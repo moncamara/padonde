@@ -1,10 +1,12 @@
 {
   "filters": {
+    "all": "All plans",
     "today": "Today",
     "tomorrow": "Tomorrow",
     "weekend": "Weekend"
   },
   "categories": {
+    "all": "All",
     "musica": "Music",
     "comida": "Food",
     "bienestar": "Wellness",
