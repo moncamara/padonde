@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { parseLocalColombiaAISO } from "@/lib/utils";
 import type { CategoriaEvento } from "@/lib/types";
 
 export interface AdminPublishInput {
@@ -106,7 +107,7 @@ export async function adminPublishEventAction(
         tipo: input.category,
         precio: input.price > 0 ? input.price : 0,
         precio_moneda: "COP",
-        fecha_inicio: new Date(input.dateTime).toISOString(),
+        fecha_inicio: parseLocalColombiaAISO(input.dateTime),
         imagen_url:
           input.imageUrl ||
           "https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&q=80",

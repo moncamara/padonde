@@ -1,4 +1,5 @@
 import type { EventoConNegocio } from "@/lib/types";
+import { getFechaYMDColombia } from "@/lib/utils";
 
 /**
  * Datos mock para desarrollo local antes de conectar Supabase.
@@ -18,9 +19,10 @@ function getFechasMock() {
 }
 
 function toISO(fecha: Date, hora: number, minuto = 0): string {
-  const d = new Date(fecha);
-  d.setHours(hora, minuto, 0, 0);
-  return d.toISOString();
+  const ymd = getFechaYMDColombia(fecha);
+  const h = hora.toString().padStart(2, "0");
+  const m = minuto.toString().padStart(2, "0");
+  return new Date(`${ymd}T${h}:${m}:00-05:00`).toISOString();
 }
 
 export function getMockEventos(): EventoConNegocio[] {

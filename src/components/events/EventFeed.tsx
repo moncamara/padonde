@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { EventCard } from "@/components/events/EventCard";
 import { EventFilters } from "@/components/events/EventFilters";
 import type { CategoriaEvento, EventoConNegocio, FiltroTiempo } from "@/lib/types";
-import { esFinDeSemana, esHoy } from "@/lib/utils";
+import { eventoCoincideConFiltroTiempo } from "@/lib/utils";
 
 interface EventFeedProps {
   eventos: EventoConNegocio[];
@@ -26,13 +26,7 @@ export function EventFeed({ eventos, zona }: EventFeedProps) {
   const eventosFiltrados = useMemo(() => {
     const now = nowRef.current;
     return eventos.filter((e) => {
-      const pasaFecha =
-        filtroTiempo === "hoy"
-          ? esHoy(e.fecha_inicio, now)
-          : filtroTiempo === "manana"
-          ? !esHoy(e.fecha_inicio, now) && !esFinDeSemana(e.fecha_inicio)
-          : esFinDeSemana(e.fecha_inicio);
-
+      const pasaFecha = eventoCoincideConFiltroTiempo(e.fecha_inicio, filtroTiempo, now);
       const pasaCategoria = filtroCategoria === null || e.tipo === filtroCategoria;
 
       return pasaFecha && pasaCategoria;
