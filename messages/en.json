@@ -68,7 +68,8 @@
   },
   "feed": {
     "empty": "No events found for this filter.",
-    "emptyHint": "Try checking another day or category!"
+    "emptyHint": "Try checking another day or category!",
+    "reset": "See today's events"
   },
   "header": {
     "subtitle": "Where to go today in"

@@ -36,15 +36,32 @@ export function EventFeed({ eventos, zona }: EventFeedProps) {
   return (
     <div className="space-y-6">
       <EventFilters
+        tiempoActivo={filtroTiempo}
+        categoriaActiva={filtroCategoria}
         onTiempoChange={setFiltroTiempo}
         onCategoriaChange={setFiltroCategoria}
       />
 
       {eventosFiltrados.length === 0 ? (
-        <div className="text-center py-16 text-stone">
+        <div className="text-center py-14 px-4 rounded-3xl bg-white/40 border border-stone-light/60 text-stone">
           <p className="text-4xl mb-3">🌿</p>
-          <p className="font-sans text-base">{tFeed("empty")}</p>
-          <p className="font-sans text-sm mt-1">{tFeed("emptyHint")}</p>
+          <p className="font-serif text-lg text-forest font-medium">{tFeed("empty")}</p>
+          <p className="font-sans text-xs text-stone mt-1 max-w-xs mx-auto">
+            {tFeed("emptyHint")}
+          </p>
+
+          {(filtroTiempo !== "hoy" || filtroCategoria !== null) && (
+            <button
+              onClick={() => {
+                setFiltroTiempo("hoy");
+                setFiltroCategoria(null);
+              }}
+              className="mt-5 inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-forest text-cream font-sans text-xs font-semibold shadow-xs hover:bg-forest/90 active:scale-95 transition-all cursor-pointer"
+            >
+              <span>✨</span>
+              <span>{tFeed("reset")}</span>
+            </button>
+          )}
         </div>
       ) : (
         <div className="space-y-4">

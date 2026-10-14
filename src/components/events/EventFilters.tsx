@@ -10,6 +10,8 @@ import {
 import type { CategoriaEvento, FiltroTiempo } from "@/lib/types";
 
 interface EventFiltersProps {
+  tiempoActivo: FiltroTiempo;
+  categoriaActiva: CategoriaEvento | null;
   onTiempoChange: (filtro: FiltroTiempo) => void;
   onCategoriaChange: (categoria: CategoriaEvento | null) => void;
 }
@@ -19,13 +21,15 @@ interface EventFiltersProps {
  * 1. Tiempo: Selector de 7 días (Hoy, Mañana, y los 5 días siguientes en hora Colombia).
  * 2. Categorías: "Todos" + categorías deslizables con indicador visual de scroll.
  */
-export function EventFilters({ onTiempoChange, onCategoriaChange }: EventFiltersProps) {
+export function EventFilters({
+  tiempoActivo,
+  categoriaActiva,
+  onTiempoChange,
+  onCategoriaChange,
+}: EventFiltersProps) {
   const tFilters = useTranslations("filters");
   const tCat = useTranslations("categories");
   const locale = useLocale();
-
-  const [tiempoActivo, setTiempoActivo] = useState<FiltroTiempo>("hoy");
-  const [categoriaActiva, setCategoriaActiva] = useState<CategoriaEvento | null>(null);
 
   // Generamos los días disponibles según el reloj de Colombia
   const opcionesTiempo = useMemo(() => {
@@ -57,12 +61,10 @@ export function EventFilters({ onTiempoChange, onCategoriaChange }: EventFilters
   }, [tFilters, locale]);
 
   function handleTiempo(filtro: FiltroTiempo) {
-    setTiempoActivo(filtro);
     onTiempoChange(filtro);
   }
 
   function handleCategoria(id: CategoriaEvento | null) {
-    setCategoriaActiva(id);
     onCategoriaChange(id);
   }
 

@@ -67,7 +67,8 @@
   },
   "feed": {
     "empty": "Aucun événement trouvé pour ce filtre.",
-    "emptyHint": "Essayez un autre jour ou une autre catégorie !"
+    "emptyHint": "Essayez un autre jour ou une autre catégorie !",
+    "reset": "Voir les plans d'aujourd'hui"
   },
   "header": {
     "subtitle": "Où aller aujourd'hui à"

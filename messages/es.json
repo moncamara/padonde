@@ -68,7 +68,8 @@
   },
   "feed": {
     "empty": "No hay planes para este filtro.",
-    "emptyHint": "¡Prueba con otro día o categoría!"
+    "emptyHint": "¡Prueba con otro día o categoría!",
+    "reset": "Ver planes de hoy"
   },
   "header": {
     "subtitle": "Qué hacer hoy en"

@@ -65,7 +65,7 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
   const waLink = whatsappLink(evento.negocio.whatsapp, waMensaje);
 
   return (
-    <div className="min-h-screen bg-cream pb-28">
+    <div className="min-h-screen bg-cream pb-32">
       {/* 1. Header flotante sobre la foto con botón atrás y compartir */}
       <nav className="fixed top-0 left-0 right-0 z-30 px-4 py-3 bg-gradient-to-b from-black/60 to-transparent">
         <div className="max-w-lg mx-auto flex items-center justify-between">
@@ -196,8 +196,8 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
         </div>
       </main>
 
-      {/* 4. Barra Fija Inferior (Sticky Bottom CTA) */}
-      <aside className="fixed bottom-0 left-0 right-0 z-20 bg-cream/95 backdrop-blur-md border-t border-stone-light py-3 px-4 shadow-lg">
+      {/* 4. Barra Fija Inferior (Sticky Bottom CTA con margen para barra gestual) */}
+      <aside className="fixed bottom-0 left-0 right-0 z-20 bg-cream/95 backdrop-blur-md border-t border-stone-light pt-3 pb-6 sm:pb-3 px-4 shadow-lg">
         <div className="max-w-lg mx-auto flex items-center justify-between gap-4">
           <div>
             <p className="text-[11px] text-stone uppercase tracking-wider font-semibold">
