@@ -60,7 +60,7 @@ export function AdminQRGenerator({ locale }: { locale: string }) {
   const [slugPersonalizado, setSlugPersonalizado] = useState("");
   const [zonaSeleccionada, setZonaSeleccionada] = useState("minca");
   const [copiadoSrc, setCopiadoSrc] = useState<string | null>(null);
-  const [dominioBase, setDominioBase] = useState("https://padonde.co");
+  const [dominioBase, setDominioBase] = useState("https://padonde.lat");
 
   // Sincronizar origen del navegador tras montaje para evitar errores de hidratación SSR
   useEffect(() => {

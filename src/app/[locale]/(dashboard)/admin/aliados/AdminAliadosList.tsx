@@ -489,7 +489,7 @@ export function AdminAliadosList({ aliados, locale }: AdminAliadosListProps) {
         const est = getEstadoExpiracion(reporteNegocio);
         const cleanWa = reporteNegocio.whatsapp.replace(/\D/g, "");
 
-        const textoReporte = `🌿 *Reporte de Impacto PaDónde* — *${reporteNegocio.nombre}*\n📍 *Minca, Sierra Nevada de Santa Marta*\n\nHola! Te compartimos el balance de visibilidad de tu negocio en la cartelera:\n\n• 🟢 *Eventos vigentes en cartelera:* ${reporteNegocio.eventosActivos}\n• 📅 *Total de eventos registrados:* ${reporteNegocio.totalEventos}\n• ⭐ *Plan comercial:* ${reporteNegocio.plan.toUpperCase()} (${est.texto})\n• 🏷️ *Categoría:* ${reporteNegocio.categoria}\n\n🔗 *Ver cartelera:* https://padonde.co/es/minca\n\n¡Gracias por conectar a viajeros y locales con lo mejor de Minca! 🌿`;
+        const textoReporte = `🌿 *Reporte de Impacto PaDónde* — *${reporteNegocio.nombre}*\n📍 *Minca, Sierra Nevada de Santa Marta*\n\nHola! Te compartimos el balance de visibilidad de tu negocio en la cartelera:\n\n• 🟢 *Eventos vigentes en cartelera:* ${reporteNegocio.eventosActivos}\n• 📅 *Total de eventos registrados:* ${reporteNegocio.totalEventos}\n• ⭐ *Plan comercial:* ${reporteNegocio.plan.toUpperCase()} (${est.texto})\n• 🏷️ *Categoría:* ${reporteNegocio.categoria}\n\n🔗 *Ver cartelera:* https://padonde.lat/es/minca\n\n¡Gracias por conectar a viajeros y locales con lo mejor de Minca! 🌿`;
 
         const waUrl = `https://wa.me/${cleanWa}?text=${encodeURIComponent(textoReporte)}`;
 

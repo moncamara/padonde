@@ -25,7 +25,7 @@ export function LoginForm({ locale }: { locale: string }) {
           type="email"
           name="email"
           required
-          placeholder="admin@padonde.co"
+          placeholder="admin@padonde.lat"
           className="w-full px-4 py-3 rounded-xl border border-stone-light bg-cream text-forest text-sm font-sans focus:outline-none focus:border-forest transition-colors"
         />
       </div>
