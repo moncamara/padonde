@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { parseLocalColombiaAISO } from "@/lib/utils";
-import type { CategoriaEvento } from "@/lib/types";
+import type { CategoriaEvento, PlanNegocio } from "@/lib/types";
 
 export interface AdminPublishInput {
   businessName: string;
@@ -165,4 +165,55 @@ export async function toggleEventoActivoAction(eventoId: string, nuevoEstado: bo
     return { success: false };
   }
 }
+
+/**
+ * Server Action para actualizar el plan y vencimiento de un Aliado / Negocio.
+ * Usado por el Admin al registrar pagos por Nequi/Daviplata o acuerdos comerciales.
+ */
+export async function actualizarPlanNegocioAction(
+  negocioId: string,
+  nuevoPlan: PlanNegocio,
+  diasVigencia?: number
+) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: "No autorizado." };
+    }
+
+    let planExpiraEn: string | null = null;
+    if (nuevoPlan !== "gratis" && diasVigencia && diasVigencia > 0) {
+      const expira = new Date();
+      expira.setDate(expira.getDate() + diasVigencia);
+      planExpiraEn = expira.toISOString();
+    }
+
+    const { error } = await supabase
+      .from("negocios")
+      .update({
+        plan: nuevoPlan,
+        plan_expira_en: planExpiraEn,
+      })
+      .eq("id", negocioId);
+
+    if (error) {
+      console.error("Error al actualizar plan del negocio:", error);
+      return { success: false, error: error.message };
+    }
+
+    revalidatePath(`/[locale]/admin`, "page");
+    revalidatePath(`/[locale]/admin/aliados`, "page");
+    revalidatePath(`/[locale]/minca`, "page");
+
+    return { success: true };
+  } catch (err) {
+    console.error("Excepción en actualizarPlanNegocioAction:", err);
+    return { success: false, error: "Error inesperado al actualizar plan." };
+  }
+}
+
 
