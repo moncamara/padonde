@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { Link } from "@/i18n/routing";
 import { formatFecha, formatHora, formatPrecio, getFechaYMDColombia, getFechaYMDDesdeISO, esHoy } from "@/lib/utils";
 import { ToggleActivoButton } from "./ToggleActivoButton";
+import { ToggleDestacadoButton } from "./ToggleDestacadoButton";
 import { Button } from "@/components/ui/Button";
 
 export interface EventoAdminItem {
@@ -265,17 +266,20 @@ export function AdminEventList({ eventos, locale }: AdminEventListProps) {
               </div>
 
               {/* Acciones Rápidas Optimizadas para Mobile y Desktop */}
-              <div className="w-full sm:w-auto pt-2.5 sm:pt-0 border-t border-stone-light/50 sm:border-0 flex items-center justify-between sm:justify-end gap-2">
-                <ToggleActivoButton eventoId={ev.id} activoInicial={ev.activo} />
+              <div className="w-full sm:w-auto pt-2.5 sm:pt-0 border-t border-stone-light/50 sm:border-0 flex items-center justify-between sm:justify-end gap-2 flex-wrap sm:flex-nowrap">
+                <div className="flex items-center gap-1.5">
+                  <ToggleActivoButton eventoId={ev.id} activoInicial={ev.activo} />
+                  <ToggleDestacadoButton eventoId={ev.id} destacadoInicial={ev.destacado} />
+                </div>
 
                 <Link
                   href={`/minca/${ev.id}`}
                   target="_blank"
-                  className="text-xs text-stone hover:text-forest px-2.5 py-1.5 rounded-xl border border-stone-light/60 bg-white/70 hover:bg-white transition-colors flex items-center gap-1"
+                  className="text-xs text-stone hover:text-forest px-2.5 py-1.5 rounded-xl border border-stone-light/60 bg-white/70 hover:bg-white transition-colors flex items-center gap-1 shrink-0"
                   title="Ver en la web pública"
                 >
                   <span>👁️</span>
-                  <span className="sm:hidden font-sans">Ver web</span>
+                  <span className="sm:hidden font-sans">Ver</span>
                 </Link>
               </div>
             </article>

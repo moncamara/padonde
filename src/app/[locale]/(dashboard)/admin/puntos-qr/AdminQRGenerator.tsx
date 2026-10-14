@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface PuntoPreset {
   id: string;
@@ -60,6 +60,14 @@ export function AdminQRGenerator({ locale }: { locale: string }) {
   const [slugPersonalizado, setSlugPersonalizado] = useState("");
   const [zonaSeleccionada, setZonaSeleccionada] = useState("minca");
   const [copiadoSrc, setCopiadoSrc] = useState<string | null>(null);
+  const [dominioBase, setDominioBase] = useState("https://padonde.co");
+
+  // Sincronizar origen del navegador tras montaje para evitar errores de hidratación SSR
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setDominioBase(window.location.origin);
+    }
+  }, []);
 
   // Generar slug automático a partir del nombre
   function handleNombreChange(val: string) {
@@ -74,11 +82,6 @@ export function AdminQRGenerator({ locale }: { locale: string }) {
   }
 
   const slugFinal = slugPersonalizado || "punto-fisico";
-  const dominioBase =
-    typeof window !== "undefined"
-      ? window.location.origin
-      : "https://padonde.co";
-
   const urlGenerada = `${dominioBase}/${locale}/${zonaSeleccionada}?src=${slugFinal}`;
   const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=12&data=${encodeURIComponent(
     urlGenerada
@@ -156,7 +159,10 @@ export function AdminQRGenerator({ locale }: { locale: string }) {
                 Enlace con Atribución Generado
               </label>
               <div className="flex items-center gap-2 p-2 bg-stone-light/30 rounded-xl border border-stone-light/60">
-                <p className="font-mono text-[11px] text-forest/90 break-all flex-1 select-all">
+                <p
+                  suppressHydrationWarning
+                  className="font-mono text-[11px] text-forest/90 break-all flex-1 select-all"
+                >
                   {urlGenerada}
                 </p>
                 <button

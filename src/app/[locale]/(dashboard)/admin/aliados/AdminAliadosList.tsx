@@ -35,6 +35,7 @@ export function AdminAliadosList({ aliados, locale }: AdminAliadosListProps) {
 
   // Estado para modal / panel de edición de plan
   const [editandoNegocio, setEditandoNegocio] = useState<AliadoItem | null>(null);
+  const [reporteNegocio, setReporteNegocio] = useState<AliadoItem | null>(null);
   const [nuevoPlan, setNuevoPlan] = useState<PlanNegocio>("pro");
   const [diasVigencia, setDiasVigencia] = useState<number>(30);
   const [isPending, startTransition] = useTransition();
@@ -347,14 +348,14 @@ export function AdminAliadosList({ aliados, locale }: AdminAliadosListProps) {
                   <span>Gestionar Plan</span>
                 </button>
 
-                {/* 3. Botón Copiar Reporte */}
+                {/* 3. Botón Ver y Enviar Reporte de Impacto */}
                 <button
-                  onClick={() => handleCopiarReporte(aliado)}
-                  className="px-2.5 py-2 sm:py-2 rounded-xl text-xs font-sans text-stone hover:text-forest bg-white/70 border border-stone-light/70 hover:bg-white transition-colors cursor-pointer text-center flex items-center justify-center gap-1"
-                  title="Copiar resumen del aliado para enviarlo por WhatsApp"
+                  onClick={() => setReporteNegocio(aliado)}
+                  className="px-2.5 py-2 sm:py-2 rounded-xl text-xs font-sans text-forest bg-white/70 border border-stone-light/70 hover:bg-white transition-colors cursor-pointer text-center flex items-center justify-center gap-1 font-medium"
+                  title="Generar y enviar Reporte de Impacto por WhatsApp"
                 >
-                  <span>{copiadoId === aliado.id ? "✓" : "📋"}</span>
-                  <span>{copiadoId === aliado.id ? "Copiado" : "Resumen"}</span>
+                  <span>📊</span>
+                  <span>Reporte</span>
                 </button>
               </div>
             </article>
@@ -482,6 +483,114 @@ export function AdminAliadosList({ aliados, locale }: AdminAliadosListProps) {
           </div>
         </div>
       )}
+
+      {/* Modal / Diálogo de Reporte de Impacto y Demostración de ROI */}
+      {reporteNegocio && (() => {
+        const est = getEstadoExpiracion(reporteNegocio);
+        const cleanWa = reporteNegocio.whatsapp.replace(/\D/g, "");
+
+        const textoReporte = `🌿 *Reporte de Impacto PaDónde* — *${reporteNegocio.nombre}*\n📍 *Minca, Sierra Nevada de Santa Marta*\n\nHola! Te compartimos el balance de visibilidad de tu negocio en la cartelera:\n\n• 🟢 *Eventos vigentes en cartelera:* ${reporteNegocio.eventosActivos}\n• 📅 *Total de eventos registrados:* ${reporteNegocio.totalEventos}\n• ⭐ *Plan comercial:* ${reporteNegocio.plan.toUpperCase()} (${est.texto})\n• 🏷️ *Categoría:* ${reporteNegocio.categoria}\n\n🔗 *Ver cartelera:* https://padonde.co/es/minca\n\n¡Gracias por conectar a viajeros y locales con lo mejor de Minca! 🌿`;
+
+        const waUrl = `https://wa.me/${cleanWa}?text=${encodeURIComponent(textoReporte)}`;
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
+            <div className="bg-white rounded-3xl p-5 sm:p-6 max-w-lg w-full shadow-xl border border-stone-light space-y-4 animate-in fade-in zoom-in-95 duration-150">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">📊</span>
+                    <h3 className="font-serif text-lg sm:text-xl text-forest font-bold">
+                      Reporte de Impacto y Rendimiento
+                    </h3>
+                  </div>
+                  <p className="text-xs text-stone mt-0.5">
+                    Demostración de valor para: <strong className="text-forest">{reporteNegocio.nombre}</strong>
+                  </p>
+                </div>
+                <button
+                  onClick={() => setReporteNegocio(null)}
+                  className="text-stone hover:text-forest text-sm cursor-pointer p-1"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Tarjeta Visual de Rendimiento (ROI Card) */}
+              <div className="bg-gradient-to-br from-forest to-[#254225] text-cream p-5 rounded-2xl space-y-4 shadow-sm">
+                <div className="flex items-center justify-between border-b border-cream/20 pb-3">
+                  <div>
+                    <span className="text-[10px] uppercase tracking-wider text-cream/70 font-sans">Aliado Oficial</span>
+                    <h4 className="font-serif text-xl font-bold text-cream">{reporteNegocio.nombre}</h4>
+                  </div>
+                  <span className="text-xs bg-terra text-white px-2.5 py-0.5 rounded-full font-semibold uppercase">
+                    Plan {reporteNegocio.plan}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div className="p-2.5 bg-white/10 rounded-xl">
+                    <span className="text-[10px] text-cream/70 block">Eventos Vigentes</span>
+                    <span className="font-serif text-2xl font-bold text-cream mt-0.5 block">
+                      {reporteNegocio.eventosActivos}
+                    </span>
+                    <span className="text-[9px] text-emerald-300">En cartelera ahora</span>
+                  </div>
+
+                  <div className="p-2.5 bg-white/10 rounded-xl">
+                    <span className="text-[10px] text-cream/70 block">Historial Publicado</span>
+                    <span className="font-serif text-2xl font-bold text-cream mt-0.5 block">
+                      {reporteNegocio.totalEventos}
+                    </span>
+                    <span className="text-[9px] text-cream/70">Planes acumulados</span>
+                  </div>
+                </div>
+
+                <div className="text-[11px] text-cream/80 space-y-1 pt-1 font-sans">
+                  <p>📍 <strong>Destino:</strong> Minca, Sierra Nevada de Santa Marta</p>
+                  <p>💬 <strong>Canal de Reservas:</strong> WhatsApp verificado (+{cleanWa})</p>
+                  <p>⏳ <strong>Vigencia del Acuerdo:</strong> {est.texto}</p>
+                </div>
+              </div>
+
+              {/* Botones de Envío y Copia */}
+              <div className="space-y-2 pt-1 font-sans">
+                <a
+                  href={waUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full py-2.5 px-4 rounded-xl text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer"
+                >
+                  <span>💬</span>
+                  <span>Enviar Reporte por WhatsApp al Dueño</span>
+                </a>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(textoReporte);
+                      setCopiadoId("modal-reporte");
+                      setTimeout(() => setCopiadoId(null), 2500);
+                    }}
+                    className="flex-1 py-2 px-3 rounded-xl text-xs font-medium text-forest bg-white border border-stone-light hover:bg-stone-50 transition-colors cursor-pointer text-center"
+                  >
+                    {copiadoId === "modal-reporte" ? "✓ Reporte Copiado" : "📋 Copiar Texto para WhatsApp"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setReporteNegocio(null)}
+                    className="py-2 px-4 rounded-xl text-xs text-stone hover:text-forest cursor-pointer"
+                  >
+                    Cerrar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

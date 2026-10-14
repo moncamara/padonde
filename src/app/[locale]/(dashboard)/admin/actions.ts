@@ -216,4 +216,39 @@ export async function actualizarPlanNegocioAction(
   }
 }
 
+/**
+ * Server Action para alternar el estado destacado de un evento (Monetización por visibilidad).
+ */
+export async function toggleEventoDestacadoAction(eventoId: string, nuevoEstado: boolean) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      console.warn("toggleEventoDestacadoAction: Usuario no autenticado.");
+      return { success: false, error: "No autenticado" };
+    }
+
+    const { error } = await supabase
+      .from("eventos")
+      .update({ destacado: nuevoEstado })
+      .eq("id", eventoId);
+
+    if (error) {
+      console.error("Error al actualizar destacado en Supabase:", error);
+      return { success: false, error: error.message };
+    }
+
+    revalidatePath(`/[locale]/admin`, "page");
+    revalidatePath(`/[locale]/minca`, "page");
+    return { success: true };
+  } catch (err) {
+    console.error("Excepción en toggleEventoDestacadoAction:", err);
+    return { success: false };
+  }
+}
+
+
 
