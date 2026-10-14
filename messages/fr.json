@@ -1,0 +1,85 @@
+{
+  "filters": {
+    "today": "Aujourd'hui",
+    "tomorrow": "Demain",
+    "weekend": "Ce week-end"
+  },
+  "categories": {
+    "musica": "Musique",
+    "comida": "Cuisine",
+    "bienestar": "Bien-être",
+    "tours": "Excursions",
+    "arte": "Art",
+    "hospedaje": "Hébergement",
+    "transporte": "Transport",
+    "artesanias": "Artisanat"
+  },
+  "eventCard": {
+    "reserve": "Réserver",
+    "seeMore": "En savoir plus",
+    "featured": "En vedette"
+  },
+  "eventDetail": {
+    "back": "Retour",
+    "organizedBy": "Organisé par",
+    "about": "À propos de ce plan",
+    "dateTime": "Date et heure",
+    "price": "Prix",
+    "bookWhatsApp": "Réserver via WhatsApp",
+    "chatWithHost": "Écrire à l'hôte",
+    "share": "Partager",
+    "copied": "Lien copié !",
+    "featured": "En vedette"
+  },
+  "publish": {
+    "title": "Publier un Plan",
+    "subtitle": "Connectez votre événement avec des milliers de voyageurs dans la Sierra",
+    "businessSection": "1. Informations sur le commerce",
+    "businessName": "Nom du commerce / hôte",
+    "businessNamePlaceholder": "Ex. Café Sierra, Hostal La Cumbre...",
+    "whatsapp": "Numéro WhatsApp",
+    "whatsappPlaceholder": "573001234567",
+    "whatsappHelp": "Inclure l'indicatif du pays (ex. 57 pour la Colombie) sans espaces.",
+    "instagram": "Instagram (facultatif)",
+    "instagramPlaceholder": "@votrecommerce",
+    "eventSection": "2. Détails de l'événement",
+    "eventTitle": "Titre de l'événement ou du plan",
+    "eventTitlePlaceholder": "Ex. Randonnée aux cascades, Soirée Pizza & Jazz...",
+    "category": "Catégorie",
+    "dateTime": "Date et heure de début",
+    "price": "Prix par personne (COP)",
+    "pricePlaceholder": "Ex. 35000 (mettre 0 si gratuit)",
+    "priceHelp": "Entrez 0 pour gratuit, ou le montant en pesos colombiens.",
+    "description": "Description du plan",
+    "descriptionPlaceholder": "Dites aux voyageurs de quoi il s'agit, ce qui est inclus, quoi apporter...",
+    "photoSection": "3. Photo de l'événement",
+    "uploadPhoto": "Télécharger une photo de qualité",
+    "photoHelp": "JPG, PNG ou WebP. Une photo de haute qualité double les réservations.",
+    "isFeatured": "Mettre cet événement en vedette en haut du flux ⭐",
+    "submit": "Publier l'événement maintenant",
+    "publishing": "Publication en cours...",
+    "successTitle": "Plan publié avec succès ! 🎉",
+    "successSubtitle": "Votre événement est maintenant en direct pour les voyageurs.",
+    "viewEvent": "Voir l'événement sur PaDónde",
+    "publishAnother": "Publier un autre plan",
+    "errorGeneral": "Une erreur est survenue lors de la publication. Veuillez vérifier vos données."
+  },
+  "feed": {
+    "empty": "Aucun événement trouvé pour ce filtre.",
+    "emptyHint": "Essayez un autre jour ou une autre catégorie !"
+  },
+  "header": {
+    "subtitle": "Où aller aujourd'hui à"
+  },
+  "footer": {
+    "cta": "Vous avez un commerce à {zona} ?",
+    "ctaLink": "Publiez ici"
+  },
+  "price": {
+    "free": "Gratuit",
+    "consult": "Sur demande"
+  },
+  "whatsapp": {
+    "message": "Bonjour ! J'ai vu votre {tipo} \"{titulo}\" sur PaDónde et j'aimerais en savoir plus. 🌿"
+  }
+}

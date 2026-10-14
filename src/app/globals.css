@@ -1,26 +1,57 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ─────────────────────────────────────────────
+   PaDónde Design Tokens
+   Tailwind v4 usa @theme para extender la paleta.
+   Todos los colores de la marca se definen aquí
+   como variables CSS reutilizables en toda la app.
+───────────────────────────────────────────── */
+@theme {
+  /* Paleta de marca */
+  --color-cream:      #f5f0e8;  /* Fondo principal — cálido, natural */
+  --color-forest:     #1a2e1a;  /* Verde oscuro — texto y elementos primarios */
+  --color-terra:      #c4622d;  /* Terracota — acento, CTAs */
+  --color-terra-dark: #a34f22;  /* Terracota oscuro — hover de CTAs */
+  --color-stone:      #8a7e6e;  /* Gris cálido — texto secundario */
+  --color-stone-light:#e8e2d9;  /* Gris muy claro — bordes y divisores */
+  --color-white:      #ffffff;
+  --color-black:      #000000;
+
+  /* Tipografía */
+  --font-serif: var(--font-playfair);   /* Títulos — elegancia */
+  --font-sans:  var(--font-inter);      /* Cuerpo — legibilidad */
+
+  /* Border radius */
+  --radius-card: 1rem;
+  --radius-pill: 9999px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ─────────────────────────────────────────────
+   Base global
+───────────────────────────────────────────── */
+html {
+  /* Suaviza el scroll en navegación interna */
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-cream);
+  color: var(--color-forest);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  /* Mejora el renderizado de texto en móviles */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─────────────────────────────────────────────
+   Utilidad: gradiente oscuro sobre imágenes de card
+   Se aplica como overlay para legibilidad del texto
+───────────────────────────────────────────── */
+.card-overlay {
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.75) 0%,
+    rgba(0, 0, 0, 0.2) 60%,
+    transparent 100%
+  );
 }

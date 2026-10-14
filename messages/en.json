@@ -1,0 +1,85 @@
+{
+  "filters": {
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "weekend": "Weekend"
+  },
+  "categories": {
+    "musica": "Music",
+    "comida": "Food",
+    "bienestar": "Wellness",
+    "tours": "Tours",
+    "arte": "Art",
+    "hospedaje": "Stay",
+    "transporte": "Transport",
+    "artesanias": "Crafts"
+  },
+  "eventCard": {
+    "reserve": "Book Now",
+    "seeMore": "See More",
+    "featured": "Featured"
+  },
+  "eventDetail": {
+    "back": "Back",
+    "organizedBy": "Hosted by",
+    "about": "About this event",
+    "dateTime": "Date & Time",
+    "price": "Price",
+    "bookWhatsApp": "Book via WhatsApp",
+    "chatWithHost": "Message the Host",
+    "share": "Share",
+    "copied": "Link copied!",
+    "featured": "Featured"
+  },
+  "publish": {
+    "title": "Post an Event / Plan",
+    "subtitle": "Connect your offering with thousands of travelers in the Sierra",
+    "businessSection": "1. Business Details",
+    "businessName": "Host / Business Name",
+    "businessNamePlaceholder": "E.g. Café Sierra, Hostal La Cumbre...",
+    "whatsapp": "WhatsApp Number",
+    "whatsappPlaceholder": "573001234567",
+    "whatsappHelp": "Include country code (e.g. 57 for Colombia) with no spaces or symbols.",
+    "instagram": "Instagram (optional)",
+    "instagramPlaceholder": "@yourbusiness",
+    "eventSection": "2. Event Details",
+    "eventTitle": "Event / Plan Title",
+    "eventTitlePlaceholder": "E.g. Waterfall Trek, Pizza & Live Jazz Night...",
+    "category": "Category",
+    "dateTime": "Start Date & Time",
+    "price": "Price per person (COP)",
+    "pricePlaceholder": "E.g. 35000 (enter 0 if free)",
+    "priceHelp": "Enter 0 for free, or amount in Colombian Pesos.",
+    "description": "Event Description",
+    "descriptionPlaceholder": "Tell travelers what it's about, what's included, what to bring (boots, repellent, warm layers)...",
+    "photoSection": "3. Event Photo",
+    "uploadPhoto": "Upload high-quality photo",
+    "photoHelp": "JPG, PNG or WebP. High-quality pictures double bookings.",
+    "isFeatured": "Feature this event at top of feed ⭐",
+    "submit": "Publish Event Now",
+    "publishing": "Publishing...",
+    "successTitle": "Plan published successfully! 🎉",
+    "successSubtitle": "Your event is now live and visible to travelers.",
+    "viewEvent": "View event on PaDónde",
+    "publishAnother": "Post another event",
+    "errorGeneral": "An error occurred while publishing. Please check your data and try again."
+  },
+  "feed": {
+    "empty": "No events found for this filter.",
+    "emptyHint": "Try checking another day or category!"
+  },
+  "header": {
+    "subtitle": "Where to go today in"
+  },
+  "footer": {
+    "cta": "Do you own a business in {zona}?",
+    "ctaLink": "Post here"
+  },
+  "price": {
+    "free": "Free",
+    "consult": "Inquire"
+  },
+  "whatsapp": {
+    "message": "Hi! I saw your {tipo} \"{titulo}\" on PaDónde and I'd like to know more. 🌿"
+  }
+}
