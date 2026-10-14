@@ -67,7 +67,10 @@ export const getCategoria = (id: CategoriaEvento) =>
 /** Porcentaje que retiene la plataforma sobre ventas de boletería (0–1) */
 export const COMISION_BOLETERIA = 0.10; // 10%
 
-// ─── WhatsApp ─────────────────────────────────────────────────────────────────
+// ─── Contacto Comercial ───────────────────────────────────────────────────────
+
+/** Número oficial de WhatsApp de PaDónde para negocios y publicaciones */
+export const WHATSAPP_CONTACTO = "573013010194";
 
 /**
  * Genera un enlace de WhatsApp directo con mensaje predefinido.
@@ -76,3 +79,4 @@ export const COMISION_BOLETERIA = 0.10; // 10%
  */
 export const whatsappLink = (numero: string, mensaje: string) =>
   `https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`;
+

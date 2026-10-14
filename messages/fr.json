@@ -81,6 +81,7 @@
     "consult": "Sur demande"
   },
   "whatsapp": {
-    "message": "Bonjour ! J'ai vu votre {tipo} \"{titulo}\" sur PaDónde et j'aimerais en savoir plus. 🌿"
+    "message": "Bonjour ! J'ai vu votre {tipo} \"{titulo}\" sur PaDónde et j'aimerais en savoir plus. 🌿",
+    "businessMessage": "Bonjour ! J'ai un commerce ou événement à {zona} et j'aimerais le publier sur PaDónde. 🌿"
   }
 }

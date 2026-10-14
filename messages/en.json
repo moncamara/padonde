@@ -82,6 +82,7 @@
     "consult": "Inquire"
   },
   "whatsapp": {
-    "message": "Hi! I saw your {tipo} \"{titulo}\" on PaDónde and I'd like to know more. 🌿"
+    "message": "Hi! I saw your {tipo} \"{titulo}\" on PaDónde and I'd like to know more. 🌿",
+    "businessMessage": "Hi! I run a business or event in {zona} and I'd like to post it on PaDónde. 🌿"
   }
 }

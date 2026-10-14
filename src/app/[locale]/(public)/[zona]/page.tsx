@@ -3,7 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/routing";
 import { EventFeed } from "@/components/events/EventFeed";
 import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
-import { getZona } from "@/constants";
+import { getZona, whatsappLink, WHATSAPP_CONTACTO } from "@/constants";
 import { getEventosByZona } from "@/lib/supabase/queries";
 import { getMockEventos } from "@/lib/mock/eventos";
 import type { ZonaSlug } from "@/lib/types";
@@ -42,12 +42,16 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
 
   const tHeader = await getTranslations("header");
   const tFooter = await getTranslations("footer");
+  const tWa = await getTranslations("whatsapp");
 
   // Obtener eventos desde Supabase con fallback a mock
   let eventos = await getEventosByZona(zonaSlug);
   if (eventos.length === 0) {
     eventos = getMockEventos();
   }
+
+  const mensajeComercial = tWa("businessMessage", { zona: zona.nombre });
+  const waComercialLink = whatsappLink(WHATSAPP_CONTACTO, mensajeComercial);
 
   return (
     <main className="min-h-screen bg-cream">
@@ -73,14 +77,12 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
         <EventFeed eventos={eventos} zona={zonaSlug} />
       </div>
 
-      {/* Footer — invitación a negocios con traducción */}
+      {/* Footer — invitación a negocios con traducción y enlace a tu WhatsApp */}
       <footer className="text-center py-8 px-4">
         <p className="font-sans text-xs text-stone">
           {tFooter("cta", { zona: zona.nombre })}{" "}
           <a
-            href={`https://wa.me/57XXXXXXXXXX?text=${encodeURIComponent(
-              `Hola! Tengo un negocio/evento en ${zona.nombre} y me gustaría publicarlo en PaDónde. 🌿`
-            )}`}
+            href={waComercialLink}
             target="_blank"
             rel="noopener noreferrer"
             className="text-terra underline underline-offset-2 hover:text-terra-dark font-medium"

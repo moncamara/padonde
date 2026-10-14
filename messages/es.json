@@ -82,6 +82,7 @@
     "consult": "Consultar"
   },
   "whatsapp": {
-    "message": "Hola! Vi tu {tipo} \"{titulo}\" en PaDónde y me interesa saber más. 🌿"
+    "message": "Hola! Vi tu {tipo} \"{titulo}\" en PaDónde y me interesa saber más. 🌿",
+    "businessMessage": "Hola! Tengo un negocio o evento en {zona} y me gustaría publicarlo en PaDónde. 🌿"
   }
 }
