@@ -97,18 +97,18 @@ export function AdminEventList({ eventos, locale }: AdminEventListProps) {
     <section className="space-y-4">
       {/* Selector de Pestañas por Vigencia */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-light/80 pb-3">
-        <div className="flex items-center gap-1.5 p-1 bg-stone-light/50 rounded-2xl">
+        <div className="grid grid-cols-3 sm:flex items-center gap-1 p-1 bg-stone-light/50 rounded-2xl w-full sm:w-auto">
           <button
             onClick={() => setTabActiva("vigentes")}
             className={[
-              "px-3.5 py-1.5 rounded-xl font-sans text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5",
+              "py-2 sm:py-1.5 px-2 sm:px-3.5 rounded-xl font-sans text-xs font-medium transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5",
               tabActiva === "vigentes"
                 ? "bg-white text-forest shadow-xs font-semibold"
                 : "text-stone hover:text-forest",
             ].join(" ")}
           >
             <span>🟢</span>
-            <span>Vigentes</span>
+            <span className="truncate">Vigentes</span>
             <span
               className={[
                 "px-1.5 py-0.2 rounded-full text-[10px]",
@@ -124,14 +124,14 @@ export function AdminEventList({ eventos, locale }: AdminEventListProps) {
           <button
             onClick={() => setTabActiva("pausados")}
             className={[
-              "px-3.5 py-1.5 rounded-xl font-sans text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5",
+              "py-2 sm:py-1.5 px-2 sm:px-3.5 rounded-xl font-sans text-xs font-medium transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5",
               tabActiva === "pausados"
                 ? "bg-white text-forest shadow-xs font-semibold"
                 : "text-stone hover:text-forest",
             ].join(" ")}
           >
             <span>⏸️</span>
-            <span>Pausados</span>
+            <span className="truncate">Pausados</span>
             <span
               className={[
                 "px-1.5 py-0.2 rounded-full text-[10px]",
@@ -147,14 +147,14 @@ export function AdminEventList({ eventos, locale }: AdminEventListProps) {
           <button
             onClick={() => setTabActiva("pasados")}
             className={[
-              "px-3.5 py-1.5 rounded-xl font-sans text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5",
+              "py-2 sm:py-1.5 px-2 sm:px-3.5 rounded-xl font-sans text-xs font-medium transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5",
               tabActiva === "pasados"
                 ? "bg-white text-forest shadow-xs font-semibold"
                 : "text-stone hover:text-forest",
             ].join(" ")}
           >
             <span>⌛</span>
-            <span>Pasados</span>
+            <span className="truncate">Pasados</span>
             <span
               className={[
                 "px-1.5 py-0.2 rounded-full text-[10px]",
@@ -169,18 +169,18 @@ export function AdminEventList({ eventos, locale }: AdminEventListProps) {
         </div>
 
         {/* Buscador Rápido */}
-        <div className="relative">
+        <div className="relative w-full sm:w-auto">
           <input
             type="text"
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
             placeholder="Buscar por título o negocio..."
-            className="w-full sm:w-64 px-3.5 py-1.5 text-xs bg-white/80 rounded-xl border border-stone-light/80 placeholder:text-stone/60 focus:outline-none focus:ring-1 focus:ring-forest text-forest"
+            className="w-full sm:w-64 px-3.5 py-2 sm:py-1.5 text-xs bg-white/80 rounded-xl border border-stone-light/80 placeholder:text-stone/60 focus:outline-none focus:ring-1 focus:ring-forest text-forest"
           />
           {busqueda && (
             <button
               onClick={() => setBusqueda("")}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone hover:text-forest text-xs cursor-pointer"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone hover:text-forest text-xs cursor-pointer p-1"
             >
               ✕
             </button>
@@ -199,7 +199,7 @@ export function AdminEventList({ eventos, locale }: AdminEventListProps) {
             <article
               key={ev.id}
               className={[
-                "rounded-2xl p-4 border transition-all shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3",
+                "rounded-2xl p-3.5 sm:p-4 border transition-all shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3",
                 tabActiva === "pasados"
                   ? "bg-white/50 border-stone-light/50 opacity-80"
                   : "bg-white/80 border-stone-light/70",
@@ -264,17 +264,18 @@ export function AdminEventList({ eventos, locale }: AdminEventListProps) {
                 </div>
               </div>
 
-              {/* Acciones Rápidas */}
-              <div className="flex items-center gap-2 self-end sm:self-center">
+              {/* Acciones Rápidas Optimizadas para Mobile y Desktop */}
+              <div className="w-full sm:w-auto pt-2.5 sm:pt-0 border-t border-stone-light/50 sm:border-0 flex items-center justify-between sm:justify-end gap-2">
                 <ToggleActivoButton eventoId={ev.id} activoInicial={ev.activo} />
 
                 <Link
                   href={`/minca/${ev.id}`}
                   target="_blank"
-                  className="text-xs text-stone hover:text-forest p-1.5 rounded-lg border border-stone-light/60 bg-white/70 hover:bg-white transition-colors"
+                  className="text-xs text-stone hover:text-forest px-2.5 py-1.5 rounded-xl border border-stone-light/60 bg-white/70 hover:bg-white transition-colors flex items-center gap-1"
                   title="Ver en la web pública"
                 >
-                  👁️
+                  <span>👁️</span>
+                  <span className="sm:hidden font-sans">Ver web</span>
                 </Link>
               </div>
             </article>

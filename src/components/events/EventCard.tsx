@@ -36,10 +36,11 @@ export function EventCard({ evento, zona, priority = false }: EventCardProps) {
       ? tPrice("free")
       : formatPrecio(evento.precio, evento.precio_moneda);
 
-  const mensajeDirecto = tWa("message", {
+  const refCode = evento.id.slice(0, 5).toUpperCase();
+  const mensajeDirecto = `${tWa("message", {
     tipo: categoria ? tCat(evento.tipo) : "evento",
     titulo: evento.titulo,
-  });
+  })} [Ref #${refCode}]`;
 
   const waLink = whatsappLink(evento.negocio.whatsapp, mensajeDirecto);
 

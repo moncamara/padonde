@@ -151,12 +151,12 @@ export function AdminAliadosList({ aliados, locale }: AdminAliadosListProps) {
     <div className="space-y-6">
       {/* Controles de Búsqueda y Filtros */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-light/80 pb-4">
-        {/* Pills de Filtrado */}
-        <div className="flex flex-wrap items-center gap-1.5 p-1 bg-stone-light/40 rounded-2xl">
+        {/* Pills de Filtrado con scroll horizontal en móviles */}
+        <div className="flex items-center gap-1.5 p-1 bg-stone-light/40 rounded-2xl overflow-x-auto w-full sm:w-auto">
           <button
             onClick={() => setFiltro("todos")}
             className={[
-              "px-3 py-1.5 rounded-xl font-sans text-xs font-medium transition-all cursor-pointer",
+              "px-3 py-1.5 rounded-xl font-sans text-xs font-medium transition-all cursor-pointer whitespace-nowrap flex-shrink-0",
               filtro === "todos"
                 ? "bg-white text-forest shadow-xs font-semibold"
                 : "text-stone hover:text-forest",
@@ -168,14 +168,14 @@ export function AdminAliadosList({ aliados, locale }: AdminAliadosListProps) {
           <button
             onClick={() => setFiltro("pro_premium")}
             className={[
-              "px-3 py-1.5 rounded-xl font-sans text-xs font-medium transition-all cursor-pointer flex items-center gap-1",
+              "px-3 py-1.5 rounded-xl font-sans text-xs font-medium transition-all cursor-pointer flex items-center gap-1 whitespace-nowrap flex-shrink-0",
               filtro === "pro_premium"
                 ? "bg-white text-forest shadow-xs font-semibold"
                 : "text-stone hover:text-forest",
             ].join(" ")}
           >
             <span>⭐ Pro / Premium</span>
-            <span className="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded-full">
+            <span className="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded-full font-semibold">
               {aliados.filter((a) => a.plan !== "gratis").length}
             </span>
           </button>
@@ -183,14 +183,14 @@ export function AdminAliadosList({ aliados, locale }: AdminAliadosListProps) {
           <button
             onClick={() => setFiltro("por_vencer")}
             className={[
-              "px-3 py-1.5 rounded-xl font-sans text-xs font-medium transition-all cursor-pointer flex items-center gap-1",
+              "px-3 py-1.5 rounded-xl font-sans text-xs font-medium transition-all cursor-pointer flex items-center gap-1 whitespace-nowrap flex-shrink-0",
               filtro === "por_vencer"
                 ? "bg-white text-forest shadow-xs font-semibold"
                 : "text-stone hover:text-forest",
             ].join(" ")}
           >
             <span>⚠️ Por Vencer</span>
-            <span className="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.2 rounded-full">
+            <span className="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.2 rounded-full font-semibold">
               {
                 aliados.filter((a) => {
                   const est = getEstadoExpiracion(a);
@@ -203,7 +203,7 @@ export function AdminAliadosList({ aliados, locale }: AdminAliadosListProps) {
           <button
             onClick={() => setFiltro("gratis")}
             className={[
-              "px-3 py-1.5 rounded-xl font-sans text-xs font-medium transition-all cursor-pointer",
+              "px-3 py-1.5 rounded-xl font-sans text-xs font-medium transition-all cursor-pointer whitespace-nowrap flex-shrink-0",
               filtro === "gratis"
                 ? "bg-white text-forest shadow-xs font-semibold"
                 : "text-stone hover:text-forest",
@@ -214,18 +214,18 @@ export function AdminAliadosList({ aliados, locale }: AdminAliadosListProps) {
         </div>
 
         {/* Buscador de Negocio */}
-        <div className="relative">
+        <div className="relative w-full sm:w-auto">
           <input
             type="text"
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
             placeholder="Buscar por nombre o teléfono..."
-            className="w-full sm:w-64 px-3.5 py-1.5 text-xs bg-white/80 rounded-xl border border-stone-light/80 placeholder:text-stone/60 focus:outline-none focus:ring-1 focus:ring-forest text-forest"
+            className="w-full sm:w-64 px-3.5 py-2 sm:py-1.5 text-xs bg-white/80 rounded-xl border border-stone-light/80 placeholder:text-stone/60 focus:outline-none focus:ring-1 focus:ring-forest text-forest"
           />
           {busqueda && (
             <button
               onClick={() => setBusqueda("")}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone hover:text-forest text-xs cursor-pointer"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone hover:text-forest text-xs cursor-pointer p-1"
             >
               ✕
             </button>
@@ -242,7 +242,7 @@ export function AdminAliadosList({ aliados, locale }: AdminAliadosListProps) {
           return (
             <article
               key={aliado.id}
-              className="bg-white/80 rounded-2xl p-5 border border-stone-light/80 shadow-xs hover:border-stone transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+              className="bg-white/80 rounded-2xl p-4 sm:p-5 border border-stone-light/80 shadow-xs hover:border-stone transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 sm:gap-4"
             >
               {/* Información Principal del Negocio */}
               <div className="space-y-2 flex-1 min-w-0">
@@ -314,14 +314,14 @@ export function AdminAliadosList({ aliados, locale }: AdminAliadosListProps) {
                 </div>
               </div>
 
-              {/* Botones de Acción Operativa y Cobro */}
-              <div className="flex flex-wrap items-center gap-2 self-start sm:self-center">
+              {/* Botones de Acción Operativa y Cobro Optimizados para Mobile */}
+              <div className="w-full sm:w-auto pt-3 sm:pt-0 border-t border-stone-light/50 sm:border-0 grid grid-cols-2 sm:flex items-center gap-2">
                 {/* 1. Botón WhatsApp Cobro / Contacto */}
                 <a
                   href={generarEnlaceWhatsAppCobro(aliado)}
                   target="_blank"
                   rel="noreferrer"
-                  className="px-3.5 py-2 rounded-xl text-xs font-sans font-semibold bg-emerald-600 text-white hover:bg-emerald-700 transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+                  className="col-span-2 sm:col-span-1 px-3.5 py-2.5 sm:py-2 rounded-xl text-xs font-sans font-semibold bg-emerald-600 text-white hover:bg-emerald-700 transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
                   title="Abrir WhatsApp con mensaje pre-redactado de cobro o contacto"
                 >
                   <span>💬</span>
@@ -341,18 +341,20 @@ export function AdminAliadosList({ aliados, locale }: AdminAliadosListProps) {
                     setNuevoPlan(aliado.plan);
                     setDiasVigencia(30);
                   }}
-                  className="px-3 py-2 rounded-xl text-xs font-sans font-medium text-forest bg-white border border-stone-light hover:bg-stone-50 transition-colors cursor-pointer"
+                  className="px-3 py-2 sm:py-2 rounded-xl text-xs font-sans font-medium text-forest bg-white border border-stone-light hover:bg-stone-50 transition-colors cursor-pointer text-center flex items-center justify-center gap-1"
                 >
-                  ⚙️ Gestionar Plan
+                  <span>⚙️</span>
+                  <span>Gestionar Plan</span>
                 </button>
 
                 {/* 3. Botón Copiar Reporte */}
                 <button
                   onClick={() => handleCopiarReporte(aliado)}
-                  className="px-2.5 py-2 rounded-xl text-xs font-sans text-stone hover:text-forest bg-white/70 border border-stone-light/70 hover:bg-white transition-colors cursor-pointer"
+                  className="px-2.5 py-2 sm:py-2 rounded-xl text-xs font-sans text-stone hover:text-forest bg-white/70 border border-stone-light/70 hover:bg-white transition-colors cursor-pointer text-center flex items-center justify-center gap-1"
                   title="Copiar resumen del aliado para enviarlo por WhatsApp"
                 >
-                  {copiadoId === aliado.id ? "✓ Copiado" : "📋 Resumen"}
+                  <span>{copiadoId === aliado.id ? "✓" : "📋"}</span>
+                  <span>{copiadoId === aliado.id ? "Copiado" : "Resumen"}</span>
                 </button>
               </div>
             </article>

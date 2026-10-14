@@ -15,60 +15,83 @@ export function AdminNav({ userEmail }: AdminNavProps) {
   const isPuntosQR = pathname.includes("/admin/puntos-qr");
 
   return (
-    <header className="sticky top-0 z-20 bg-cream/90 backdrop-blur-md border-b border-stone-light/80 px-4 py-3">
-      <div className="max-w-3xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        {/* Logo y Enlaces de Navegación del Admin */}
-        <div className="flex items-center justify-between sm:justify-start gap-4">
-          <Link href="/admin" className="flex items-center gap-2">
-            <span className="text-xl">🌿</span>
-            <span className="font-serif text-xl text-forest font-bold tracking-tight">
-              PaDónde Admin
+    <header className="sticky top-0 z-20 bg-cream/95 backdrop-blur-md border-b border-stone-light/80 px-3 sm:px-4 py-2.5 sm:py-3 transition-all">
+      <div className="max-w-3xl mx-auto flex flex-col gap-2.5 sm:gap-0 sm:flex-row sm:items-center sm:justify-between">
+        {/* Fila 1 en Mobile / Lado Izquierdo en Desktop: Logo y Acciones Rápidas */}
+        <div className="flex items-center justify-between">
+          <Link href="/admin" className="flex items-center gap-2 group">
+            <span className="text-xl group-hover:scale-110 transition-transform">🌿</span>
+            <span className="font-serif text-lg sm:text-xl text-forest font-bold tracking-tight">
+              PaDónde <span className="font-sans font-normal text-xs text-stone bg-white/70 px-2 py-0.5 rounded-full border border-stone-light/60">Admin</span>
             </span>
           </Link>
 
-          {/* Pestañas de Navegación Principal */}
-          <nav className="flex items-center gap-1 bg-stone-light/40 p-1 rounded-2xl">
+          {/* Acciones de Cuenta en Mobile */}
+          <div className="flex items-center gap-2 sm:hidden text-xs font-sans">
             <Link
-              href="/admin"
-              className={[
-                "px-3 py-1.5 rounded-xl font-sans text-xs font-medium transition-all",
-                isCartelera
-                  ? "bg-white text-forest shadow-xs font-semibold"
-                  : "text-stone hover:text-forest",
-              ].join(" ")}
+              href="/minca"
+              target="_blank"
+              className="text-stone hover:text-forest p-1.5 rounded-lg border border-stone-light/60 bg-white/70"
+              title="Ver web pública"
             >
-              🌿 Cartelera
+              👁️ Web
             </Link>
 
-            <Link
-              href="/admin/aliados"
-              className={[
-                "px-3 py-1.5 rounded-xl font-sans text-xs font-medium transition-all flex items-center gap-1.5",
-                isAliados
-                  ? "bg-white text-forest shadow-xs font-semibold"
-                  : "text-stone hover:text-forest",
-              ].join(" ")}
-            >
-              <span>👥 Aliados</span>
-              <span className="text-[10px] bg-forest/10 text-forest px-1.5 py-0.2 rounded-full font-semibold">
-                Paso 2
-              </span>
-            </Link>
-
-            <span
-              title="Próximo paso: Atribución de tráfico QR"
-              className="px-2.5 py-1.5 rounded-xl font-sans text-xs text-stone/60 cursor-not-allowed flex items-center gap-1"
-            >
-              <span>📍 QRs</span>
-              <span className="text-[9px] bg-stone-200/70 text-stone px-1 rounded-sm">
-                Paso 3
-              </span>
-            </span>
-          </nav>
+            <form action={logoutAction}>
+              <button
+                type="submit"
+                className="text-red-600 font-medium px-2 py-1 rounded-lg border border-red-200 bg-red-50 text-[11px]"
+              >
+                Salir
+              </button>
+            </form>
+          </div>
         </div>
 
-        {/* Acciones del Header */}
-        <div className="flex items-center justify-end gap-3 text-xs font-sans">
+        {/* Fila 2 en Mobile / Centro en Desktop: Pestañas de Navegación Segmentadas */}
+        <nav className="grid grid-cols-3 sm:flex items-center gap-1 bg-stone-light/40 p-1 rounded-2xl w-full sm:w-auto">
+          <Link
+            href="/admin"
+            className={[
+              "py-1.5 px-2 sm:px-3.5 rounded-xl font-sans text-xs font-medium transition-all text-center flex items-center justify-center gap-1",
+              isCartelera
+                ? "bg-white text-forest shadow-xs font-semibold"
+                : "text-stone hover:text-forest",
+            ].join(" ")}
+          >
+            <span>🌿</span>
+            <span>Cartelera</span>
+          </Link>
+
+          <Link
+            href="/admin/aliados"
+            className={[
+              "py-1.5 px-2 sm:px-3 rounded-xl font-sans text-xs font-medium transition-all text-center flex items-center justify-center gap-1",
+              isAliados
+                ? "bg-white text-forest shadow-xs font-semibold"
+                : "text-stone hover:text-forest",
+            ].join(" ")}
+          >
+            <span>👥</span>
+            <span>Aliados</span>
+          </Link>
+
+          <Link
+            href="/admin/puntos-qr"
+            className={[
+              "py-1.5 px-2 sm:px-3 rounded-xl font-sans text-xs font-medium transition-all text-center flex items-center justify-center gap-1",
+              isPuntosQR
+                ? "bg-white text-forest shadow-xs font-semibold"
+                : "text-stone hover:text-forest",
+            ].join(" ")}
+          >
+            <span>📍</span>
+            <span>Puntos QR</span>
+          </Link>
+        </nav>
+
+        {/* Acciones de Cuenta en Desktop */}
+        <div className="hidden sm:flex items-center justify-end gap-3 text-xs font-sans">
           <Link
             href="/minca"
             target="_blank"

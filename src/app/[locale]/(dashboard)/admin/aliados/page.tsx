@@ -83,77 +83,77 @@ export default async function AdminAliadosPage({
       {/* Header unificado con navegación */}
       <AdminNav userEmail={user?.email} />
 
-      <main className="max-w-3xl mx-auto px-4 py-8 space-y-6">
+      <main className="max-w-3xl mx-auto px-3.5 sm:px-4 py-4 sm:py-8 space-y-4 sm:space-y-6">
         {/* Banner principal */}
-        <div className="bg-white/70 backdrop-blur-sm p-6 rounded-3xl border border-stone-light/80 shadow-xs">
+        <div className="bg-white/70 backdrop-blur-sm p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-stone-light/80 shadow-xs">
           <div className="flex items-center gap-2">
-            <h1 className="font-serif text-2xl text-forest font-bold">
+            <h1 className="font-serif text-xl sm:text-2xl text-forest font-bold">
               Aliados Comerciales y Planes B2B
             </h1>
-            <span className="text-xs bg-forest/10 text-forest px-2.5 py-0.5 rounded-full font-medium">
+            <span className="text-[11px] bg-forest/10 text-forest px-2.5 py-0.5 rounded-full font-medium">
               Paso 2: Monetización
             </span>
           </div>
           <p className="font-sans text-xs text-stone mt-1">
-            Gestiona los acuerdos con hostales, restaurantes, guías y artesanos de Minca.
-            Controla sus renovaciones y genera mensajes de cobro por WhatsApp en 1 clic.
+            Gestiona acuerdos con hostales, restaurantes, guías y artesanos de Minca.
+            Controla renovaciones y genera mensajes de cobro por WhatsApp en 1 clic.
           </p>
         </div>
 
         {/* 4 KPIs de Monetización B2B */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="p-4 rounded-2xl bg-white/70 border border-stone-light/80 shadow-xs">
-            <p className="text-[11px] text-stone font-sans uppercase tracking-wider">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+          <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-white/70 border border-stone-light/80 shadow-xs">
+            <p className="text-[10px] sm:text-[11px] text-stone font-sans uppercase tracking-wider">
               Total Aliados
             </p>
-            <p className="font-serif text-2xl text-forest font-bold mt-0.5">
+            <p className="font-serif text-xl sm:text-2xl text-forest font-bold mt-0.5">
               {totalAliados}
             </p>
-            <p className="text-[10px] text-stone mt-1">🏛️ Comercios registrados</p>
+            <p className="text-[10px] text-stone mt-0.5 truncate">🏛️ Comercios</p>
           </div>
 
-          <div className="p-4 rounded-2xl bg-white/70 border border-stone-light/80 shadow-xs">
-            <p className="text-[11px] text-stone font-sans uppercase tracking-wider">
+          <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-white/70 border border-stone-light/80 shadow-xs">
+            <p className="text-[10px] sm:text-[11px] text-stone font-sans uppercase tracking-wider">
               Suscripciones Pro
             </p>
-            <p className="font-serif text-2xl text-emerald-800 font-bold mt-0.5">
+            <p className="font-serif text-xl sm:text-2xl text-emerald-800 font-bold mt-0.5">
               {planesDePago}
             </p>
-            <p className="text-[10px] text-emerald-700 font-medium mt-1">
-              ⭐ Planes de pago activos
+            <p className="text-[10px] text-emerald-700 font-medium mt-0.5 truncate">
+              ⭐ Planes activos
             </p>
           </div>
 
-          <div className="p-4 rounded-2xl bg-white/70 border border-stone-light/80 shadow-xs">
-            <p className="text-[11px] text-stone font-sans uppercase tracking-wider">
+          <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-white/70 border border-stone-light/80 shadow-xs">
+            <p className="text-[10px] sm:text-[11px] text-stone font-sans uppercase tracking-wider">
               Atención / Cobros
             </p>
-            <p className="font-serif text-2xl text-amber-700 font-bold mt-0.5">
+            <p className="font-serif text-xl sm:text-2xl text-amber-700 font-bold mt-0.5">
               {porVencerOVencidos}
             </p>
-            <p className="text-[10px] text-amber-800 font-medium mt-1">
-              ⚠️ Vencidos o por vencer
+            <p className="text-[10px] text-amber-800 font-medium mt-0.5 truncate">
+              ⚠️ Por vencer
             </p>
           </div>
 
-          <div className="p-4 rounded-2xl bg-white/70 border border-stone-light/80 shadow-xs">
-            <p className="text-[11px] text-stone font-sans uppercase tracking-wider">
+          <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-white/70 border border-stone-light/80 shadow-xs">
+            <p className="text-[10px] sm:text-[11px] text-stone font-sans uppercase tracking-wider">
               Planes Gratis
             </p>
-            <p className="font-serif text-2xl text-stone font-bold mt-0.5">
+            <p className="font-serif text-xl sm:text-2xl text-stone font-bold mt-0.5">
               {planesGratis}
             </p>
-            <p className="text-[10px] text-stone mt-1">💡 Prospectos para upgrade</p>
+            <p className="text-[10px] text-stone mt-0.5 truncate">💡 Para upgrade</p>
           </div>
         </div>
 
         {/* Directorio con búsqueda, filtros y acciones */}
-        <div className="bg-white/40 p-5 rounded-3xl border border-stone-light/60 space-y-4">
+        <div className="bg-white/40 p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-stone-light/60 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="font-serif text-xl text-forest font-semibold">
+            <h2 className="font-serif text-lg sm:text-xl text-forest font-semibold">
               Directorio de Comercios y Acuerdos
             </h2>
-            <span className="text-xs text-stone font-sans">
+            <span className="text-[11px] sm:text-xs text-stone font-sans">
               <strong>{totalAliados}</strong> registrados
             </span>
           </div>
