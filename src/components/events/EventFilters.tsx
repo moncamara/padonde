@@ -16,7 +16,7 @@ interface EventFiltersProps {
 
 /**
  * Filtros del feed público:
- * 1. Tiempo: Selector de 7 días (Hoy, Mañana, Días de la semana) + Fin de semana (hora Colombia).
+ * 1. Tiempo: Selector de 7 días (Hoy, Mañana, y los 5 días siguientes en hora Colombia).
  * 2. Categorías: "Todos" + categorías deslizables con indicador visual de scroll.
  */
 export function EventFilters({ onTiempoChange, onCategoriaChange }: EventFiltersProps) {
@@ -37,9 +37,6 @@ export function EventFilters({ onTiempoChange, onCategoriaChange }: EventFilters
       }
       if (op.id === "manana") {
         return { ...op, label: tFilters("tomorrow") };
-      }
-      if (op.id === "finde") {
-        return { ...op, label: tFilters("weekend") };
       }
 
       // Para los días específicos (ej. 2026-10-16), formateamos con el locale activo (es/en/fr)

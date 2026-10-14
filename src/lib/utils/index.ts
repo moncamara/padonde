@@ -69,13 +69,13 @@ export function esFinDeSemana(iso: string): boolean {
 }
 
 export type OpcionDiaFiltro = {
-  id: string; // 'hoy', 'manana', 'YYYY-MM-DD', o 'finde'
+  id: string; // 'hoy', 'manana', o 'YYYY-MM-DD'
   label: string; // 'Hoy', 'Mañana', 'Jue 15', etc.
   ymd?: string; // YYYY-MM-DD si es un día específico
 };
 
 /**
- * Genera la lista de opciones para el selector de tiempo (próximos 7 días + Finde)
+ * Genera la lista de opciones para el selector de tiempo (próximos 7 días)
  * calculado en la hora real de Colombia.
  */
 export function getOpcionesTiempoColombia(): OpcionDiaFiltro[] {
@@ -110,9 +110,6 @@ export function getOpcionesTiempoColombia(): OpcionDiaFiltro[] {
     opciones.push({ id: ymd, label: labelCap, ymd });
   }
 
-  // 4. Fin de semana
-  opciones.push({ id: "finde", label: "Fin de semana" });
-
   return opciones;
 }
 
@@ -140,7 +137,6 @@ export function parseLocalColombiaAISO(dateTimeStr: string): string {
  * Filtros soportados:
  * - "hoy": la fecha del evento coincide con la fecha de hoy en Colombia.
  * - "manana": la fecha del evento coincide con la fecha de mañana en Colombia.
- * - "finde": la fecha del evento cae en sábado o domingo de la semana en curso (próximos 7 días).
  * - "YYYY-MM-DD": la fecha del evento coincide exactamente con esa fecha específica.
  */
 export function eventoCoincideConFiltroTiempo(
@@ -160,15 +156,6 @@ export function eventoCoincideConFiltroTiempo(
     manana.setDate(manana.getDate() + 1);
     const ymdManana = getFechaYMDColombia(manana);
     return ymdEvento === ymdManana;
-  }
-
-  if (filtro === "finde") {
-    if (!esFinDeSemana(fechaInicioIso)) return false;
-    // Dentro de la ventana de los próximos 7 días a partir de hoy
-    const enSieteDias = new Date(now);
-    enSieteDias.setDate(enSieteDias.getDate() + 7);
-    const ymdMax = getFechaYMDColombia(enSieteDias);
-    return ymdEvento >= ymdHoy && ymdEvento <= ymdMax;
   }
 
   // Fecha específica (formato YYYY-MM-DD)

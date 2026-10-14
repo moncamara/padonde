@@ -23,8 +23,8 @@ export type CategoriaEvento =
 /** Planes de suscripción de un negocio */
 export type PlanNegocio = "gratis" | "pro" | "premium";
 
-/** Filtro de tiempo en el feed público: 'hoy', 'manana', 'finde', o una fecha específica 'YYYY-MM-DD' */
-export type FiltroTiempo = "hoy" | "manana" | "finde" | string;
+/** Filtro de tiempo en el feed público: 'hoy', 'manana', o una fecha específica 'YYYY-MM-DD' */
+export type FiltroTiempo = "hoy" | "manana" | string;
 
 
 // ─── Entidades principales ────────────────────────────────────────────────────
