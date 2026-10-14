@@ -16,6 +16,8 @@ interface EventCardProps {
 
 /**
  * Tarjeta principal de evento para el feed público con soporte i18n.
+ * Toda la tarjeta es clickeable para abrir el detalle del plan,
+ * manteniendo el botón de WhatsApp como acción directa de reserva.
  */
 export function EventCard({ evento, zona, priority = false }: EventCardProps) {
   const tCard = useTranslations("eventCard");
@@ -42,16 +44,25 @@ export function EventCard({ evento, zona, priority = false }: EventCardProps) {
   const waLink = whatsappLink(evento.negocio.whatsapp, mensajeDirecto);
 
   return (
-    <article className="relative w-full rounded-[--radius-card] overflow-hidden bg-forest shadow-sm">
-      {/* Imagen de fondo del evento */}
-      <div className="relative h-56 sm:h-64 w-full">
+    <article className="group relative w-full rounded-[--radius-card] overflow-hidden bg-forest shadow-xs hover:shadow-md transition-all duration-200">
+      {/* 1. Enlace global clickeable que cubre toda la tarjeta */}
+      <Link
+        href={`/${zona}/${evento.id}`}
+        className="absolute inset-0 z-10 focus:outline-none focus:ring-2 focus:ring-terra focus:ring-offset-2 rounded-[--radius-card]"
+        aria-label={`${evento.titulo} - ${evento.negocio.nombre}`}
+      >
+        <span className="sr-only">{evento.titulo}</span>
+      </Link>
+
+      {/* 2. Contenedor de Imagen y Gradiente */}
+      <div className="relative h-64 sm:h-72 w-full overflow-hidden">
         {evento.imagen_url ? (
           <Image
             src={evento.imagen_url}
             alt={evento.titulo}
             fill
             sizes="(max-width: 640px) 100vw, 640px"
-            className="object-cover"
+            className="object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
             priority={priority}
           />
         ) : (
@@ -60,50 +71,60 @@ export function EventCard({ evento, zona, priority = false }: EventCardProps) {
 
         <div className="card-overlay absolute inset-0" />
 
-        {/* Badge de categoría traducida */}
-        {categoria && (
-          <span className="absolute top-3 left-3 bg-white/20 backdrop-blur-sm text-white text-xs font-sans font-medium px-2.5 py-1 rounded-full">
-            {categoria.emoji} {tCat(evento.tipo)}
-          </span>
-        )}
+        {/* Badges superiores (Categoría y Destacado) */}
+        <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none z-20">
+          {categoria ? (
+            <span className="bg-black/35 backdrop-blur-md text-white text-xs font-sans font-medium px-3 py-1 rounded-full border border-white/10 shadow-xs">
+              {categoria.emoji} {tCat(evento.tipo)}
+            </span>
+          ) : (
+            <span />
+          )}
 
-        {/* Badge "Destacado" / "Featured" */}
-        {evento.destacado && (
-          <span className="absolute top-3 right-3 bg-terra text-white text-xs font-sans font-semibold px-2.5 py-1 rounded-full">
-            ⭐ {tCard("featured")}
-          </span>
-        )}
+          {evento.destacado && (
+            <span className="bg-terra text-white text-xs font-sans font-semibold px-3 py-1 rounded-full shadow-xs">
+              ⭐ {tCard("featured")}
+            </span>
+          )}
+        </div>
 
-        {/* Contenido inferior sobre la imagen */}
-        <div className="absolute bottom-0 left-0 right-0 p-4">
-          <p className="text-white/70 text-xs font-sans mb-1">
+        {/* 3. Contenido inferior sobre la imagen */}
+        <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-5 z-20 pointer-events-none">
+          <p className="text-white/80 text-xs font-sans mb-1 font-medium tracking-wide">
             {evento.negocio.nombre} · {hora}
           </p>
 
-          <h2 className="font-serif text-white text-xl leading-tight mb-3">
+          <h2 className="font-serif text-white text-xl sm:text-2xl leading-tight mb-3 tracking-tight">
             {truncar(evento.titulo, 60)}
           </h2>
 
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-white font-sans font-semibold text-sm">
-              {precioDisplay}
-            </span>
+          {/* Fila inferior: Precio a la izquierda, Botón de WhatsApp a la derecha */}
+          <div className="flex items-center justify-between gap-3 pt-1">
+            <div className="flex flex-col">
+              <span className="text-white font-sans font-bold text-base tracking-tight drop-shadow-xs">
+                {precioDisplay}
+              </span>
+              {evento.precio !== null && evento.precio > 0 && (
+                <span className="text-white/70 text-[10px] font-sans">
+                  Por persona
+                </span>
+              )}
+            </div>
 
-            {/* Enlace a detalle del evento (con Link localizado) */}
-            <Link href={`/${zona}/${evento.id}`}>
+            {/* Botón directo de reserva por WhatsApp */}
+            <a
+              href={waLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="pointer-events-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
               <Button
                 size="sm"
-                variant="outline"
-                className="border-white/60 text-white hover:bg-white hover:text-forest"
+                className="bg-terra hover:bg-terra-dark text-white font-medium shadow-md text-xs px-3.5 py-2 flex items-center gap-1.5 active:scale-95 transition-transform"
               >
-                {tCard("seeMore")}
-              </Button>
-            </Link>
-
-            {/* Contacto directo por WhatsApp */}
-            <a href={waLink} target="_blank" rel="noopener noreferrer">
-              <Button size="sm">
-                {tCard("reserve")}
+                <span>💬</span>
+                <span>{tCard("reserve")}</span>
               </Button>
             </a>
           </div>
