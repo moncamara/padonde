@@ -621,5 +621,147 @@ export async function eliminarEventoAdminAction(eventoId: string) {
   }
 }
 
+export interface EditarAliadoInput {
+  id: string;
+  nombre: string;
+  categoria: CategoriaEvento;
+  whatsapp: string;
+  instagram?: string | null;
+  descripcion?: string | null;
+  activo: boolean;
+  plan: PlanNegocio;
+  diasVigencia?: number;
+  sincronizarPublicaciones?: boolean;
+}
+
+/**
+ * Server Action para editar completamente los datos de un Aliado comercial.
+ */
+export async function editarAliadoCompletoAction(input: EditarAliadoInput) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: "Debes iniciar sesión para editar." };
+    }
+
+    if (!input.nombre?.trim() || input.nombre.trim().length < 2) {
+      return { success: false, error: "El nombre del aliado debe tener al menos 2 caracteres." };
+    }
+
+    // Normalizar WhatsApp
+    let cleanWa = input.whatsapp.replace(/\D/g, "");
+    if (cleanWa.length === 10 && cleanWa.startsWith("3")) {
+      cleanWa = `57${cleanWa}`;
+    }
+    if (cleanWa.length < 8) {
+      return { success: false, error: "El número de WhatsApp no es válido." };
+    }
+
+    // Normalizar Instagram
+    const cleanIg = input.instagram?.replace(/^@+/, "").trim() || null;
+
+    // Calcular vigencia del plan si aplica
+    let planExpiraEn: string | null = null;
+    if (input.plan !== "gratis" && input.diasVigencia && input.diasVigencia > 0) {
+      const expira = new Date();
+      expira.setDate(expira.getDate() + input.diasVigencia);
+      planExpiraEn = expira.toISOString();
+    }
+
+    const updatePayload: Record<string, any> = {
+      nombre: input.nombre.trim(),
+      categoria: input.categoria,
+      whatsapp: cleanWa,
+      instagram: cleanIg,
+      descripcion: input.descripcion?.trim() || null,
+      activo: input.activo,
+      plan: input.plan,
+    };
+
+    if (input.plan === "gratis") {
+      updatePayload.plan_expira_en = null;
+    } else if (planExpiraEn) {
+      updatePayload.plan_expira_en = planExpiraEn;
+    }
+
+    const { error } = await supabase
+      .from("negocios")
+      .update(updatePayload)
+      .eq("id", input.id);
+
+    if (error) {
+      console.error("Error al actualizar aliado:", error);
+      return { success: false, error: error.message };
+    }
+
+    // Si el usuario solicita sincronizar publicaciones al desactivar/activar
+    if (input.sincronizarPublicaciones) {
+      await supabase
+        .from("eventos")
+        .update({ activo: input.activo })
+        .eq("negocio_id", input.id);
+    }
+
+    revalidatePath(`/[locale]/admin`, "page");
+    revalidatePath(`/[locale]/admin/aliados`, "page");
+    revalidatePath(`/[locale]/minca`, "page");
+
+    return { success: true };
+  } catch (err: any) {
+    console.error("Excepción en editarAliadoCompletoAction:", err);
+    return { success: false, error: err?.message || "Error al actualizar aliado." };
+  }
+}
+
+/**
+ * Server Action para alternar rápidamente el estado activo/inactivo de un Aliado con 1 clic.
+ */
+export async function toggleActivoAliadoAction(
+  negocioId: string,
+  nuevoEstado: boolean,
+  sincronizarPublicaciones: boolean = true
+) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: "No autenticado." };
+    }
+
+    const { error } = await supabase
+      .from("negocios")
+      .update({ activo: nuevoEstado })
+      .eq("id", negocioId);
+
+    if (error) {
+      console.error("Error al alternar estado del aliado:", error);
+      return { success: false, error: error.message };
+    }
+
+    if (sincronizarPublicaciones) {
+      await supabase
+        .from("eventos")
+        .update({ activo: nuevoEstado })
+        .eq("negocio_id", negocioId);
+    }
+
+    revalidatePath(`/[locale]/admin`, "page");
+    revalidatePath(`/[locale]/admin/aliados`, "page");
+    revalidatePath(`/[locale]/minca`, "page");
+
+    return { success: true };
+  } catch (err: any) {
+    console.error("Excepción en toggleActivoAliadoAction:", err);
+    return { success: false, error: err?.message || "Error al alternar estado." };
+  }
+}
+
 
 

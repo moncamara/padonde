@@ -3,12 +3,14 @@
 import { useState, useTransition, useMemo } from "react";
 import { useRouter } from "@/i18n/routing";
 import { formatFecha } from "@/lib/utils";
-import { actualizarPlanNegocioAction } from "../actions";
+import { actualizarPlanNegocioAction, toggleActivoAliadoAction } from "../actions";
+import { ModalEditarAliado } from "./ModalEditarAliado";
 import type { PlanNegocio } from "@/lib/types";
 
 export interface AliadoItem {
   id: string;
   nombre: string;
+  descripcion?: string | null;
   categoria: string;
   whatsapp: string;
   instagram?: string | null;
@@ -32,6 +34,9 @@ export function AdminAliadosList({ aliados, locale }: AdminAliadosListProps) {
   const [filtro, setFiltro] = useState<FiltroPlan>("todos");
   const [busqueda, setBusqueda] = useState("");
   const [copiadoId, setCopiadoId] = useState<string | null>(null);
+
+  // Estado para modal de edición completa
+  const [aliadoParaEditar, setAliadoParaEditar] = useState<AliadoItem | null>(null);
 
   // Estado para modal / panel de edición de plan
   const [editandoNegocio, setEditandoNegocio] = useState<AliadoItem | null>(null);
@@ -125,6 +130,18 @@ export function AdminAliadosList({ aliados, locale }: AdminAliadosListProps) {
     navigator.clipboard.writeText(texto);
     setCopiadoId(aliado.id);
     setTimeout(() => setCopiadoId(null), 2500);
+  }
+
+  // Alternar estado activo / inactivo de un aliado
+  function handleToggleActivo(aliado: AliadoItem) {
+    startTransition(async () => {
+      const res = await toggleActivoAliadoAction(aliado.id, !aliado.activo, true);
+      if (!res.success) {
+        alert(res.error || "No se pudo cambiar el estado del aliado.");
+      } else {
+        router.refresh();
+      }
+    });
   }
 
   // Guardar cambio de plan
@@ -243,7 +260,12 @@ export function AdminAliadosList({ aliados, locale }: AdminAliadosListProps) {
           return (
             <article
               key={aliado.id}
-              className="bg-white/80 rounded-2xl p-4 sm:p-5 border border-stone-light/80 shadow-xs hover:border-stone transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 sm:gap-4"
+              className={[
+                "rounded-2xl p-4 sm:p-5 border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 sm:gap-4",
+                aliado.activo
+                  ? "bg-white/80 border-stone-light/80 shadow-xs hover:border-stone"
+                  : "bg-stone-50/70 border-dashed border-stone-300 opacity-90",
+              ].join(" ")}
             >
               {/* Información Principal del Negocio */}
               <div className="space-y-2 flex-1 min-w-0">
@@ -251,6 +273,26 @@ export function AdminAliadosList({ aliados, locale }: AdminAliadosListProps) {
                   <h3 className="font-serif text-lg text-forest font-bold truncate">
                     {aliado.nombre}
                   </h3>
+
+                  {/* Switch rápido de Activo / Pausado */}
+                  <button
+                    type="button"
+                    onClick={() => handleToggleActivo(aliado)}
+                    disabled={isPending}
+                    title={
+                      aliado.activo
+                        ? "Clic para pausar este aliado (sus publicaciones no se verán)"
+                        : "Clic para reactivar este aliado"
+                    }
+                    className={[
+                      "text-[10px] px-2.5 py-0.5 rounded-full font-semibold border flex items-center gap-1 transition-all cursor-pointer shadow-2xs active:scale-95",
+                      aliado.activo
+                        ? "bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100"
+                        : "bg-red-50 text-red-700 border-red-300 hover:bg-red-100",
+                    ].join(" ")}
+                  >
+                    <span>{aliado.activo ? "🟢 Activo" : "⏸️ Pausado"}</span>
+                  </button>
 
                   {/* Badge de Plan */}
                   <span
@@ -313,6 +355,13 @@ export function AdminAliadosList({ aliados, locale }: AdminAliadosListProps) {
                     {aliado.totalEventos} total)
                   </span>
                 </div>
+
+                {!aliado.activo && (
+                  <p className="text-[11px] text-amber-800 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200/60 inline-flex items-center gap-1 mt-1">
+                    <span>⚠️</span>
+                    <span>Aliado inactivo: sus publicaciones están pausadas en la cartelera turística.</span>
+                  </p>
+                )}
               </div>
 
               {/* Botones de Acción Operativa y Cobro Optimizados para Mobile */}
@@ -335,20 +384,30 @@ export function AdminAliadosList({ aliados, locale }: AdminAliadosListProps) {
                   </span>
                 </a>
 
-                {/* 2. Botón Cambiar Plan */}
+                {/* 2. Botón Editar Aliado */}
+                <button
+                  onClick={() => setAliadoParaEditar(aliado)}
+                  className="px-3 py-2 sm:py-2 rounded-xl text-xs font-sans font-semibold text-forest bg-white border border-stone-light hover:bg-stone-50 transition-colors cursor-pointer text-center flex items-center justify-center gap-1 shadow-2xs"
+                  title="Editar datos comerciales, teléfono, Instagram y estado del aliado"
+                >
+                  <span>✏️</span>
+                  <span>Editar</span>
+                </button>
+
+                {/* 3. Botón Cambiar Plan */}
                 <button
                   onClick={() => {
                     setEditandoNegocio(aliado);
                     setNuevoPlan(aliado.plan);
                     setDiasVigencia(30);
                   }}
-                  className="px-3 py-2 sm:py-2 rounded-xl text-xs font-sans font-medium text-forest bg-white border border-stone-light hover:bg-stone-50 transition-colors cursor-pointer text-center flex items-center justify-center gap-1"
+                  className="px-3 py-2 sm:py-2 rounded-xl text-xs font-sans font-medium text-stone hover:text-forest bg-white/70 border border-stone-light hover:bg-stone-50 transition-colors cursor-pointer text-center flex items-center justify-center gap-1"
                 >
                   <span>⚙️</span>
-                  <span>Gestionar Plan</span>
+                  <span>Plan</span>
                 </button>
 
-                {/* 3. Botón Ver y Enviar Reporte de Impacto */}
+                {/* 4. Botón Ver y Enviar Reporte de Impacto */}
                 <button
                   onClick={() => setReporteNegocio(aliado)}
                   className="px-2.5 py-2 sm:py-2 rounded-xl text-xs font-sans text-forest bg-white/70 border border-stone-light/70 hover:bg-white transition-colors cursor-pointer text-center flex items-center justify-center gap-1 font-medium"
@@ -591,6 +650,15 @@ export function AdminAliadosList({ aliados, locale }: AdminAliadosListProps) {
           </div>
         );
       })()}
+
+      {/* Modal de Edición Completa de Aliado */}
+      {aliadoParaEditar && (
+        <ModalEditarAliado
+          aliado={aliadoParaEditar}
+          isOpen={true}
+          onClose={() => setAliadoParaEditar(null)}
+        />
+      )}
     </div>
   );
 }

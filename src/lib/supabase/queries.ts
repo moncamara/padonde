@@ -45,7 +45,8 @@ export async function getEventosByZona(zonaSlug: ZonaSlug): Promise<EventoConNeg
         negocio:negocios (
           nombre,
           whatsapp,
-          instagram
+          instagram,
+          activo
         )
       `)
       .eq("zona_id", zona.id)
@@ -58,7 +59,9 @@ export async function getEventosByZona(zonaSlug: ZonaSlug): Promise<EventoConNeg
       return [];
     }
 
-    return (eventos as unknown as EventoConNegocio[]) || [];
+    const lista = (eventos as unknown as (EventoConNegocio & { negocio?: { activo?: boolean } })[]) || [];
+    // Ocultar del feed público si el comercio aliado está desactivado
+    return lista.filter((e) => !e.negocio || e.negocio.activo !== false);
   } catch (err) {
     console.error("Excepción en getEventosByZona:", err);
     return [];
@@ -94,7 +97,8 @@ export async function getEventoById(id: string): Promise<EventoConNegocio | null
         negocio:negocios (
           nombre,
           whatsapp,
-          instagram
+          instagram,
+          activo
         )
       `)
       .eq("id", id)

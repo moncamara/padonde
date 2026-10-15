@@ -31,6 +31,7 @@ export default async function AdminAliadosPage({
     .select(`
       id,
       nombre,
+      descripcion,
       categoria,
       whatsapp,
       instagram,
@@ -53,6 +54,7 @@ export default async function AdminAliadosPage({
     return {
       id: n.id,
       nombre: n.nombre,
+      descripcion: n.descripcion || null,
       categoria: n.categoria,
       whatsapp: n.whatsapp,
       instagram: n.instagram,
