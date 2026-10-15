@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "@/i18n/routing";
-import { editarAliadoCompletoAction, type EditarAliadoInput } from "../actions";
+import { editarAliadoCompletoAction, eliminarAliadoAdminAction, type EditarAliadoInput } from "../actions";
 import type { AliadoItem } from "./AdminAliadosList";
 import type { CategoriaEvento, PlanNegocio } from "@/lib/types";
 
@@ -27,6 +27,7 @@ export function ModalEditarAliado({ aliado, isOpen, onClose }: ModalEditarAliado
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [confirmandoEliminar, setConfirmandoEliminar] = useState(false);
 
   // Campos de formulario
   const [nombre, setNombre] = useState(aliado.nombre);
@@ -44,6 +45,19 @@ export function ModalEditarAliado({ aliado, isOpen, onClose }: ModalEditarAliado
   const [diasVigencia, setDiasVigencia] = useState<number>(30);
 
   if (!isOpen) return null;
+
+  const handleEliminar = () => {
+    setErrorMsg(null);
+    startTransition(async () => {
+      const res = await eliminarAliadoAdminAction(aliado.id);
+      if (!res.success) {
+        setErrorMsg(res.error || "No se pudo eliminar el aliado.");
+      } else {
+        router.refresh();
+        onClose();
+      }
+    });
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -311,33 +325,82 @@ export function ModalEditarAliado({ aliado, isOpen, onClose }: ModalEditarAliado
             )}
           </div>
 
+          {/* Reconfirmación de eliminación */}
+          {confirmandoEliminar && (
+            <div className="p-3.5 bg-red-50 rounded-2xl border border-red-200 space-y-2 animate-in fade-in duration-150">
+              <p className="font-semibold text-red-800 text-xs flex items-center gap-1.5">
+                <span>⚠️</span>
+                <span>¿Estás seguro de eliminar a &ldquo;{aliado.nombre}&rdquo;?</span>
+              </p>
+              <p className="text-[11px] text-red-700 leading-relaxed">
+                Esta acción es irreversible. Se eliminará permanentemente el aliado y sus{" "}
+                <strong>{aliado.totalEventos} publicaciones</strong> asociadas en la cartelera.
+              </p>
+              <div className="flex items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setConfirmandoEliminar(false)}
+                  disabled={isPending}
+                  className="px-3 py-1.5 rounded-xl bg-white border border-stone-light text-stone hover:text-forest text-xs font-medium cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleEliminar}
+                  disabled={isPending}
+                  className="px-3.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-semibold shadow-xs transition-all cursor-pointer flex items-center gap-1"
+                >
+                  {isPending ? "Eliminando..." : "Sí, eliminar permanentemente"}
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Footer Botones */}
-          <div className="pt-2 flex items-center justify-end gap-2.5">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={isPending}
-              className="px-4 py-2.5 rounded-xl border border-stone-light text-stone hover:text-forest hover:bg-stone-50 font-medium transition-colors cursor-pointer"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={isPending}
-              className="px-5 py-2.5 rounded-xl bg-forest text-cream font-semibold shadow-xs hover:bg-forest/90 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
-            >
-              {isPending ? (
-                <>
-                  <span className="animate-spin">⏳</span>
-                  <span>Guardando...</span>
-                </>
-              ) : (
-                <>
-                  <span>💾</span>
-                  <span>Guardar Aliado</span>
-                </>
-              )}
-            </button>
+          <div className="pt-2 flex items-center justify-between gap-2.5">
+            {!confirmandoEliminar ? (
+              <button
+                type="button"
+                onClick={() => setConfirmandoEliminar(true)}
+                disabled={isPending}
+                className="px-3.5 py-2.5 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5"
+                title="Eliminar este aliado y sus eventos"
+              >
+                <span>🗑️</span>
+                <span>Eliminar Aliado</span>
+              </button>
+            ) : (
+              <div />
+            )}
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={isPending}
+                className="px-4 py-2.5 rounded-xl border border-stone-light text-stone hover:text-forest hover:bg-stone-50 font-medium transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={isPending}
+                className="px-5 py-2.5 rounded-xl bg-forest text-cream font-semibold shadow-xs hover:bg-forest/90 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
+              >
+                {isPending ? (
+                  <>
+                    <span className="animate-spin">⏳</span>
+                    <span>Guardando...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>💾</span>
+                    <span>Guardar Aliado</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </form>
       </div>

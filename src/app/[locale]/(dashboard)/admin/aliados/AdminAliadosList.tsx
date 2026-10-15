@@ -3,7 +3,11 @@
 import { useState, useTransition, useMemo } from "react";
 import { useRouter } from "@/i18n/routing";
 import { formatFecha } from "@/lib/utils";
-import { actualizarPlanNegocioAction, toggleActivoAliadoAction } from "../actions";
+import {
+  actualizarPlanNegocioAction,
+  toggleActivoAliadoAction,
+  eliminarAliadoAdminAction,
+} from "../actions";
 import { ModalEditarAliado } from "./ModalEditarAliado";
 import { ModalEventosAliado } from "./ModalEventosAliado";
 import type { PlanNegocio } from "@/lib/types";
@@ -61,6 +65,9 @@ export function AdminAliadosList({
 
   // Estado para modal de edición completa de aliado
   const [aliadoParaEditar, setAliadoParaEditar] = useState<AliadoItem | null>(null);
+
+  // Estado para confirmación de eliminación de aliado
+  const [aliadoAEliminar, setAliadoAEliminar] = useState<AliadoItem | null>(null);
 
   // Estado para modal / panel de edición de plan
   const [editandoNegocio, setEditandoNegocio] = useState<AliadoItem | null>(null);
@@ -458,6 +465,16 @@ export function AdminAliadosList({
                   <span>📊</span>
                   <span>Reporte</span>
                 </button>
+
+                {/* 6. Botón Eliminar Aliado */}
+                <button
+                  type="button"
+                  onClick={() => setAliadoAEliminar(aliado)}
+                  className="px-2.5 py-2 sm:py-2 rounded-xl text-xs font-sans text-stone/60 hover:text-red-600 hover:bg-red-50 border border-stone-light/70 hover:border-red-200 transition-colors cursor-pointer text-center flex items-center justify-center"
+                  title={`Eliminar aliado ${aliado.nombre} y sus publicaciones`}
+                >
+                  <span>🗑️</span>
+                </button>
               </div>
             </article>
           );
@@ -710,6 +727,54 @@ export function AdminAliadosList({
           onClose={() => setAliadoParaVerEventos(null)}
           negociosList={negociosList}
         />
+      )}
+
+      {/* Modal de Reconfirmación para Eliminar Aliado */}
+      {aliadoAEliminar && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150 font-sans">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-stone-light space-y-4 animate-in zoom-in-95 duration-150">
+            <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-2xl mx-auto">
+              🗑️
+            </div>
+            <div className="text-center space-y-1">
+              <h3 className="font-serif text-lg font-bold text-forest">
+                ¿Eliminar {aliadoAEliminar.nombre}?
+              </h3>
+              <p className="text-xs text-stone leading-relaxed">
+                Esta acción es irreversible. Se eliminará el perfil de este aliado y sus{" "}
+                <strong>{aliadoAEliminar.totalEventos} publicaciones</strong> asociadas en la cartelera.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setAliadoAEliminar(null)}
+                disabled={isPending}
+                className="flex-1 py-2.5 rounded-xl border border-stone-light text-stone hover:text-forest text-xs font-medium cursor-pointer transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  startTransition(async () => {
+                    const res = await eliminarAliadoAdminAction(aliadoAEliminar.id);
+                    if (!res.success) {
+                      alert(res.error || "No se pudo eliminar el aliado.");
+                    } else {
+                      setAliadoAEliminar(null);
+                      router.refresh();
+                    }
+                  });
+                }}
+                disabled={isPending}
+                className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-semibold shadow-xs transition-all cursor-pointer text-center"
+              >
+                {isPending ? "Eliminando..." : "Sí, eliminar"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

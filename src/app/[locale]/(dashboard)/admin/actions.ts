@@ -621,6 +621,52 @@ export async function eliminarEventoAdminAction(eventoId: string) {
   }
 }
 
+/**
+ * Server Action para eliminar permanentemente un Aliado y sus eventos asociados desde el Admin.
+ */
+export async function eliminarAliadoAdminAction(negocioId: string) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: "Debes iniciar sesión para eliminar." };
+    }
+
+    // 1. Eliminar primero eventos asociados (garantiza limpieza completa)
+    const { error: errorEventos } = await supabase
+      .from("eventos")
+      .delete()
+      .eq("negocio_id", negocioId);
+
+    if (errorEventos) {
+      console.warn("Advertencia al eliminar eventos del negocio:", errorEventos);
+    }
+
+    // 2. Eliminar el registro del negocio
+    const { error: errorNegocio } = await supabase
+      .from("negocios")
+      .delete()
+      .eq("id", negocioId);
+
+    if (errorNegocio) {
+      console.error("Error al eliminar negocio:", errorNegocio);
+      return { success: false, error: errorNegocio.message };
+    }
+
+    revalidatePath(`/[locale]/admin`, "page");
+    revalidatePath(`/[locale]/admin/aliados`, "page");
+    revalidatePath(`/[locale]/minca`, "page");
+
+    return { success: true };
+  } catch (err: any) {
+    console.error("Excepción en eliminarAliadoAdminAction:", err);
+    return { success: false, error: err?.message || "Error al eliminar aliado." };
+  }
+}
+
 export interface EditarAliadoInput {
   id: string;
   nombre: string;
