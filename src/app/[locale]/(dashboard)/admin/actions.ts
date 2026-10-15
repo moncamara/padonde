@@ -441,35 +441,62 @@ export async function importarLoteEventosRealesAction() {
       },
       {
         negocioNombre: "Finca La Frecuencia",
-        titulo: "Bounce & Acupuntura Comunitaria — Finca La Frecuencia",
-        descripcion: "Si el tai chi, sound healing y ecstatic dance tuvieran un hijo, sería Bounce. Explora el cuerpo con respiración y movimiento. Luego, sesión grupal de acupuntura.",
-        tipo: "bienestar",
+        identificadorClave: "cacao-sound",
+        titulo: "Cacao Sensorial & Sound Bath",
+        descripcion: "Para bajar de la mente al cuerpo y activar tu poder creador. Cacao, música, movimiento, ojos vendados y visualización para crear desde el corazón. Cerramos con un exquisito baño de sonido para integrar.",
+        tipo: "bienestar" as const,
+        precio: 0,
+        fechaInicio: "2026-10-10T10:00:00-05:00",
+        fechaFin: "2026-10-10T14:00:00-05:00",
+        imagenUrl: "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/eventos_reales/cacao-sensorial.webp",
+        destacado: true,
+      },
+      {
+        negocioNombre: "Finca La Frecuencia",
+        identificadorClave: "caminata",
+        titulo: "Caminata en Silencio — Meditación Activa",
+        descripcion: "La montaña tiene un mensaje para ti. Explora el poder del silencio en esta meditación activa diseñada para enraizarnos con la Madre Tierra y cultivar nuestras cualidades yin de receptividad. Guiada por Jesse Blazo.",
+        tipo: "bienestar" as const,
+        precio: 0,
+        fechaInicio: "2026-10-12T09:30:00-05:00",
+        fechaFin: "2026-10-12T11:30:00-05:00",
+        imagenUrl: "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/eventos_reales/caminata.webp",
+        destacado: true,
+      },
+      {
+        negocioNombre: "Finca La Frecuencia",
+        identificadorClave: "bounce",
+        titulo: "Bounce & Acupuntura Comunitaria",
+        descripcion: "Si el tai chi, el sound healing y el ecstatic dance tuvieran un hijo, sería Bounce. Explora nuevas formas de habitar el cuerpo con la respiración, el sonido y el movimiento. Luego, quédate para una sesión comunitaria de acupuntura.",
+        tipo: "bienestar" as const,
         precio: 0,
         fechaInicio: "2026-10-24T10:00:00-05:00",
         fechaFin: "2026-10-24T16:00:00-05:00",
-        imagenUrl: "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/eventos_reales/finca-la-frecuencia.webp",
+        imagenUrl: "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/eventos_reales/acupuntura.webp",
         destacado: true,
       },
       {
         negocioNombre: "Finca La Frecuencia",
-        titulo: "Sauna de Leña & Baño de Sonido — Finca La Frecuencia",
-        descripcion: "Para habitar la presencia y la escucha interior. Sauna de leña acompañado de exploración vocal de sonido y vibración, círculo de cantos sagrados y meditación.",
-        tipo: "bienestar",
+        identificadorClave: "sauna",
+        titulo: "Sauna de Leña & Sonido",
+        descripcion: "Para habitar la presencia y la escucha interior. Nuestro sauna de leña acompañado de una exploración vocal de sonido y vibración. Abrimos con un círculo de cantos sagrados. Cerramos en silencio y meditación.",
+        tipo: "bienestar" as const,
         precio: 0,
         fechaInicio: "2026-10-25T10:00:00-05:00",
         fechaFin: "2026-10-25T14:00:00-05:00",
-        imagenUrl: "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/eventos_reales/finca-la-frecuencia.webp",
+        imagenUrl: "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/eventos_reales/sauna.webp",
         destacado: true,
       },
       {
         negocioNombre: "Finca La Frecuencia",
+        identificadorClave: "cacao-danza",
         titulo: "Cacao Sensorial & Ecstatic Dance en Disfraces",
-        descripcion: "Un viaje musical para depurar y regular activamente el sistema nervioso. Cacao, DJ en vivo, baile, ojos vendados y visualización para sacudir lo estancado.",
-        tipo: "bienestar",
+        descripcion: "Un viaje musical para depurar y regular activamente el sistema nervioso. Cacao, DJ en vivo, baile, ojos vendados y visualización para sacudir lo estancado, liberar emociones y entregarte a la catarsis somática.",
+        tipo: "bienestar" as const,
         precio: 0,
         fechaInicio: "2026-10-31T10:00:00-05:00",
         fechaFin: "2026-10-31T14:00:00-05:00",
-        imagenUrl: "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/eventos_reales/finca-la-frecuencia.webp",
+        imagenUrl: "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/eventos_reales/cacao-danza.webp",
         destacado: true,
       },
     ];
@@ -480,15 +507,40 @@ export async function importarLoteEventosRealesAction() {
       const negId = mapaNegocios[ev.negocioNombre];
       if (!negId) continue;
 
-      // Verificar si ya existe un evento con el mismo título en ese negocio
-      const { data: evExistente } = await supabase
-        .from("eventos")
-        .select("id")
-        .eq("negocio_id", negId)
-        .ilike("titulo", ev.titulo)
-        .maybeSingle();
+      // Buscar si ya existe un evento similar en ese negocio
+      let evExistente = null;
+      const clave = (ev as any).identificadorClave;
+      if (clave === "bounce") {
+        const { data } = await supabase.from("eventos").select("id").eq("negocio_id", negId).ilike("titulo", "%Bounce%").maybeSingle();
+        evExistente = data;
+      } else if (clave === "sauna") {
+        const { data } = await supabase.from("eventos").select("id").eq("negocio_id", negId).ilike("titulo", "%Sauna%").maybeSingle();
+        evExistente = data;
+      } else if (clave === "cacao-danza") {
+        const { data } = await supabase.from("eventos").select("id").eq("negocio_id", negId).ilike("titulo", "%Ecstatic%").maybeSingle();
+        evExistente = data;
+      } else {
+        const { data } = await supabase.from("eventos").select("id").eq("negocio_id", negId).ilike("titulo", ev.titulo).maybeSingle();
+        evExistente = data;
+      }
 
-      if (!evExistente) {
+      if (evExistente) {
+        // Actualizar el evento existente con su nueva imagen WebP y texto pulido
+        await supabase.from("eventos").update({
+          titulo: ev.titulo,
+          descripcion: ev.descripcion,
+          tipo: ev.tipo,
+          precio: ev.precio > 0 ? ev.precio : 0,
+          precio_moneda: "COP",
+          fecha_inicio: ev.fechaInicio,
+          fecha_fin: ev.fechaFin,
+          imagen_url: ev.imagenUrl,
+          destacado: ev.destacado,
+          activo: true,
+        }).eq("id", evExistente.id);
+        insertadosCount++;
+      } else {
+        // Insertar el nuevo evento
         await supabase.from("eventos").insert({
           negocio_id: negId,
           zona_id: zona.id,
