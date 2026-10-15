@@ -131,6 +131,31 @@ export function parseLocalColombiaAISO(dateTimeStr: string): string {
 }
 
 /**
+ * Convierte un string ISO a formato 'YYYY-MM-DDTHH:mm' en hora local de Colombia (UTC-5),
+ * listo para usarse como defaultValue o value en un <input type="datetime-local" />.
+ */
+export function isoADatetimeLocalColombia(isoStr?: string | null): string {
+  if (!isoStr) return "";
+  const d = new Date(isoStr);
+  if (isNaN(d.getTime())) return "";
+
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: TIMEZONE_COLOMBIA,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(d);
+
+  const getPart = (type: string) => parts.find((p) => p.type === type)?.value || "";
+  let hour = getPart("hour");
+  if (hour === "24") hour = "00";
+  return `${getPart("year")}-${getPart("month")}-${getPart("day")}T${hour}:${getPart("minute")}`;
+}
+
+/**
  * Verifica si la fecha de un evento coincide con el filtro de tiempo seleccionado.
  * Todos los cálculos se evalúan estrictamente en el huso horario de Colombia (UTC-5).
  *

@@ -34,21 +34,30 @@ export default async function AdminDashboardPage({
     .from("eventos")
     .select(`
       id,
+      negocio_id,
       titulo,
+      descripcion,
       tipo,
       precio,
       precio_moneda,
       fecha_inicio,
       fecha_fin,
+      imagen_url,
       destacado,
       tiene_boleteria,
       activo,
       negocio:negocios (
+        id,
         nombre,
         whatsapp
       )
     `)
     .order("fecha_inicio", { ascending: false });
+
+  const { data: rawNegocios } = await supabase
+    .from("negocios")
+    .select("id, nombre")
+    .order("nombre");
 
   const { count: totalNegocios } = await supabase
     .from("negocios")
@@ -147,7 +156,11 @@ export default async function AdminDashboardPage({
             </span>
           </div>
 
-          <AdminEventList eventos={eventos} locale={locale} />
+          <AdminEventList
+            eventos={eventos}
+            negocios={rawNegocios || []}
+            locale={locale}
+          />
         </div>
       </main>
     </div>

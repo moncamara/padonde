@@ -519,5 +519,105 @@ export async function importarLoteEventosRealesAction() {
   }
 }
 
+export interface EditarEventoAdminInput {
+  eventoId: string;
+  titulo: string;
+  descripcion?: string | null;
+  tipo: CategoriaEvento;
+  precio: number;
+  dateTime: string;
+  imageUrl?: string;
+  destacado: boolean;
+  activo: boolean;
+  negocioId?: string;
+}
+
+/**
+ * Server Action para actualizar todos los campos de un evento desde el Admin.
+ */
+export async function editarEventoAdminAction(input: EditarEventoAdminInput) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: "Debes iniciar sesión para editar." };
+    }
+
+    const updatePayload: Record<string, any> = {
+      titulo: input.titulo.trim(),
+      descripcion: input.descripcion?.trim() || null,
+      tipo: input.tipo,
+      precio: input.precio >= 0 ? input.precio : 0,
+      fecha_inicio: parseLocalColombiaAISO(input.dateTime),
+      destacado: Boolean(input.destacado),
+      activo: Boolean(input.activo),
+    };
+
+    if (input.imageUrl) {
+      updatePayload.imagen_url = input.imageUrl;
+    }
+
+    if (input.negocioId) {
+      updatePayload.negocio_id = input.negocioId;
+    }
+
+    const { error } = await supabase
+      .from("eventos")
+      .update(updatePayload)
+      .eq("id", input.eventoId);
+
+    if (error) {
+      console.error("Error al actualizar evento:", error);
+      return { success: false, error: error.message };
+    }
+
+    revalidatePath(`/[locale]/admin`, "page");
+    revalidatePath(`/[locale]/minca`, "page");
+    revalidatePath(`/[locale]/minca/${input.eventoId}`, "page");
+
+    return { success: true };
+  } catch (err: any) {
+    console.error("Excepción en editarEventoAdminAction:", err);
+    return { success: false, error: err?.message || "Error al actualizar evento." };
+  }
+}
+
+/**
+ * Server Action para eliminar permanentemente un evento desde el Admin.
+ */
+export async function eliminarEventoAdminAction(eventoId: string) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: "Debes iniciar sesión para eliminar." };
+    }
+
+    const { error } = await supabase
+      .from("eventos")
+      .delete()
+      .eq("id", eventoId);
+
+    if (error) {
+      console.error("Error al eliminar evento:", error);
+      return { success: false, error: error.message };
+    }
+
+    revalidatePath(`/[locale]/admin`, "page");
+    revalidatePath(`/[locale]/minca`, "page");
+
+    return { success: true };
+  } catch (err: any) {
+    console.error("Excepción en eliminarEventoAdminAction:", err);
+    return { success: false, error: err?.message || "Error al eliminar evento." };
+  }
+}
+
 
 

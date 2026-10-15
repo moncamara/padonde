@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Link } from "@/i18n/routing";
 import { formatFecha, formatHora, formatPrecio, getFechaYMDColombia, getFechaYMDDesdeISO, esHoy } from "@/lib/utils";
 import { ToggleActivoButton } from "./ToggleActivoButton";
 import { ToggleDestacadoButton } from "./ToggleDestacadoButton";
+import { ModalEditarEvento } from "./ModalEditarEvento";
 import { Button } from "@/components/ui/Button";
 
 export interface EventoAdminItem {
@@ -18,7 +19,11 @@ export interface EventoAdminItem {
   destacado: boolean;
   tiene_boleteria?: boolean;
   activo: boolean;
+  descripcion?: string | null;
+  imagen_url?: string | null;
+  negocio_id?: string;
   negocio?: {
+    id?: string;
     nombre: string;
     whatsapp: string;
   } | null;
@@ -26,14 +31,21 @@ export interface EventoAdminItem {
 
 interface AdminEventListProps {
   eventos: EventoAdminItem[];
+  negocios?: { id: string; nombre: string }[];
   locale: string;
 }
 
 type TabType = "vigentes" | "pausados" | "pasados";
 
-export function AdminEventList({ eventos, locale }: AdminEventListProps) {
+export function AdminEventList({ eventos, negocios = [], locale }: AdminEventListProps) {
+  const [listaEventos, setListaEventos] = useState<EventoAdminItem[]>(eventos);
   const [tabActiva, setTabActiva] = useState<TabType>("vigentes");
   const [busqueda, setBusqueda] = useState("");
+  const [eventoAEditar, setEventoAEditar] = useState<EventoAdminItem | null>(null);
+
+  useEffect(() => {
+    setListaEventos(eventos);
+  }, [eventos]);
 
   const hoyYMD = useMemo(() => getFechaYMDColombia(new Date()), []);
 
@@ -43,7 +55,7 @@ export function AdminEventList({ eventos, locale }: AdminEventListProps) {
     const pau: EventoAdminItem[] = [];
     const pas: EventoAdminItem[] = [];
 
-    for (const ev of eventos) {
+    for (const ev of listaEventos) {
       const ymd = getFechaYMDDesdeISO(ev.fecha_inicio);
       const yaPaso = ymd < hoyYMD;
 
@@ -272,15 +284,27 @@ export function AdminEventList({ eventos, locale }: AdminEventListProps) {
                   <ToggleDestacadoButton eventoId={ev.id} destacadoInicial={ev.destacado} />
                 </div>
 
-                <Link
-                  href={`/minca/${ev.id}`}
-                  target="_blank"
-                  className="text-xs text-stone hover:text-forest px-2.5 py-1.5 rounded-xl border border-stone-light/60 bg-white/70 hover:bg-white transition-colors flex items-center gap-1 shrink-0"
-                  title="Ver en la web pública"
-                >
-                  <span>👁️</span>
-                  <span className="sm:hidden font-sans">Ver</span>
-                </Link>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setEventoAEditar(ev)}
+                    className="text-xs text-forest hover:text-terra px-2.5 py-1.5 rounded-xl border border-stone-light/70 bg-white/80 hover:bg-white transition-colors flex items-center gap-1 font-medium font-sans shadow-2xs"
+                    title="Editar información del evento"
+                  >
+                    <span>✏️</span>
+                    <span className="font-sans">Editar</span>
+                  </button>
+
+                  <Link
+                    href={`/minca/${ev.id}`}
+                    target="_blank"
+                    className="text-xs text-stone hover:text-forest px-2.5 py-1.5 rounded-xl border border-stone-light/60 bg-white/70 hover:bg-white transition-colors flex items-center gap-1 shrink-0"
+                    title="Ver en la web pública"
+                  >
+                    <span>👁️</span>
+                    <span className="sm:hidden font-sans">Ver</span>
+                  </Link>
+                </div>
               </div>
             </article>
           );
@@ -325,6 +349,25 @@ export function AdminEventList({ eventos, locale }: AdminEventListProps) {
           </div>
         )}
       </div>
+
+      {/* Modal de Edición de Evento */}
+      {eventoAEditar && (
+        <ModalEditarEvento
+          evento={eventoAEditar}
+          negocios={negocios}
+          onClose={() => setEventoAEditar(null)}
+          onSaved={(eventoActualizado) => {
+            setListaEventos((prev) =>
+              prev.map((e) =>
+                e.id === eventoActualizado.id ? ({ ...e, ...eventoActualizado } as EventoAdminItem) : e
+              )
+            );
+          }}
+          onDeleted={(idEliminado) => {
+            setListaEventos((prev) => prev.filter((e) => e.id !== idEliminado));
+          }}
+        />
+      )}
     </section>
   );
 }
