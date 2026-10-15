@@ -10,10 +10,13 @@ export const metadata: Metadata = {
 
 export default async function AdminNuevoEventoPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ negocio?: string }>;
 }) {
   const { locale } = await params;
+  const { negocio: negocioId } = (await searchParams) || {};
 
   // Proteger ruta: verificar autenticación
   const supabase = await createClient();
@@ -23,6 +26,27 @@ export default async function AdminNuevoEventoPage({
 
   if (!user) {
     redirect({ href: "/admin/login", locale });
+  }
+
+  let defaultNegocio:
+    | {
+        nombre: string;
+        whatsapp: string;
+        instagram?: string | null;
+        categoria?: string;
+      }
+    | undefined = undefined;
+
+  if (negocioId) {
+    const { data: n } = await supabase
+      .from("negocios")
+      .select("nombre, whatsapp, instagram, categoria")
+      .eq("id", negocioId)
+      .single();
+
+    if (n) {
+      defaultNegocio = n as any;
+    }
   }
 
   return (
@@ -41,13 +65,17 @@ export default async function AdminNuevoEventoPage({
 
       <main className="max-w-lg mx-auto px-4 py-8 space-y-6">
         <div>
-          <h1 className="font-serif text-3xl text-forest">Publicar para un Negocio</h1>
+          <h1 className="font-serif text-3xl text-forest">
+            {defaultNegocio ? `Publicar para ${defaultNegocio.nombre}` : "Publicar para un Negocio"}
+          </h1>
           <p className="font-sans text-xs text-stone mt-1">
-            Este evento se publicará inmediatamente en la cartelera de Minca.
+            {defaultNegocio
+              ? `Datos de ${defaultNegocio.nombre} precargados. Completa los detalles de la experiencia.`
+              : "Este evento se publicará inmediatamente en la cartelera de Minca."}
           </p>
         </div>
 
-        <AdminPublishForm defaultZona="minca" />
+        <AdminPublishForm defaultZona="minca" initialNegocio={defaultNegocio} />
       </main>
     </div>
   );

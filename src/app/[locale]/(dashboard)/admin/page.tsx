@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "@/i18n/routing";
 import { Link } from "@/i18n/routing";
@@ -160,11 +161,13 @@ export default async function AdminDashboardPage({
             </span>
           </div>
 
-          <AdminEventList
-            eventos={eventos}
-            negocios={rawNegocios || []}
-            locale={locale}
-          />
+          <Suspense fallback={<div className="p-8 text-center text-xs text-stone">Cargando eventos...</div>}>
+            <AdminEventList
+              eventos={eventos}
+              negocios={rawNegocios || []}
+              locale={locale}
+            />
+          </Suspense>
         </div>
       </main>
     </div>

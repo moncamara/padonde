@@ -41,7 +41,16 @@ export default async function AdminAliadosPage({
       created_at,
       eventos (
         id,
-        activo
+        titulo,
+        tipo,
+        precio,
+        precio_moneda,
+        fecha_inicio,
+        fecha_fin,
+        activo,
+        destacado,
+        imagen_url,
+        descripcion
       )
     `)
     .order("nombre", { ascending: true });
@@ -51,6 +60,10 @@ export default async function AdminAliadosPage({
   // 3. Normalizar datos
   const aliados: AliadoItem[] = (rawNegocios || []).map((n: any) => {
     const evList = Array.isArray(n.eventos) ? n.eventos : [];
+    const eventosOrdenados = [...evList].sort(
+      (a: any, b: any) => new Date(b.fecha_inicio).getTime() - new Date(a.fecha_inicio).getTime()
+    );
+
     return {
       id: n.id,
       nombre: n.nombre,
@@ -64,8 +77,14 @@ export default async function AdminAliadosPage({
       created_at: n.created_at,
       totalEventos: evList.length,
       eventosActivos: evList.filter((e: any) => e.activo).length,
+      eventos: eventosOrdenados,
     };
   });
+
+  const negociosList = (rawNegocios || []).map((n: any) => ({
+    id: n.id,
+    nombre: n.nombre,
+  }));
 
   // 4. Métricas de Monetización B2B
   const totalAliados = aliados.length;
@@ -160,7 +179,11 @@ export default async function AdminAliadosPage({
             </span>
           </div>
 
-          <AdminAliadosList aliados={aliados} locale={locale} />
+          <AdminAliadosList
+            aliados={aliados}
+            negociosList={negociosList}
+            locale={locale}
+          />
         </div>
       </main>
     </div>

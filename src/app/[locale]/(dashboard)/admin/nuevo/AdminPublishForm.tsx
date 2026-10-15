@@ -8,12 +8,27 @@ import { adminPublishEventAction } from "../actions";
 import { Button } from "@/components/ui/Button";
 import type { CategoriaEvento } from "@/lib/types";
 
-export function AdminPublishForm({ defaultZona = "minca" }: { defaultZona?: string }) {
-  const [businessName, setBusinessName] = useState("");
-  const [whatsapp, setWhatsapp] = useState("");
-  const [instagram, setInstagram] = useState("");
+interface AdminPublishFormProps {
+  defaultZona?: string;
+  initialNegocio?: {
+    nombre: string;
+    whatsapp: string;
+    instagram?: string | null;
+    categoria?: string;
+  };
+}
+
+export function AdminPublishForm({
+  defaultZona = "minca",
+  initialNegocio,
+}: AdminPublishFormProps) {
+  const [businessName, setBusinessName] = useState(initialNegocio?.nombre || "");
+  const [whatsapp, setWhatsapp] = useState(initialNegocio?.whatsapp || "");
+  const [instagram, setInstagram] = useState(initialNegocio?.instagram || "");
   const [eventTitle, setEventTitle] = useState("");
-  const [category, setCategory] = useState<CategoriaEvento>("comida");
+  const [category, setCategory] = useState<CategoriaEvento>(
+    (initialNegocio?.categoria as CategoriaEvento) || "comida"
+  );
   const [dateTime, setDateTime] = useState("");
   const [price, setPrice] = useState<string>("0");
   const [description, setDescription] = useState("");

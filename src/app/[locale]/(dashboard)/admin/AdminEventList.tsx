@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { Link } from "@/i18n/routing";
 import {
   formatFecha,
@@ -46,10 +47,16 @@ interface AdminEventListProps {
 type TabType = "vigentes" | "pausados" | "pasados";
 
 export function AdminEventList({ eventos, negocios = [], locale }: AdminEventListProps) {
+  const searchParams = useSearchParams();
   const [listaEventos, setListaEventos] = useState<EventoAdminItem[]>(eventos);
   const [tabActiva, setTabActiva] = useState<TabType>("vigentes");
-  const [busqueda, setBusqueda] = useState("");
+  const [busqueda, setBusqueda] = useState(searchParams.get("busqueda") || "");
   const [eventoAEditar, setEventoAEditar] = useState<EventoAdminItem | null>(null);
+
+  useEffect(() => {
+    const q = searchParams.get("busqueda");
+    if (q !== null) setBusqueda(q);
+  }, [searchParams]);
 
   useEffect(() => {
     setListaEventos(eventos);

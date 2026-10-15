@@ -5,7 +5,22 @@ import { useRouter } from "@/i18n/routing";
 import { formatFecha } from "@/lib/utils";
 import { actualizarPlanNegocioAction, toggleActivoAliadoAction } from "../actions";
 import { ModalEditarAliado } from "./ModalEditarAliado";
+import { ModalEventosAliado } from "./ModalEventosAliado";
 import type { PlanNegocio } from "@/lib/types";
+
+export interface EventoAliadoItem {
+  id: string;
+  titulo: string;
+  tipo: string;
+  precio: number | null;
+  precio_moneda: string;
+  fecha_inicio: string;
+  fecha_fin?: string | null;
+  activo: boolean;
+  destacado: boolean;
+  imagen_url?: string | null;
+  descripcion?: string | null;
+}
 
 export interface AliadoItem {
   id: string;
@@ -20,22 +35,31 @@ export interface AliadoItem {
   created_at: string;
   totalEventos: number;
   eventosActivos: number;
+  eventos?: EventoAliadoItem[];
 }
 
 interface AdminAliadosListProps {
   aliados: AliadoItem[];
+  negociosList?: { id: string; nombre: string }[];
   locale: string;
 }
 
 type FiltroPlan = "todos" | "pro_premium" | "por_vencer" | "gratis";
 
-export function AdminAliadosList({ aliados, locale }: AdminAliadosListProps) {
+export function AdminAliadosList({
+  aliados,
+  negociosList = [],
+  locale,
+}: AdminAliadosListProps) {
   const router = useRouter();
   const [filtro, setFiltro] = useState<FiltroPlan>("todos");
   const [busqueda, setBusqueda] = useState("");
   const [copiadoId, setCopiadoId] = useState<string | null>(null);
 
-  // Estado para modal de edición completa
+  // Estado para ver eventos del aliado
+  const [aliadoParaVerEventos, setAliadoParaVerEventos] = useState<AliadoItem | null>(null);
+
+  // Estado para modal de edición completa de aliado
   const [aliadoParaEditar, setAliadoParaEditar] = useState<AliadoItem | null>(null);
 
   // Estado para modal / panel de edición de plan
@@ -350,10 +374,18 @@ export function AdminAliadosList({ aliados, locale }: AdminAliadosListProps) {
                   )}
 
                   <span>·</span>
-                  <span>
-                    🎪 <strong>{aliado.eventosActivos}</strong> vigentes (
-                    {aliado.totalEventos} total)
-                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setAliadoParaVerEventos(aliado)}
+                    className="inline-flex items-center gap-1 text-forest hover:text-terra font-semibold hover:underline cursor-pointer bg-forest/5 hover:bg-forest/10 px-2 py-0.5 rounded-lg transition-all"
+                    title={`Ver los ${aliado.totalEventos} eventos de este aliado`}
+                  >
+                    <span>🎪</span>
+                    <span>
+                      {aliado.eventosActivos} vigentes ({aliado.totalEventos} total)
+                    </span>
+                    <span className="text-[10px]">↗</span>
+                  </button>
                 </div>
 
                 {!aliado.activo && (
@@ -366,25 +398,35 @@ export function AdminAliadosList({ aliados, locale }: AdminAliadosListProps) {
 
               {/* Botones de Acción Operativa y Cobro Optimizados para Mobile */}
               <div className="w-full sm:w-auto pt-3 sm:pt-0 border-t border-stone-light/50 sm:border-0 grid grid-cols-2 sm:flex items-center gap-2">
-                {/* 1. Botón WhatsApp Cobro / Contacto */}
+                {/* 1. Botón Ver Eventos del Aliado */}
+                <button
+                  onClick={() => setAliadoParaVerEventos(aliado)}
+                  className="px-3 py-2 sm:py-2 rounded-xl text-xs font-sans font-semibold text-forest bg-forest/10 hover:bg-forest/20 border border-forest/30 transition-all cursor-pointer text-center flex items-center justify-center gap-1 shadow-2xs"
+                  title={`Ver y gestionar las ${aliado.totalEventos} publicaciones de este aliado`}
+                >
+                  <span>🎪</span>
+                  <span>Eventos ({aliado.totalEventos})</span>
+                </button>
+
+                {/* 2. Botón WhatsApp Cobro / Contacto */}
                 <a
                   href={generarEnlaceWhatsAppCobro(aliado)}
                   target="_blank"
                   rel="noreferrer"
-                  className="col-span-2 sm:col-span-1 px-3.5 py-2.5 sm:py-2 rounded-xl text-xs font-sans font-semibold bg-emerald-600 text-white hover:bg-emerald-700 transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+                  className="px-3.5 py-2.5 sm:py-2 rounded-xl text-xs font-sans font-semibold bg-emerald-600 text-white hover:bg-emerald-700 transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
                   title="Abrir WhatsApp con mensaje pre-redactado de cobro o contacto"
                 >
                   <span>💬</span>
                   <span>
                     {aliado.plan !== "gratis" && (est.tipo === "por_vencer" || est.tipo === "vencido")
-                      ? "Cobrar Renovación"
+                      ? "Cobrar"
                       : aliado.plan === "gratis"
-                      ? "Ofrecer Plan Pro"
-                      : "Escribir"}
+                      ? "Ofrecer Pro"
+                      : "WhatsApp"}
                   </span>
                 </a>
 
-                {/* 2. Botón Editar Aliado */}
+                {/* 3. Botón Editar Aliado */}
                 <button
                   onClick={() => setAliadoParaEditar(aliado)}
                   className="px-3 py-2 sm:py-2 rounded-xl text-xs font-sans font-semibold text-forest bg-white border border-stone-light hover:bg-stone-50 transition-colors cursor-pointer text-center flex items-center justify-center gap-1 shadow-2xs"
@@ -394,20 +436,20 @@ export function AdminAliadosList({ aliados, locale }: AdminAliadosListProps) {
                   <span>Editar</span>
                 </button>
 
-                {/* 3. Botón Cambiar Plan */}
+                {/* 4. Botón Cambiar Plan */}
                 <button
                   onClick={() => {
                     setEditandoNegocio(aliado);
                     setNuevoPlan(aliado.plan);
                     setDiasVigencia(30);
                   }}
-                  className="px-3 py-2 sm:py-2 rounded-xl text-xs font-sans font-medium text-stone hover:text-forest bg-white/70 border border-stone-light hover:bg-stone-50 transition-colors cursor-pointer text-center flex items-center justify-center gap-1"
+                  className="px-2.5 py-2 sm:py-2 rounded-xl text-xs font-sans font-medium text-stone hover:text-forest bg-white/70 border border-stone-light hover:bg-stone-50 transition-colors cursor-pointer text-center flex items-center justify-center gap-1"
                 >
                   <span>⚙️</span>
                   <span>Plan</span>
                 </button>
 
-                {/* 4. Botón Ver y Enviar Reporte de Impacto */}
+                {/* 5. Botón Ver y Enviar Reporte de Impacto */}
                 <button
                   onClick={() => setReporteNegocio(aliado)}
                   className="px-2.5 py-2 sm:py-2 rounded-xl text-xs font-sans text-forest bg-white/70 border border-stone-light/70 hover:bg-white transition-colors cursor-pointer text-center flex items-center justify-center gap-1 font-medium"
@@ -657,6 +699,16 @@ export function AdminAliadosList({ aliados, locale }: AdminAliadosListProps) {
           aliado={aliadoParaEditar}
           isOpen={true}
           onClose={() => setAliadoParaEditar(null)}
+        />
+      )}
+
+      {/* Modal de Eventos y Publicaciones del Aliado */}
+      {aliadoParaVerEventos && (
+        <ModalEventosAliado
+          aliado={aliadoParaVerEventos}
+          isOpen={true}
+          onClose={() => setAliadoParaVerEventos(null)}
+          negociosList={negociosList}
         />
       )}
     </div>
