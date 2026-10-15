@@ -7,6 +7,7 @@ import { getCategoria, whatsappLink } from "@/constants";
 import { formatHora, formatPrecio, mensajeWhatsApp, truncar, getEtiquetaHorario } from "@/lib/utils";
 import type { EventoConNegocio } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
+import { trackWhatsAppClick } from "@/lib/analytics";
 
 interface EventCardProps {
   evento: EventoConNegocio;
@@ -125,7 +126,16 @@ export function EventCard({ evento, zona, priority = false }: EventCardProps) {
             target="_blank"
             rel="noopener noreferrer"
             className="pointer-events-auto z-20"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              trackWhatsAppClick({
+                eventoId: evento.id,
+                eventoTitulo: evento.titulo,
+                negocioNombre: evento.negocio.nombre,
+                ubicacion: "tarjeta",
+                precio: evento.precio,
+              });
+            }}
           >
             <Button
               size="sm"

@@ -14,6 +14,7 @@ import {
 } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { ShareButton } from "@/components/events/ShareButton";
+import { WhatsAppBookingButton } from "@/components/events/WhatsAppBookingButton";
 import type { ZonaSlug } from "@/lib/types";
 import type { Metadata } from "next";
 
@@ -300,17 +301,14 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
             </p>
           </div>
 
-          <a
+          <WhatsAppBookingButton
             href={waLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-1 max-w-[240px]"
-          >
-            <Button size="lg" className="w-full shadow-md font-semibold">
-              <span>💬</span>
-              <span>{tDetail("bookWhatsApp")}</span>
-            </Button>
-          </a>
+            label={tDetail("bookWhatsApp")}
+            eventoId={evento.id}
+            eventoTitulo={evento.titulo}
+            negocioNombre={evento.negocio.nombre}
+            precio={evento.precio}
+          />
         </div>
       </aside>
     </div>

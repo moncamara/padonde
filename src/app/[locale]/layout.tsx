@@ -4,6 +4,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getMessages, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
+import GoogleAnalytics from "@/components/analytics/GoogleAnalytics";
 import "../globals.css";
 
 const playfair = Playfair_Display({
@@ -50,6 +51,7 @@ export const metadata: Metadata = {
       es: "/es",
       en: "/en",
       fr: "/fr",
+      de: "/de",
     },
   },
   openGraph: {
@@ -116,6 +118,7 @@ export default async function LocaleLayout({
       className={`${playfair.variable} ${inter.variable} h-full`}
     >
       <body className="min-h-full flex flex-col antialiased">
+        <GoogleAnalytics />
         <NextIntlClientProvider messages={messages}>
           {children}
         </NextIntlClientProvider>
