@@ -1,0 +1,91 @@
+{
+  "filters": {
+    "all": "Alle Aktivitäten",
+    "today": "Heute",
+    "tomorrow": "Morgen",
+    "weekend": "Wochenende",
+    "upcoming": "Später im Monat"
+  },
+  "categories": {
+    "all": "Alle",
+    "musica": "Musik",
+    "comida": "Essen & Trinken",
+    "bienestar": "Wellness & Yoga",
+    "tours": "Touren & Natur",
+    "arte": "Kunst & Kultur",
+    "hospedaje": "Unterkunft",
+    "transporte": "Transport",
+    "artesanias": "Handwerk"
+  },
+  "eventCard": {
+    "reserve": "Buchen",
+    "seeMore": "Mehr erfahren",
+    "featured": "Empfohlen",
+    "perPerson": "Pro Person"
+  },
+  "eventDetail": {
+    "back": "Zurück",
+    "organizedBy": "Veranstaltet von",
+    "about": "Über diese Aktivität",
+    "dateTime": "Datum & Uhrzeit",
+    "price": "Preis",
+    "bookWhatsApp": "Über WhatsApp buchen",
+    "chatWithHost": "Gastgeber kontaktieren",
+    "share": "Teilen",
+    "copied": "Link kopiert!",
+    "featured": "Empfohlen"
+  },
+  "publish": {
+    "title": "Aktivität veröffentlichen",
+    "subtitle": "Verbinde dein Event mit Tausenden von Reisenden in der Sierra",
+    "businessSection": "1. Angaben zum Unternehmen",
+    "businessName": "Name des Unternehmens / Gastgebers",
+    "businessNamePlaceholder": "Z.B. Café Sierra, Hostal La Cumbre...",
+    "whatsapp": "WhatsApp-Nummer",
+    "whatsappPlaceholder": "573001234567",
+    "whatsappHelp": "Ländercode (z.B. 57 für Kolumbien) ohne Leerzeichen angeben.",
+    "instagram": "Instagram (optional)",
+    "instagramPlaceholder": "@deinunternehmen",
+    "eventSection": "2. Details zur Aktivität",
+    "eventTitle": "Titel des Events oder der Tour",
+    "eventTitlePlaceholder": "Z.B. Wasserfall-Tour, Pizza & Jazz-Abend...",
+    "category": "Kategorie",
+    "dateTime": "Startdatum & Uhrzeit",
+    "price": "Preis pro Person (COP)",
+    "pricePlaceholder": "Z.B. 35000 (0 eintragen, wenn kostenlos)",
+    "priceHelp": "0 für kostenlos eingeben oder den Betrag in kolumbianischen Pesos.",
+    "description": "Beschreibung der Aktivität",
+    "descriptionPlaceholder": "Erzähle Reisenden, worum es geht, was enthalten ist und was mitgebracht werden sollte...",
+    "photoSection": "3. Foto der Aktivität",
+    "uploadPhoto": "Ansprechendes Foto hochladen",
+    "photoHelp": "Formate JPG, PNG oder WebP. Ein gutes Foto verdoppelt Buchungen.",
+    "isFeatured": "Dieses Event oben im Feed hervorheben ⭐",
+    "submit": "Event jetzt veröffentlichen",
+    "publishing": "Wird veröffentlicht...",
+    "successTitle": "Aktivität erfolgreich veröffentlicht! 🎉",
+    "successSubtitle": "Dein Event ist jetzt live für Touristen verfügbar.",
+    "viewEvent": "Event auf PaDónde ansehen",
+    "publishAnother": "Weitere Aktivität veröffentlichen",
+    "errorGeneral": "Beim Veröffentlichen ist ein Fehler aufgetreten. Bitte Daten prüfen und erneut versuchen."
+  },
+  "feed": {
+    "empty": "Keine Aktivitäten für diesen Filter gefunden.",
+    "emptyHint": "Probiere einen anderen Tag oder eine andere Kategorie aus!",
+    "reset": "Aktivitäten für heute ansehen"
+  },
+  "header": {
+    "subtitle": "Was kann man heute tun in"
+  },
+  "footer": {
+    "cta": "Hast du ein Unternehmen in {zona}?",
+    "ctaLink": "Hier inserieren"
+  },
+  "price": {
+    "free": "Kostenlos",
+    "consult": "Auf Anfrage"
+  },
+  "whatsapp": {
+    "message": "Hallo! Ich habe dein {tipo} \"{titulo}\" auf PaDónde gesehen. [Reservierung PaDónde 🌿] Ich interessiere mich für Verfügbarkeit und Anfahrt.",
+    "businessMessage": "Hallo! Ich habe ein Unternehmen oder Event in {zona} und möchte es auf PaDónde veröffentlichen. 🌿"
+  }
+}

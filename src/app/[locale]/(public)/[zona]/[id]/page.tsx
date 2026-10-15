@@ -43,6 +43,7 @@ export async function generateMetadata({ params }: EventoDetailPageProps): Promi
         es: `https://www.padonde.lat/es/${zonaSlug}/${id}`,
         en: `https://www.padonde.lat/en/${zonaSlug}/${id}`,
         fr: `https://www.padonde.lat/fr/${zonaSlug}/${id}`,
+        de: `https://www.padonde.lat/de/${zonaSlug}/${id}`,
       },
     },
     openGraph: {
@@ -50,7 +51,7 @@ export async function generateMetadata({ params }: EventoDetailPageProps): Promi
       description: descripcionLimpia.slice(0, 160),
       url: canonicalUrl,
       type: "website",
-      locale: locale === "en" ? "en_US" : locale === "fr" ? "fr_FR" : "es_CO",
+      locale: locale === "en" ? "en_US" : locale === "fr" ? "fr_FR" : locale === "de" ? "de_DE" : "es_CO",
       images: evento.imagen_url
         ? [
             {

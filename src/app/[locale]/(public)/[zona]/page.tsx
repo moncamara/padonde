@@ -23,12 +23,14 @@ export async function generateMetadata({ params }: ZonaPageProps): Promise<Metad
     es: `Qué hacer en ${zona.nombre} hoy — Eventos, Tours y Gastronomía`,
     en: `Things to do in ${zona.nombre} today — Events, Tours & Experiences`,
     fr: `Que faire à ${zona.nombre} aujourd'hui — Événements, Sorties et Tours`,
+    de: `Was kann man in ${zona.nombre} heute tun — Events, Touren & Aktivitäten`,
   };
 
   const descriptions: Record<string, string> = {
     es: `Descubre qué hacer hoy en ${zona.nombre}, Sierra Nevada de Santa Marta. Cartelera turística en vivo: tours de café, avistamiento de aves, música en vivo, yoga y restaurantes locales.`,
     en: `Discover what to do today in ${zona.nombre}, Sierra Nevada de Santa Marta. Live tourist board: coffee tours, birdwatching, live music, wellness, and authentic dining.`,
     fr: `Découvrez quoi faire aujourd'hui à ${zona.nombre}, Sierra Nevada de Santa Marta. Agenda touristique en direct : observation des oiseaux, visites de café, musique live et restaurants.`,
+    de: `Entdecke Aktivitäten heute in ${zona.nombre}, Sierra Nevada de Santa Marta. Live-Tourismus-Kalender: Kaffeetouren, Vogelbeobachtung, Live-Musik, Wellness und lokale Restaurants.`,
   };
 
   const title = titles[locale] || titles.es;
@@ -44,6 +46,7 @@ export async function generateMetadata({ params }: ZonaPageProps): Promise<Metad
         es: `https://www.padonde.lat/es/${zonaSlug}`,
         en: `https://www.padonde.lat/en/${zonaSlug}`,
         fr: `https://www.padonde.lat/fr/${zonaSlug}`,
+        de: `https://www.padonde.lat/de/${zonaSlug}`,
       },
     },
     openGraph: {
@@ -51,7 +54,7 @@ export async function generateMetadata({ params }: ZonaPageProps): Promise<Metad
       description,
       url: canonicalUrl,
       type: "website",
-      locale: locale === "en" ? "en_US" : locale === "fr" ? "fr_FR" : "es_CO",
+      locale: locale === "en" ? "en_US" : locale === "fr" ? "fr_FR" : locale === "de" ? "de_DE" : "es_CO",
       images: [
         {
           url: "/optimized_events/jam-birding.webp",

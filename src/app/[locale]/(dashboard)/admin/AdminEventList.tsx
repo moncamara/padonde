@@ -15,6 +15,7 @@ import {
 import { ToggleActivoButton } from "./ToggleActivoButton";
 import { ToggleDestacadoButton } from "./ToggleDestacadoButton";
 import { ModalEditarEvento } from "./ModalEditarEvento";
+import { ModalNotificarAliado, type EventoNotificarData } from "./ModalNotificarAliado";
 import { Button } from "@/components/ui/Button";
 
 export interface EventoAdminItem {
@@ -52,6 +53,7 @@ export function AdminEventList({ eventos, negocios = [], locale }: AdminEventLis
   const [tabActiva, setTabActiva] = useState<TabType>("vigentes");
   const [busqueda, setBusqueda] = useState(searchParams.get("busqueda") || "");
   const [eventoAEditar, setEventoAEditar] = useState<EventoAdminItem | null>(null);
+  const [eventoANotificar, setEventoANotificar] = useState<EventoNotificarData | null>(null);
 
   useEffect(() => {
     const q = searchParams.get("busqueda");
@@ -300,11 +302,30 @@ export function AdminEventList({ eventos, negocios = [], locale }: AdminEventLis
                   <ToggleDestacadoButton eventoId={ev.id} destacadoInicial={ev.destacado} />
                 </div>
 
-                <div className="flex items-center gap-1.5 shrink-0">
+                <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+                  {negocio?.whatsapp && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setEventoANotificar({
+                          id: ev.id,
+                          titulo: ev.titulo,
+                          negocioNombre: negocio.nombre,
+                          whatsapp: negocio.whatsapp,
+                        })
+                      }
+                      className="text-xs text-emerald-800 hover:text-emerald-900 px-2.5 py-1.5 rounded-xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 transition-colors flex items-center gap-1 font-medium font-sans shadow-2xs cursor-pointer active:scale-95"
+                      title="Enviar mensaje de bienvenida y revisión al WhatsApp del aliado"
+                    >
+                      <span>📲</span>
+                      <span className="font-sans">Notificar</span>
+                    </button>
+                  )}
+
                   <button
                     type="button"
                     onClick={() => setEventoAEditar(ev)}
-                    className="text-xs text-forest hover:text-terra px-2.5 py-1.5 rounded-xl border border-stone-light/70 bg-white/80 hover:bg-white transition-colors flex items-center gap-1 font-medium font-sans shadow-2xs"
+                    className="text-xs text-forest hover:text-terra px-2.5 py-1.5 rounded-xl border border-stone-light/70 bg-white/80 hover:bg-white transition-colors flex items-center gap-1 font-medium font-sans shadow-2xs cursor-pointer"
                     title="Editar información del evento"
                   >
                     <span>✏️</span>
@@ -384,6 +405,13 @@ export function AdminEventList({ eventos, negocios = [], locale }: AdminEventLis
           }}
         />
       )}
+
+      {/* Modal para Notificar al Aliado por WhatsApp */}
+      <ModalNotificarAliado
+        evento={eventoANotificar}
+        isOpen={Boolean(eventoANotificar)}
+        onClose={() => setEventoANotificar(null)}
+      />
     </section>
   );
 }

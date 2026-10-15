@@ -7,6 +7,7 @@ const IDIOMAS = [
   { code: "es", label: "ES", flag: "🇨🇴" },
   { code: "en", label: "EN", flag: "🇬🇧" },
   { code: "fr", label: "FR", flag: "🇫🇷" },
+  { code: "de", label: "DE", flag: "🇩🇪" },
 ];
 
 export function LanguageSwitcher() {
