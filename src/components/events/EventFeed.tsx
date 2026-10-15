@@ -26,7 +26,13 @@ export function EventFeed({ eventos, zona }: EventFeedProps) {
   const eventosFiltrados = useMemo(() => {
     const now = nowRef.current;
     return eventos.filter((e) => {
-      const pasaFecha = eventoCoincideConFiltroTiempo(e.fecha_inicio, filtroTiempo, now);
+      const pasaFecha = eventoCoincideConFiltroTiempo(
+        e.fecha_inicio,
+        filtroTiempo,
+        now,
+        e.fecha_fin,
+        e.descripcion
+      );
       const pasaCategoria = filtroCategoria === null || e.tipo === filtroCategoria;
 
       return pasaFecha && pasaCategoria;

@@ -3,7 +3,13 @@
 import { useState } from "react";
 import Image from "next/image";
 import { CATEGORIAS } from "@/constants";
-import { isoADatetimeLocalColombia } from "@/lib/utils";
+import {
+  isoADatetimeLocalColombia,
+  extraerRecurrencia,
+  limpiarDescripcionRecurrencia,
+  inyectarRecurrencia,
+  formatearDiasRecurrencia,
+} from "@/lib/utils";
 import { uploadEventImage } from "@/lib/supabase/storage";
 import { editarEventoAdminAction, eliminarEventoAdminAction } from "./actions";
 import { Button } from "@/components/ui/Button";
@@ -40,7 +46,22 @@ export function ModalEditarEvento({
       ? evento.precio.toString()
       : "0"
   );
-  const [descripcion, setDescripcion] = useState(evento.descripcion || "");
+
+  // Recurrencia y días de la semana
+  const recInicial = extraerRecurrencia(evento.descripcion);
+  const [esRecurrente, setEsRecurrente] = useState(recInicial.esRecurrente);
+  const [diasSeleccionados, setDiasSeleccionados] = useState<number[]>(
+    recInicial.dias.length > 0 ? recInicial.dias : [1, 2, 3, 4, 5, 6, 0]
+  );
+  const [fechaFin, setFechaFin] = useState(
+    isoADatetimeLocalColombia(evento.fecha_fin)
+  );
+
+  // Descripción limpia (sin tags internos de recurrencia)
+  const [descripcion, setDescripcion] = useState(
+    limpiarDescripcionRecurrencia(evento.descripcion)
+  );
+
   const [destacado, setDestacado] = useState(Boolean(evento.destacado));
   const [activo, setActivo] = useState(Boolean(evento.activo));
 
@@ -85,13 +106,18 @@ export function ModalEditarEvento({
         if (uploadedUrl) finalImg = uploadedUrl;
       }
 
+      const descripcionFinal = esRecurrente
+        ? inyectarRecurrencia(descripcion, diasSeleccionados)
+        : limpiarDescripcionRecurrencia(descripcion);
+
       const res = await editarEventoAdminAction({
         eventoId: evento.id,
         titulo: titulo.trim(),
-        descripcion: descripcion.trim() || null,
+        descripcion: descripcionFinal || null,
         tipo,
         precio: parseFloat(precio) || 0,
         dateTime,
+        fechaFin: esRecurrente || fechaFin ? fechaFin : null,
         imageUrl: finalImg || undefined,
         destacado,
         activo,
@@ -109,9 +135,10 @@ export function ModalEditarEvento({
       onSaved({
         id: evento.id,
         titulo: titulo.trim(),
-        descripcion: descripcion.trim() || null,
+        descripcion: descripcionFinal || null,
         tipo,
         precio: parseFloat(precio) || 0,
+        fecha_fin: esRecurrente || fechaFin ? fechaFin : null,
         destacado,
         activo,
         imagen_url: finalImg,
@@ -158,10 +185,10 @@ export function ModalEditarEvento({
         <div className="px-5 sm:px-6 py-4 border-b border-stone-light/70 flex items-center justify-between bg-cream/50">
           <div>
             <h3 className="font-serif text-lg sm:text-xl text-forest font-semibold flex items-center gap-2">
-              <span>✏️</span> Editar Evento
+              <span>✏️</span> Editar Evento o Experiencia
             </h3>
             <p className="text-[11px] sm:text-xs text-stone font-sans mt-0.5">
-              Actualiza descripción, precios, fechas y fotografía del plan.
+              Actualiza descripción, periodicidad, precios y fotografía del plan.
             </p>
           </div>
           <button
@@ -185,7 +212,7 @@ export function ModalEditarEvento({
           {/* 1. Título */}
           <div>
             <label className="block text-xs font-semibold text-forest mb-1 font-sans">
-              Título del Evento *
+              Título del Evento o Experiencia *
             </label>
             <input
               type="text"
@@ -193,7 +220,7 @@ export function ModalEditarEvento({
               value={titulo}
               onChange={(e) => setTitulo(e.target.value)}
               className="w-full px-3.5 py-2.5 rounded-xl border border-stone-light bg-stone-50/50 text-forest text-sm font-sans focus:outline-none focus:border-forest focus:bg-white transition-colors"
-              placeholder="Ej: Cata de Café Especial, Tour de Cascadas..."
+              placeholder="Ej: Tour Matutino de Aves, Menú del Día..."
             />
           </div>
 
@@ -281,7 +308,139 @@ export function ModalEditarEvento({
             </div>
           </div>
 
-          {/* 5. Descripción amplia (WhatsApp Paste) */}
+          {/* 5. SECCIÓN DE RECURRENCIA (DÍAS DE REPETICIÓN) */}
+          <div className="p-3.5 sm:p-4 rounded-2xl bg-amber-50/70 border border-amber-200/90 space-y-3">
+            <label className="flex items-center justify-between cursor-pointer">
+              <div className="flex items-center gap-2">
+                <span className="text-base sm:text-lg">🔄</span>
+                <div>
+                  <span className="text-xs font-semibold text-forest block font-sans">
+                    ¿Es una experiencia diaria o recurrente?
+                  </span>
+                  <span className="text-[10px] text-stone font-sans block">
+                    Aparecerá en el feed de todos los días seleccionados (ej: tours diarios o menús de lunes a sábado).
+                  </span>
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                checked={esRecurrente}
+                onChange={(e) => setEsRecurrente(e.target.checked)}
+                className="w-4 h-4 text-forest rounded border-stone-light focus:ring-forest shrink-0 ml-2"
+              />
+            </label>
+
+            {esRecurrente && (
+              <div className="pt-2 border-t border-amber-200/60 space-y-3 animate-in fade-in duration-150">
+                {/* Atajos Rápidos */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[10px] text-stone font-medium mr-1">Atajos:</span>
+                  <button
+                    type="button"
+                    onClick={() => setDiasSeleccionados([1, 2, 3, 4, 5, 6, 0])}
+                    className="text-[10px] px-2.5 py-1 rounded-lg bg-white border border-amber-300 text-forest hover:bg-amber-100/60 font-medium transition-colors"
+                  >
+                    Todos los días
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDiasSeleccionados([1, 2, 3, 4, 5])}
+                    className="text-[10px] px-2.5 py-1 rounded-lg bg-white border border-amber-300 text-forest hover:bg-amber-100/60 font-medium transition-colors"
+                  >
+                    Lun a Vie
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDiasSeleccionados([1, 2, 3, 4, 5, 6])}
+                    className="text-[10px] px-2.5 py-1 rounded-lg bg-white border border-amber-300 text-forest hover:bg-amber-100/60 font-medium transition-colors"
+                  >
+                    Lun a Sáb
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDiasSeleccionados([5, 6, 0])}
+                    className="text-[10px] px-2.5 py-1 rounded-lg bg-white border border-amber-300 text-forest hover:bg-amber-100/60 font-medium transition-colors"
+                  >
+                    Vie, Sáb y Dom
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDiasSeleccionados([6, 0])}
+                    className="text-[10px] px-2.5 py-1 rounded-lg bg-white border border-amber-300 text-forest hover:bg-amber-100/60 font-medium transition-colors"
+                  >
+                    Fines de semana
+                  </button>
+                </div>
+
+                {/* Botones de Días de la semana */}
+                <div>
+                  <span className="block text-[11px] font-semibold text-forest mb-1.5 font-sans">
+                    Días en los que aplica:
+                  </span>
+                  <div className="grid grid-cols-7 gap-1">
+                    {[
+                      { d: 1, label: "L", nombre: "Lun" },
+                      { d: 2, label: "M", nombre: "Mar" },
+                      { d: 3, label: "M", nombre: "Mié" },
+                      { d: 4, label: "J", nombre: "Jue" },
+                      { d: 5, label: "V", nombre: "Vie" },
+                      { d: 6, label: "S", nombre: "Sáb" },
+                      { d: 0, label: "D", nombre: "Dom" },
+                    ].map((item) => {
+                      const activo = diasSeleccionados.includes(item.d);
+                      return (
+                        <button
+                          key={item.d}
+                          type="button"
+                          onClick={() => {
+                            if (activo) {
+                              if (diasSeleccionados.length > 1) {
+                                setDiasSeleccionados(
+                                  diasSeleccionados.filter((x) => x !== item.d)
+                                );
+                              }
+                            } else {
+                              setDiasSeleccionados([...diasSeleccionados, item.d]);
+                            }
+                          }}
+                          className={[
+                            "py-2 rounded-xl text-xs font-semibold transition-all border text-center flex flex-col items-center justify-center",
+                            activo
+                              ? "bg-forest text-cream border-forest shadow-2xs font-bold"
+                              : "bg-white text-stone border-amber-200 hover:border-forest/40 hover:text-forest",
+                          ].join(" ")}
+                          title={item.nombre}
+                        >
+                          <span>{item.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-[11px] text-amber-900 font-sans mt-1.5 font-medium">
+                    Programación: <strong>{formatearDiasRecurrencia(diasSeleccionados)}</strong>
+                  </p>
+                </div>
+
+                {/* Vigencia / Fecha fin opcional */}
+                <div>
+                  <label className="block text-[11px] font-semibold text-forest mb-1 font-sans">
+                    Vigente hasta (Fecha fin):
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={fechaFin}
+                    onChange={(e) => setFechaFin(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-amber-300 bg-white text-forest text-xs font-sans focus:outline-none focus:border-forest"
+                  />
+                  <span className="text-[10px] text-stone font-sans mt-0.5 block">
+                    Fecha límite en la que dejará de mostrarse en la cartelera.
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 6. Descripción amplia (WhatsApp Paste) */}
           <div>
             <label className="block text-xs font-semibold text-forest mb-1 font-sans">
               Descripción del Plan (Pega aquí la información de WhatsApp)
@@ -295,7 +454,7 @@ export function ModalEditarEvento({
             />
           </div>
 
-          {/* 6. Fotografía del Evento */}
+          {/* 7. Fotografía del Evento */}
           <div className="space-y-2">
             <label className="block text-xs font-semibold text-forest font-sans">
               Fotografía de Portada
@@ -330,7 +489,7 @@ export function ModalEditarEvento({
             </div>
           </div>
 
-          {/* 7. Switches de Control (Destacado y Activo) */}
+          {/* 8. Switches de Control (Destacado y Activo) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
             <label className="flex items-center gap-2.5 p-3 rounded-xl bg-stone-50 border border-stone-light/70 cursor-pointer hover:bg-stone-100/60 transition-colors">
               <input

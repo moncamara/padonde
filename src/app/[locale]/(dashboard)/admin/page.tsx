@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { AdminEventList, type EventoAdminItem } from "./AdminEventList";
 import { AdminNav } from "./AdminNav";
 import { BotonCargarEventosReales } from "./BotonCargarEventosReales";
-import { getFechaYMDColombia, getFechaYMDDesdeISO } from "@/lib/utils";
+import { getFechaYMDColombia, getFechaYMDDesdeISO, eventoCoincideConFiltroTiempo } from "@/lib/utils";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -68,11 +68,15 @@ export default async function AdminDashboardPage({
   // 3. Cálculos de métricas operativas en horario Colombia (UTC-5)
   const hoyYMD = getFechaYMDColombia(new Date());
 
-  const eventosVigentes = eventos.filter(
-    (e) => e.activo && getFechaYMDDesdeISO(e.fecha_inicio) >= hoyYMD
-  );
-  const eventosHoy = eventosVigentes.filter(
-    (e) => getFechaYMDDesdeISO(e.fecha_inicio) === hoyYMD
+  const eventosVigentes = eventos.filter((e) => {
+    if (!e.activo) return false;
+    const ymdInicio = getFechaYMDDesdeISO(e.fecha_inicio);
+    const ymdFin = e.fecha_fin ? getFechaYMDDesdeISO(e.fecha_fin) : null;
+    return ymdFin ? ymdFin >= hoyYMD : ymdInicio >= hoyYMD;
+  });
+
+  const eventosHoy = eventosVigentes.filter((e) =>
+    eventoCoincideConFiltroTiempo(e.fecha_inicio, "hoy", new Date(), e.fecha_fin, e.descripcion)
   ).length;
   const destacadosActivos = eventosVigentes.filter((e) => e.destacado).length;
   const eventosPausados = eventos.filter((e) => !e.activo).length;

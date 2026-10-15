@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/routing";
 import { getCategoria, whatsappLink } from "@/constants";
-import { formatHora, formatPrecio, mensajeWhatsApp, truncar } from "@/lib/utils";
+import { formatHora, formatPrecio, mensajeWhatsApp, truncar, getEtiquetaHorario } from "@/lib/utils";
 import type { EventoConNegocio } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 
@@ -91,8 +91,10 @@ export function EventCard({ evento, zona, priority = false }: EventCardProps) {
 
         {/* 3. Contenido inferior sobre la imagen */}
         <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-5 z-20 pointer-events-none">
-          <p className="text-white/80 text-xs font-sans mb-1 font-medium tracking-wide">
-            {evento.negocio.nombre} · {hora}
+          <p className="text-white/80 text-xs font-sans mb-1 font-medium tracking-wide flex items-center gap-1.5 flex-wrap">
+            <span>{evento.negocio.nombre}</span>
+            <span>·</span>
+            <span>{getEtiquetaHorario(evento)}</span>
           </p>
 
           <h2 className="font-serif text-white text-xl sm:text-2xl leading-tight mb-3 tracking-tight">

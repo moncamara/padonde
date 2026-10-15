@@ -2,7 +2,15 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { Link } from "@/i18n/routing";
-import { formatFecha, formatHora, formatPrecio, getFechaYMDColombia, getFechaYMDDesdeISO, esHoy } from "@/lib/utils";
+import {
+  formatFecha,
+  formatHora,
+  formatPrecio,
+  getFechaYMDColombia,
+  getFechaYMDDesdeISO,
+  esHoy,
+  getEtiquetaHorario,
+} from "@/lib/utils";
 import { ToggleActivoButton } from "./ToggleActivoButton";
 import { ToggleDestacadoButton } from "./ToggleDestacadoButton";
 import { ModalEditarEvento } from "./ModalEditarEvento";
@@ -56,8 +64,9 @@ export function AdminEventList({ eventos, negocios = [], locale }: AdminEventLis
     const pas: EventoAdminItem[] = [];
 
     for (const ev of listaEventos) {
-      const ymd = getFechaYMDDesdeISO(ev.fecha_inicio);
-      const yaPaso = ymd < hoyYMD;
+      const ymdInicio = getFechaYMDDesdeISO(ev.fecha_inicio);
+      const ymdFin = ev.fecha_fin ? getFechaYMDDesdeISO(ev.fecha_fin) : null;
+      const yaPaso = ymdFin ? ymdFin < hoyYMD : ymdInicio < hoyYMD;
 
       if (!ev.activo && !yaPaso) {
         // Pausado manualmente pero con fecha actual/futura
@@ -266,8 +275,8 @@ export function AdminEventList({ eventos, negocios = [], locale }: AdminEventLis
                   )}
 
                   <span>·</span>
-                  <span>
-                    {formatFecha(ev.fecha_inicio)} ({formatHora(ev.fecha_inicio)})
+                  <span className="font-medium text-forest/90">
+                    {getEtiquetaHorario(ev)}
                   </span>
 
                   <span>·</span>

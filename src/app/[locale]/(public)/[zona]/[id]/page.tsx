@@ -4,7 +4,14 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/routing";
 import { getEventoById } from "@/lib/supabase/queries";
 import { getCategoria, getZona, whatsappLink } from "@/constants";
-import { formatFecha, formatHora, formatPrecio } from "@/lib/utils";
+import {
+  formatFecha,
+  formatHora,
+  formatPrecio,
+  extraerRecurrencia,
+  formatearDiasRecurrencia,
+  limpiarDescripcionRecurrencia,
+} from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { ShareButton } from "@/components/events/ShareButton";
 import type { ZonaSlug } from "@/lib/types";
@@ -47,6 +54,7 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
   const tWa = await getTranslations("whatsapp");
 
   const categoria = getCategoria(evento.tipo);
+  const rec = extraerRecurrencia(evento.descripcion);
   const fecha = formatFecha(evento.fecha_inicio);
   const hora = formatHora(evento.fecha_inicio);
 
@@ -154,12 +162,15 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
           {/* Tarjetas de metadata rápida: Fecha, Hora y Precio */}
           <div className="grid grid-cols-2 gap-3">
             <div className="p-3.5 rounded-2xl bg-white/60 border border-stone-light/70 shadow-xs">
-              <span className="text-base">📅</span>
+              <span className="text-base">{rec.esRecurrente ? "🔄" : "📅"}</span>
               <p className="text-xs text-stone mt-1">{tDetail("dateTime")}</p>
               <p className="font-sans font-semibold text-sm text-forest capitalize">
-                {fecha}
+                {rec.esRecurrente ? formatearDiasRecurrencia(rec.dias) : fecha}
               </p>
-              <p className="text-xs text-stone mt-0.5">{hora}</p>
+              <p className="text-xs text-stone mt-0.5">
+                {hora}
+                {rec.esRecurrente && evento.fecha_fin ? ` · Hasta ${formatFecha(evento.fecha_fin)}` : ""}
+              </p>
             </div>
 
             <div className="p-3.5 rounded-2xl bg-white/60 border border-stone-light/70 shadow-xs">
@@ -180,7 +191,7 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
               {tDetail("about")}
             </h2>
             <div className="font-sans text-sm text-stone leading-relaxed whitespace-pre-line">
-              {evento.descripcion ||
+              {limpiarDescripcionRecurrencia(evento.descripcion) ||
                 "No hay una descripción detallada disponible para este plan. Puedes contactar directamente al anfitrión para resolver cualquier duda."}
             </div>
           </section>

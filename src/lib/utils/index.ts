@@ -155,36 +155,154 @@ export function isoADatetimeLocalColombia(isoStr?: string | null): string {
   return `${getPart("year")}-${getPart("month")}-${getPart("day")}T${hour}:${getPart("minute")}`;
 }
 
+// ─── Recurrencia y Experiencias Diarias ────────────────────────────────────────
+
+export interface RecurrenciaConfig {
+  esRecurrente: boolean;
+  dias: number[]; // 0=Dom, 1=Lun, 2=Mar, 3=Mié, 4=Jue, 5=Vie, 6=Sáb
+}
+
+/**
+ * Extrae la configuración de días de repetición embebida en la descripción.
+ */
+export function extraerRecurrencia(descripcion?: string | null): RecurrenciaConfig {
+  if (!descripcion) return { esRecurrente: false, dias: [] };
+  const match = descripcion.match(/<!--recurrente:([0-6,]+)-->/);
+  if (!match) return { esRecurrente: false, dias: [] };
+  const dias = match[1]
+    .split(",")
+    .map((n) => parseInt(n.trim(), 10))
+    .filter((n) => !isNaN(n) && n >= 0 && n <= 6);
+  return { esRecurrente: dias.length > 0, dias };
+}
+
+/**
+ * Limpia la descripción eliminando cualquier metadato técnico de recurrencia.
+ */
+export function limpiarDescripcionRecurrencia(descripcion?: string | null): string {
+  if (!descripcion) return "";
+  return descripcion.replace(/<!--recurrente:[0-6,]+-->/g, "").trim();
+}
+
+/**
+ * Inyecta o actualiza la etiqueta de recurrencia en la descripción.
+ */
+export function inyectarRecurrencia(descripcion: string, dias: number[]): string {
+  const limpia = limpiarDescripcionRecurrencia(descripcion);
+  if (!dias || dias.length === 0) return limpia;
+  return `${limpia}\n\n<!--recurrente:${dias.join(",")}-->`.trim();
+}
+
+/**
+ * Formatea los días de la semana en un texto amigable y legible para humanos.
+ * Ej: "Todos los días", "Lun a Vie", "Vie, Sáb y Dom", "Fines de semana".
+ */
+export function formatearDiasRecurrencia(dias: number[]): string {
+  if (!dias || dias.length === 0) return "";
+  if (dias.length === 7) return "Todos los días";
+
+  const diasSet = new Set(dias);
+  if (dias.length === 5 && [1, 2, 3, 4, 5].every((d) => diasSet.has(d))) {
+    return "Lun a Vie";
+  }
+  if (dias.length === 6 && [1, 2, 3, 4, 5, 6].every((d) => diasSet.has(d))) {
+    return "Lun a Sáb";
+  }
+  if (dias.length === 3 && [5, 6, 0].every((d) => diasSet.has(d))) {
+    return "Vie, Sáb y Dom";
+  }
+  if (dias.length === 2 && [6, 0].every((d) => diasSet.has(d))) {
+    return "Fines de semana";
+  }
+
+  const nombresCortos: Record<number, string> = {
+    1: "Lun",
+    2: "Mar",
+    3: "Mié",
+    4: "Jue",
+    5: "Vie",
+    6: "Sáb",
+    0: "Dom",
+  };
+  const ordenados = [...dias].sort((a, b) => (a === 0 ? 7 : a) - (b === 0 ? 7 : b));
+  return ordenados.map((d) => nombresCortos[d]).join(", ");
+}
+
+/**
+ * Genera la etiqueta de fecha y hora para mostrar en tarjetas y cabeceras.
+ * Si es recurrente: "🔄 Todos los días · 6:00 AM"
+ * Si es puntual: "jue, 15 oct · 7:00 PM"
+ */
+export function getEtiquetaHorario(evento: {
+  fecha_inicio: string;
+  fecha_fin?: string | null;
+  descripcion?: string | null;
+}): string {
+  const rec = extraerRecurrencia(evento.descripcion);
+  const hora = formatHora(evento.fecha_inicio);
+
+  if (rec.esRecurrente) {
+    const diasTexto = formatearDiasRecurrencia(rec.dias);
+    return `🔄 ${diasTexto} · ${hora}`;
+  }
+
+  return `${formatFecha(evento.fecha_inicio)} · ${hora}`;
+}
+
+/**
+ * Obtiene el día de la semana (0=Dom, 1=Lun, ..., 6=Sáb) evaluado en Colombia.
+ */
+export function getDayOfWeekColombia(dateStr: string): number {
+  const d = new Date(dateStr.includes("T") ? dateStr : `${dateStr}T12:00:00-05:00`);
+  const dayStr = new Intl.DateTimeFormat("en-US", {
+    timeZone: TIMEZONE_COLOMBIA,
+    weekday: "short",
+  }).format(d);
+  const map: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+  return map[dayStr] ?? 0;
+}
+
 /**
  * Verifica si la fecha de un evento coincide con el filtro de tiempo seleccionado.
+ * Soporta eventos puntuales, rangos continuos y experiencias recurrentes por días de semana.
  * Todos los cálculos se evalúan estrictamente en el huso horario de Colombia (UTC-5).
- *
- * Filtros soportados:
- * - "hoy": la fecha del evento coincide con la fecha de hoy en Colombia.
- * - "manana": la fecha del evento coincide con la fecha de mañana en Colombia.
- * - "YYYY-MM-DD": la fecha del evento coincide exactamente con esa fecha específica.
  */
 export function eventoCoincideConFiltroTiempo(
   fechaInicioIso: string,
   filtro: string,
-  now: Date = new Date()
+  now: Date = new Date(),
+  fechaFinIso?: string | null,
+  descripcion?: string | null
 ): boolean {
-  const ymdEvento = getFechaYMDDesdeISO(fechaInicioIso);
-  const ymdHoy = getFechaYMDColombia(now);
-
+  let ymdTarget = filtro;
   if (filtro === "hoy") {
-    return ymdEvento === ymdHoy;
-  }
-
-  if (filtro === "manana") {
+    ymdTarget = getFechaYMDColombia(now);
+  } else if (filtro === "manana") {
     const manana = new Date(now);
     manana.setDate(manana.getDate() + 1);
-    const ymdManana = getFechaYMDColombia(manana);
-    return ymdEvento === ymdManana;
+    ymdTarget = getFechaYMDColombia(manana);
   }
 
-  // Fecha específica (formato YYYY-MM-DD)
-  return ymdEvento === filtro;
+  const ymdInicio = getFechaYMDDesdeISO(fechaInicioIso);
+  const ymdFin = fechaFinIso ? getFechaYMDDesdeISO(fechaFinIso) : null;
+  const rec = extraerRecurrencia(descripcion);
+
+  // Caso 1: Evento recurrente (días específicos de la semana)
+  if (rec.esRecurrente) {
+    if (ymdTarget < ymdInicio) return false;
+    if (ymdFin && ymdTarget > ymdFin) return false;
+
+    const diaSemana = getDayOfWeekColombia(ymdTarget);
+    return rec.dias.includes(diaSemana);
+  }
+
+  // Caso 2: Rango continuo de fechas (ej: festival o curso de varios días consecutivos)
+  if (ymdFin && ymdFin > ymdInicio) {
+    return ymdTarget >= ymdInicio && ymdTarget <= ymdFin;
+  }
+
+  // Caso 3: Evento puntual de 1 solo día
+  return ymdInicio === ymdTarget;
 }
 
 // ─── Precios ──────────────────────────────────────────────────────────────────

@@ -526,6 +526,7 @@ export interface EditarEventoAdminInput {
   tipo: CategoriaEvento;
   precio: number;
   dateTime: string;
+  fechaFin?: string | null;
   imageUrl?: string;
   destacado: boolean;
   activo: boolean;
@@ -552,6 +553,7 @@ export async function editarEventoAdminAction(input: EditarEventoAdminInput) {
       tipo: input.tipo,
       precio: input.precio >= 0 ? input.precio : 0,
       fecha_inicio: parseLocalColombiaAISO(input.dateTime),
+      fecha_fin: input.fechaFin ? parseLocalColombiaAISO(input.fechaFin) : null,
       destacado: Boolean(input.destacado),
       activo: Boolean(input.activo),
     };
