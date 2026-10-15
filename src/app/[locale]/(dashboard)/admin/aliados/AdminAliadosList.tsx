@@ -292,16 +292,16 @@ export function AdminAliadosList({
             <article
               key={aliado.id}
               className={[
-                "rounded-2xl p-4 sm:p-5 border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 sm:gap-4",
+                "rounded-2xl p-4 sm:p-5 border transition-all space-y-3",
                 aliado.activo
-                  ? "bg-white/80 border-stone-light/80 shadow-xs hover:border-stone"
+                  ? "bg-white/80 border-stone-light/80 shadow-xs hover:border-stone hover:shadow-sm"
                   : "bg-stone-50/70 border-dashed border-stone-300 opacity-90",
               ].join(" ")}
             >
-              {/* Información Principal del Negocio */}
-              <div className="space-y-2 flex-1 min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="font-serif text-lg text-forest font-bold truncate">
+              {/* Fila 1: Cabecera con Nombre y Badges Principales */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-2 min-w-0">
+                  <h3 className="font-serif text-lg sm:text-xl text-forest font-bold tracking-tight">
                     {aliado.nombre}
                   </h3>
 
@@ -316,7 +316,7 @@ export function AdminAliadosList({
                         : "Clic para reactivar este aliado"
                     }
                     className={[
-                      "text-[10px] px-2.5 py-0.5 rounded-full font-semibold border flex items-center gap-1 transition-all cursor-pointer shadow-2xs active:scale-95",
+                      "text-[10px] px-2.5 py-0.5 rounded-full font-semibold border flex items-center gap-1 transition-all cursor-pointer shadow-2xs active:scale-95 shrink-0",
                       aliado.activo
                         ? "bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100"
                         : "bg-red-50 text-red-700 border-red-300 hover:bg-red-100",
@@ -328,7 +328,7 @@ export function AdminAliadosList({
                   {/* Badge de Plan */}
                   <span
                     className={[
-                      "text-[11px] px-2.5 py-0.5 rounded-full font-semibold border uppercase tracking-wider",
+                      "text-[10px] px-2.5 py-0.5 rounded-full font-semibold border uppercase tracking-wider shrink-0",
                       aliado.plan === "premium"
                         ? "bg-terra text-white border-terra shadow-2xs"
                         : aliado.plan === "pro"
@@ -342,7 +342,7 @@ export function AdminAliadosList({
                   {/* Badge de Estado de Vencimiento */}
                   <span
                     className={[
-                      "text-[10px] px-2 py-0.5 rounded-full font-medium border",
+                      "text-[10px] px-2 py-0.5 rounded-full font-medium border shrink-0",
                       est.badge,
                     ].join(" ")}
                   >
@@ -350,131 +350,133 @@ export function AdminAliadosList({
                   </span>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-stone font-sans">
-                  <span className="capitalize text-forest font-medium">
-                    🏷️ {aliado.categoria}
-                  </span>
-
-                  <span>·</span>
-                  <a
-                    href={`https://wa.me/${cleanWa}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-emerald-700 hover:text-emerald-800 font-medium hover:underline flex items-center gap-1"
-                  >
-                    <span>💬</span>
-                    <span>+{cleanWa}</span>
-                  </a>
-
-                  {aliado.instagram && (
-                    <>
-                      <span>·</span>
-                      <a
-                        href={`https://instagram.com/${aliado.instagram.replace("@", "")}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-stone hover:text-forest hover:underline"
-                      >
-                        @{aliado.instagram.replace("@", "")}
-                      </a>
-                    </>
-                  )}
-
-                  <span>·</span>
-                  <button
-                    type="button"
-                    onClick={() => setAliadoParaVerEventos(aliado)}
-                    className="inline-flex items-center gap-1 text-forest hover:text-terra font-semibold hover:underline cursor-pointer bg-forest/5 hover:bg-forest/10 px-2 py-0.5 rounded-lg transition-all"
-                    title={`Ver los ${aliado.totalEventos} eventos de este aliado`}
-                  >
-                    <span>🎪</span>
-                    <span>
-                      {aliado.eventosActivos} vigentes ({aliado.totalEventos} total)
-                    </span>
-                    <span className="text-[10px]">↗</span>
-                  </button>
-                </div>
-
-                {!aliado.activo && (
-                  <p className="text-[11px] text-amber-800 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200/60 inline-flex items-center gap-1 mt-1">
-                    <span>⚠️</span>
-                    <span>Aliado inactivo: sus publicaciones están pausadas en la cartelera turística.</span>
-                  </p>
-                )}
-              </div>
-
-              {/* Botones de Acción Operativa y Cobro Optimizados para Mobile */}
-              <div className="w-full sm:w-auto pt-3 sm:pt-0 border-t border-stone-light/50 sm:border-0 grid grid-cols-2 sm:flex items-center gap-2">
-                {/* 1. Botón Ver Eventos del Aliado */}
+                {/* Acceso Rápido a Eventos del Aliado */}
                 <button
+                  type="button"
                   onClick={() => setAliadoParaVerEventos(aliado)}
-                  className="px-3 py-2 sm:py-2 rounded-xl text-xs font-sans font-semibold text-forest bg-forest/10 hover:bg-forest/20 border border-forest/30 transition-all cursor-pointer text-center flex items-center justify-center gap-1 shadow-2xs"
+                  className="inline-flex items-center gap-1.5 text-xs text-forest hover:text-terra font-semibold hover:underline cursor-pointer bg-forest/5 hover:bg-forest/10 px-2.5 py-1 rounded-xl transition-all shrink-0 self-start sm:self-auto"
                   title={`Ver y gestionar las ${aliado.totalEventos} publicaciones de este aliado`}
                 >
                   <span>🎪</span>
-                  <span>Eventos ({aliado.totalEventos})</span>
+                  <span>
+                    {aliado.eventosActivos} vigentes ({aliado.totalEventos} total)
+                  </span>
+                  <span className="text-[10px]">↗</span>
                 </button>
+              </div>
 
-                {/* 2. Botón WhatsApp Cobro / Contacto */}
+              {/* Fila 2: Metadatos de Contacto (Categoría, WhatsApp, Instagram) */}
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-stone font-sans">
+                <span className="capitalize text-forest font-medium">
+                  🏷️ {aliado.categoria}
+                </span>
+
+                <span>·</span>
                 <a
-                  href={generarEnlaceWhatsAppCobro(aliado)}
+                  href={`https://wa.me/${cleanWa}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="px-3.5 py-2.5 sm:py-2 rounded-xl text-xs font-sans font-semibold bg-emerald-600 text-white hover:bg-emerald-700 transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
-                  title="Abrir WhatsApp con mensaje pre-redactado de cobro o contacto"
+                  className="text-emerald-700 hover:text-emerald-800 font-medium hover:underline flex items-center gap-1"
                 >
                   <span>💬</span>
-                  <span>
-                    {aliado.plan !== "gratis" && (est.tipo === "por_vencer" || est.tipo === "vencido")
-                      ? "Cobrar"
-                      : aliado.plan === "gratis"
-                      ? "Ofrecer Pro"
-                      : "WhatsApp"}
-                  </span>
+                  <span>+{cleanWa}</span>
                 </a>
 
-                {/* 3. Botón Editar Aliado */}
-                <button
-                  onClick={() => setAliadoParaEditar(aliado)}
-                  className="px-3 py-2 sm:py-2 rounded-xl text-xs font-sans font-semibold text-forest bg-white border border-stone-light hover:bg-stone-50 transition-colors cursor-pointer text-center flex items-center justify-center gap-1 shadow-2xs"
-                  title="Editar datos comerciales, teléfono, Instagram y estado del aliado"
-                >
-                  <span>✏️</span>
-                  <span>Editar</span>
-                </button>
+                {aliado.instagram && (
+                  <>
+                    <span>·</span>
+                    <a
+                      href={`https://instagram.com/${aliado.instagram.replace("@", "")}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-stone hover:text-forest hover:underline"
+                    >
+                      @{aliado.instagram.replace("@", "")}
+                    </a>
+                  </>
+                )}
+              </div>
 
-                {/* 4. Botón Cambiar Plan */}
-                <button
-                  onClick={() => {
-                    setEditandoNegocio(aliado);
-                    setNuevoPlan(aliado.plan);
-                    setDiasVigencia(30);
-                  }}
-                  className="px-2.5 py-2 sm:py-2 rounded-xl text-xs font-sans font-medium text-stone hover:text-forest bg-white/70 border border-stone-light hover:bg-stone-50 transition-colors cursor-pointer text-center flex items-center justify-center gap-1"
-                >
-                  <span>⚙️</span>
-                  <span>Plan</span>
-                </button>
+              {!aliado.activo && (
+                <p className="text-[11px] text-amber-800 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200/60 inline-flex items-center gap-1">
+                  <span>⚠️</span>
+                  <span>Aliado inactivo: sus publicaciones están pausadas en la cartelera turística.</span>
+                </p>
+              )}
 
-                {/* 5. Botón Ver y Enviar Reporte de Impacto */}
-                <button
-                  onClick={() => setReporteNegocio(aliado)}
-                  className="px-2.5 py-2 sm:py-2 rounded-xl text-xs font-sans text-forest bg-white/70 border border-stone-light/70 hover:bg-white transition-colors cursor-pointer text-center flex items-center justify-center gap-1 font-medium"
-                  title="Generar y enviar Reporte de Impacto por WhatsApp"
-                >
-                  <span>📊</span>
-                  <span>Reporte</span>
-                </button>
+              {/* Fila 3: Barra de Acciones Operativas y Cobro */}
+              <div className="pt-2.5 border-t border-stone-light/60 flex flex-wrap items-center justify-between gap-2">
+                {/* Grupo Izquierdo: Gestión de Eventos y Reporte */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    onClick={() => setAliadoParaVerEventos(aliado)}
+                    className="px-3 py-1.5 rounded-xl text-xs font-sans font-semibold text-forest bg-forest/10 hover:bg-forest/20 border border-forest/30 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                    title={`Ver las ${aliado.totalEventos} publicaciones de este aliado`}
+                  >
+                    <span>🎪</span>
+                    <span>Gestionar Eventos ({aliado.totalEventos})</span>
+                  </button>
 
-                {/* 6. Botón Eliminar Aliado */}
-                <button
-                  type="button"
-                  onClick={() => setAliadoAEliminar(aliado)}
-                  className="px-2.5 py-2 sm:py-2 rounded-xl text-xs font-sans text-stone/60 hover:text-red-600 hover:bg-red-50 border border-stone-light/70 hover:border-red-200 transition-colors cursor-pointer text-center flex items-center justify-center"
-                  title={`Eliminar aliado ${aliado.nombre} y sus publicaciones`}
-                >
-                  <span>🗑️</span>
-                </button>
+                  <button
+                    onClick={() => setReporteNegocio(aliado)}
+                    className="px-3 py-1.5 rounded-xl text-xs font-sans text-forest bg-white border border-stone-light hover:bg-stone-50 transition-colors cursor-pointer flex items-center gap-1.5 font-medium shadow-2xs"
+                    title="Generar y enviar Reporte de Impacto por WhatsApp"
+                  >
+                    <span>📊</span>
+                    <span>Reporte</span>
+                  </button>
+                </div>
+
+                {/* Grupo Derecho: WhatsApp Comercial, Plan, Editar y Eliminar */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <a
+                    href={generarEnlaceWhatsAppCobro(aliado)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3.5 py-1.5 rounded-xl text-xs font-sans font-semibold bg-emerald-600 text-white hover:bg-emerald-700 transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+                    title="Abrir WhatsApp con mensaje pre-redactado de cobro o contacto"
+                  >
+                    <span>💬</span>
+                    <span>
+                      {aliado.plan !== "gratis" && (est.tipo === "por_vencer" || est.tipo === "vencido")
+                        ? "Cobrar"
+                        : aliado.plan === "gratis"
+                        ? "Ofrecer Pro"
+                        : "WhatsApp"}
+                    </span>
+                  </a>
+
+                  <button
+                    onClick={() => {
+                      setEditandoNegocio(aliado);
+                      setNuevoPlan(aliado.plan);
+                      setDiasVigencia(30);
+                    }}
+                    className="px-3 py-1.5 rounded-xl text-xs font-sans font-medium text-stone hover:text-forest bg-white border border-stone-light hover:bg-stone-50 transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
+                    title="Cambiar plan o extender vigencia"
+                  >
+                    <span>⚙️</span>
+                    <span>Plan</span>
+                  </button>
+
+                  <button
+                    onClick={() => setAliadoParaEditar(aliado)}
+                    className="px-3 py-1.5 rounded-xl text-xs font-sans font-semibold text-forest bg-white border border-stone-light hover:bg-stone-50 transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
+                    title="Editar datos comerciales, teléfono e Instagram"
+                  >
+                    <span>✏️</span>
+                    <span>Editar</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setAliadoAEliminar(aliado)}
+                    className="p-1.5 rounded-xl text-xs text-stone/40 hover:text-red-600 hover:bg-red-50 border border-stone-light/60 hover:border-red-200 transition-colors cursor-pointer flex items-center justify-center"
+                    title={`Eliminar aliado ${aliado.nombre} y sus publicaciones`}
+                  >
+                    <span>🗑️</span>
+                  </button>
+                </div>
               </div>
             </article>
           );

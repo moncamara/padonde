@@ -15,8 +15,8 @@ export function AdminNav({ userEmail }: AdminNavProps) {
   const isPuntosQR = pathname.includes("/admin/puntos-qr");
 
   return (
-    <header className="sticky top-0 z-20 bg-cream/95 backdrop-blur-md border-b border-stone-light/80 px-3 sm:px-4 py-2.5 sm:py-3 transition-all">
-      <div className="max-w-3xl mx-auto flex flex-col gap-2.5 sm:gap-0 sm:flex-row sm:items-center sm:justify-between">
+    <header className="sticky top-0 z-20 bg-cream/95 backdrop-blur-md border-b border-stone-light/80 px-3 sm:px-6 py-2.5 sm:py-3 transition-all">
+      <div className="max-w-4xl mx-auto flex flex-col gap-2.5 sm:gap-0 sm:flex-row sm:items-center sm:justify-between">
         {/* Fila 1 en Mobile / Lado Izquierdo en Desktop: Logo y Acciones Rápidas */}
         <div className="flex items-center justify-between">
           <Link href="/admin" className="flex items-center gap-2 group">
