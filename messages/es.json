@@ -19,7 +19,8 @@
   "eventCard": {
     "reserve": "Reservar",
     "seeMore": "Ver más",
-    "featured": "Destacado"
+    "featured": "Destacado",
+    "perPerson": "Por persona"
   },
   "eventDetail": {
     "back": "Atrás",

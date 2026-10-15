@@ -18,7 +18,8 @@
   "eventCard": {
     "reserve": "Réserver",
     "seeMore": "En savoir plus",
-    "featured": "En vedette"
+    "featured": "En vedette",
+    "perPerson": "Par personne"
   },
   "eventDetail": {
     "back": "Retour",

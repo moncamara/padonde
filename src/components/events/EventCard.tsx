@@ -45,18 +45,18 @@ export function EventCard({ evento, zona, priority = false }: EventCardProps) {
   const waLink = whatsappLink(evento.negocio.whatsapp, mensajeDirecto);
 
   return (
-    <article className="group relative w-full rounded-[--radius-card] overflow-hidden bg-forest shadow-xs hover:shadow-md transition-all duration-200">
+    <article className="group relative w-full rounded-3xl overflow-hidden bg-white border border-stone-light/80 shadow-xs hover:shadow-md hover:border-stone/60 transition-all duration-300 flex flex-col">
       {/* 1. Enlace global clickeable que cubre toda la tarjeta */}
       <Link
         href={`/${zona}/${evento.id}`}
-        className="absolute inset-0 z-10 focus:outline-none focus:ring-2 focus:ring-terra focus:ring-offset-2 rounded-[--radius-card]"
+        className="absolute inset-0 z-10 focus:outline-none focus:ring-2 focus:ring-terra focus:ring-offset-2 rounded-3xl"
         aria-label={`${evento.titulo} - ${evento.negocio.nombre}`}
       >
         <span className="sr-only">{evento.titulo}</span>
       </Link>
 
-      {/* 2. Contenedor de Imagen y Gradiente */}
-      <div className="relative h-64 sm:h-72 w-full overflow-hidden">
+      {/* 2. Contenedor de Imagen / Flyer 100% limpio y visible */}
+      <div className="relative aspect-[16/10] sm:aspect-[16/9] w-full overflow-hidden bg-stone-100">
         {evento.imagen_url ? (
           <Image
             src={evento.imagen_url}
@@ -67,15 +67,15 @@ export function EventCard({ evento, zona, priority = false }: EventCardProps) {
             priority={priority}
           />
         ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-forest to-stone opacity-80" />
+          <div className="absolute inset-0 bg-gradient-to-br from-forest/90 to-stone/80 flex items-center justify-center text-4xl">
+            🌿
+          </div>
         )}
 
-        <div className="card-overlay absolute inset-0" />
-
-        {/* Badges superiores (Categoría y Destacado) */}
+        {/* Badges superiores flotantes (Categoría y Destacado) */}
         <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none z-20">
           {categoria ? (
-            <span className="bg-black/35 backdrop-blur-md text-white text-xs font-sans font-medium px-3 py-1 rounded-full border border-white/10 shadow-xs">
+            <span className="bg-black/50 backdrop-blur-md text-white text-xs font-sans font-medium px-3 py-1 rounded-full border border-white/20 shadow-xs">
               {categoria.emoji} {tCat(evento.tipo)}
             </span>
           ) : (
@@ -88,49 +88,53 @@ export function EventCard({ evento, zona, priority = false }: EventCardProps) {
             </span>
           )}
         </div>
+      </div>
 
-        {/* 3. Contenido inferior sobre la imagen */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-5 z-20 pointer-events-none">
-          <p className="text-white/80 text-xs font-sans mb-1 font-medium tracking-wide flex items-center gap-1.5 flex-wrap">
-            <span>{evento.negocio.nombre}</span>
+      {/* 3. Cuerpo de la tarjeta (Debajo de la foto con legibilidad 100% garantizada) */}
+      <div className="p-4 sm:p-5 flex flex-col justify-between flex-1 space-y-3 bg-white">
+        <div className="space-y-1.5">
+          {/* Nombre del Aliado y Horario Inteligente */}
+          <p className="text-stone text-xs font-sans font-medium tracking-wide flex items-center gap-1.5 flex-wrap">
+            <span className="text-forest font-semibold">{evento.negocio.nombre}</span>
             <span>·</span>
-            <span>{getEtiquetaHorario(evento)}</span>
+            <span className="text-stone">{getEtiquetaHorario(evento)}</span>
           </p>
 
-          <h2 className="font-serif text-white text-xl sm:text-2xl leading-tight mb-3 tracking-tight">
-            {truncar(evento.titulo, 60)}
+          {/* Título de la Experiencia en Tipografía Serif */}
+          <h2 className="font-serif text-forest text-lg sm:text-xl font-bold leading-snug tracking-tight group-hover:text-terra transition-colors line-clamp-2">
+            {evento.titulo}
           </h2>
+        </div>
 
-          {/* Fila inferior: Precio a la izquierda, Botón de WhatsApp a la derecha */}
-          <div className="flex items-center justify-between gap-3 pt-1">
-            <div className="flex flex-col">
-              <span className="text-white font-sans font-bold text-base tracking-tight drop-shadow-xs">
-                {precioDisplay}
+        {/* Fila inferior: Precio a la izquierda, Botón de WhatsApp a la derecha */}
+        <div className="flex items-center justify-between gap-3 pt-2.5 border-t border-stone-light/60">
+          <div className="flex flex-col">
+            <span className="text-forest font-sans font-bold text-base tracking-tight">
+              {precioDisplay}
+            </span>
+            {evento.precio !== null && evento.precio > 0 && (
+              <span className="text-stone text-[10px] font-sans">
+                {tCard("perPerson")}
               </span>
-              {evento.precio !== null && evento.precio > 0 && (
-                <span className="text-white/70 text-[10px] font-sans">
-                  Por persona
-                </span>
-              )}
-            </div>
-
-            {/* Botón directo de reserva por WhatsApp */}
-            <a
-              href={waLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="pointer-events-auto"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <Button
-                size="sm"
-                className="bg-terra hover:bg-terra-dark text-white font-medium shadow-md text-xs px-3.5 py-2 flex items-center gap-1.5 active:scale-95 transition-transform"
-              >
-                <span>💬</span>
-                <span>{tCard("reserve")}</span>
-              </Button>
-            </a>
+            )}
           </div>
+
+          {/* Botón directo de reserva por WhatsApp */}
+          <a
+            href={waLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="pointer-events-auto z-20"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Button
+              size="sm"
+              className="bg-terra hover:bg-terra-dark text-white font-medium shadow-xs text-xs px-3.5 py-2 flex items-center gap-1.5 active:scale-95 transition-transform"
+            >
+              <span>💬</span>
+              <span>{tCard("reserve")}</span>
+            </Button>
+          </a>
         </div>
       </div>
     </article>

@@ -19,7 +19,8 @@
   "eventCard": {
     "reserve": "Book Now",
     "seeMore": "See More",
-    "featured": "Featured"
+    "featured": "Featured",
+    "perPerson": "Per person"
   },
   "eventDetail": {
     "back": "Back",
