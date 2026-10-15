@@ -4,6 +4,7 @@ import { Link } from "@/i18n/routing";
 import { Button } from "@/components/ui/Button";
 import { AdminEventList, type EventoAdminItem } from "./AdminEventList";
 import { AdminNav } from "./AdminNav";
+import { BotonCargarEventosReales } from "./BotonCargarEventosReales";
 import { getFechaYMDColombia, getFechaYMDDesdeISO } from "@/lib/utils";
 import type { Metadata } from "next";
 
@@ -131,6 +132,9 @@ export default async function AdminDashboardPage({
             <p className="text-[10px] text-stone mt-0.5 truncate">🏛️ Comercios</p>
           </div>
         </div>
+
+        {/* Acceso Rápido: Cargar Lote de Eventos Reales de WhatsApp */}
+        <BotonCargarEventosReales />
 
         {/* Lista de Eventos con Pestañas de Vigencia y Buscador */}
         <div className="bg-white/40 p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-stone-light/60 space-y-4">
