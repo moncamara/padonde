@@ -22,17 +22,51 @@ interface EventoDetailPageProps {
 }
 
 export async function generateMetadata({ params }: EventoDetailPageProps): Promise<Metadata> {
-  const { id } = await params;
+  const { locale, zona: zonaSlug, id } = await params;
   const evento = await getEventoById(id);
   if (!evento) return {};
 
+  const zona = getZona(zonaSlug);
+  const nombreZona = zona?.nombre || "Minca";
+  const descripcionLimpia = limpiarDescripcionRecurrencia(evento.descripcion) ||
+    `${evento.titulo} en ${evento.negocio.nombre}, ${nombreZona}. Consulta horarios y reserva directa por WhatsApp.`;
+
+  const canonicalUrl = `https://www.padonde.lat/${locale}/${zonaSlug}/${id}`;
+  const title = `${evento.titulo} — ${evento.negocio.nombre} (${nombreZona})`;
+
   return {
-    title: `${evento.titulo} — PaDónde`,
-    description: evento.descripcion || `Descubre este evento en PaDónde.`,
+    title,
+    description: descripcionLimpia.slice(0, 160),
+    alternates: {
+      canonical: canonicalUrl,
+      languages: {
+        es: `https://www.padonde.lat/es/${zonaSlug}/${id}`,
+        en: `https://www.padonde.lat/en/${zonaSlug}/${id}`,
+        fr: `https://www.padonde.lat/fr/${zonaSlug}/${id}`,
+      },
+    },
     openGraph: {
-      title: evento.titulo,
-      description: evento.descripcion || undefined,
-      images: evento.imagen_url ? [{ url: evento.imagen_url }] : undefined,
+      title,
+      description: descripcionLimpia.slice(0, 160),
+      url: canonicalUrl,
+      type: "website",
+      locale: locale === "en" ? "en_US" : locale === "fr" ? "fr_FR" : "es_CO",
+      images: evento.imagen_url
+        ? [
+            {
+              url: evento.imagen_url,
+              width: 1200,
+              height: 630,
+              alt: evento.titulo,
+            },
+          ]
+        : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description: descripcionLimpia.slice(0, 160),
+      images: evento.imagen_url ? [evento.imagen_url] : undefined,
     },
   };
 }
@@ -73,8 +107,53 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
 
   const waLink = whatsappLink(evento.negocio.whatsapp, waMensaje);
 
+  const descripcionLimpia =
+    limpiarDescripcionRecurrencia(evento.descripcion) ||
+    `${evento.titulo} en ${evento.negocio.nombre}, ${zona.nombre}.`;
+
+  // Datos estructurados Schema.org para Google Events Rich Snippets
+  const eventJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Event",
+    name: evento.titulo,
+    description: descripcionLimpia,
+    startDate: evento.fecha_inicio,
+    endDate: evento.fecha_fin || evento.fecha_inicio,
+    eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+    eventStatus: "https://schema.org/EventScheduled",
+    image: evento.imagen_url ? [evento.imagen_url] : [],
+    location: {
+      "@type": "Place",
+      name: evento.negocio.nombre,
+      address: {
+        "@type": "PostalAddress",
+        addressLocality: zona.nombre,
+        addressRegion: "Magdalena",
+        addressCountry: "CO",
+      },
+    },
+    organizer: {
+      "@type": "Organization",
+      name: evento.negocio.nombre,
+      url: `https://wa.me/${evento.negocio.whatsapp.replace(/\D/g, "")}`,
+    },
+    offers: {
+      "@type": "Offer",
+      price: evento.precio ?? 0,
+      priceCurrency: evento.precio_moneda || "COP",
+      url: `https://www.padonde.lat/${locale}/${zonaSlug}/${evento.id}`,
+      availability: "https://schema.org/InStock",
+    },
+  };
+
   return (
     <div className="min-h-screen bg-cream pb-32">
+      {/* Datos estructurados JSON-LD para Google Search Events */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(eventJsonLd) }}
+      />
+
       {/* 1. Header flotante sobre la foto con botón atrás y compartir */}
       <nav className="fixed top-0 left-0 right-0 z-30 px-4 py-3 bg-gradient-to-b from-black/60 to-transparent">
         <div className="max-w-lg mx-auto flex items-center justify-between">

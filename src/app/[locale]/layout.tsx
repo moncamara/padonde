@@ -19,14 +19,73 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "PaDónde — Where to go today in Minca & Santa Marta",
+  metadataBase: new URL("https://www.padonde.lat"),
+  title: {
+    default: "PaDónde — Qué hacer hoy en Minca & Santa Marta",
+    template: "%s | PaDónde",
+  },
   description:
-    "Descubre eventos, planes, tours, comida y más en Minca y Santa Marta. La cartelera digital para turistas y viajeros.",
-  keywords: ["Minca", "Santa Marta", "Colombia", "turismo", "eventos", "planes"],
+    "Cartelera viva de eventos, tours, experiencias, comida y música en Minca y la Sierra Nevada de Santa Marta. Planes del día para turistas y viajeros en Colombia.",
+  keywords: [
+    "Minca",
+    "Minca Colombia",
+    "qué hacer en Minca",
+    "qué hacer hoy en Minca",
+    "things to do in Minca",
+    "Minca events",
+    "tours Minca",
+    "avistamiento de aves Minca",
+    "Sierra Nevada de Santa Marta",
+    "Santa Marta turismo",
+    "planes Minca",
+    "restaurantes Minca",
+    "hostales Minca",
+  ],
+  authors: [{ name: "PaDónde" }],
+  creator: "PaDónde",
+  publisher: "PaDónde",
+  alternates: {
+    canonical: "./",
+    languages: {
+      es: "/es",
+      en: "/en",
+      fr: "/fr",
+    },
+  },
   openGraph: {
-    title: "PaDónde",
-    description: "Where to go today in Minca & Santa Marta",
+    siteName: "PaDónde",
+    title: "PaDónde — Cartelera Turística de Minca",
+    description:
+      "Descubre qué hacer hoy en Minca. Eventos, tours, comida, música y experiencias en la Sierra Nevada.",
+    url: "https://www.padonde.lat",
     type: "website",
+    locale: "es_CO",
+    images: [
+      {
+        url: "/optimized_events/jam-birding.webp",
+        width: 1200,
+        height: 630,
+        alt: "PaDónde — Qué hacer hoy en Minca",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "PaDónde — Qué hacer hoy en Minca",
+    description:
+      "Cartelera viva de eventos, tours y experiencias en Minca y la Sierra Nevada.",
+    images: ["/optimized_events/jam-birding.webp"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
 };
 
