@@ -42,6 +42,9 @@ export function EventFilters({
       if (op.id === "manana") {
         return { ...op, label: tFilters("tomorrow") };
       }
+      if (op.id === "proximos") {
+        return { ...op, label: tFilters("upcoming") };
+      }
 
       // Para los días específicos (ej. 2026-10-16), formateamos con el locale activo (es/en/fr)
       if (op.ymd) {

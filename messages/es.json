@@ -3,7 +3,8 @@
     "all": "Todos los planes",
     "today": "Hoy",
     "tomorrow": "Mañana",
-    "weekend": "Fin de semana"
+    "weekend": "Fin de semana",
+    "upcoming": "Más adelante"
   },
   "categories": {
     "all": "Todos",

@@ -3,7 +3,8 @@
     "all": "All plans",
     "today": "Today",
     "tomorrow": "Tomorrow",
-    "weekend": "Weekend"
+    "weekend": "Weekend",
+    "upcoming": "Later this month"
   },
   "categories": {
     "all": "All",

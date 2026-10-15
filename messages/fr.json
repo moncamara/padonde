@@ -2,7 +2,8 @@
   "filters": {
     "today": "Aujourd'hui",
     "tomorrow": "Demain",
-    "weekend": "Ce week-end"
+    "weekend": "Ce week-end",
+    "upcoming": "Plus tard"
   },
   "categories": {
     "all": "Tous",

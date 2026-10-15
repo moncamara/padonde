@@ -110,6 +110,9 @@ export function getOpcionesTiempoColombia(): OpcionDiaFiltro[] {
     opciones.push({ id: ymd, label: labelCap, ymd });
   }
 
+  // 4. Opción para explorar planes futuros más allá de los próximos 6 días
+  opciones.push({ id: "proximos", label: "Más adelante" });
+
   return opciones;
 }
 
@@ -274,6 +277,14 @@ export function eventoCoincideConFiltroTiempo(
   fechaFinIso?: string | null,
   descripcion?: string | null
 ): boolean {
+  // Caso especial: Planes futuros más allá del rango inmediato
+  if (filtro === "proximos" || filtro === "todos") {
+    const hoyYMD = getFechaYMDColombia(now);
+    const ymdInicio = getFechaYMDDesdeISO(fechaInicioIso);
+    const ymdFin = fechaFinIso ? getFechaYMDDesdeISO(fechaFinIso) : null;
+    return ymdFin ? ymdFin >= hoyYMD : ymdInicio >= hoyYMD;
+  }
+
   let ymdTarget = filtro;
   if (filtro === "hoy") {
     ymdTarget = getFechaYMDColombia(now);
