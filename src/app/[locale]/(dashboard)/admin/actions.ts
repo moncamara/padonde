@@ -398,11 +398,12 @@ export async function importarLoteEventosRealesAction() {
       {
         negocioNombre: "Jam Birding Minca",
         titulo: "Tour Matutino de Avistamiento de Aves (6:00 AM)",
-        descripcion: "Caminata de 150 minutos alrededor de Minca con guía de avistamiento Jam. Observación de aves: Turpiales, Tórtolas, Espigueros, Tucanes y Colibríes. Visita a plataforma Torre del Sol vía San Rafael. Binoculares incluidos.",
+        descripcion:
+          "Avistamiento de aves en Minca con el guía especializado Jam. Salidas casi a diario a las 6:00 AM desde el puente de Minca hacia la plataforma de observación Torre del Sol (vía San Rafael).\n\n• Duración: 3 horas y media de caminata ecológica.\n• Avistamiento: Turpiales, Tórtolas, Espigueros, Tucanes y variedad de Colibríes de la Sierra Nevada.\n• Incluye: Acompañamiento de guía local experto y uso de binoculares.\n• Punto de encuentro: Puente de Minca (6:00 AM).\n• Valor: $75.000 COP por persona.\n\n<!--recurrente:0,1,2,3,4,5,6-->",
         tipo: "tours",
         precio: 75000,
         fechaInicio: "2026-10-16T06:00:00-05:00",
-        fechaFin: "2026-10-16T08:30:00-05:00",
+        fechaFin: "2026-12-31T09:30:00-05:00",
         imagenUrl: "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/eventos_reales/jam-birding.webp",
         destacado: true,
       },
