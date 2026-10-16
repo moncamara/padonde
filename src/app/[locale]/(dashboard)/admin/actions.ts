@@ -326,6 +326,14 @@ export async function importarLoteEventosRealesAction() {
         instagram: null,
         plan: "gratis" as PlanNegocio,
       },
+      {
+        nombre: "La Veranda Hotels",
+        descripcion: "Hotel boutique y descanso en Minca. Naturaleza, piscina y desconexión total en la Sierra Nevada.",
+        categoria: "hospedaje",
+        whatsapp: "573123614904",
+        instagram: "@laverandahotels",
+        plan: "gratis" as PlanNegocio,
+      },
     ];
 
     const mapaNegocios: Record<string, string> = {};
@@ -517,6 +525,27 @@ export async function importarLoteEventosRealesAction() {
         imagenUrl: "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/eventos_reales/cacao-danza.webp",
         destacado: true,
       },
+      {
+        negocioNombre: "La Veranda Hotels",
+        titulo: "Escápate a Minca en Octubre — 3x2 en La Veranda Hotels",
+        descripcion: `✨ ¡Escápate a Minca en octubre! ✨
+
+🏡 Reserva 2 noches y recibe la tercera GRATIS en La Veranda Hotels.
+
+💦 Descanso, naturaleza y piscina te esperan en la Sierra Nevada.
+
+📲 ¡Escríbenos y reserva directamente con nosotros!
+
+#LaVerandaExperience #Minca #SantaMarta
+
+<!--recurrente:1,2,3,4,5,6,0-->`,
+        tipo: "hospedaje",
+        precio: null,
+        fechaInicio: "2026-10-16T09:00:00-05:00",
+        fechaFin: "2026-10-31T23:59:00-05:00",
+        imagenUrl: "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/eventos_reales/laveranda.webp",
+        destacado: false,
+      },
     ];
 
     let insertadosCount = 0;
@@ -548,7 +577,7 @@ export async function importarLoteEventosRealesAction() {
           titulo: ev.titulo,
           descripcion: ev.descripcion,
           tipo: ev.tipo,
-          precio: ev.precio > 0 ? ev.precio : 0,
+          precio: ev.precio && ev.precio > 0 ? ev.precio : 0,
           precio_moneda: "COP",
           fecha_inicio: ev.fechaInicio,
           fecha_fin: ev.fechaFin,
@@ -565,7 +594,7 @@ export async function importarLoteEventosRealesAction() {
           titulo: ev.titulo,
           descripcion: ev.descripcion,
           tipo: ev.tipo,
-          precio: ev.precio > 0 ? ev.precio : 0,
+          precio: ev.precio && ev.precio > 0 ? ev.precio : 0,
           precio_moneda: "COP",
           fecha_inicio: ev.fechaInicio,
           fecha_fin: ev.fechaFin,

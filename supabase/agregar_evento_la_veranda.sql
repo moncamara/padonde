@@ -12,9 +12,8 @@ DECLARE
     v_zona_minca UUID;
     v_negocio_id UUID;
     v_evento_id UUID;
-    -- ⚠️ WhatsApp de contacto directo de La Veranda Hotels (con indicativo 57 sin +)
-    -- Si tienes el número exacto, reemplázalo aquí antes de ejecutar:
-    v_whatsapp TEXT := '573000000000'; 
+    -- WhatsApp de contacto directo de La Veranda Hotels
+    v_whatsapp TEXT := '573123614904'; 
     v_instagram TEXT := '@laverandahotels';
 BEGIN
     -- 1. Obtener ID de la zona Minca
