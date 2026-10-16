@@ -55,3 +55,36 @@ body {
     transparent 100%
   );
 }
+
+/* ─────────────────────────────────────────────
+   Estilos de Impresión Limpia para Afiches y Habladores QR
+───────────────────────────────────────────── */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #1a2e1a !important;
+  }
+
+  header,
+  footer,
+  nav,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  .print-afiche-container {
+    box-shadow: none !important;
+    border: 2px solid #1a2e1a !important;
+    margin: 0 auto !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  @page {
+    size: portrait;
+    margin: 0.6cm;
+  }
+}
+

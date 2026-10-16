@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { ModalAficheImprimible } from "@/components/admin/ModalAficheImprimible";
 
 interface PuntoPreset {
   id: string;
@@ -61,6 +62,13 @@ export function AdminQRGenerator({ locale }: { locale: string }) {
   const [zonaSeleccionada, setZonaSeleccionada] = useState("minca");
   const [copiadoSrc, setCopiadoSrc] = useState<string | null>(null);
   const [dominioBase, setDominioBase] = useState("https://padonde.lat");
+  const [aficheModal, setAficheModal] = useState<{
+    isOpen: boolean;
+    nombre: string;
+    url: string;
+    qrUrl: string;
+    src: string;
+  } | null>(null);
 
   // Sincronizar origen del navegador tras montaje para evitar errores de hidratación SSR
   useEffect(() => {
@@ -196,15 +204,32 @@ export function AdminQRGenerator({ locale }: { locale: string }) {
               </p>
             </div>
 
-            <div className="w-full flex items-center justify-center gap-2 pt-1">
+            <div className="w-full flex flex-col sm:flex-row items-center justify-center gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() =>
+                  setAficheModal({
+                    isOpen: true,
+                    nombre: nombrePunto || "PaDónde Minca",
+                    url: urlGenerada,
+                    qrUrl: qrImageUrl,
+                    src: slugFinal,
+                  })
+                }
+                className="w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-sans font-semibold bg-emerald-700 text-white hover:bg-emerald-800 transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer active:scale-95"
+              >
+                <span>📄</span>
+                <span>Generar Afiche / PDF</span>
+              </button>
+
               <a
                 href={qrImageUrl}
                 target="_blank"
                 download={`qr-padonde-${slugFinal}.png`}
-                className="w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-sans font-semibold bg-forest text-cream hover:bg-forest/90 transition-all flex items-center justify-center gap-1.5 shadow-xs"
+                className="w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-sans font-semibold bg-white border border-stone-light text-forest hover:bg-stone-50 transition-all flex items-center justify-center gap-1.5 shadow-2xs"
               >
                 <span>📥</span>
-                <span>Descargar Imagen QR</span>
+                <span>Descargar PNG</span>
               </a>
             </div>
           </div>
@@ -254,24 +279,42 @@ export function AdminQRGenerator({ locale }: { locale: string }) {
                   </p>
                 </div>
 
-                <div className="pt-2 border-t border-stone-light/50 flex items-center justify-between gap-2">
+                <div className="pt-2 border-t border-stone-light/50 flex items-center justify-between gap-1.5 flex-wrap sm:flex-nowrap">
                   <button
                     type="button"
                     onClick={() => handleCopiar(urlPreset, preset.id)}
-                    className="flex-1 py-1.5 px-3 rounded-xl text-xs font-sans font-medium text-forest bg-white border border-stone-light hover:bg-stone-50 transition-colors cursor-pointer text-center"
+                    className="flex-1 py-1.5 px-2.5 rounded-xl text-xs font-sans font-medium text-forest bg-white border border-stone-light hover:bg-stone-50 transition-colors cursor-pointer text-center"
                   >
-                    {copiadoSrc === preset.id ? "✓ Copiado" : "📋 Copiar Enlace"}
+                    {copiadoSrc === preset.id ? "✓ Copiado" : "📋 Enlace"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setAficheModal({
+                        isOpen: true,
+                        nombre: preset.nombre,
+                        url: urlPreset,
+                        qrUrl: qrPresetUrl,
+                        src: preset.src,
+                      })
+                    }
+                    className="py-1.5 px-3 rounded-xl text-xs font-sans font-semibold text-emerald-800 bg-emerald-50 border border-emerald-300 hover:bg-emerald-100 transition-colors flex items-center gap-1 shrink-0 cursor-pointer shadow-2xs"
+                    title="Generar afiche o hablador imprimible para este punto"
+                  >
+                    <span>📄</span>
+                    <span>Afiche PDF</span>
                   </button>
 
                   <a
                     href={qrPresetUrl}
                     target="_blank"
                     download={`qr-minca-${preset.src}.png`}
-                    className="py-1.5 px-3 rounded-xl text-xs font-sans font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 transition-colors flex items-center gap-1 shrink-0"
-                    title="Descargar código QR para imprimir"
+                    className="py-1.5 px-2.5 rounded-xl text-xs font-sans font-medium text-stone bg-white border border-stone-light hover:bg-stone-50 transition-colors flex items-center gap-1 shrink-0"
+                    title="Descargar solo imagen del código QR"
                   >
                     <span>🖼️</span>
-                    <span>QR</span>
+                    <span>PNG</span>
                   </a>
                 </div>
               </article>
@@ -279,6 +322,18 @@ export function AdminQRGenerator({ locale }: { locale: string }) {
           })}
         </div>
       </div>
+
+      {/* Modal de Previsualización e Impresión de Afiches en 4 Idiomas */}
+      {aficheModal && (
+        <ModalAficheImprimible
+          isOpen={aficheModal.isOpen}
+          onClose={() => setAficheModal(null)}
+          puntoNombre={aficheModal.nombre}
+          urlDestino={aficheModal.url}
+          qrImageUrl={aficheModal.qrUrl}
+          srcParam={aficheModal.src}
+        />
+      )}
     </div>
   );
 }
