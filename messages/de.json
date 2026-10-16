@@ -90,7 +90,7 @@
     "consult": "Auf Anfrage"
   },
   "whatsapp": {
-    "message": "Hallo! Ich habe dein {tipo} \"{titulo}\" auf PaDónde gesehen. [Reservierung PaDónde 🌿] Ich interessiere mich für Verfügbarkeit und Anfahrt.",
+    "message": "Hallo! Ich habe deinen Beitrag \"{titulo}\" auf PaDónde gesehen. [Reservierung PaDónde 🌿] Ich interessiere mich für Verfügbarkeit und Anfahrt.",
     "businessMessage": "Hallo! Ich habe ein Unternehmen oder Event in {zona} und möchte es auf PaDónde veröffentlichen. 🌿"
   }
 }

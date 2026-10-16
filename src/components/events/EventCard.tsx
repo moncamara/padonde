@@ -43,7 +43,6 @@ export function EventCard({ evento: rawEvento, zona, priority = false }: EventCa
 
   const refCode = evento.id.slice(0, 5).toUpperCase();
   const mensajeDirecto = `${tWa("message", {
-    tipo: categoria ? tCat(evento.tipo) : "evento",
     titulo: evento.titulo,
   })} [Ref #${refCode}]`;
 

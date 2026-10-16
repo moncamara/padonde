@@ -107,7 +107,6 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
 
   const refCode = evento.id.slice(0, 5).toUpperCase();
   const waMensaje = `${tWa("message", {
-    tipo: categoria ? tCat(evento.tipo) : "evento",
     titulo: evento.titulo,
   })} [Ref #${refCode}]`;
 

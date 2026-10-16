@@ -384,7 +384,7 @@ export function truncar(texto: string, maxChars: number): string {
 /** Genera el mensaje de WhatsApp predefinido al contactar un negocio */
 export function mensajeWhatsApp(
   nombreEvento: string,
-  categoria: CategoriaEvento
+  _categoria?: CategoriaEvento
 ): string {
-  return `Hola! Vi tu ${categoria} "${nombreEvento}" en PaDónde y me interesa saber más. 🌿`;
+  return `Hola! Vi tu publicación "${nombreEvento}" en PaDónde. [Reserva PaDónde 🌿] Me interesa saber disponibilidad y cómo llegar.`;
 }
