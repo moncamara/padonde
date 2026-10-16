@@ -9,6 +9,7 @@ import {
   formatPrecio,
   getFechaYMDColombia,
   getFechaYMDDesdeISO,
+  getMinutosDelDiaColombia,
   esHoy,
   getEtiquetaHorario,
 } from "@/lib/utils";
@@ -91,14 +92,23 @@ export function AdminEventList({ eventos, negocios = [], locale }: AdminEventLis
     }
 
     // Ordenamiento lógico:
-    // Vigentes: del más próximo al más lejano (ascendente)
-    v.sort((a, b) => new Date(a.fecha_inicio).getTime() - new Date(b.fecha_inicio).getTime());
+    // Vigentes: destacados primero, luego del más temprano al más tarde
+    v.sort((a, b) => {
+      if (a.destacado !== b.destacado) return a.destacado ? -1 : 1;
+      const ymdA = getFechaYMDDesdeISO(a.fecha_inicio);
+      const ymdB = getFechaYMDDesdeISO(b.fecha_inicio);
+      if (ymdA !== ymdB) return ymdA.localeCompare(ymdB);
+      const minA = getMinutosDelDiaColombia(a.fecha_inicio);
+      const minB = getMinutosDelDiaColombia(b.fecha_inicio);
+      if (minA !== minB) return minA - minB;
+      return a.titulo.localeCompare(b.titulo);
+    });
     // Pausados y Pasados: del más reciente al más antiguo (descendente)
     pau.sort((a, b) => new Date(b.fecha_inicio).getTime() - new Date(a.fecha_inicio).getTime());
     pas.sort((a, b) => new Date(b.fecha_inicio).getTime() - new Date(a.fecha_inicio).getTime());
 
     return { vigentes: v, pausados: pau, pasados: pas };
-  }, [eventos, hoyYMD]);
+  }, [listaEventos, hoyYMD]);
 
   // 2. Lista según tab seleccionada
   const listaBase = useMemo(() => {

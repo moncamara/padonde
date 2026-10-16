@@ -62,6 +62,37 @@ export function formatHora(iso: string): string {
   return formatter.format(d);
 }
 
+/**
+ * Obtiene los minutos transcurridos desde la medianoche en hora de Colombia (0 a 1439).
+ * Permite ordenar eventos de más temprano a más tarde en el día,
+ * independientemente de la fecha calendario en que fue creado el registro.
+ */
+export function getMinutosDelDiaColombia(iso: string): number {
+  try {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return 0;
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: TIMEZONE_COLOMBIA,
+      hour: "numeric",
+      minute: "numeric",
+      hourCycle: "h23",
+    });
+
+    const parts = formatter.formatToParts(d);
+    let hour = 0;
+    let minute = 0;
+    for (const part of parts) {
+      if (part.type === "hour") hour = parseInt(part.value, 10);
+      if (part.type === "minute") minute = parseInt(part.value, 10);
+    }
+    if (hour === 24) hour = 0;
+
+    return hour * 60 + minute;
+  } catch {
+    return 0;
+  }
+}
+
 /** Retorna true si la fecha ISO corresponde al día de hoy en Colombia */
 export function esHoy(iso: string, now = new Date()): boolean {
   return getFechaYMDDesdeISO(iso) === getFechaYMDColombia(now);

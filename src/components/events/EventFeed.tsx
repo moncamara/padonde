@@ -5,7 +5,11 @@ import { useTranslations } from "next-intl";
 import { EventCard } from "@/components/events/EventCard";
 import { EventFilters } from "@/components/events/EventFilters";
 import type { CategoriaEvento, EventoConNegocio, FiltroTiempo } from "@/lib/types";
-import { eventoCoincideConFiltroTiempo } from "@/lib/utils";
+import {
+  eventoCoincideConFiltroTiempo,
+  getFechaYMDDesdeISO,
+  getMinutosDelDiaColombia,
+} from "@/lib/utils";
 
 interface EventFeedProps {
   eventos: EventoConNegocio[];
@@ -25,7 +29,7 @@ export function EventFeed({ eventos, zona }: EventFeedProps) {
 
   const eventosFiltrados = useMemo(() => {
     const now = nowRef.current;
-    return eventos.filter((e) => {
+    const filtrados = eventos.filter((e) => {
       const pasaFecha = eventoCoincideConFiltroTiempo(
         e.fecha_inicio,
         filtroTiempo,
@@ -36,6 +40,32 @@ export function EventFeed({ eventos, zona }: EventFeedProps) {
       const pasaCategoria = filtroCategoria === null || e.tipo === filtroCategoria;
 
       return pasaFecha && pasaCategoria;
+    });
+
+    return [...filtrados].sort((a, b) => {
+      // 1. Destacados siempre primero
+      if (a.destacado !== b.destacado) {
+        return a.destacado ? -1 : 1;
+      }
+
+      // 2. Si es filtro "proximos" (días futuros), agrupar cronológicamente por día
+      if (filtroTiempo === "proximos") {
+        const ymdA = getFechaYMDDesdeISO(a.fecha_inicio);
+        const ymdB = getFechaYMDDesdeISO(b.fecha_inicio);
+        if (ymdA !== ymdB) {
+          return ymdA.localeCompare(ymdB);
+        }
+      }
+
+      // 3. De acuerdo a las horas de los eventos: del más temprano al más tarde (hora Colombia)
+      const minA = getMinutosDelDiaColombia(a.fecha_inicio);
+      const minB = getMinutosDelDiaColombia(b.fecha_inicio);
+      if (minA !== minB) {
+        return minA - minB;
+      }
+
+      // 4. Desempate determinista por título
+      return a.titulo.localeCompare(b.titulo);
     });
   }, [eventos, filtroTiempo, filtroCategoria]);
 
