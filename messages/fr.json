@@ -32,7 +32,12 @@
     "chatWithHost": "Écrire à l'hôte",
     "share": "Partager",
     "copied": "Lien copié !",
-    "featured": "En vedette"
+    "featured": "En vedette",
+    "perPerson": "Par personne",
+    "tipTitle": "Conseil PaDónde",
+    "tipContent": "À Minca, le réseau mobile peut varier selon l'altitude. Nous vous conseillons de contacter l'hôte et de confirmer votre réservation à l'avance.",
+    "noDescription": "Aucune description détaillée n'est encore disponible. Vous pouvez contacter directement l'hôte par WhatsApp pour toute question.",
+    "until": "Jusqu'au"
   },
   "publish": {
     "title": "Publier un Plan",

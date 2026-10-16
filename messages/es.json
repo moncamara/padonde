@@ -33,7 +33,12 @@
     "chatWithHost": "Escribir al anfitrión",
     "share": "Compartir",
     "copied": "¡Enlace copiado!",
-    "featured": "Destacado"
+    "featured": "Destacado",
+    "perPerson": "Por persona",
+    "tipTitle": "Tip PaDónde",
+    "tipContent": "En Minca la señal celular puede variar según la montaña. Te recomendamos contactar y confirmar tu reserva con anticipación.",
+    "noDescription": "No hay una descripción detallada disponible para este plan. Puedes contactar directamente al anfitrión para resolver cualquier duda.",
+    "until": "Hasta"
   },
   "publish": {
     "title": "Publicar un Plan",

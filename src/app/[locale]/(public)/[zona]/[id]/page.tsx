@@ -12,6 +12,7 @@ import {
   formatearDiasRecurrencia,
   limpiarDescripcionRecurrencia,
 } from "@/lib/utils";
+import { getEventoTraducido } from "@/lib/translations/eventosTraducciones";
 import { Button } from "@/components/ui/Button";
 import { ShareButton } from "@/components/events/ShareButton";
 import { WhatsAppBookingButton } from "@/components/events/WhatsAppBookingButton";
@@ -24,8 +25,9 @@ interface EventoDetailPageProps {
 
 export async function generateMetadata({ params }: EventoDetailPageProps): Promise<Metadata> {
   const { locale, zona: zonaSlug, id } = await params;
-  const evento = await getEventoById(id);
-  if (!evento) return {};
+  const rawEvento = await getEventoById(id);
+  if (!rawEvento) return {};
+  const evento = getEventoTraducido(rawEvento, locale);
 
   const zona = getZona(zonaSlug);
   const nombreZona = zona?.nombre || "Minca";
@@ -81,8 +83,10 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
 
   setRequestLocale(locale);
 
-  const evento = await getEventoById(id);
-  if (!evento) notFound();
+  const rawEvento = await getEventoById(id);
+  if (!rawEvento) notFound();
+
+  const evento = getEventoTraducido(rawEvento, locale);
 
   const tDetail = await getTranslations("eventDetail");
   const tCat = await getTranslations("categories");
@@ -91,7 +95,7 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
 
   const categoria = getCategoria(evento.tipo);
   const rec = extraerRecurrencia(evento.descripcion);
-  const fecha = formatFecha(evento.fecha_inicio);
+  const fecha = formatFecha(evento.fecha_inicio, locale);
   const hora = formatHora(evento.fecha_inicio);
 
   const precioDisplay =
@@ -246,11 +250,11 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
               <span className="text-base">{rec.esRecurrente ? "🔄" : "📅"}</span>
               <p className="text-xs text-stone mt-1">{tDetail("dateTime")}</p>
               <p className="font-sans font-semibold text-sm text-forest capitalize">
-                {rec.esRecurrente ? formatearDiasRecurrencia(rec.dias) : fecha}
+                {rec.esRecurrente ? formatearDiasRecurrencia(rec.dias, locale) : fecha}
               </p>
               <p className="text-xs text-stone mt-0.5">
                 {hora}
-                {rec.esRecurrente && evento.fecha_fin ? ` · Hasta ${formatFecha(evento.fecha_fin)}` : ""}
+                {rec.esRecurrente && evento.fecha_fin ? ` · ${tDetail("until")} ${formatFecha(evento.fecha_fin, locale)}` : ""}
               </p>
             </div>
 
@@ -261,7 +265,7 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
                 {precioDisplay}
               </p>
               {evento.precio !== null && evento.precio > 0 && (
-                <p className="text-[10px] text-stone">Por persona</p>
+                <p className="text-[10px] text-stone">{tDetail("perPerson")}</p>
               )}
             </div>
           </div>
@@ -272,18 +276,17 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
               {tDetail("about")}
             </h2>
             <div className="font-sans text-sm text-stone leading-relaxed whitespace-pre-line">
-              {limpiarDescripcionRecurrencia(evento.descripcion) ||
-                "No hay una descripción detallada disponible para este plan. Puedes contactar directamente al anfitrión para resolver cualquier duda."}
+              {limpiarDescripcionRecurrencia(evento.descripcion) || tDetail("noDescription")}
             </div>
           </section>
 
           {/* Información de ayuda o tips para la zona */}
           <div className="p-4 rounded-2xl bg-stone-light/40 border border-stone-light/60 text-xs text-stone space-y-1">
             <p className="font-semibold text-forest flex items-center gap-1.5">
-              <span>🌿</span> Tip PaDónde:
+              <span>🌿</span> {tDetail("tipTitle")}:
             </p>
             <p>
-              En Minca la señal celular puede variar según la montaña. Te recomendamos contactar y confirmar tu reserva con anticipación.
+              {tDetail("tipContent")}
             </p>
           </div>
         </div>
@@ -304,10 +307,10 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
           <WhatsAppBookingButton
             href={waLink}
             label={tDetail("bookWhatsApp")}
-            eventoId={evento.id}
-            eventoTitulo={evento.titulo}
-            negocioNombre={evento.negocio.nombre}
-            precio={evento.precio}
+            eventoId={rawEvento.id}
+            eventoTitulo={rawEvento.titulo}
+            negocioNombre={rawEvento.negocio.nombre}
+            precio={rawEvento.precio}
           />
         </div>
       </aside>

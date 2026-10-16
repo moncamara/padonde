@@ -1,10 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/routing";
 import { getCategoria, whatsappLink } from "@/constants";
 import { formatHora, formatPrecio, mensajeWhatsApp, truncar, getEtiquetaHorario } from "@/lib/utils";
+import { getEventoTraducido } from "@/lib/translations/eventosTraducciones";
 import type { EventoConNegocio } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { trackWhatsAppClick } from "@/lib/analytics";
@@ -20,7 +21,10 @@ interface EventCardProps {
  * Toda la tarjeta es clickeable para abrir el detalle del plan,
  * manteniendo el botón de WhatsApp como acción directa de reserva.
  */
-export function EventCard({ evento, zona, priority = false }: EventCardProps) {
+export function EventCard({ evento: rawEvento, zona, priority = false }: EventCardProps) {
+  const locale = useLocale();
+  const evento = getEventoTraducido(rawEvento, locale);
+
   const tCard = useTranslations("eventCard");
   const tCat = useTranslations("categories");
   const tPrice = useTranslations("price");
@@ -98,7 +102,7 @@ export function EventCard({ evento, zona, priority = false }: EventCardProps) {
           <p className="text-stone text-xs font-sans font-medium tracking-wide flex items-center gap-1.5 flex-wrap">
             <span className="text-forest font-semibold">{evento.negocio.nombre}</span>
             <span>·</span>
-            <span className="text-stone">{getEtiquetaHorario(evento)}</span>
+            <span className="text-stone">{getEtiquetaHorario(evento, locale)}</span>
           </p>
 
           {/* Título de la Experiencia en Tipografía Serif */}
@@ -129,11 +133,11 @@ export function EventCard({ evento, zona, priority = false }: EventCardProps) {
             onClick={(e) => {
               e.stopPropagation();
               trackWhatsAppClick({
-                eventoId: evento.id,
-                eventoTitulo: evento.titulo,
-                negocioNombre: evento.negocio.nombre,
+                eventoId: rawEvento.id,
+                eventoTitulo: rawEvento.titulo,
+                negocioNombre: rawEvento.negocio.nombre,
                 ubicacion: "tarjeta",
-                precio: evento.precio,
+                precio: rawEvento.precio,
               });
             }}
           >

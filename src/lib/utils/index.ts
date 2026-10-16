@@ -28,8 +28,17 @@ export function getFechaYMDDesdeISO(iso: string): string {
  * Formatea una fecha ISO para mostrar en la UI en hora colombiana.
  * Ejemplo: "mié, 14 oct"
  */
-export function formatFecha(iso: string): string {
-  return new Intl.DateTimeFormat("es-CO", {
+export function formatFecha(iso: string, locale = "es"): string {
+  const intlLocale =
+    locale === "de"
+      ? "de-DE"
+      : locale === "fr"
+      ? "fr-FR"
+      : locale === "en"
+      ? "en-US"
+      : "es-CO";
+
+  return new Intl.DateTimeFormat(intlLocale, {
     timeZone: TIMEZONE_COLOMBIA,
     weekday: "short",
     day: "numeric",
@@ -200,56 +209,75 @@ export function inyectarRecurrencia(descripcion: string, dias: number[]): string
  * Formatea los días de la semana en un texto amigable y legible para humanos.
  * Ej: "Todos los días", "Lun a Vie", "Vie, Sáb y Dom", "Fines de semana".
  */
-export function formatearDiasRecurrencia(dias: number[]): string {
+export function formatearDiasRecurrencia(dias: number[], locale = "es"): string {
   if (!dias || dias.length === 0) return "";
-  if (dias.length === 7) return "Todos los días";
+  if (dias.length === 7) {
+    if (locale === "de") return "Jeden Tag";
+    if (locale === "fr") return "Tous les jours";
+    if (locale === "en") return "Every day";
+    return "Todos los días";
+  }
 
   const diasSet = new Set(dias);
   if (dias.length === 5 && [1, 2, 3, 4, 5].every((d) => diasSet.has(d))) {
+    if (locale === "de") return "Mo bis Fr";
+    if (locale === "fr") return "Lun au Ven";
+    if (locale === "en") return "Mon to Fri";
     return "Lun a Vie";
   }
   if (dias.length === 6 && [1, 2, 3, 4, 5, 6].every((d) => diasSet.has(d))) {
+    if (locale === "de") return "Mo bis Sa";
+    if (locale === "fr") return "Lun au Sam";
+    if (locale === "en") return "Mon to Sat";
     return "Lun a Sáb";
   }
   if (dias.length === 3 && [5, 6, 0].every((d) => diasSet.has(d))) {
+    if (locale === "de") return "Fr, Sa & So";
+    if (locale === "fr") return "Ven, Sam et Dim";
+    if (locale === "en") return "Fri, Sat & Sun";
     return "Vie, Sáb y Dom";
   }
   if (dias.length === 2 && [6, 0].every((d) => diasSet.has(d))) {
+    if (locale === "de") return "Wochenenden";
+    if (locale === "fr") return "Week-ends";
+    if (locale === "en") return "Weekends";
     return "Fines de semana";
   }
 
-  const nombresCortos: Record<number, string> = {
-    1: "Lun",
-    2: "Mar",
-    3: "Mié",
-    4: "Jue",
-    5: "Vie",
-    6: "Sáb",
-    0: "Dom",
+  const nombresPorIdioma: Record<string, Record<number, string>> = {
+    es: { 1: "Lun", 2: "Mar", 3: "Mié", 4: "Jue", 5: "Vie", 6: "Sáb", 0: "Dom" },
+    en: { 1: "Mon", 2: "Tue", 3: "Wed", 4: "Thu", 5: "Fri", 6: "Sat", 0: "Sun" },
+    de: { 1: "Mo", 2: "Di", 3: "Mi", 4: "Do", 5: "Fr", 6: "Sa", 0: "So" },
+    fr: { 1: "Lun", 2: "Mar", 3: "Mer", 4: "Jeu", 5: "Ven", 6: "Sam", 0: "Dim" },
   };
+
+  const nombresCortos = nombresPorIdioma[locale] || nombresPorIdioma.es;
   const ordenados = [...dias].sort((a, b) => (a === 0 ? 7 : a) - (b === 0 ? 7 : b));
   return ordenados.map((d) => nombresCortos[d]).join(", ");
 }
 
 /**
  * Genera la etiqueta de fecha y hora para mostrar en tarjetas y cabeceras.
- * Si es recurrente: "🔄 Todos los días · 6:00 AM"
- * Si es puntual: "jue, 15 oct · 7:00 PM"
+ * Si es recurrente: "🔄 Todos los días · 6:00 AM" / "🔄 Every day · 6:00 AM"
+ * Si es puntual: "jue, 15 oct · 7:00 PM" / "Thu, Oct 15 · 7:00 PM"
  */
-export function getEtiquetaHorario(evento: {
-  fecha_inicio: string;
-  fecha_fin?: string | null;
-  descripcion?: string | null;
-}): string {
+export function getEtiquetaHorario(
+  evento: {
+    fecha_inicio: string;
+    fecha_fin?: string | null;
+    descripcion?: string | null;
+  },
+  locale = "es"
+): string {
   const rec = extraerRecurrencia(evento.descripcion);
   const hora = formatHora(evento.fecha_inicio);
 
   if (rec.esRecurrente) {
-    const diasTexto = formatearDiasRecurrencia(rec.dias);
+    const diasTexto = formatearDiasRecurrencia(rec.dias, locale);
     return `🔄 ${diasTexto} · ${hora}`;
   }
 
-  return `${formatFecha(evento.fecha_inicio)} · ${hora}`;
+  return `${formatFecha(evento.fecha_inicio, locale)} · ${hora}`;
 }
 
 /**
