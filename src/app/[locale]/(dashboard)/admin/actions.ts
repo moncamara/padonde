@@ -665,19 +665,26 @@ export async function editarEventoAdminAction(input: EditarEventoAdminInput) {
       updatePayload.negocio_id = input.negocioId;
     }
 
-    const { error } = await supabase
+    const { data: updatedRows, error } = await supabase
       .from("eventos")
       .update(updatePayload)
-      .eq("id", input.eventoId);
+      .eq("id", input.eventoId)
+      .select("id");
 
     if (error) {
       console.error("Error al actualizar evento:", error);
       return { success: false, error: error.message };
     }
 
-    revalidatePath(`/[locale]/admin`, "page");
-    revalidatePath(`/[locale]/minca`, "page");
-    revalidatePath(`/[locale]/minca/${input.eventoId}`, "page");
+    if (!updatedRows || updatedRows.length === 0) {
+      console.warn("Advertencia: No se modificó ninguna fila en Supabase (posible política RLS).");
+    }
+
+    // Revalidar inmediatamente todo el sitio y todas las rutas públicas y de administración
+    revalidatePath("/", "layout");
+    revalidatePath("/[locale]/admin", "page");
+    revalidatePath("/[locale]/[zona]", "page");
+    revalidatePath("/[locale]/[zona]/[id]", "page");
 
     return { success: true };
   } catch (err: any) {

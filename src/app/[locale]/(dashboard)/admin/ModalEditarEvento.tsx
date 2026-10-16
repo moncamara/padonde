@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { CATEGORIAS } from "@/constants";
 import {
   isoADatetimeLocalColombia,
+  parseLocalColombiaAISO,
   extraerRecurrencia,
   limpiarDescripcionRecurrencia,
   inyectarRecurrencia,
@@ -31,6 +33,7 @@ export function ModalEditarEvento({
   onSaved,
   onDeleted,
 }: ModalEditarEventoProps) {
+  const router = useRouter();
   const [titulo, setTitulo] = useState(evento.titulo);
   const [negocioId, setNegocioId] = useState(
     evento.negocio_id || (evento.negocio as any)?.id || ""
@@ -138,6 +141,7 @@ export function ModalEditarEvento({
         descripcion: descripcionFinal || null,
         tipo,
         precio: parseFloat(precio) || 0,
+        fecha_inicio: parseLocalColombiaAISO(dateTime),
         fecha_fin: esRecurrente || fechaFin ? fechaFin : null,
         destacado,
         activo,
@@ -152,6 +156,7 @@ export function ModalEditarEvento({
           : evento.negocio,
       });
 
+      router.refresh();
       onClose();
     } catch (err: any) {
       setError(err?.message || "Error inesperado al guardar.");
@@ -555,24 +560,31 @@ export function ModalEditarEvento({
           </div>
 
           {/* Footer de Acciones del Formulario */}
-          <div className="pt-3 border-t border-stone-light/70 flex items-center justify-end gap-2.5 sticky bottom-0 bg-white">
-            <Button
-              type="button"
-              variant="outline"
-              size="md"
-              onClick={onClose}
-              disabled={loading || deleting}
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              size="md"
-              disabled={loading || deleting}
-              className="shadow-sm"
-            >
-              {loading ? "Guardando cambios..." : "Guardar Cambios"}
-            </Button>
+          <div className="pt-3 border-t border-stone-light/70 sticky bottom-0 bg-white space-y-2">
+            {error && (
+              <div className="p-2.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 font-sans">
+                ⚠️ {error}
+              </div>
+            )}
+            <div className="flex items-center justify-end gap-2.5">
+              <Button
+                type="button"
+                variant="outline"
+                size="md"
+                onClick={onClose}
+                disabled={loading || deleting}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                size="md"
+                disabled={loading || deleting}
+                className="shadow-sm"
+              >
+                {loading ? "Guardando cambios..." : "Guardar Cambios"}
+              </Button>
+            </div>
           </div>
         </form>
       </div>
