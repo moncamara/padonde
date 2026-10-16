@@ -379,15 +379,13 @@ export function eventoCoincideConFiltroTiempo(
 
 /**
  * Formatea un precio para mostrar en la UI.
- * Si precio es null, retorna "Consultar" (precio no definido).
- * Si precio es 0, retorna "Gratis".
+ * Si precio es null o 0, retorna "Consultar" (precio no definido o a consultar).
  */
 export function formatPrecio(
   precio: number | null,
   moneda: "COP" | "USD" = "COP"
 ): string {
-  if (precio === null) return "Consultar";
-  if (precio === 0) return "Gratis";
+  if (precio === null || precio === 0) return "Consultar";
 
   return new Intl.NumberFormat("es-CO", {
     style: "currency",

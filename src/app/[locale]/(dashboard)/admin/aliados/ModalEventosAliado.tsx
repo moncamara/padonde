@@ -102,10 +102,10 @@ export function ModalEventosAliado({
               </div>
             ) : (
               eventos.map((ev) => {
-                const precioTexto =
-                  ev.precio === null || ev.precio === 0
-                    ? "Gratis / Libre"
-                    : formatPrecio(ev.precio, (ev.precio_moneda as "COP" | "USD") || "COP");
+                const precioTexto = formatPrecio(
+                  ev.precio,
+                  (ev.precio_moneda as "COP" | "USD") || "COP"
+                );
 
                 const horarioBadge = getEtiquetaHorario(ev);
 

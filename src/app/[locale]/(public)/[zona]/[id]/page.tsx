@@ -99,10 +99,8 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
   const hora = formatHora(evento.fecha_inicio);
 
   const precioDisplay =
-    evento.precio === null
+    evento.precio === null || evento.precio === 0
       ? tPrice("consult")
-      : evento.precio === 0
-      ? tPrice("free")
       : formatPrecio(evento.precio, evento.precio_moneda);
 
   const refCode = evento.id.slice(0, 5).toUpperCase();

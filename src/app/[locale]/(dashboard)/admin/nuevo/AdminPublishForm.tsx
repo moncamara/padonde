@@ -240,7 +240,7 @@ export function AdminPublishForm({
 
           <div>
             <label className="block text-xs font-medium text-forest mb-1.5 font-sans">
-              Precio COP (0 = Gratis) *
+              Precio COP (0 = Consultar) *
             </label>
             <input
               type="number"

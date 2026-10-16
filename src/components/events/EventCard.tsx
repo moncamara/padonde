@@ -33,12 +33,10 @@ export function EventCard({ evento: rawEvento, zona, priority = false }: EventCa
   const categoria = getCategoria(evento.tipo);
   const hora = formatHora(evento.fecha_inicio);
   
-  // Si es 0 o null, usamos la traducción correspondiente
+  // Si es 0 o null, mostramos precio a consultar
   const precioDisplay =
-    evento.precio === null
+    evento.precio === null || evento.precio === 0
       ? tPrice("consult")
-      : evento.precio === 0
-      ? tPrice("free")
       : formatPrecio(evento.precio, evento.precio_moneda);
 
   const refCode = evento.id.slice(0, 5).toUpperCase();

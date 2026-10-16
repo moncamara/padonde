@@ -305,10 +305,10 @@ export function ModalEditarEvento({
                 value={precio}
                 onChange={(e) => setPrecio(e.target.value)}
                 className="w-full px-3.5 py-2.5 rounded-xl border border-stone-light bg-stone-50/50 text-forest text-sm font-sans focus:outline-none focus:border-forest focus:bg-white transition-colors"
-                placeholder="0 = Gratis"
+                placeholder="0 = Consultar"
               />
               <span className="text-[10px] text-stone font-sans mt-0.5 block">
-                0 para evento gratuito o sin cobro directo.
+                0 para consultar precio o sin cobro directo.
               </span>
             </div>
           </div>
