@@ -16,6 +16,46 @@ export type LocaleCode = "es" | "en" | "de" | "fr";
  * Diccionario curado de eventos en Minca por clave identificadora.
  */
 const TRADUCCIONES_EVENTOS: Record<string, Partial<Record<"en" | "de" | "fr", EventoTraduccion>>> = {
+  // 🏡 0. La Veranda Hotels (Promo Octubre 3x2)
+  "la-veranda": {
+    en: {
+      titulo: "Escape to Minca in October — 3x2 Stay at La Veranda Hotels",
+      descripcion: `✨ Escape to Minca this October! ✨
+
+🏡 Book 2 nights and get the 3rd night FREE at La Veranda Hotels.
+
+💦 Rest, lush nature, and pool relaxation await you in the Sierra Nevada.
+
+📲 Message us to book directly with us!
+
+#LaVerandaExperience #Minca #SantaMarta`,
+    },
+    de: {
+      titulo: "Auszeit in Minca im Oktober — 3 Nächte zum Preis von 2 im La Veranda Hotels",
+      descripcion: `✨ Kurzurlaub in Minca im Oktober! ✨
+
+🏡 Buche 2 Nächte und erhalte die 3. Nacht GRATIS im La Veranda Hotels.
+
+💦 Erholung, üppige Natur und ein Pool erwarten dich in der Sierra Nevada.
+
+📲 Kontaktiere uns und buche direkt bei uns!
+
+#LaVerandaExperience #Minca #SantaMarta`,
+    },
+    fr: {
+      titulo: "Échappez-vous à Minca en Octobre — 3 Nuits pour le Prix de 2 à La Veranda Hotels",
+      descripcion: `✨ Échappez-vous à Minca en octobre ! ✨
+
+🏡 Réservez 2 nuits et profitez de la 3ème nuit GRATUITE à La Veranda Hotels.
+
+💦 Détente, nature luxuriante et piscine vous attendent dans la Sierra Nevada.
+
+📲 Écrivez-nous et réservez directement avec nous !
+
+#LaVerandaExperience #Minca #SantaMarta`,
+    },
+  },
+
   // 🦜 1. Jam Birding Minca
   "jam-birding": {
     en: {
@@ -342,6 +382,9 @@ function identificarClaveEvento(evento: {
   const t = (evento.titulo || "").toLowerCase();
   const d = (evento.descripcion || "").toLowerCase();
 
+  if (t.includes("veranda") || d.includes("veranda")) {
+    return "la-veranda";
+  }
   if (t.includes("birding") || t.includes("avistamiento de aves") || t.includes("jam")) {
     return "jam-birding";
   }
