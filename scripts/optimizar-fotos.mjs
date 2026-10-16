@@ -6,6 +6,7 @@
 import fs from "fs";
 import path from "path";
 import os from "os";
+import { execSync } from "child_process";
 import sharp from "sharp";
 
 const HOME_DIR = os.homedir();
@@ -78,9 +79,21 @@ async function optimizarFotos() {
     const statEntrada = fs.statSync(rutaEntrada);
     const tamanoOriginal = statEntrada.size;
 
+    let rutaParaSharp = rutaEntrada;
+    let tempJpgParaBorrar = null;
+
     try {
+      const ext = path.extname(archivo).toLowerCase();
+      if (ext === ".heic") {
+        tempJpgParaBorrar = path.join(os.tmpdir(), `temp_${Date.now()}_${nombreLimpio}.jpg`);
+        execSync(`sips -s format jpeg "${rutaEntrada}" --out "${tempJpgParaBorrar}"`, {
+          stdio: "ignore",
+        });
+        rutaParaSharp = tempJpgParaBorrar;
+      }
+
       // Proceso con sharp: orientación auto, max 1200x900, WebP 80% calidad
-      const bufferOptimizado = await sharp(rutaEntrada)
+      const bufferOptimizado = await sharp(rutaParaSharp)
         .rotate() // Respeta orientación del celular
         .resize(1200, 900, {
           fit: "inside",
@@ -108,6 +121,12 @@ async function optimizarFotos() {
       procesadas++;
     } catch (err) {
       console.error(`❌ Error al procesar "${archivo}":`, err.message, "\n");
+    } finally {
+      if (tempJpgParaBorrar && fs.existsSync(tempJpgParaBorrar)) {
+        try {
+          fs.unlinkSync(tempJpgParaBorrar);
+        } catch {}
+      }
     }
   }
 
