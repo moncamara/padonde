@@ -409,13 +409,30 @@ export async function importarLoteEventosRealesAction() {
       },
       {
         negocioNombre: "Feeling Bar Minca",
-        titulo: "Menú del Día y Almuerzos en Feeling Bar",
-        descripcion: "Pasta penne en pesto de la casa, cerdo a la plancha en salsa de maracuyá, lentejas, ensalada fresca y jugo del día natural. Sabores frescos con mucho amor.",
+        titulo: "Menú del Día en Feeling Bar — Rollitos de Repollo",
+        descripcion: `🌿🍽️ ¡Hoy en Feeling – Menú del Día! 😋
+
+🥬 Rollitos de repollo rellenos de carne molida 
+🥔 Papas cocidas o arroz
+🥗 Ensalada fresca
+🍲 Sopa de frijoles negros
+🍋 Limonada natural
+
+💰 ¡Todo por solo $20.000 COP!
+
+❤️ Comida casera, fresca y llena de sabor, preparada con amor.
+
+📍 ¡Te esperamos en Feeling, Minca! 🌴✨
+(📸 Imagen de referencia - la realidad es más rica)
+
+📲 Escríbenos y haz tu pedido o reserva tu mesa.
+
+<!--recurrente:1,2,3,4,5,6,0-->`,
         tipo: "comida",
         precio: 20000,
-        fechaInicio: "2026-10-15T12:00:00-05:00",
-        fechaFin: "2026-10-15T16:00:00-05:00",
-        imagenUrl: "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/eventos_reales/feeling-bar-almuerzo.webp",
+        fechaInicio: "2026-10-16T12:00:00-05:00",
+        fechaFin: "2026-11-30T16:30:00-05:00",
+        imagenUrl: "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/eventos_reales/feeling-menu-rollitos.webp",
         destacado: false,
       },
       {

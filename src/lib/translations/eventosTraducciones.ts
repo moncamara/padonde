@@ -50,6 +50,56 @@ const TRADUCCIONES_EVENTOS: Record<string, Partial<Record<"en" | "de" | "fr", Ev
     },
   },
 
+  // 🍽️ Feeling Bar Minca (Menú del Día)
+  feeling: {
+    en: {
+      titulo: "Daily Special Lunch — Feeling Bar Minca",
+      descripcion: `🌿🍽️ Today at Feeling – Daily Lunch Menu! 😋
+
+🥬 Stuffed cabbage rolls with seasoned ground beef
+🥔 Steamed potatoes or rice
+🥗 Fresh mountain garden salad
+🍲 Black bean soup
+🍋 Natural fresh lemonade
+
+💰 Full lunch for only $20,000 COP!
+❤️ Fresh, homemade food prepared with love in the heart of Minca.
+
+📍 We look forward to seeing you at Feeling, Minca! 🌴✨
+(📸 Reference photo - reality is even tastier!)`,
+    },
+    de: {
+      titulo: "Tagesmenü & Mittagessen — Feeling Bar Minca",
+      descripcion: `🌿🍽️ Heute im Feeling – Tagesmenü! 😋
+
+🥬 Gefüllte Kohlrouladen mit Rinderhackfleisch
+🥔 Salzkartoffeln oder Reis
+🥗 Frischer Salat
+🍲 Schwarze Bohnensuppe
+🍋 Frische Limonade
+
+💰 Komplettes Menü für nur $20.000 COP!
+❤️ Hausgemachte, frische Speisen mit Liebe zubereitet im Herzen von Minca.
+
+📍 Wir freuen uns auf dich im Feeling, Minca! 🌴✨`,
+    },
+    fr: {
+      titulo: "Menu du Jour & Déjeuner — Feeling Bar Minca",
+      descripcion: `🌿🍽️ Aujourd'hui au Feeling – Menu du Jour ! 😋
+
+🥬 Roulés de chou farcis à la viande hachée
+🥔 Pommes de terre vapeur ou riz
+🥗 Salade fraîche
+🍲 Soupe de haricots noirs
+🍋 Limonade fraîche naturelle
+
+💰 Tout compris pour seulement $20.000 COP !
+❤️ Cuisine maison, fraîche et pleine de saveurs préparée avec amour.
+
+📍 On vous attend au Feeling, Minca ! 🌴✨`,
+    },
+  },
+
   // 🌿 2. Canúmake Minca (Nina & Samuel)
   canumake: {
     en: {
@@ -294,6 +344,9 @@ function identificarClaveEvento(evento: {
 
   if (t.includes("birding") || t.includes("avistamiento de aves") || t.includes("jam")) {
     return "jam-birding";
+  }
+  if (t.includes("feeling") || d.includes("feeling") || t.includes("rollitos")) {
+    return "feeling";
   }
   if (t.includes("canúmake") || t.includes("canumake") || t.includes("dschungeltour") || d.includes("nina y samuel")) {
     return "canumake";
