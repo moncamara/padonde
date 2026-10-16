@@ -310,6 +310,7 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
             eventoId={rawEvento.id}
             eventoTitulo={rawEvento.titulo}
             negocioNombre={rawEvento.negocio.nombre}
+            negocioId={rawEvento.negocio_id}
             precio={rawEvento.precio}
           />
         </div>

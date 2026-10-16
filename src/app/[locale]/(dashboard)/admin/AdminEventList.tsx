@@ -37,6 +37,7 @@ export interface EventoAdminItem {
     nombre: string;
     whatsapp: string;
   } | null;
+  clicsCount?: number;
 }
 
 interface AdminEventListProps {
@@ -260,6 +261,14 @@ export function AdminEventList({ eventos, negocios = [], locale }: AdminEventLis
                       🎟️ Boletos
                     </span>
                   )}
+
+                  {/* Métrica de Clics a WhatsApp */}
+                  <span
+                    className="text-[10px] bg-emerald-50 text-emerald-800 border border-emerald-200/90 px-2 py-0.5 rounded-full font-medium"
+                    title="Clics de reserva directa vía WhatsApp generados por PaDónde"
+                  >
+                    📲 {ev.clicsCount || 0} clics
+                  </span>
                 </div>
 
                 {/* Datos del Negocio y Fecha */}

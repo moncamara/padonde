@@ -39,6 +39,8 @@ export interface AliadoItem {
   created_at: string;
   totalEventos: number;
   eventosActivos: number;
+  totalClics?: number;
+  clics7Dias?: number;
   eventos?: EventoAliadoItem[];
 }
 
@@ -350,19 +352,33 @@ export function AdminAliadosList({
                   </span>
                 </div>
 
-                {/* Acceso Rápido a Eventos del Aliado */}
-                <button
-                  type="button"
-                  onClick={() => setAliadoParaVerEventos(aliado)}
-                  className="inline-flex items-center gap-1.5 text-xs text-forest hover:text-terra font-semibold hover:underline cursor-pointer bg-forest/5 hover:bg-forest/10 px-2.5 py-1 rounded-xl transition-all shrink-0 self-start sm:self-auto"
-                  title={`Ver y gestionar las ${aliado.totalEventos} publicaciones de este aliado`}
-                >
-                  <span>🎪</span>
-                  <span>
-                    {aliado.eventosActivos} vigentes ({aliado.totalEventos} total)
-                  </span>
-                  <span className="text-[10px]">↗</span>
-                </button>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {/* Métrica de Clics a WhatsApp */}
+                  <div
+                    className="inline-flex items-center gap-1.5 text-xs text-emerald-800 bg-emerald-50 border border-emerald-200/90 px-2.5 py-1 rounded-xl font-medium shrink-0"
+                    title="Personas interesadas que hicieron clic en Reservar por WhatsApp"
+                  >
+                    <span>📲</span>
+                    <span>{aliado.totalClics || 0} clics</span>
+                    {typeof aliado.clics7Dias === "number" && aliado.clics7Dias > 0 && (
+                      <span className="text-[10px] text-emerald-600 font-bold">(+{aliado.clics7Dias} en 7d)</span>
+                    )}
+                  </div>
+
+                  {/* Acceso Rápido a Eventos del Aliado */}
+                  <button
+                    type="button"
+                    onClick={() => setAliadoParaVerEventos(aliado)}
+                    className="inline-flex items-center gap-1.5 text-xs text-forest hover:text-terra font-semibold hover:underline cursor-pointer bg-forest/5 hover:bg-forest/10 px-2.5 py-1 rounded-xl transition-all shrink-0 self-start sm:self-auto"
+                    title={`Ver y gestionar las ${aliado.totalEventos} publicaciones de este aliado`}
+                  >
+                    <span>🎪</span>
+                    <span>
+                      {aliado.eventosActivos} vigentes ({aliado.totalEventos} total)
+                    </span>
+                    <span className="text-[10px]">↗</span>
+                  </button>
+                </div>
               </div>
 
               {/* Fila 2: Metadatos de Contacto (Categoría, WhatsApp, Instagram) */}
@@ -609,7 +625,12 @@ export function AdminAliadosList({
         const est = getEstadoExpiracion(reporteNegocio);
         const cleanWa = reporteNegocio.whatsapp.replace(/\D/g, "");
 
-        const textoReporte = `🌿 *Reporte de Impacto PaDónde* — *${reporteNegocio.nombre}*\n📍 *Minca, Sierra Nevada de Santa Marta*\n\nHola! Te compartimos el balance de visibilidad de tu negocio en la cartelera:\n\n• 🟢 *Eventos vigentes en cartelera:* ${reporteNegocio.eventosActivos}\n• 📅 *Total de eventos registrados:* ${reporteNegocio.totalEventos}\n• ⭐ *Plan comercial:* ${reporteNegocio.plan.toUpperCase()} (${est.texto})\n• 🏷️ *Categoría:* ${reporteNegocio.categoria}\n\n🔗 *Ver cartelera:* https://padonde.lat/es/minca\n\n¡Gracias por conectar a viajeros y locales con lo mejor de Minca! 🌿`;
+        const clicsTexto =
+          typeof reporteNegocio.totalClics === "number" && reporteNegocio.totalClics > 0
+            ? `• 📲 *Clientes interesados directos a tu WhatsApp:* ${reporteNegocio.totalClics} personas${reporteNegocio.clics7Dias ? ` (+${reporteNegocio.clics7Dias} esta semana)` : ""}\n`
+            : "";
+
+        const textoReporte = `🌿 *Reporte de Impacto PaDónde* — *${reporteNegocio.nombre}*\n📍 *Minca, Sierra Nevada de Santa Marta*\n\nHola! Te compartimos el balance de visibilidad y clientes que generó tu negocio en la cartelera:\n\n${clicsTexto}• 🟢 *Eventos vigentes en cartelera:* ${reporteNegocio.eventosActivos}\n• 📅 *Total de eventos registrados:* ${reporteNegocio.totalEventos}\n• ⭐ *Plan comercial:* ${reporteNegocio.plan.toUpperCase()} (${est.texto})\n• 🏷️ *Categoría:* ${reporteNegocio.categoria}\n\n🔗 *Ver cartelera:* https://padonde.lat/es/minca\n\n¡Gracias por conectar a viajeros y locales con lo mejor de Minca! 🌿`;
 
         const waUrl = `https://wa.me/${cleanWa}?text=${encodeURIComponent(textoReporte)}`;
 
@@ -648,21 +669,33 @@ export function AdminAliadosList({
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 text-xs">
-                  <div className="p-2.5 bg-white/10 rounded-xl">
-                    <span className="text-[10px] text-cream/70 block">Eventos Vigentes</span>
-                    <span className="font-serif text-2xl font-bold text-cream mt-0.5 block">
-                      {reporteNegocio.eventosActivos}
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div className="p-2.5 bg-emerald-500/20 border border-emerald-400/30 rounded-xl">
+                    <span className="text-[10px] text-emerald-200 block">Clientes WhatsApp</span>
+                    <span className="font-serif text-2xl font-bold text-white mt-0.5 block">
+                      {reporteNegocio.totalClics || 0}
                     </span>
-                    <span className="text-[9px] text-emerald-300">En cartelera ahora</span>
+                    <span className="text-[9px] text-emerald-300">
+                      {typeof reporteNegocio.clics7Dias === "number" && reporteNegocio.clics7Dias > 0
+                        ? `+${reporteNegocio.clics7Dias} en 7d`
+                        : "Prospectos"}
+                    </span>
                   </div>
 
                   <div className="p-2.5 bg-white/10 rounded-xl">
-                    <span className="text-[10px] text-cream/70 block">Historial Publicado</span>
+                    <span className="text-[10px] text-cream/70 block">Vigentes</span>
+                    <span className="font-serif text-2xl font-bold text-cream mt-0.5 block">
+                      {reporteNegocio.eventosActivos}
+                    </span>
+                    <span className="text-[9px] text-emerald-300">En cartelera</span>
+                  </div>
+
+                  <div className="p-2.5 bg-white/10 rounded-xl">
+                    <span className="text-[10px] text-cream/70 block">Historial</span>
                     <span className="font-serif text-2xl font-bold text-cream mt-0.5 block">
                       {reporteNegocio.totalEventos}
                     </span>
-                    <span className="text-[9px] text-cream/70">Planes acumulados</span>
+                    <span className="text-[9px] text-cream/70">Planes</span>
                   </div>
                 </div>
 

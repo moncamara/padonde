@@ -9,6 +9,7 @@ interface WhatsAppBookingButtonProps {
   eventoId: string;
   eventoTitulo: string;
   negocioNombre: string;
+  negocioId?: string;
   precio?: number | null;
 }
 
@@ -18,6 +19,7 @@ export function WhatsAppBookingButton({
   eventoId,
   eventoTitulo,
   negocioNombre,
+  negocioId,
   precio,
 }: WhatsAppBookingButtonProps) {
   return (
@@ -31,6 +33,7 @@ export function WhatsAppBookingButton({
           eventoId,
           eventoTitulo,
           negocioNombre,
+          negocioId,
           ubicacion: "detalle",
           precio,
         });

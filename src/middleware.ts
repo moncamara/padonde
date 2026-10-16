@@ -1,4 +1,4 @@
-import { type NextRequest } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import createMiddleware from "next-intl/middleware";
 import { createServerClient } from "@supabase/ssr";
 import { routing } from "@/i18n/routing";
@@ -6,6 +6,11 @@ import { routing } from "@/i18n/routing";
 const handleI18nRouting = createMiddleware(routing);
 
 export default async function middleware(request: NextRequest) {
+  // Las rutas de API internas no requieren redirección de idiomas
+  if (request.nextUrl.pathname.startsWith("/api")) {
+    return NextResponse.next();
+  }
+
   // 1. Manejar enrutamiento de idiomas
   const response = handleI18nRouting(request);
 
@@ -37,5 +42,5 @@ export default async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/(es|en|fr)/:path*", "/((?!_next|_vercel|.*\\..*).*)"],
+  matcher: ["/", "/(es|en|de|fr)/:path*", "/((?!api|_next|_vercel|.*\\..*).*)"],
 };

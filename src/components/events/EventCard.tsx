@@ -136,6 +136,7 @@ export function EventCard({ evento: rawEvento, zona, priority = false }: EventCa
                 eventoId: rawEvento.id,
                 eventoTitulo: rawEvento.titulo,
                 negocioNombre: rawEvento.negocio.nombre,
+                negocioId: rawEvento.negocio_id,
                 ubicacion: "tarjeta",
                 precio: rawEvento.precio,
               });

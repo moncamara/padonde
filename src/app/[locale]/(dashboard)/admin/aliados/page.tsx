@@ -56,10 +56,34 @@ export default async function AdminAliadosPage({
     .order("nombre", { ascending: true });
 
   const ahora = new Date();
+  const hace7Dias = new Date(ahora.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+  // 2.1 Cargar clics de WhatsApp (fail-safe para producción)
+  let rawClics: { evento_id: string | null; negocio_id: string | null; created_at: string }[] = [];
+  try {
+    const { data: clicsData, error: clicsErr } = await supabase
+      .from("clics_whatsapp")
+      .select("evento_id, negocio_id, created_at");
+    if (!clicsErr && clicsData) {
+      rawClics = clicsData;
+    }
+  } catch {
+    // Silencioso para garantizar cero caídas en producción
+  }
+
+  const totalClicsGlobal = rawClics.length;
+  const totalClics7DiasGlobal = rawClics.filter(
+    (c) => new Date(c.created_at) >= hace7Dias
+  ).length;
 
   // 3. Normalizar datos
   const aliados: AliadoItem[] = (rawNegocios || []).map((n: any) => {
     const evList = Array.isArray(n.eventos) ? n.eventos : [];
+    const evIds = new Set(evList.map((e: any) => e.id));
+    const clicsAliado = rawClics.filter(
+      (c) => (c.negocio_id && c.negocio_id === n.id) || (c.evento_id && evIds.has(c.evento_id))
+    );
+
     const eventosOrdenados = [...evList].sort(
       (a: any, b: any) => new Date(b.fecha_inicio).getTime() - new Date(a.fecha_inicio).getTime()
     );
@@ -77,6 +101,8 @@ export default async function AdminAliadosPage({
       created_at: n.created_at,
       totalEventos: evList.length,
       eventosActivos: evList.filter((e: any) => e.activo).length,
+      totalClics: clicsAliado.length,
+      clics7Dias: clicsAliado.filter((c) => new Date(c.created_at) >= hace7Dias).length,
       eventos: eventosOrdenados,
     };
   });
@@ -121,8 +147,8 @@ export default async function AdminAliadosPage({
           </p>
         </div>
 
-        {/* 4 KPIs de Monetización B2B */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+        {/* 5 KPIs de Monetización B2B y Conversión */}
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3">
           <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-white/70 border border-stone-light/80 shadow-xs">
             <p className="text-[10px] sm:text-[11px] text-stone font-sans uppercase tracking-wider">
               Total Aliados
@@ -142,6 +168,18 @@ export default async function AdminAliadosPage({
             </p>
             <p className="text-[10px] text-emerald-700 font-medium mt-0.5 truncate">
               ⭐ Planes activos
+            </p>
+          </div>
+
+          <div className="col-span-2 sm:col-span-1 p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-emerald-50/70 border border-emerald-200/80 shadow-xs">
+            <p className="text-[10px] sm:text-[11px] text-emerald-800 font-sans uppercase tracking-wider font-semibold">
+              Clics WhatsApp
+            </p>
+            <p className="font-serif text-xl sm:text-2xl text-emerald-900 font-bold mt-0.5">
+              {totalClicsGlobal}
+            </p>
+            <p className="text-[10px] text-emerald-700 font-medium mt-0.5 truncate">
+              📲 +{totalClics7DiasGlobal} en 7 días
             </p>
           </div>
 

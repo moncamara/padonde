@@ -63,7 +63,29 @@ export default async function AdminDashboardPage({
     .from("negocios")
     .select("*", { count: "exact", head: true });
 
-  const eventos: EventoAdminItem[] = (rawEventos || []) as any;
+  // 2.1 Cargar conteos de clics de WhatsApp (con fail-safe para producción)
+  const clicsPorEvento: Record<string, number> = {};
+  let totalClicsGlobal = 0;
+  try {
+    const { data: rawClics, error: clicsError } = await supabase
+      .from("clics_whatsapp")
+      .select("evento_id");
+    if (!clicsError && rawClics) {
+      totalClicsGlobal = rawClics.length;
+      for (const c of rawClics) {
+        if (c.evento_id) {
+          clicsPorEvento[c.evento_id] = (clicsPorEvento[c.evento_id] || 0) + 1;
+        }
+      }
+    }
+  } catch {
+    // Silencioso para garantizar cero caídas en producción
+  }
+
+  const eventos: EventoAdminItem[] = (rawEventos || []).map((ev: any) => ({
+    ...ev,
+    clicsCount: clicsPorEvento[ev.id] || 0,
+  }));
 
   // 3. Cálculos de métricas operativas en horario Colombia (UTC-5)
   const hoyYMD = getFechaYMDColombia(new Date());
@@ -109,8 +131,8 @@ export default async function AdminDashboardPage({
           </Link>
         </div>
 
-        {/* 4 Métricas Clave de Salud Operativa */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+        {/* 5 Métricas Clave de Salud Operativa y Conversión */}
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3">
           <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-white/70 border border-stone-light/80 shadow-xs">
             <p className="text-[10px] sm:text-[11px] text-stone font-sans uppercase tracking-wider">Vigentes</p>
             <p className="font-serif text-xl sm:text-2xl text-forest font-bold mt-0.5">
@@ -143,6 +165,18 @@ export default async function AdminDashboardPage({
               {totalNegocios || 0}
             </p>
             <p className="text-[10px] text-stone mt-0.5 truncate">🏛️ Comercios</p>
+          </div>
+
+          <div className="col-span-2 sm:col-span-1 p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-emerald-50/70 border border-emerald-200/80 shadow-xs">
+            <p className="text-[10px] sm:text-[11px] text-emerald-800 font-sans uppercase tracking-wider font-semibold">
+              Clics WhatsApp
+            </p>
+            <p className="font-serif text-xl sm:text-2xl text-emerald-900 font-bold mt-0.5">
+              {totalClicsGlobal}
+            </p>
+            <p className="text-[10px] text-emerald-700 font-medium mt-0.5 truncate">
+              📲 Reservas iniciadas
+            </p>
           </div>
         </div>
 
