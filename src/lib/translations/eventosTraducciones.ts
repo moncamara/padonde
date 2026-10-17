@@ -369,6 +369,73 @@ Situé au bord de la rivière à Minca. Réservation directe avec les barmen.`,
       descripcion: `Randonnée méditative sur des sentiers préservés, entre arbres géants et ruisseaux cristallins autour de la Finca La Frecuencia. Une immersion respectueuse dans la Sierra Nevada.`,
     },
   },
+
+  // 🍫 10. Silocibe Gastrobar: Minca, ¿Quiere Cacao? Versión 2
+  "silocibe-cacao": {
+    en: {
+      titulo: "Minca, ¿Quiere Cacao? Vol. 2 — Flavors, Ancestral Craft & Live Music",
+      descripcion: `🍫🌿 ¡MINCA, ¿QUIERE CACAO? — VOLUME 2! 🌿🍫
+
+This Sunday, October 18 at 4:00 PM, join us at Silocibe Gastrobar to celebrate cacao as an ancestral symbol of community, memory, and deep connection with the earth. 🌱✨
+
+🎶 Live music with Solblack, sensory experiences, rich cacao flavors, and local projects celebrating Sierra Nevada's natural heritage.
+
+💚 Guest makers and projects:
+• Theobromas — The Magic of Cacao
+• Kakaw Minca (Cacao Museum)
+• Chocolate Sinduli
+• Minca Experiences
+
+🔥 Pure ceremonial cacao, organic face masks, tea husks, artisanal chocolates, cacao liqueurs, and much more in an afternoon to feel, share, and connect with the spirit of cacao.
+
+📍 Location: Silocibe Gastrobar, entrance to Minca.
+🕒 Time: Starting at 4:00 PM.
+
+Cacao brings us together! ¿Quiere cacao? 🍫💚`,
+    },
+    de: {
+      titulo: "Minca, ¿Quiere Cacao? Teil 2 — Kakao-Kultur & Live-Musik im Silocibe",
+      descripcion: `🍫🌿 ¡MINCA, ¿QUIERE CACAO? — TEIL 2! 🌿🍫
+
+Diesen Sonntag, 18. Oktober um 16:00 Uhr, treffen wir uns in der Silocibe Gastrobar, um Kakao als uraltes Symbol der Begegnung, Erinnerung und Erdverbundenheit zu feiern. 🌱✨
+
+🎶 Live-Musik mit Solblack, sensorische Erlebnisse, feine Kakao-Aromen und regionale Projekte, die den Reichtum der Sierra Nevada teilen.
+
+💚 Unsere Gast-Projekte:
+• Theobromas — Die Magie des Kakaos
+• Kakaw Minca (Kakao-Museum)
+• Chocolate Sinduli
+• Minca Experiences
+
+🔥 Reiner Zeremonienkakao, Gesichtsmasken, Kakao-Tee, handgemachte Schokolade, Liköre und vieles mehr für einen unvergesslichen Nachmittag.
+
+📍 Ort: Silocibe Gastrobar, Ortseingang Minca.
+🕒 Uhrzeit: Ab 16:00 Uhr.
+
+Kakao verbindet uns! ¿Quiere cacao? 🍫💚`,
+    },
+    fr: {
+      titulo: "Minca, ¿Quiere Cacao? Vol. 2 — Saveurs Ancestrales & Musique Live à Silocibe",
+      descripcion: `🍫🌿 ¡MINCA, ¿QUIERE CACAO? — VOLUME 2 ! 🌿🍫
+
+Ce dimanche 18 octobre à 16h00, retrouvons-nous au Silocibe Gastrobar pour célébrer le cacao comme symbole ancestral de rencontre, de mémoire et de lien avec la terre. 🌱✨
+
+🎶 Musique live avec Solblack, expériences sensorielles, saveurs de cacao et projets locaux célébrant la richesse de la Sierra Nevada.
+
+💚 Nos invités et projets d'artisanat :
+• Theobromas — La Magie du Cacao
+• Kakaw Minca (Musée du Cacao)
+• Chocolate Sinduli
+• Minca Experiences
+
+🔥 Cacao pur 100%, masques visage, infusions, chocolats artisanaux, liqueurs et bien plus encore pour un après-midi de partage et de reconnexion.
+
+📍 Lieu : Silocibe Gastrobar, entrée de Minca.
+🕒 Heure : À partir de 16h00.
+
+Le cacao nous réunit ! ¿Quiere cacao? 🍫💚`,
+    },
+  },
 };
 
 /**
@@ -414,6 +481,9 @@ function identificarClaveEvento(evento: {
   }
   if (t.includes("caminata sagrada") || t.includes("conexión con la montaña")) {
     return "caminata";
+  }
+  if (t.includes("quiere cacao") || t.includes("silocibe") || d.includes("silocibe") || d.includes("quiere cacao")) {
+    return "silocibe-cacao";
   }
 
   return null;
