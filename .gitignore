@@ -45,3 +45,6 @@ next-env.d.ts
 # raw media dumps
 eventos_iniciales/
 eventos/
+fotos_pendientes/*
+!fotos_pendientes/.gitkeep
+

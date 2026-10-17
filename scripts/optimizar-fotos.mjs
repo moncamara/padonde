@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // 🌿 PaDónde - Optimizador Automático de Fotos para Eventos y Aliados
-// Lee imágenes desde ~/Downloads/fotosHoy, las convierte a WebP ultraligero
-// y las deja listas en ~/Downloads/fotosHoy/optimizadas y en public/optimized_events
+// Lee imágenes prioritariamente desde ./fotos_pendientes (dentro del proyecto)
+// o desde ~/Downloads/fotosHoy (retrocompatible), las convierte a WebP ultraligero
+// y las deja listas en fotos_pendientes/optimizadas y en public/optimized_events
 
 import fs from "fs";
 import path from "path";
@@ -10,9 +11,18 @@ import { execSync } from "child_process";
 import sharp from "sharp";
 
 const HOME_DIR = os.homedir();
-const INPUT_DIR = path.join(HOME_DIR, "Downloads", "fotosHoy");
-const OUTPUT_DIR_DOWNLOADS = path.join(INPUT_DIR, "optimizadas");
-const OUTPUT_DIR_PROJECT = path.join(process.cwd(), "public", "optimized_events");
+const PROJECT_DIR = process.cwd();
+
+// Directorio principal (dentro del proyecto, sin permisos externos de macOS)
+const LOCAL_INPUT_DIR = path.join(PROJECT_DIR, "fotos_pendientes");
+const LOCAL_OUTPUT_DIR = path.join(LOCAL_INPUT_DIR, "optimizadas");
+
+// Directorio secundario / retrocompatible en Descargas
+const DOWNLOADS_INPUT_DIR = path.join(HOME_DIR, "Downloads", "fotosHoy");
+const DOWNLOADS_OUTPUT_DIR = path.join(DOWNLOADS_INPUT_DIR, "optimizadas");
+
+// Destino web listo para producción
+const PUBLIC_EVENTS_DIR = path.join(PROJECT_DIR, "public", "optimized_events");
 
 // Extensiones de imagen soportadas
 const VALID_EXTENSIONS = new Set([".jpg", ".jpeg", ".png", ".webp", ".heic", ".tiff", ".bmp"]);
@@ -33,48 +43,77 @@ function formatearBytes(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
+function obtenerArchivosValidos(dir) {
+  if (!fs.existsSync(dir)) return [];
+  try {
+    return fs.readdirSync(dir).filter((archivo) => {
+      const ext = path.extname(archivo).toLowerCase();
+      const rutaCompleta = path.join(dir, archivo);
+      try {
+        const esArchivo = fs.statSync(rutaCompleta).isFile();
+        return esArchivo && VALID_EXTENSIONS.has(ext);
+      } catch {
+        return false;
+      }
+    });
+  } catch {
+    return [];
+  }
+}
+
 async function optimizarFotos() {
   console.log("\n🌿 ==========================================");
   console.log("   PaDónde — Optimizador Automático de Fotos");
   console.log("==========================================\n");
 
   // 1. Asegurar directorios
-  if (!fs.existsSync(INPUT_DIR)) {
-    fs.mkdirSync(INPUT_DIR, { recursive: true });
-  }
-  if (!fs.existsSync(OUTPUT_DIR_DOWNLOADS)) {
-    fs.mkdirSync(OUTPUT_DIR_DOWNLOADS, { recursive: true });
-  }
-  if (!fs.existsSync(OUTPUT_DIR_PROJECT)) {
-    fs.mkdirSync(OUTPUT_DIR_PROJECT, { recursive: true });
+  if (!fs.existsSync(LOCAL_INPUT_DIR)) fs.mkdirSync(LOCAL_INPUT_DIR, { recursive: true });
+  if (!fs.existsSync(LOCAL_OUTPUT_DIR)) fs.mkdirSync(LOCAL_OUTPUT_DIR, { recursive: true });
+  if (!fs.existsSync(PUBLIC_EVENTS_DIR)) fs.mkdirSync(PUBLIC_EVENTS_DIR, { recursive: true });
+
+  // 2. Buscar fotos primero en fotos_pendientes (local)
+  const archivosLocales = obtenerArchivosValidos(LOCAL_INPUT_DIR);
+  const archivosDownloads = obtenerArchivosValidos(DOWNLOADS_INPUT_DIR);
+
+  const tareas = [];
+  for (const archivo of archivosLocales) {
+    tareas.push({
+      archivo,
+      rutaEntrada: path.join(LOCAL_INPUT_DIR, archivo),
+      salidaCopia: path.join(LOCAL_OUTPUT_DIR, `${limpiarNombreArchivo(archivo) || "evento"}.webp`),
+      origen: "fotos_pendientes (local)",
+    });
   }
 
-  // 2. Leer archivos en fotosHoy
-  const archivos = fs.readdirSync(INPUT_DIR).filter((archivo) => {
-    const ext = path.extname(archivo).toLowerCase();
-    const esArchivo = fs.statSync(path.join(INPUT_DIR, archivo)).isFile();
-    return esArchivo && VALID_EXTENSIONS.has(ext);
-  });
+  for (const archivo of archivosDownloads) {
+    // Evitar procesar duplicados si ya está en local
+    if (!tareas.some((t) => t.archivo === archivo)) {
+      tareas.push({
+        archivo,
+        rutaEntrada: path.join(DOWNLOADS_INPUT_DIR, archivo),
+        salidaCopia: path.join(DOWNLOADS_OUTPUT_DIR, `${limpiarNombreArchivo(archivo) || "evento"}.webp`),
+        origen: "~/Downloads/fotosHoy",
+      });
+    }
+  }
 
-  if (archivos.length === 0) {
-    console.log(`📁 La carpeta está lista en:`);
-    console.log(`   ${INPUT_DIR}`);
-    console.log("\n⚠️  No hay fotos para optimizar todavía.");
-    console.log("👉 Guarda las fotos que te envíen los aliados allí y vuelve a correr:");
+  if (tareas.length === 0) {
+    console.log(`📁 Carpeta local lista en el proyecto:`);
+    console.log(`   ${LOCAL_INPUT_DIR}\n`);
+    console.log("⚠️  No hay fotos para optimizar todavía.");
+    console.log("👉 Guarda las fotos en 'fotos_pendientes' y vuelve a correr:");
     console.log("   npm run optimizar-fotos\n");
     return;
   }
 
-  console.log(`🔍 Se encontraron ${archivos.length} foto(s) en ~/Downloads/fotosHoy:\n`);
+  console.log(`🔍 Se encontraron ${tareas.length} foto(s) para optimizar:\n`);
 
   let procesadas = 0;
 
-  for (const archivo of archivos) {
-    const rutaEntrada = path.join(INPUT_DIR, archivo);
+  for (const { archivo, rutaEntrada, salidaCopia, origen } of tareas) {
     const nombreLimpio = limpiarNombreArchivo(archivo);
     const nombreWebp = `${nombreLimpio || "evento"}.webp`;
-    const rutaSalidaDownloads = path.join(OUTPUT_DIR_DOWNLOADS, nombreWebp);
-    const rutaSalidaProject = path.join(OUTPUT_DIR_PROJECT, nombreWebp);
+    const rutaSalidaProject = path.join(PUBLIC_EVENTS_DIR, nombreWebp);
 
     const statEntrada = fs.statSync(rutaEntrada);
     const tamanoOriginal = statEntrada.size;
@@ -102,8 +141,10 @@ async function optimizarFotos() {
         .webp({ quality: 80, effort: 5 })
         .toBuffer();
 
-      // Guardar en Downloads/fotosHoy/optimizadas
-      fs.writeFileSync(rutaSalidaDownloads, bufferOptimizado);
+      // Guardar copia en la carpeta de optimizadas correspondiente
+      const dirSalidaCopia = path.dirname(salidaCopia);
+      if (!fs.existsSync(dirSalidaCopia)) fs.mkdirSync(dirSalidaCopia, { recursive: true });
+      fs.writeFileSync(salidaCopia, bufferOptimizado);
 
       // Guardar copia directa en public/optimized_events del proyecto
       fs.writeFileSync(rutaSalidaProject, bufferOptimizado);
@@ -111,11 +152,11 @@ async function optimizarFotos() {
       const tamanoOptimizado = bufferOptimizado.length;
       const reduccion = (((tamanoOriginal - tamanoOptimizado) / tamanoOriginal) * 100).toFixed(1);
 
-      console.log(`✅ [${archivo}]`);
+      console.log(`✅ [${archivo}] (de ${origen})`);
       console.log(`   ➔ Nombre web:   ${nombreWebp}`);
       console.log(`   ➔ Peso inicial: ${formatearBytes(tamanoOriginal)}`);
       console.log(`   ➔ Peso optim:   ${formatearBytes(tamanoOptimizado)} (Ahorro del ${reduccion}%)`);
-      console.log(`   ➔ Guardado en:  ~/Downloads/fotosHoy/optimizadas/${nombreWebp}`);
+      console.log(`   ➔ Guardado en:  ${salidaCopia}`);
       console.log(`                   public/optimized_events/${nombreWebp}\n`);
 
       procesadas++;
