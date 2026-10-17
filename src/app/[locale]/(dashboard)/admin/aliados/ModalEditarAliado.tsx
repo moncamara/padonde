@@ -12,16 +12,7 @@ interface ModalEditarAliadoProps {
   onClose: () => void;
 }
 
-const CATEGORIAS: { id: CategoriaEvento; label: string; icon: string }[] = [
-  { id: "comida", label: "Comida & Café", icon: "🥑" },
-  { id: "musica", label: "Música & Noche", icon: "🎵" },
-  { id: "bienestar", label: "Bienestar & Yoga", icon: "🧘" },
-  { id: "tours", label: "Tours & Guías", icon: "🦅" },
-  { id: "arte", label: "Arte & Talleres", icon: "🎨" },
-  { id: "hospedaje", label: "Hospedaje", icon: "🏡" },
-  { id: "transporte", label: "Transporte", icon: "🛵" },
-  { id: "artesanias", label: "Artesanías", icon: "🧵" },
-];
+import { CATEGORIAS } from "@/constants";
 
 export function ModalEditarAliado({ aliado, isOpen, onClose }: ModalEditarAliadoProps) {
   const router = useRouter();
@@ -161,7 +152,7 @@ export function ModalEditarAliado({ aliado, isOpen, onClose }: ModalEditarAliado
                         : "bg-white text-stone border-stone-light hover:border-forest/40 hover:text-forest",
                     ].join(" ")}
                   >
-                    <span>{cat.icon}</span>
+                    <span>{cat.emoji}</span>
                     <span className="truncate text-[11px]">{cat.label}</span>
                   </button>
                 );

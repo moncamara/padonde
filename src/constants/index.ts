@@ -53,7 +53,7 @@ export const CATEGORIAS: CategoriaConfig[] = [
   { id: "comida",      label: "Comida",      labelEn: "Food",      emoji: "🍽️" },
   { id: "bienestar",   label: "Bienestar",   labelEn: "Wellness",  emoji: "🧘" },
   { id: "tours",       label: "Tours",       labelEn: "Tours",     emoji: "🌿" },
-  { id: "arte",        label: "Arte",        labelEn: "Art",       emoji: "🎨" },
+  { id: "arte",        label: "Arte & Cultura",  labelEn: "Art & Culture",  emoji: "🎨" },
   { id: "hospedaje",   label: "Hospedaje",   labelEn: "Stay",      emoji: "🏡" },
   { id: "transporte",  label: "Transporte",  labelEn: "Transport", emoji: "🚐" },
   { id: "artesanias",  label: "Artesanías",  labelEn: "Crafts",    emoji: "🪡" },

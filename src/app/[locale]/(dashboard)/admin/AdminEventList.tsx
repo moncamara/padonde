@@ -18,6 +18,8 @@ import { ToggleDestacadoButton } from "./ToggleDestacadoButton";
 import { ModalEditarEvento } from "./ModalEditarEvento";
 import { ModalNotificarAliado, type EventoNotificarData } from "./ModalNotificarAliado";
 import { Button } from "@/components/ui/Button";
+import { getCategoria } from "@/constants";
+import type { CategoriaEvento } from "@/lib/types";
 
 export interface EventoAdminItem {
   id: string;
@@ -271,6 +273,15 @@ export function AdminEventList({ eventos, negocios = [], locale }: AdminEventLis
                       🎟️ Boletos
                     </span>
                   )}
+
+                  {(() => {
+                    const catObj = getCategoria(ev.tipo as CategoriaEvento);
+                    return catObj ? (
+                      <span className="text-[10px] bg-stone-100 text-stone-700 border border-stone-200 px-2 py-0.5 rounded-full font-medium">
+                        {catObj.emoji} {catObj.label}
+                      </span>
+                    ) : null;
+                  })()}
 
                   {/* Métrica de Clics a WhatsApp */}
                   <span

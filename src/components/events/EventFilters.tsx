@@ -116,14 +116,14 @@ export function EventFilters({
                 key={id}
                 onClick={() => handleCategoria(isSelected ? null : id)}
                 className={[
-                  "flex-shrink-0 flex flex-col items-center justify-center gap-1 min-w-[70px] px-3.5 py-2.5 rounded-2xl text-xs font-sans transition-all duration-150 cursor-pointer shadow-xs",
+                  "flex-shrink-0 flex flex-col items-center justify-center gap-1 min-w-[72px] px-3.5 py-2.5 rounded-2xl text-xs font-sans transition-all duration-150 cursor-pointer shadow-xs",
                   isSelected
                     ? "bg-forest text-white"
                     : "bg-white/60 border border-stone-light/60 text-stone hover:text-forest",
                 ].join(" ")}
               >
                 <span className="text-xl">{emoji}</span>
-                <span className="font-medium tracking-tight truncate max-w-[64px]">
+                <span className="font-medium tracking-tight truncate max-w-[84px]">
                   {tCat(id)}
                 </span>
               </button>
