@@ -43,18 +43,18 @@ export function EventFeed({ eventos, zona }: EventFeedProps) {
     });
 
     return [...filtrados].sort((a, b) => {
-      // 1. Destacados siempre primero
-      if (a.destacado !== b.destacado) {
-        return a.destacado ? -1 : 1;
-      }
-
-      // 2. Si es filtro "proximos" (días futuros), agrupar cronológicamente por día
+      // 1. Si es filtro "proximos" (agenda futura), el orden principal es cronológico por día
       if (filtroTiempo === "proximos") {
         const ymdA = getFechaYMDDesdeISO(a.fecha_inicio);
         const ymdB = getFechaYMDDesdeISO(b.fecha_inicio);
         if (ymdA !== ymdB) {
           return ymdA.localeCompare(ymdB);
         }
+      }
+
+      // 2. Destacados primero (en la vista de un día específico o dentro del mismo día en próximos)
+      if (a.destacado !== b.destacado) {
+        return a.destacado ? -1 : 1;
       }
 
       // 3. De acuerdo a las horas de los eventos: del más temprano al más tarde (hora Colombia)

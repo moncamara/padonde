@@ -336,8 +336,37 @@ export function eventoCoincideConFiltroTiempo(
   fechaFinIso?: string | null,
   descripcion?: string | null
 ): boolean {
-  // Caso especial: Planes futuros más allá del rango inmediato
-  if (filtro === "proximos" || filtro === "todos") {
+  // Caso especial: Planes futuros más allá del rango de 7 días visible en la barra
+  if (filtro === "proximos") {
+    // La barra muestra 7 días individuales: hoy (día 0) hasta hoy + 6 días
+    const limiteBarra = new Date(now);
+    limiteBarra.setDate(limiteBarra.getDate() + 6);
+    const limiteBarraYMD = getFechaYMDColombia(limiteBarra);
+
+    const ymdInicio = getFechaYMDDesdeISO(fechaInicioIso);
+    const ymdFin = fechaFinIso ? getFechaYMDDesdeISO(fechaFinIso) : null;
+    const rec = extraerRecurrencia(descripcion);
+
+    // Las actividades recurrentes diarias (ej: menús del día, tours permanentes)
+    // ya se muestran en cada día correspondiente de la semana y no son eventos futuros "Más adelante"
+    if (rec.esRecurrente && rec.dias.length >= 6) {
+      return false;
+    }
+
+    // Eventos que inician después del rango de 7 días visible
+    if (ymdInicio > limiteBarraYMD) {
+      return true;
+    }
+
+    // Eventos especiales de varios días (no diarios) que se extienden más allá de los 7 días
+    if (!rec.esRecurrente && ymdFin && ymdFin > limiteBarraYMD) {
+      return true;
+    }
+
+    return false;
+  }
+
+  if (filtro === "todos") {
     const hoyYMD = getFechaYMDColombia(now);
     const ymdInicio = getFechaYMDDesdeISO(fechaInicioIso);
     const ymdFin = fechaFinIso ? getFechaYMDDesdeISO(fechaFinIso) : null;
