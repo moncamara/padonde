@@ -23,6 +23,9 @@ interface EventoDetailPageProps {
   params: Promise<{ locale: string; zona: ZonaSlug; id: string }>;
 }
 
+// Revalidación cada 60 segundos en el Edge CDN de Vercel para soportar tráfico viral sin cargar la BD
+export const revalidate = 60;
+
 export async function generateMetadata({ params }: EventoDetailPageProps): Promise<Metadata> {
   const { locale, zona: zonaSlug, id } = await params;
   const rawEvento = await getEventoById(id);

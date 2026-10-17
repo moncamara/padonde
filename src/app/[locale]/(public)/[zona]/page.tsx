@@ -13,6 +13,9 @@ interface ZonaPageProps {
   params: Promise<{ locale: string; zona: ZonaSlug }>;
 }
 
+// Revalidación cada 60 segundos en el Edge CDN de Vercel para máxima velocidad y protección de la BD
+export const revalidate = 60;
+
 /** Metadata dinámica por zona e idioma — optimizada para búsquedas turísticas en Google */
 export async function generateMetadata({ params }: ZonaPageProps): Promise<Metadata> {
   const { locale, zona: zonaSlug } = await params;
