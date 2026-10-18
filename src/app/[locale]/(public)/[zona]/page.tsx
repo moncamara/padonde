@@ -5,7 +5,7 @@ import { EventFeed } from "@/components/events/EventFeed";
 import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 import { getZona, whatsappLink, WHATSAPP_CONTACTO } from "@/constants";
 import { getEventosByZona } from "@/lib/supabase/queries";
-import { getMockEventos } from "@/lib/mock/eventos";
+import { getEventoTraducidoAsync } from "@/lib/translations/eventosTraducciones";
 import type { ZonaSlug } from "@/lib/types";
 import type { Metadata } from "next";
 
@@ -94,10 +94,14 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
   const tFooter = await getTranslations("footer");
   const tWa = await getTranslations("whatsapp");
 
-  // Obtener eventos desde Supabase con fallback a mock
+  // Obtener eventos desde Supabase
   let eventos = await getEventosByZona(zonaSlug);
-  if (eventos.length === 0) {
-    eventos = getMockEventos();
+
+  // Si el idioma no es español, traducir dinámicamente títulos y descripciones
+  if (locale !== "es" && eventos.length > 0) {
+    eventos = await Promise.all(
+      eventos.map((ev) => getEventoTraducidoAsync(ev, locale))
+    );
   }
 
   const mensajeComercial = tWa("businessMessage", { zona: zona.nombre });

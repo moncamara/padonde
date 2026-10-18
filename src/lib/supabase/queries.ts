@@ -2,6 +2,55 @@ import { createClient } from "@/lib/supabase/server";
 import { getMockEventos } from "@/lib/mock/eventos";
 import type { EventoConNegocio, ZonaSlug } from "@/lib/types";
 
+const COLUMNAS_BASE = `
+  id,
+  negocio_id,
+  zona_id,
+  titulo,
+  descripcion,
+  tipo,
+  precio,
+  precio_moneda,
+  fecha_inicio,
+  fecha_fin,
+  imagen_url,
+  destacado,
+  tiene_boleteria,
+  activo,
+  created_at,
+  negocio:negocios (
+    nombre,
+    whatsapp,
+    instagram,
+    activo
+  )
+`;
+
+const COLUMNAS_CON_TRADUCCIONES = `
+  id,
+  negocio_id,
+  zona_id,
+  titulo,
+  descripcion,
+  tipo,
+  precio,
+  precio_moneda,
+  fecha_inicio,
+  fecha_fin,
+  imagen_url,
+  destacado,
+  tiene_boleteria,
+  activo,
+  created_at,
+  traducciones,
+  negocio:negocios (
+    nombre,
+    whatsapp,
+    instagram,
+    activo
+  )
+`;
+
 /**
  * Obtiene los eventos activos de una zona desde Supabase.
  * Realiza un JOIN relacional con la tabla de negocios.
@@ -24,42 +73,37 @@ export async function getEventosByZona(zonaSlug: ZonaSlug): Promise<EventoConNeg
     }
 
     // 2. Obtener eventos con su negocio relacionado (todos los activos)
-    const { data: eventos, error: eventosError } = await supabase
+    let eventosData: any[] | null = null;
+    const resInicial = await supabase
       .from("eventos")
-      .select(`
-        id,
-        negocio_id,
-        zona_id,
-        titulo,
-        descripcion,
-        tipo,
-        precio,
-        precio_moneda,
-        fecha_inicio,
-        fecha_fin,
-        imagen_url,
-        destacado,
-        tiene_boleteria,
-        activo,
-        created_at,
-        negocio:negocios (
-          nombre,
-          whatsapp,
-          instagram,
-          activo
-        )
-      `)
+      .select(COLUMNAS_CON_TRADUCCIONES)
       .eq("zona_id", zona.id)
       .eq("activo", true)
       .order("destacado", { ascending: false })
       .order("fecha_inicio", { ascending: true });
+
+    let eventosError = resInicial.error;
+    eventosData = resInicial.data;
+
+    // Fallback retrocompatible por si la columna traducciones aún no existe en la BD
+    if (eventosError && eventosError.code === "42703") {
+      const fallbackRes = await supabase
+        .from("eventos")
+        .select(COLUMNAS_BASE)
+        .eq("zona_id", zona.id)
+        .eq("activo", true)
+        .order("destacado", { ascending: false })
+        .order("fecha_inicio", { ascending: true });
+      eventosData = fallbackRes.data;
+      eventosError = fallbackRes.error;
+    }
 
     if (eventosError) {
       console.error("Error al obtener eventos de Supabase:", eventosError);
       return [];
     }
 
-    const lista = (eventos as unknown as (EventoConNegocio & { negocio?: { activo?: boolean } })[]) || [];
+    const lista = (eventosData as unknown as (EventoConNegocio & { negocio?: { activo?: boolean } })[]) || [];
     // Ocultar del feed público si el comercio aliado está desactivado
     return lista.filter((e) => !e.negocio || e.negocio.activo !== false);
   } catch (err) {
@@ -76,42 +120,36 @@ export async function getEventoById(id: string): Promise<EventoConNegocio | null
   try {
     const supabase = await createClient();
 
-    const { data: evento, error } = await supabase
+    let eventoData: any = null;
+    const resInicial = await supabase
       .from("eventos")
-      .select(`
-        id,
-        negocio_id,
-        zona_id,
-        titulo,
-        descripcion,
-        tipo,
-        precio,
-        precio_moneda,
-        fecha_inicio,
-        fecha_fin,
-        imagen_url,
-        destacado,
-        tiene_boleteria,
-        activo,
-        created_at,
-        negocio:negocios (
-          nombre,
-          whatsapp,
-          instagram,
-          activo
-        )
-      `)
+      .select(COLUMNAS_CON_TRADUCCIONES)
       .eq("id", id)
       .eq("activo", true)
       .single();
 
-    if (error || !evento) {
+    let error = resInicial.error;
+    eventoData = resInicial.data;
+
+    // Fallback retrocompatible por si la columna traducciones aún no existe en la BD
+    if (error && error.code === "42703") {
+      const fallbackRes = await supabase
+        .from("eventos")
+        .select(COLUMNAS_BASE)
+        .eq("id", id)
+        .eq("activo", true)
+        .single();
+      eventoData = fallbackRes.data;
+      error = fallbackRes.error;
+    }
+
+    if (error || !eventoData) {
       // Buscar en mock como fallback
       const mockEventos = getMockEventos();
       return mockEventos.find((e) => e.id === id) || null;
     }
 
-    return evento as unknown as EventoConNegocio;
+    return eventoData as unknown as EventoConNegocio;
   } catch (err) {
     console.error("Excepción en getEventoById:", err);
     const mockEventos = getMockEventos();

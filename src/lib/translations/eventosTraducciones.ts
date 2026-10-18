@@ -4,6 +4,7 @@
 // transparente al texto original sin alterar ningún dato de la base de datos.
 
 import { limpiarDescripcionRecurrencia, extraerRecurrencia } from "@/lib/utils";
+import { traducirEventoCompleto } from "./translator";
 
 export interface EventoTraduccion {
   titulo: string;
@@ -16,6 +17,67 @@ export type LocaleCode = "es" | "en" | "de" | "fr";
  * Diccionario curado de eventos en Minca por clave identificadora.
  */
 const TRADUCCIONES_EVENTOS: Record<string, Partial<Record<"en" | "de" | "fr", EventoTraduccion>>> = {
+  // 🥪 Amora Cocina Saludable
+  amora: {
+    en: {
+      titulo: "Healthy Breakfast & Brunch in Minca — Amora",
+      descripcion: `🥪🌿 Welcome to the breakfast house in Minca! At Amora Cocina Saludable we believe that good eating has no schedule.
+
+We invite you to enjoy a proposal crafted with love to nourish your body with fresh, natural, and flavorful ingredients in the heart of the Sierra Nevada.
+
+✨ What you will find on our menu:
+• Energy bowls with fresh fruits, seeds, and superfoods.
+• Breakfast and brunch options for all tastes (vegetarian and healthy options).
+• Sierra Nevada single-origin coffee, natural drinks, and artisanal creations.
+• A fresh, cozy atmosphere to recharge before or after your hikes.
+
+🔄 Recurring schedule:
+• Open every day.
+• Continuous breakfast and brunch.
+
+📍 Location: Minca, Colombia.
+📱 Visit us or message us on WhatsApp to reserve or check today's menu!`,
+    },
+    de: {
+      titulo: "Gesundes Frühstück & Brunch in Minca — Amora",
+      descripcion: `🥪🌿 Willkommen im Haus des Frühstücks in Minca! Bei Amora Cocina Saludable glauben wir, dass gutes Essen keine festen Zeiten braucht.
+
+Wir laden dich ein, ein mit Liebe zubereitetes Angebot zu genießen, um deinen Körper mit frischen, natürlichen und schmackhaften Zutaten inmitten der Magie der Sierra Nevada zu stärken.
+
+✨ Was du auf unserer Speisekarte findest:
+• Energie-Bowls mit frischen Früchten, Samen und Superfoods.
+• Frühstücks- und Brunch-Optionen für jeden Geschmack (vegetarische und gesunde Optionen).
+• Herkunftskaffee aus der Sierra, natürliche Getränke und handwerkliche Spezialitäten.
+• Eine frische und gemütliche Atmosphäre, um vor oder nach deinen Wanderungen Kraft zu tanken.
+
+🔄 Dauerhafter Zeitplan:
+• Täglich geöffnet.
+• Durchgehend Frühstück und Brunch.
+
+📍 Ort: Minca, Kolumbien.
+📱 Besuche uns oder schreibe uns auf WhatsApp, um zu reservieren oder das Tagesmenü zu erfahren!`,
+    },
+    fr: {
+      titulo: "Petit-Déjeuner & Brunch Sain à Minca — Amora",
+      descripcion: `🥪🌿 Bienvenue dans la maison du petit-déjeuner à Minca ! Chez Amora Cocina Saludable, nous pensons que bien manger n'a pas d'horaire fixe.
+
+Nous vous invitons à savourer une cuisine préparée avec amour pour nourrir votre corps avec des ingrédients frais, naturels et savoureux au cœur de la Sierra Nevada.
+
+✨ Ce que vous trouverez sur notre menu :
+• Bols énergétiques aux fruits frais, graines et super-aliments.
+• Options de petit-déjeuner et brunch pour tous les goûts (végétarien et sain).
+• Café d'origine de la Sierra, boissons naturelles et créations artisanales.
+• Une atmosphère fraîche et chaleureuse pour faire le plein d'énergie avant ou après vos randonnées.
+
+🔄 Horaire récurrent :
+• Ouvert tous les jours.
+• Petit-déjeuner et brunch en continu.
+
+📍 Lieu : Minca, Colombie.
+📱 Rendez-nous visite ou écrivez-nous sur WhatsApp pour réserver ou consulter le menu du jour !`,
+    },
+  },
+
   // 🏡 0. La Veranda Hotels (Promo Octubre 3x2)
   "la-veranda": {
     en: {
@@ -449,6 +511,9 @@ function identificarClaveEvento(evento: {
   const t = (evento.titulo || "").toLowerCase();
   const d = (evento.descripcion || "").toLowerCase();
 
+  if (t.includes("amora") || d.includes("amora")) {
+    return "amora";
+  }
   if (t.includes("veranda") || d.includes("veranda")) {
     return "la-veranda";
   }
@@ -490,13 +555,18 @@ function identificarClaveEvento(evento: {
 }
 
 /**
- * Función principal: Obtiene el evento traducido según el idioma activo.
- * - Si locale === "es", retorna el evento original sin tocarlo.
- * - Si locale es "en", "de" o "fr", aplica la traducción curada conservando
- *   la etiqueta técnica <!--recurrente:...-->.
- * - Si no existe traducción, hace fallback seguro al español.
+ * Función principal sincrónica: Obtiene el evento traducido según el idioma activo.
+ * - Prioridad 1: Campo `traducciones` del registro en base de datos.
+ * - Prioridad 2: Diccionario histórico curado.
+ * - Fallback: Español original.
  */
-export function getEventoTraducido<T extends { titulo: string; descripcion?: string | null }>(
+export function getEventoTraducido<
+  T extends {
+    titulo: string;
+    descripcion?: string | null;
+    traducciones?: Record<string, { titulo: string; descripcion: string }> | null;
+  }
+>(
   evento: T,
   locale: string
 ): T {
@@ -505,32 +575,94 @@ export function getEventoTraducido<T extends { titulo: string; descripcion?: str
     return evento;
   }
 
+  // 1. Revisar si ya contiene la traducción en su objeto (desde BD o procesado en servidor)
+  const traduccionDb = evento.traducciones?.[locale];
+  if (traduccionDb && traduccionDb.titulo) {
+    return {
+      ...evento,
+      titulo: traduccionDb.titulo,
+      descripcion: traduccionDb.descripcion ?? evento.descripcion,
+    };
+  }
+
+  // 2. Diccionario histórico curado
   const clave = identificarClaveEvento(evento);
-  if (!clave) {
+  if (clave) {
+    const traducciones = TRADUCCIONES_EVENTOS[clave];
+    if (traducciones) {
+      const traduccion = traducciones[locale as "en" | "de" | "fr"];
+      if (traduccion) {
+        // Conservar cualquier etiqueta técnica de recurrencia que tuviera el evento original
+        const recOriginal = extraerRecurrencia(evento.descripcion);
+        let descripcionFinal = traduccion.descripcion.trim();
+
+        if (recOriginal.esRecurrente && recOriginal.dias.length > 0) {
+          descripcionFinal = `${descripcionFinal}\n\n<!--recurrente:${recOriginal.dias.join(",")}-->`;
+        }
+
+        return {
+          ...evento,
+          titulo: traduccion.titulo,
+          descripcion: descripcionFinal,
+        };
+      }
+    }
+  }
+
+  return evento;
+}
+
+/**
+ * Función asincrónica para Server Components:
+ * Traduce automáticamente cualquier evento nuevo dinámicamente si no tiene traducción previa.
+ */
+export async function getEventoTraducidoAsync<
+  T extends {
+    titulo: string;
+    descripcion?: string | null;
+    traducciones?: Record<string, { titulo: string; descripcion: string }> | null;
+  }
+>(evento: T, locale: string): Promise<T> {
+  if (!evento) return evento;
+  if (!locale || locale === "es") {
     return evento;
   }
 
-  const traducciones = TRADUCCIONES_EVENTOS[clave];
-  if (!traducciones) {
-    return evento;
+  // 1. Revisar si ya tiene traducción en base de datos
+  const traduccionDb = evento.traducciones?.[locale];
+  if (traduccionDb && traduccionDb.titulo) {
+    return {
+      ...evento,
+      titulo: traduccionDb.titulo,
+      descripcion: traduccionDb.descripcion ?? evento.descripcion,
+    };
   }
 
-  const traduccion = traducciones[locale as "en" | "de" | "fr"];
-  if (!traduccion) {
-    return evento;
+  // 2. Revisar si está en el diccionario curado manual histórico
+  const tradSync = getEventoTraducido(evento, locale);
+  if (tradSync.titulo !== evento.titulo || tradSync.descripcion !== evento.descripcion) {
+    return tradSync;
   }
 
-  // Conservar cualquier etiqueta técnica de recurrencia que tuviera el evento original
-  const recOriginal = extraerRecurrencia(evento.descripcion);
-  let descripcionFinal = traduccion.descripcion.trim();
-
-  if (recOriginal.esRecurrente && recOriginal.dias.length > 0) {
-    descripcionFinal = `${descripcionFinal}\n\n<!--recurrente:${recOriginal.dias.join(",")}-->`;
+  // 3. Traducir automáticamente en el servidor
+  try {
+    const traduccionesAuto = await traducirEventoCompleto(evento.titulo, evento.descripcion);
+    const tradAuto = traduccionesAuto[locale as "en" | "de" | "fr"];
+    if (tradAuto && tradAuto.titulo) {
+      return {
+        ...evento,
+        titulo: tradAuto.titulo,
+        descripcion: tradAuto.descripcion,
+        traducciones: {
+          ...(evento.traducciones || {}),
+          ...traduccionesAuto,
+        },
+      };
+    }
+  } catch (err) {
+    console.warn("[getEventoTraducidoAsync] Error en traducción automática:", err);
   }
 
-  return {
-    ...evento,
-    titulo: traduccion.titulo,
-    descripcion: descripcionFinal,
-  };
+  // 4. Fallback seguro al texto original
+  return evento;
 }

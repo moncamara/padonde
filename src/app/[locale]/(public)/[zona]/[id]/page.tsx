@@ -12,7 +12,7 @@ import {
   formatearDiasRecurrencia,
   limpiarDescripcionRecurrencia,
 } from "@/lib/utils";
-import { getEventoTraducido } from "@/lib/translations/eventosTraducciones";
+import { getEventoTraducido, getEventoTraducidoAsync } from "@/lib/translations/eventosTraducciones";
 import { Button } from "@/components/ui/Button";
 import { ShareButton } from "@/components/events/ShareButton";
 import { WhatsAppBookingButton } from "@/components/events/WhatsAppBookingButton";
@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: EventoDetailPageProps): Promi
   const { locale, zona: zonaSlug, id } = await params;
   const rawEvento = await getEventoById(id);
   if (!rawEvento) return {};
-  const evento = getEventoTraducido(rawEvento, locale);
+  const evento = await getEventoTraducidoAsync(rawEvento, locale);
 
   const zona = getZona(zonaSlug);
   const nombreZona = zona?.nombre || "Minca";
@@ -89,7 +89,7 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
   const rawEvento = await getEventoById(id);
   if (!rawEvento) notFound();
 
-  const evento = getEventoTraducido(rawEvento, locale);
+  const evento = await getEventoTraducidoAsync(rawEvento, locale);
 
   const tDetail = await getTranslations("eventDetail");
   const tCat = await getTranslations("categories");

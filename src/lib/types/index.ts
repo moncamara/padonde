@@ -69,6 +69,7 @@ export type Evento = {
   tiene_boleteria: boolean;        // Si tiene venta de tickets integrada
   activo: boolean;
   created_at: string;
+  traducciones?: Record<string, { titulo: string; descripcion: string }> | null;
   // Relación — se incluye en queries con JOIN
   negocio?: Pick<Negocio, "nombre" | "whatsapp" | "instagram">;
 };

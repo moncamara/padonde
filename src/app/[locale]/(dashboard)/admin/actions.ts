@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { parseLocalColombiaAISO } from "@/lib/utils";
+import { traducirEventoCompleto } from "@/lib/translations/translator";
 import type { CategoriaEvento, PlanNegocio } from "@/lib/types";
 
 export interface AdminPublishInput {
@@ -96,27 +97,48 @@ export async function adminPublishEventAction(
       negocioId = nuevoNegocio.id;
     }
 
-    // 4. Crear evento
-    const { data: nuevoEvento, error: evError } = await supabase
+    // 4. Generar traducciones automáticas (EN, DE, FR)
+    let traducciones: Record<string, any> = {};
+    try {
+      traducciones = await traducirEventoCompleto(input.eventTitle.trim(), input.description.trim() || null);
+    } catch (e) {
+      console.warn("No se pudieron generar traducciones automáticas al publicar:", e);
+    }
+
+    // 5. Crear evento con soporte de columna traducciones
+    const basePayload = {
+      negocio_id: negocioId,
+      zona_id: zona.id,
+      titulo: input.eventTitle.trim(),
+      descripcion: input.description.trim() || null,
+      tipo: input.category,
+      precio: input.price > 0 ? input.price : 0,
+      precio_moneda: "COP",
+      fecha_inicio: parseLocalColombiaAISO(input.dateTime),
+      imagen_url:
+        input.imageUrl ||
+        "https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&q=80",
+      destacado: Boolean(input.isFeatured),
+      tiene_boleteria: false,
+      activo: true,
+    };
+
+    let { data: nuevoEvento, error: evError } = await supabase
       .from("eventos")
-      .insert({
-        negocio_id: negocioId,
-        zona_id: zona.id,
-        titulo: input.eventTitle.trim(),
-        descripcion: input.description.trim() || null,
-        tipo: input.category,
-        precio: input.price > 0 ? input.price : 0,
-        precio_moneda: "COP",
-        fecha_inicio: parseLocalColombiaAISO(input.dateTime),
-        imagen_url:
-          input.imageUrl ||
-          "https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&q=80",
-        destacado: Boolean(input.isFeatured),
-        tiene_boleteria: false,
-        activo: true,
-      })
+      .insert({ ...basePayload, traducciones })
       .select("id")
       .single();
+
+    // Fallback retrocompatible si la columna traducciones aún no existe en Supabase
+    if (evError && evError.code === "42703") {
+      const fallbackRes = await supabase
+        .from("eventos")
+        .insert(basePayload)
+        .select("id")
+        .single();
+      nuevoEvento = fallbackRes.data;
+      evError = fallbackRes.error;
+    }
 
     if (evError || !nuevoEvento) {
       return { success: false, error: "Error al registrar el evento en Supabase." };
@@ -665,11 +687,29 @@ export async function editarEventoAdminAction(input: EditarEventoAdminInput) {
       updatePayload.negocio_id = input.negocioId;
     }
 
-    const { data: updatedRows, error } = await supabase
+    try {
+      const traducciones = await traducirEventoCompleto(input.titulo.trim(), input.descripcion?.trim() || null);
+      updatePayload.traducciones = traducciones;
+    } catch (e) {
+      console.warn("No se pudieron generar traducciones automáticas al editar:", e);
+    }
+
+    let { data: updatedRows, error } = await supabase
       .from("eventos")
       .update(updatePayload)
       .eq("id", input.eventoId)
       .select("id");
+
+    if (error && error.code === "42703") {
+      delete updatePayload.traducciones;
+      const fallbackRes = await supabase
+        .from("eventos")
+        .update(updatePayload)
+        .eq("id", input.eventoId)
+        .select("id");
+      updatedRows = fallbackRes.data;
+      error = fallbackRes.error;
+    }
 
     if (error) {
       console.error("Error al actualizar evento:", error);
