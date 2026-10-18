@@ -127,7 +127,7 @@ export default async function AdminDashboardPage({
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3.5 sm:gap-4 bg-white/70 backdrop-blur-sm p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-stone-light/80 shadow-xs">
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="font-serif text-xl sm:text-2xl text-forest font-bold">Cartelera de Minca</h1>
+              <h1 className="font-serif text-xl sm:text-2xl text-forest font-bold">Cartelera de Eventos y Experiencias</h1>
               <span className="text-[11px] bg-forest/10 text-forest px-2.5 py-0.5 rounded-full font-medium">
                 Paso 1: Organización
               </span>

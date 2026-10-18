@@ -143,16 +143,17 @@ export function AdminAliadosList({
   function generarEnlaceWhatsAppCobro(aliado: AliadoItem) {
     const cleanWa = aliado.whatsapp.replace(/\D/g, "");
     const est = getEstadoExpiracion(aliado);
+    const destinoNombre = aliado.zonaNombre || (aliado.zonaSlug === "mendihuaca" ? "Mendihuaca" : "Minca");
 
     let mensaje = "";
     if (aliado.plan !== "gratis" && (est.tipo === "por_vencer" || est.tipo === "vencido")) {
-      mensaje = `🌿 Hola ${aliado.nombre}, te escribimos de PaDónde.\n\nTu suscripción Plan ${aliado.plan.toUpperCase()} en la cartelera de Minca ${
+      mensaje = `🌿 Hola ${aliado.nombre}, te escribimos de PaDónde.\n\nTu suscripción Plan ${aliado.plan.toUpperCase()} en la cartelera de ${destinoNombre} ${
         est.tipo === "vencido" ? "venció recientemente" : "está próxima a vencer"
       }.\n\nPara mantener tus planes con visibilidad destacada y continuar recibiendo turistas directos a tu WhatsApp, puedes transferir a Nequi/Daviplata.\n\n¿Te gustaría renovar este mes? Quedamos muy atentos.`;
     } else if (aliado.plan === "gratis") {
-      mensaje = `🌿 Hola ${aliado.nombre}, te escribimos de PaDónde.\n\nVemos que tienes planes de ${aliado.categoria} en Minca. ¿Te gustaría activar el Plan Pro para que aparezcan destacados en las primeras posiciones de la cartelera y recibas más clics de turistas?\n\nCuéntanos y te mostramos cómo funciona.`;
+      mensaje = `🌿 Hola ${aliado.nombre}, te escribimos de PaDónde.\n\nVemos que tienes planes de ${aliado.categoria} en ${destinoNombre}. ¿Te gustaría activar el Plan Pro para que aparezcan destacados en las primeras posiciones de la cartelera y recibas más clics de turistas?\n\nCuéntanos y te mostramos cómo funciona.`;
     } else {
-      mensaje = `🌿 Hola ${aliado.nombre}, te escribimos de PaDónde para saber cómo va la temporada en Minca y si tienes nuevos eventos que quieras publicar esta semana.`;
+      mensaje = `🌿 Hola ${aliado.nombre}, te escribimos de PaDónde para saber cómo va la temporada en ${destinoNombre} y si tienes nuevos eventos que quieras publicar esta semana.`;
     }
 
     return `https://wa.me/${cleanWa}?text=${encodeURIComponent(mensaje)}`;
@@ -161,13 +162,14 @@ export function AdminAliadosList({
   // Copiar reporte al portapapeles
   function handleCopiarReporte(aliado: AliadoItem) {
     const est = getEstadoExpiracion(aliado);
+    const destinoNombre = aliado.zonaNombre || (aliado.zonaSlug === "mendihuaca" ? "Mendihuaca" : "Minca");
     const texto = `🌿 Reporte PaDónde — ${aliado.nombre}
-📍 Minca, Magdalena
+📍 ${destinoNombre}, Magdalena
 🟢 Eventos vigentes en cartelera: ${aliado.eventosActivos}
 📅 Total de eventos registrados: ${aliado.totalEventos}
 ⭐ Plan: ${aliado.plan.toUpperCase()} (${est.texto})
 
-¡Gracias por impulsar la cartelera turística de Minca!`;
+¡Gracias por impulsar la cartelera turística de ${destinoNombre}!`;
 
     navigator.clipboard.writeText(texto);
     setCopiadoId(aliado.id);
@@ -691,13 +693,17 @@ export function AdminAliadosList({
       {reporteNegocio && (() => {
         const est = getEstadoExpiracion(reporteNegocio);
         const cleanWa = reporteNegocio.whatsapp.replace(/\D/g, "");
+        const destinoNombre =
+          reporteNegocio.zonaNombre ||
+          (reporteNegocio.zonaSlug === "mendihuaca" ? "Mendihuaca" : "Minca");
+        const destinoUrl = `https://padonde.lat/es/${reporteNegocio.zonaSlug || "minca"}`;
 
         const clicsTexto =
           typeof reporteNegocio.totalClics === "number" && reporteNegocio.totalClics > 0
             ? `• 📲 *Clientes interesados directos a tu WhatsApp:* ${reporteNegocio.totalClics} personas${reporteNegocio.clics7Dias ? ` (+${reporteNegocio.clics7Dias} esta semana)` : ""}\n`
             : "";
 
-        const textoReporte = `🌿 *Reporte de Impacto PaDónde* — *${reporteNegocio.nombre}*\n📍 *Minca, Sierra Nevada de Santa Marta*\n\nHola! Te compartimos el balance de visibilidad y clientes que generó tu negocio en la cartelera:\n\n${clicsTexto}• 🟢 *Eventos vigentes en cartelera:* ${reporteNegocio.eventosActivos}\n• 📅 *Total de eventos registrados:* ${reporteNegocio.totalEventos}\n• ⭐ *Plan comercial:* ${reporteNegocio.plan.toUpperCase()} (${est.texto})\n• 🏷️ *Categoría:* ${reporteNegocio.categoria}\n\n🔗 *Ver cartelera:* https://padonde.lat/es/minca\n\n¡Gracias por conectar a viajeros y locales con lo mejor de Minca! 🌿`;
+        const textoReporte = `🌿 *Reporte de Impacto PaDónde* — *${reporteNegocio.nombre}*\n📍 *${destinoNombre}, Magdalena*\n\nHola! Te compartimos el balance de visibilidad y clientes que generó tu negocio en la cartelera:\n\n${clicsTexto}• 🟢 *Eventos vigentes en cartelera:* ${reporteNegocio.eventosActivos}\n• 📅 *Total de eventos registrados:* ${reporteNegocio.totalEventos}\n• ⭐ *Plan comercial:* ${reporteNegocio.plan.toUpperCase()} (${est.texto})\n• 🏷️ *Categoría:* ${reporteNegocio.categoria}\n\n🔗 *Ver cartelera:* ${destinoUrl}\n\n¡Gracias por conectar a viajeros y locales con lo mejor de ${destinoNombre}! 🌿`;
 
         const waUrl = `https://wa.me/${cleanWa}?text=${encodeURIComponent(textoReporte)}`;
 
@@ -767,7 +773,7 @@ export function AdminAliadosList({
                 </div>
 
                 <div className="text-[11px] text-cream/80 space-y-1 pt-1 font-sans">
-                  <p>📍 <strong>Destino:</strong> Minca, Sierra Nevada de Santa Marta</p>
+                  <p>📍 <strong>Destino:</strong> {destinoNombre}, Magdalena</p>
                   <p>💬 <strong>Canal de Reservas:</strong> WhatsApp verificado (+{cleanWa})</p>
                   <p>⏳ <strong>Vigencia del Acuerdo:</strong> {est.texto}</p>
                 </div>

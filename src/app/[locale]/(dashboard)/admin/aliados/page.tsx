@@ -156,7 +156,7 @@ export default async function AdminAliadosPage({
             </span>
           </div>
           <p className="font-sans text-xs text-stone mt-1">
-            Gestiona acuerdos con hostales, restaurantes, guías y artesanos de Minca.
+            Gestiona acuerdos con hostales, restaurantes, guías y aliados turísticos en cada destino.
             Controla renovaciones y genera mensajes de cobro por WhatsApp en 1 clic.
           </p>
         </div>

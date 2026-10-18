@@ -8,6 +8,8 @@ export interface EventoNotificarData {
   titulo: string;
   negocioNombre: string;
   whatsapp: string;
+  zonaSlug?: string;
+  zonaNombre?: string;
 }
 
 interface ModalNotificarAliadoProps {
@@ -23,15 +25,20 @@ interface ModalNotificarAliadoProps {
 export function generarMensajeBienvenidaAliado(
   negocioNombre: string,
   tituloEvento: string,
-  eventoId: string
+  eventoId: string,
+  zonaSlug?: string,
+  zonaNombre?: string
 ): string {
-  const urlPublicacion = `https://padonde.lat/es/minca/${eventoId}`;
+  const slug = zonaSlug || "minca";
+  const destinoNombre = zonaNombre || (slug === "mendihuaca" ? "Mendihuaca" : "Minca");
+  const urlPublicacion = `https://www.padonde.lat/es/${slug}/${eventoId}`;
+  const urlCartelera = `https://www.padonde.lat/es/${slug}`;
 
-  return `🌿 ¡Hola ${negocioNombre}! Un saludo muy especial desde PaDónde Minca.
+  return `🌿 ¡Hola ${negocioNombre}! Un saludo muy especial desde PaDónde ${destinoNombre}.
 
 Estuvimos viendo lo que compartieron en la comunidad y nos encantó su plan: "${tituloEvento}" ✨
 
-Para apoyar el turismo local y la visibilidad de los proyectos de la montaña, nos tomamos el atrevimiento de subir su evento como cortesía de bienvenida en la nueva cartelera turística digital de Minca: PaDónde 📲
+Para apoyar el turismo local y la visibilidad de los proyectos de la región, nos tomamos el atrevimiento de subir su evento como cortesía de bienvenida en la nueva cartelera turística digital de ${destinoNombre}: PaDónde 📲
 
 👉 Pueden ver cómo luce su publicación aquí:
 ${urlPublicacion}
@@ -43,7 +50,7 @@ Queremos pedirles un favor muy especial: ¿Podrían echarle un ojito y confirmar
 
 En PaDónde los viajeros buscan qué hacer hoy, mañana y los fines de semana, y cuando tocan en "Reservar" van directo a su WhatsApp, sin comisiones ni intermediarios. 💬
 
-Esta publicación estará activa y destacada como cortesía de apertura. Échenle una mirada a toda la cartelera en https://padonde.lat y nos cuentan si desean ajustar cualquier detalle.
+Esta publicación estará activa y destacada como cortesía de apertura. Échenle una mirada a toda la cartelera en ${urlCartelera} y nos cuentan si desean ajustar cualquier detalle.
 
 ¡Un abrazo y muchos éxitos con este planazo! 🌿✨`;
 }
@@ -64,7 +71,9 @@ export function ModalNotificarAliado({
         generarMensajeBienvenidaAliado(
           evento.negocioNombre,
           evento.titulo,
-          evento.id
+          evento.id,
+          evento.zonaSlug,
+          evento.zonaNombre
         )
       );
       setCopiado(false);
@@ -156,11 +165,11 @@ export function ModalNotificarAliado({
             <div className="min-w-0">
               <p className="font-medium text-forest truncate">🔗 Link en vivo del evento:</p>
               <p className="text-[11px] text-stone truncate">
-                https://padonde.lat/es/minca/{evento.id}
+                https://www.padonde.lat/es/{evento.zonaSlug || "minca"}/{evento.id}
               </p>
             </div>
             <a
-              href={`/minca/${evento.id}`}
+              href={`/${evento.zonaSlug || "minca"}/${evento.id}`}
               target="_blank"
               rel="noreferrer"
               className="text-[11px] text-terra font-semibold hover:underline shrink-0"

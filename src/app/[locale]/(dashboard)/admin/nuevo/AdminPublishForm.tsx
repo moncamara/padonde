@@ -101,7 +101,7 @@ export function AdminPublishForm({
         <div>
           <h2 className="font-serif text-2xl text-forest">¡Evento publicado exitosamente!</h2>
           <p className="font-sans text-xs text-stone mt-1.5">
-            El plan ya está visible en vivo en la cartelera de Minca.
+            El plan ya está visible en vivo en la cartelera de {zonaSlug === "mendihuaca" ? "Mendihuaca" : "Minca"}.
           </p>
         </div>
 

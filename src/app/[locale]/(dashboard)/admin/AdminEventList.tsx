@@ -409,6 +409,8 @@ export function AdminEventList({ eventos, negocios = [], locale }: AdminEventLis
                           titulo: ev.titulo,
                           negocioNombre: negocio.nombre,
                           whatsapp: negocio.whatsapp,
+                          zonaSlug: ev.zonaSlug,
+                          zonaNombre: ev.zonaNombre,
                         })
                       }
                       className="text-xs text-emerald-800 hover:text-emerald-900 px-2.5 py-1.5 rounded-xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 transition-colors flex items-center gap-1 font-medium font-sans shadow-2xs cursor-pointer active:scale-95"
@@ -430,7 +432,7 @@ export function AdminEventList({ eventos, negocios = [], locale }: AdminEventLis
                   </button>
 
                   <Link
-                    href={`/minca/${ev.id}`}
+                    href={`/${ev.zonaSlug || "minca"}/${ev.id}`}
                     target="_blank"
                     className="text-xs text-stone hover:text-forest px-2.5 py-1.5 rounded-xl border border-stone-light/60 bg-white/70 hover:bg-white transition-colors flex items-center gap-1 shrink-0"
                     title="Ver en la web pública"

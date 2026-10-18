@@ -187,6 +187,8 @@ export function ModalEventosAliado({
                               titulo: ev.titulo,
                               negocioNombre: aliado.nombre,
                               whatsapp: aliado.whatsapp,
+                              zonaSlug: aliado.zonaSlug,
+                              zonaNombre: aliado.zonaNombre,
                             })
                           }
                           className="px-2.5 py-1 rounded-xl text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-300 hover:bg-emerald-100 transition-colors cursor-pointer flex items-center gap-1 shadow-2xs active:scale-95"

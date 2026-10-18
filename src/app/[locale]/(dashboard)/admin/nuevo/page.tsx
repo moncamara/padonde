@@ -71,7 +71,7 @@ export default async function AdminNuevoEventoPage({
           <p className="font-sans text-xs text-stone mt-1">
             {defaultNegocio
               ? `Datos de ${defaultNegocio.nombre} precargados. Completa los detalles de la experiencia.`
-              : "Este evento se publicará inmediatamente en la cartelera de Minca."}
+              : "Este evento se publicará inmediatamente en la cartelera seleccionada."}
           </p>
         </div>
 

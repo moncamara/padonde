@@ -181,6 +181,7 @@ export async function toggleEventoActivoAction(eventoId: string, nuevoEstado: bo
 
     revalidatePath(`/[locale]/admin`, "page");
     revalidatePath(`/[locale]/minca`, "page");
+    revalidatePath(`/[locale]/mendihuaca`, "page");
     return { success: true };
   } catch (err) {
     console.error("Excepción en toggleEventoActivoAction:", err);
@@ -230,6 +231,7 @@ export async function actualizarPlanNegocioAction(
     revalidatePath(`/[locale]/admin`, "page");
     revalidatePath(`/[locale]/admin/aliados`, "page");
     revalidatePath(`/[locale]/minca`, "page");
+    revalidatePath(`/[locale]/mendihuaca`, "page");
 
     return { success: true };
   } catch (err) {
@@ -265,6 +267,7 @@ export async function toggleEventoDestacadoAction(eventoId: string, nuevoEstado:
 
     revalidatePath(`/[locale]/admin`, "page");
     revalidatePath(`/[locale]/minca`, "page");
+    revalidatePath(`/[locale]/mendihuaca`, "page");
     return { success: true };
   } catch (err) {
     console.error("Excepción en toggleEventoDestacadoAction:", err);
@@ -632,6 +635,7 @@ export async function importarLoteEventosRealesAction() {
     revalidatePath(`/[locale]/admin`, "page");
     revalidatePath(`/[locale]/admin/aliados`, "page");
     revalidatePath(`/[locale]/minca`, "page");
+    revalidatePath(`/[locale]/mendihuaca`, "page");
 
     return { success: true, count: insertadosCount };
   } catch (err: any) {
@@ -759,6 +763,7 @@ export async function eliminarEventoAdminAction(eventoId: string) {
 
     revalidatePath(`/[locale]/admin`, "page");
     revalidatePath(`/[locale]/minca`, "page");
+    revalidatePath(`/[locale]/mendihuaca`, "page");
 
     return { success: true };
   } catch (err: any) {
@@ -805,6 +810,7 @@ export async function eliminarAliadoAdminAction(negocioId: string) {
     revalidatePath(`/[locale]/admin`, "page");
     revalidatePath(`/[locale]/admin/aliados`, "page");
     revalidatePath(`/[locale]/minca`, "page");
+    revalidatePath(`/[locale]/mendihuaca`, "page");
 
     return { success: true };
   } catch (err: any) {
@@ -901,6 +907,7 @@ export async function editarAliadoCompletoAction(input: EditarAliadoInput) {
     revalidatePath(`/[locale]/admin`, "page");
     revalidatePath(`/[locale]/admin/aliados`, "page");
     revalidatePath(`/[locale]/minca`, "page");
+    revalidatePath(`/[locale]/mendihuaca`, "page");
 
     return { success: true };
   } catch (err: any) {
@@ -947,6 +954,7 @@ export async function toggleActivoAliadoAction(
     revalidatePath(`/[locale]/admin`, "page");
     revalidatePath(`/[locale]/admin/aliados`, "page");
     revalidatePath(`/[locale]/minca`, "page");
+    revalidatePath(`/[locale]/mendihuaca`, "page");
 
     return { success: true };
   } catch (err: any) {
