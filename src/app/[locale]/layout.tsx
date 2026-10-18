@@ -56,9 +56,9 @@ export const metadata: Metadata = {
   },
   openGraph: {
     siteName: "PaDónde",
-    title: "PaDónde — Cartelera Turística de Minca",
+    title: "PaDónde 🌿 Cartelera de Minca | Live Events & Tours",
     description:
-      "Descubre qué hacer hoy en Minca. Eventos, tours, comida, música y experiencias en la Sierra Nevada.",
+      "Qué hacer hoy en Minca: eventos, música en vivo, talleres y tours. / Live tourist board: daily events, live music, workshops, wellness & local dining.",
     url: "https://www.padonde.lat",
     type: "website",
     locale: "es_CO",

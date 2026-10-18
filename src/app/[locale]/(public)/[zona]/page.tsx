@@ -23,17 +23,17 @@ export async function generateMetadata({ params }: ZonaPageProps): Promise<Metad
   if (!zona) return {};
 
   const titles: Record<string, string> = {
-    es: `PaDónde 🌿 Cartelera de ${zona.nombre} — Eventos, Tours y Gastronomía`,
+    es: `PaDónde 🌿 Cartelera de ${zona.nombre} | Live Events & Tours`,
     en: `PaDónde 🌿 Things to do in ${zona.nombre} today — Live Events & Tours`,
-    fr: `PaDónde 🌿 Que faire à ${zona.nombre} — Événements, Sorties et Tours`,
-    de: `PaDónde 🌿 Was tun in ${zona.nombre} — Events, Touren & Aktivitäten`,
+    fr: `PaDónde 🌿 Agenda Touristique à ${zona.nombre} — Événements et Sorties`,
+    de: `PaDónde 🌿 Live-Tourismus-Kalender in ${zona.nombre} — Events & Touren`,
   };
 
   const descriptions: Record<string, string> = {
-    es: `Descubre qué hacer hoy en ${zona.nombre}, Sierra Nevada de Santa Marta. Cartelera turística en vivo: música en vivo, talleres, yoga, tours y gastronomía local.`,
-    en: `Discover what to do today in ${zona.nombre}, Sierra Nevada de Santa Marta. Live tourist board: live music, workshops, wellness, tours, and authentic dining.`,
-    fr: `Découvrez quoi faire aujourd'hui à ${zona.nombre}, Sierra Nevada de Santa Marta. Agenda touristique en direct : musique live, ateliers, yoga, visites et restaurants.`,
-    de: `Entdecke Aktivitäten heute in ${zona.nombre}, Sierra Nevada de Santa Marta. Live-Tourismus-Kalender: Live-Musik, Workshops, Yoga, Touren und Restaurants.`,
+    es: `Qué hacer hoy en ${zona.nombre}: eventos, música en vivo, talleres y tours. / Live tourist board: daily events, live music, workshops, wellness & local dining.`,
+    en: `Discover what to do today in ${zona.nombre}, Sierra Nevada. Live tourist board: live music, workshops, wellness, tours, and authentic dining.`,
+    fr: `Découvrez quoi faire aujourd'hui à ${zona.nombre}, Sierra Nevada. Agenda touristique en direct : musique live, ateliers, yoga, visites et restaurants.`,
+    de: `Entdecke Aktivitäten heute in ${zona.nombre}, Sierra Nevada. Live-Tourismus-Kalender: Live-Musik, Workshops, Yoga, Touren und Restaurants.`,
   };
 
   const title = titles[locale] || titles.es;
