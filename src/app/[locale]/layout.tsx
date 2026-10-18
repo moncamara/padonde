@@ -64,10 +64,10 @@ export const metadata: Metadata = {
     locale: "es_CO",
     images: [
       {
-        url: "/optimized_events/jam-birding.webp",
+        url: "https://www.padonde.lat/og_minca.jpg",
         width: 1200,
         height: 630,
-        alt: "PaDónde — Qué hacer hoy en Minca",
+        alt: "PaDónde — Cartelera Turística de Minca",
       },
     ],
   },
@@ -76,7 +76,7 @@ export const metadata: Metadata = {
     title: "PaDónde — Qué hacer hoy en Minca",
     description:
       "Cartelera viva de eventos, tours y experiencias en Minca y la Sierra Nevada.",
-    images: ["/optimized_events/jam-birding.webp"],
+    images: ["https://www.padonde.lat/og_minca.jpg"],
   },
   robots: {
     index: true,

@@ -23,22 +23,23 @@ export async function generateMetadata({ params }: ZonaPageProps): Promise<Metad
   if (!zona) return {};
 
   const titles: Record<string, string> = {
-    es: `Qué hacer en ${zona.nombre} hoy — Eventos, Tours y Gastronomía`,
-    en: `Things to do in ${zona.nombre} today — Events, Tours & Experiences`,
-    fr: `Que faire à ${zona.nombre} aujourd'hui — Événements, Sorties et Tours`,
-    de: `Was kann man in ${zona.nombre} heute tun — Events, Touren & Aktivitäten`,
+    es: `PaDónde 🌿 Cartelera de ${zona.nombre} — Eventos, Tours y Gastronomía`,
+    en: `PaDónde 🌿 Things to do in ${zona.nombre} today — Live Events & Tours`,
+    fr: `PaDónde 🌿 Que faire à ${zona.nombre} — Événements, Sorties et Tours`,
+    de: `PaDónde 🌿 Was tun in ${zona.nombre} — Events, Touren & Aktivitäten`,
   };
 
   const descriptions: Record<string, string> = {
-    es: `Descubre qué hacer hoy en ${zona.nombre}, Sierra Nevada de Santa Marta. Cartelera turística en vivo: tours de café, avistamiento de aves, música en vivo, yoga y restaurantes locales.`,
-    en: `Discover what to do today in ${zona.nombre}, Sierra Nevada de Santa Marta. Live tourist board: coffee tours, birdwatching, live music, wellness, and authentic dining.`,
-    fr: `Découvrez quoi faire aujourd'hui à ${zona.nombre}, Sierra Nevada de Santa Marta. Agenda touristique en direct : observation des oiseaux, visites de café, musique live et restaurants.`,
-    de: `Entdecke Aktivitäten heute in ${zona.nombre}, Sierra Nevada de Santa Marta. Live-Tourismus-Kalender: Kaffeetouren, Vogelbeobachtung, Live-Musik, Wellness und lokale Restaurants.`,
+    es: `Descubre qué hacer hoy en ${zona.nombre}, Sierra Nevada de Santa Marta. Cartelera turística en vivo: música en vivo, talleres, yoga, tours y gastronomía local.`,
+    en: `Discover what to do today in ${zona.nombre}, Sierra Nevada de Santa Marta. Live tourist board: live music, workshops, wellness, tours, and authentic dining.`,
+    fr: `Découvrez quoi faire aujourd'hui à ${zona.nombre}, Sierra Nevada de Santa Marta. Agenda touristique en direct : musique live, ateliers, yoga, visites et restaurants.`,
+    de: `Entdecke Aktivitäten heute in ${zona.nombre}, Sierra Nevada de Santa Marta. Live-Tourismus-Kalender: Live-Musik, Workshops, Yoga, Touren und Restaurants.`,
   };
 
   const title = titles[locale] || titles.es;
   const description = descriptions[locale] || descriptions.es;
   const canonicalUrl = `https://www.padonde.lat/${locale}/${zonaSlug}`;
+  const ogImageUrl = "https://www.padonde.lat/og_minca.jpg";
 
   return {
     title,
@@ -60,12 +61,18 @@ export async function generateMetadata({ params }: ZonaPageProps): Promise<Metad
       locale: locale === "en" ? "en_US" : locale === "fr" ? "fr_FR" : locale === "de" ? "de_DE" : "es_CO",
       images: [
         {
-          url: "/optimized_events/jam-birding.webp",
+          url: ogImageUrl,
           width: 1200,
           height: 630,
-          alt: `Qué hacer en ${zona.nombre} hoy`,
+          alt: `PaDónde — Cartelera Turística de ${zona.nombre}`,
         },
       ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [ogImageUrl],
     },
   };
 }
