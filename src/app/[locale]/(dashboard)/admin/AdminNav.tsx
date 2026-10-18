@@ -27,14 +27,22 @@ export function AdminNav({ userEmail }: AdminNavProps) {
           </Link>
 
           {/* Acciones de Cuenta en Mobile */}
-          <div className="flex items-center gap-2 sm:hidden text-xs font-sans">
+          <div className="flex items-center gap-1.5 sm:hidden text-xs font-sans">
             <Link
               href="/minca"
               target="_blank"
-              className="text-stone hover:text-forest p-1.5 rounded-lg border border-stone-light/60 bg-white/70"
-              title="Ver web pública"
+              className="text-stone hover:text-forest p-1 rounded-lg border border-stone-light/60 bg-white/70 text-[10px]"
+              title="Ver Minca"
             >
-              👁️ Web
+              🌿 Minca
+            </Link>
+            <Link
+              href="/mendihuaca"
+              target="_blank"
+              className="text-stone hover:text-forest p-1 rounded-lg border border-stone-light/60 bg-white/70 text-[10px]"
+              title="Ver Mendihuaca"
+            >
+              🌊 Mendi.
             </Link>
 
             <form action={logoutAction}>
@@ -92,13 +100,23 @@ export function AdminNav({ userEmail }: AdminNavProps) {
 
         {/* Acciones de Cuenta en Desktop */}
         <div className="hidden sm:flex items-center justify-end gap-3 text-xs font-sans">
-          <Link
-            href="/minca"
-            target="_blank"
-            className="text-stone hover:text-forest underline underline-offset-2"
-          >
-            Ver web pública ↗
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/minca"
+              target="_blank"
+              className="text-stone hover:text-forest underline underline-offset-2 flex items-center gap-1"
+            >
+              <span>🌿 Minca ↗</span>
+            </Link>
+            <span className="text-stone-light">|</span>
+            <Link
+              href="/mendihuaca"
+              target="_blank"
+              className="text-stone hover:text-forest underline underline-offset-2 flex items-center gap-1"
+            >
+              <span>🌊 Mendihuaca ↗</span>
+            </Link>
+          </div>
 
           <form action={logoutAction}>
             <button

@@ -41,6 +41,9 @@ export interface AliadoItem {
   eventosActivos: number;
   totalClics?: number;
   clics7Dias?: number;
+  zona_id?: string;
+  zonaSlug?: string;
+  zonaNombre?: string;
   eventos?: EventoAliadoItem[];
 }
 
@@ -59,6 +62,7 @@ export function AdminAliadosList({
 }: AdminAliadosListProps) {
   const router = useRouter();
   const [filtro, setFiltro] = useState<FiltroPlan>("todos");
+  const [filtroZona, setFiltroZona] = useState<string>("todas");
   const [busqueda, setBusqueda] = useState("");
   const [copiadoId, setCopiadoId] = useState<string | null>(null);
 
@@ -114,6 +118,11 @@ export function AdminAliadosList({
   // Filtrado de aliados
   const aliadosFiltrados = useMemo(() => {
     return aliados.filter((a) => {
+      // 0. Filtro por Región / Zona
+      if (filtroZona !== "todas" && (a.zonaSlug || "minca") !== filtroZona) {
+        return false;
+      }
+
       // 1. Filtro por plan / estado
       const est = getEstadoExpiracion(a);
       if (filtro === "pro_premium" && a.plan === "gratis") return false;
@@ -128,7 +137,7 @@ export function AdminAliadosList({
       const matchWa = a.whatsapp.includes(q);
       return matchNombre || matchCategoria || matchWa;
     });
-  }, [aliados, filtro, busqueda]);
+  }, [aliados, filtro, busqueda, filtroZona]);
 
   // Mensaje para cobrar o contactar por WhatsApp
   function generarEnlaceWhatsAppCobro(aliado: AliadoItem) {
@@ -200,6 +209,52 @@ export function AdminAliadosList({
 
   return (
     <div className="space-y-6">
+      {/* Selector de Región / Zona */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-white/70 p-2.5 sm:p-3 rounded-2xl border border-stone-light/70 shadow-2xs">
+        <div className="flex items-center gap-1.5 overflow-x-auto w-full">
+          <span className="text-xs font-semibold text-forest font-sans mr-1 shrink-0">
+            Región:
+          </span>
+          {[
+            { id: "todas", label: "Todas las Zonas", icon: "🌐", count: aliados.length },
+            {
+              id: "minca",
+              label: "Minca",
+              icon: "🌿",
+              count: aliados.filter((a) => (a.zonaSlug || "minca") === "minca").length,
+            },
+            {
+              id: "mendihuaca",
+              label: "Mendihuaca",
+              icon: "🌊",
+              count: aliados.filter((a) => a.zonaSlug === "mendihuaca").length,
+            },
+          ].map((z) => (
+            <button
+              key={z.id}
+              type="button"
+              onClick={() => setFiltroZona(z.id)}
+              className={[
+                "py-1.5 px-3 rounded-xl text-xs font-sans font-medium transition-all cursor-pointer flex items-center gap-1.5 shrink-0",
+                filtroZona === z.id
+                  ? "bg-forest text-white shadow-xs font-semibold"
+                  : "bg-cream text-stone hover:text-forest hover:bg-stone-100",
+              ].join(" ")}
+            >
+              <span>{z.icon}</span>
+              <span>{z.label}</span>
+              <span
+                className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                  filtroZona === z.id ? "bg-white/20 text-white" : "bg-stone-light/60 text-stone"
+                }`}
+              >
+                {z.count}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Controles de Búsqueda y Filtros */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-light/80 pb-4">
         {/* Pills de Filtrado con scroll horizontal en móviles */}
@@ -306,6 +361,18 @@ export function AdminAliadosList({
                   <h3 className="font-serif text-lg sm:text-xl text-forest font-bold tracking-tight">
                     {aliado.nombre}
                   </h3>
+
+                  {/* Badge de Zona */}
+                  <span
+                    className={[
+                      "text-[10px] px-2 py-0.5 rounded-full font-medium border shrink-0",
+                      aliado.zonaSlug === "mendihuaca"
+                        ? "bg-cyan-50 text-cyan-800 border-cyan-200"
+                        : "bg-emerald-50 text-emerald-800 border-emerald-200",
+                    ].join(" ")}
+                  >
+                    {aliado.zonaSlug === "mendihuaca" ? "🌊 Mendihuaca" : "🌿 Minca"}
+                  </span>
 
                   {/* Switch rápido de Activo / Pausado */}
                   <button

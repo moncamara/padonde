@@ -35,6 +35,9 @@ export interface EventoAdminItem {
   descripcion?: string | null;
   imagen_url?: string | null;
   negocio_id?: string;
+  zona_id?: string;
+  zonaSlug?: string;
+  zonaNombre?: string;
   negocio?: {
     id?: string;
     nombre: string;
@@ -55,6 +58,7 @@ export function AdminEventList({ eventos, negocios = [], locale }: AdminEventLis
   const searchParams = useSearchParams();
   const [listaEventos, setListaEventos] = useState<EventoAdminItem[]>(eventos);
   const [tabActiva, setTabActiva] = useState<TabType>("vigentes");
+  const [filtroZona, setFiltroZona] = useState<string>("todas");
   const [busqueda, setBusqueda] = useState(searchParams.get("busqueda") || "");
   const [eventoAEditar, setEventoAEditar] = useState<EventoAdminItem | null>(null);
   const [eventoANotificar, setEventoANotificar] = useState<EventoNotificarData | null>(null);
@@ -76,7 +80,12 @@ export function AdminEventList({ eventos, negocios = [], locale }: AdminEventLis
     const pau: EventoAdminItem[] = [];
     const pas: EventoAdminItem[] = [];
 
-    for (const ev of listaEventos) {
+    const eventosFiltrados =
+      filtroZona === "todas"
+        ? listaEventos
+        : listaEventos.filter((ev) => (ev.zonaSlug || "minca") === filtroZona);
+
+    for (const ev of eventosFiltrados) {
       const ymdInicio = getFechaYMDDesdeISO(ev.fecha_inicio);
       const ymdFin = ev.fecha_fin ? getFechaYMDDesdeISO(ev.fecha_fin) : null;
       const yaPaso = ymdFin ? ymdFin < hoyYMD : ymdInicio < hoyYMD;
@@ -110,7 +119,7 @@ export function AdminEventList({ eventos, negocios = [], locale }: AdminEventLis
     pas.sort((a, b) => new Date(b.fecha_inicio).getTime() - new Date(a.fecha_inicio).getTime());
 
     return { vigentes: v, pausados: pau, pasados: pas };
-  }, [listaEventos, hoyYMD]);
+  }, [listaEventos, hoyYMD, filtroZona]);
 
   // 2. Lista según tab seleccionada
   const listaBase = useMemo(() => {
@@ -139,6 +148,52 @@ export function AdminEventList({ eventos, negocios = [], locale }: AdminEventLis
 
   return (
     <section className="space-y-4">
+      {/* Selector de Región / Zona */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-white/70 p-2.5 sm:p-3 rounded-2xl border border-stone-light/70 shadow-2xs">
+        <div className="flex items-center gap-1.5 overflow-x-auto w-full">
+          <span className="text-xs font-semibold text-forest font-sans mr-1 shrink-0">
+            Región:
+          </span>
+          {[
+            { id: "todas", label: "Todas las Zonas", icon: "🌐", count: listaEventos.length },
+            {
+              id: "minca",
+              label: "Minca",
+              icon: "🌿",
+              count: listaEventos.filter((e) => (e.zonaSlug || "minca") === "minca").length,
+            },
+            {
+              id: "mendihuaca",
+              label: "Mendihuaca",
+              icon: "🌊",
+              count: listaEventos.filter((e) => e.zonaSlug === "mendihuaca").length,
+            },
+          ].map((z) => (
+            <button
+              key={z.id}
+              type="button"
+              onClick={() => setFiltroZona(z.id)}
+              className={[
+                "py-1.5 px-3 rounded-xl text-xs font-sans font-medium transition-all cursor-pointer flex items-center gap-1.5 shrink-0",
+                filtroZona === z.id
+                  ? "bg-forest text-white shadow-xs font-semibold"
+                  : "bg-cream text-stone hover:text-forest hover:bg-stone-100",
+              ].join(" ")}
+            >
+              <span>{z.icon}</span>
+              <span>{z.label}</span>
+              <span
+                className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                  filtroZona === z.id ? "bg-white/20 text-white" : "bg-stone-light/60 text-stone"
+                }`}
+              >
+                {z.count}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Selector de Pestañas por Vigencia */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-light/80 pb-3">
         <div className="grid grid-cols-3 sm:flex items-center gap-1 p-1 bg-stone-light/50 rounded-2xl w-full sm:w-auto">
@@ -255,6 +310,18 @@ export function AdminEventList({ eventos, negocios = [], locale }: AdminEventLis
                   <h3 className="font-serif text-base text-forest font-medium truncate">
                     {ev.titulo}
                   </h3>
+
+                  {/* Badge de Zona */}
+                  <span
+                    className={[
+                      "text-[10px] px-2 py-0.5 rounded-full font-medium border shrink-0",
+                      ev.zonaSlug === "mendihuaca"
+                        ? "bg-cyan-50 text-cyan-800 border-cyan-200"
+                        : "bg-emerald-50 text-emerald-800 border-emerald-200",
+                    ].join(" ")}
+                  >
+                    {ev.zonaSlug === "mendihuaca" ? "🌊 Mendihuaca" : "🌿 Minca"}
+                  </span>
 
                   {esEventoDeHoy && tabActiva === "vigentes" && (
                     <span className="text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded-full font-semibold">

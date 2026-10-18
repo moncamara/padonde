@@ -33,6 +33,7 @@ export default async function AdminAliadosPage({
       nombre,
       descripcion,
       categoria,
+      zona_id,
       whatsapp,
       instagram,
       plan,
@@ -54,6 +55,16 @@ export default async function AdminAliadosPage({
       )
     `)
     .order("nombre", { ascending: true });
+
+  const { data: rawZonas } = await supabase
+    .from("zonas")
+    .select("id, nombre, slug")
+    .eq("activa", true);
+
+  const mapaZonas: Record<string, { nombre: string; slug: string }> = {};
+  for (const z of rawZonas || []) {
+    mapaZonas[z.id] = { nombre: z.nombre, slug: z.slug };
+  }
 
   const ahora = new Date();
   const hace7Dias = new Date(ahora.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -93,6 +104,9 @@ export default async function AdminAliadosPage({
       nombre: n.nombre,
       descripcion: n.descripcion || null,
       categoria: n.categoria,
+      zona_id: n.zona_id,
+      zonaSlug: mapaZonas[n.zona_id]?.slug || "minca",
+      zonaNombre: mapaZonas[n.zona_id]?.nombre || "Minca",
       whatsapp: n.whatsapp,
       instagram: n.instagram,
       plan: n.plan,
