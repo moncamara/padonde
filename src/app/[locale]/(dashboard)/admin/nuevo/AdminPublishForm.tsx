@@ -22,6 +22,7 @@ export function AdminPublishForm({
   defaultZona = "minca",
   initialNegocio,
 }: AdminPublishFormProps) {
+  const [zonaSlug, setZonaSlug] = useState<string>(defaultZona);
   const [businessName, setBusinessName] = useState(initialNegocio?.nombre || "");
   const [whatsapp, setWhatsapp] = useState(initialNegocio?.whatsapp || "");
   const [instagram, setInstagram] = useState(initialNegocio?.instagram || "");
@@ -73,7 +74,7 @@ export function AdminPublishForm({
         description,
         imageUrl: finalImageUrl,
         isFeatured,
-        zonaSlug: defaultZona,
+        zonaSlug,
       });
 
       if (!result.success) {
@@ -105,7 +106,7 @@ export function AdminPublishForm({
         </div>
 
         <div className="space-y-3 pt-2">
-          <Link href={`/${defaultZona}/${createdEventId}`}>
+          <Link href={`/${zonaSlug}/${createdEventId}`}>
             <Button size="lg" className="w-full">
               Ver evento en vivo
             </Button>
@@ -134,6 +135,39 @@ export function AdminPublishForm({
         <h2 className="font-serif text-lg text-forest flex items-center gap-2">
           <span>📍</span> 1. Negocio / Anfitrión
         </h2>
+
+        {/* Selector de Zona */}
+        <div>
+          <label className="block text-xs font-semibold text-forest mb-1.5 font-sans">
+            Zona de Publicación *
+          </label>
+          <div className="grid grid-cols-2 gap-2.5">
+            {[
+              { id: "minca", label: "Minca", icon: "🌿", desc: "Montaña y Sierra" },
+              { id: "mendihuaca", label: "Mendihuaca", icon: "🌊", desc: "Playa, Río y Surf" },
+            ].map((z) => (
+              <button
+                key={z.id}
+                type="button"
+                onClick={() => setZonaSlug(z.id)}
+                className={[
+                  "flex items-center gap-2 p-2.5 rounded-xl border text-xs font-sans transition-all cursor-pointer text-left",
+                  zonaSlug === z.id
+                    ? "bg-forest text-white border-forest shadow-xs font-semibold"
+                    : "bg-cream border-stone-light/70 text-forest hover:bg-white",
+                ].join(" ")}
+              >
+                <span className="text-lg">{z.icon}</span>
+                <div>
+                  <span className="block font-medium">{z.label}</span>
+                  <span className={`text-[10px] ${zonaSlug === z.id ? "text-cream/80" : "text-stone"}`}>
+                    {z.desc}
+                  </span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
 
         <div>
           <label className="block text-xs font-medium text-forest mb-1.5 font-sans">

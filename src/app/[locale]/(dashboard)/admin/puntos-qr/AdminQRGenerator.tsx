@@ -142,6 +142,7 @@ export function AdminQRGenerator({ locale }: { locale: string }) {
                   className="w-full px-3 py-2 text-xs bg-white rounded-xl border border-stone-light/80 focus:outline-none focus:ring-1 focus:ring-forest text-forest cursor-pointer"
                 >
                   <option value="minca">🌿 Minca</option>
+                  <option value="mendihuaca">🌊 Mendihuaca</option>
                   <option value="tairona">🌴 Tairona</option>
                   <option value="santa-marta">🌊 Santa Marta</option>
                 </select>

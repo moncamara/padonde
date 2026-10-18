@@ -20,6 +20,13 @@ export const ZONAS: ZonaConfig[] = [
     activa: true,
   },
   {
+    slug: "mendihuaca",
+    nombre: "Mendihuaca",
+    nombreCorto: "Mendihuaca",
+    descripcion: "Playas vírgenes, río, surf y naturaleza a los pies de la Sierra Nevada",
+    activa: true,
+  },
+  {
     slug: "tairona",
     nombre: "Parque Tairona",
     nombreCorto: "Tairona",
