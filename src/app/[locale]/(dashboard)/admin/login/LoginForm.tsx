@@ -51,6 +51,15 @@ export function LoginForm({ locale }: { locale: string }) {
       >
         {isPending ? "Ingresando..." : "Iniciar Sesión como Administrador"}
       </Button>
+
+      <div className="text-center pt-2">
+        <a
+          href={`/${locale}/minca`}
+          className="text-xs font-sans text-stone hover:text-forest transition-colors inline-flex items-center gap-1"
+        >
+          ← Volver a la cartelera pública
+        </a>
+      </div>
     </form>
   );
 }

@@ -30,7 +30,6 @@ export function AdminNav({ userEmail }: AdminNavProps) {
           <div className="flex items-center gap-1.5 sm:hidden text-xs font-sans">
             <Link
               href="/minca"
-              target="_blank"
               className="text-stone hover:text-forest p-1 rounded-lg border border-stone-light/60 bg-white/70 text-[10px]"
               title="Ver Minca"
             >
@@ -38,7 +37,6 @@ export function AdminNav({ userEmail }: AdminNavProps) {
             </Link>
             <Link
               href="/mendihuaca"
-              target="_blank"
               className="text-stone hover:text-forest p-1 rounded-lg border border-stone-light/60 bg-white/70 text-[10px]"
               title="Ver Mendihuaca"
             >
@@ -103,18 +101,16 @@ export function AdminNav({ userEmail }: AdminNavProps) {
           <div className="flex items-center gap-2">
             <Link
               href="/minca"
-              target="_blank"
               className="text-stone hover:text-forest underline underline-offset-2 flex items-center gap-1"
             >
-              <span>🌿 Minca ↗</span>
+              <span>🌿 Minca</span>
             </Link>
             <span className="text-stone-light">|</span>
             <Link
               href="/mendihuaca"
-              target="_blank"
               className="text-stone hover:text-forest underline underline-offset-2 flex items-center gap-1"
             >
-              <span>🌊 Mendihuaca ↗</span>
+              <span>🌊 Mendihuaca</span>
             </Link>
           </div>
 

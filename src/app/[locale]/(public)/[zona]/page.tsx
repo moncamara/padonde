@@ -4,6 +4,7 @@ import { Link } from "@/i18n/routing";
 import { EventFeed } from "@/components/events/EventFeed";
 import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 import { InstallPrompt } from "@/components/layout/InstallPrompt";
+import { AdminSecretTrigger } from "@/components/layout/AdminSecretTrigger";
 import { getZona, whatsappLink, WHATSAPP_CONTACTO } from "@/constants";
 import { getEventosByZona } from "@/lib/supabase/queries";
 import { getEventoTraducidoAsync } from "@/lib/translations/eventosTraducciones";
@@ -151,14 +152,14 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
       {/* Header sticky con blur y selector de idioma */}
       <header className="sticky top-0 z-10 bg-cream/90 backdrop-blur-sm border-b border-stone-light px-4 py-3">
         <div className="max-w-lg mx-auto flex items-center justify-between">
-          <div>
+          <AdminSecretTrigger>
             <h1 className="font-serif text-3xl text-forest tracking-tight">
               PaDónde
             </h1>
             <p className="font-sans text-xs text-stone mt-0.5">
               {tHeader("subtitle")} {zona.nombre}
             </p>
-          </div>
+          </AdminSecretTrigger>
 
           {/* Selector de idioma ES / EN / FR */}
           <LanguageSwitcher />
