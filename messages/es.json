@@ -107,5 +107,21 @@
     "chromeIosStep2": "2. Selecciona",
     "chromeIosStep2Sub": "Añadir a pantalla de inicio",
     "understood": "¡Entendido!"
+  },
+  "stayCalculator": {
+    "sectionTitle": "Habitaciones y Acomodación",
+    "sectionSubtitle": "Selecciona una opción para calcular tu estadía",
+    "checkIn": "Llegada (Check-in)",
+    "checkOut": "Salida (Check-out)",
+    "guests": "Huéspedes",
+    "nights": "noches",
+    "nightSingular": "noche",
+    "estimatedTotal": "Cotización estimada",
+    "consultWhatsApp": "Consultar Disponibilidad por WhatsApp",
+    "disclaimer": "Tarifa referencial sujeta a confirmación directa con el anfitrión según temporada.",
+    "selectRoom": "Cotizar esta habitación",
+    "selectedRoom": "✓ Seleccionada para cotizar",
+    "perNight": "/ noche",
+    "chooseRoomHint": "Elige una habitación para cotizar"
   }
 }

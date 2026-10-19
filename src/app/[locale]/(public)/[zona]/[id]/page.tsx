@@ -16,6 +16,8 @@ import { getEventoTraducido, getEventoTraducidoAsync } from "@/lib/translations/
 import { Button } from "@/components/ui/Button";
 import { ShareButton } from "@/components/events/ShareButton";
 import { WhatsAppBookingButton } from "@/components/events/WhatsAppBookingButton";
+import { StayCalculator } from "@/components/events/StayCalculator";
+import { GoogleRatingBadge } from "@/components/events/GoogleRatingBadge";
 import type { ZonaSlug } from "@/lib/types";
 import type { Metadata } from "next";
 
@@ -95,6 +97,7 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
   const tCat = await getTranslations("categories");
   const tPrice = await getTranslations("price");
   const tWa = await getTranslations("whatsapp");
+  const tStay = await getTranslations("stayCalculator");
 
   const categoria = getCategoria(evento.tipo);
   const rec = extraerRecurrencia(evento.descripcion);
@@ -231,16 +234,22 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
                 </div>
               </div>
 
-              {evento.negocio.instagram && (
-                <a
-                  href={`https://instagram.com/${evento.negocio.instagram.replace("@", "")}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-terra hover:text-terra-dark font-medium underline underline-offset-2"
-                >
-                  {evento.negocio.instagram}
-                </a>
-              )}
+              <div className="flex flex-col items-end gap-1.5">
+                {evento.metadata_hospedaje?.google_reputacion && (
+                  <GoogleRatingBadge reputacion={evento.metadata_hospedaje.google_reputacion} />
+                )}
+
+                {evento.negocio.instagram && (
+                  <a
+                    href={`https://instagram.com/${evento.negocio.instagram.replace("@", "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-terra hover:text-terra-dark font-medium underline underline-offset-2"
+                  >
+                    {evento.negocio.instagram}
+                  </a>
+                )}
+              </div>
             </div>
           </div>
 
@@ -279,6 +288,34 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
               {limpiarDescripcionRecurrencia(evento.descripcion) || tDetail("noDescription")}
             </div>
           </section>
+
+          {/* Módulo de Hospedaje: Habitaciones y Pre-cotizador reactivo */}
+          {evento.tipo === "hospedaje" &&
+            evento.metadata_hospedaje?.habitaciones &&
+            evento.metadata_hospedaje.habitaciones.length > 0 && (
+              <StayCalculator
+                habitaciones={evento.metadata_hospedaje.habitaciones}
+                hostalNombre={evento.negocio.nombre}
+                whatsapp={evento.negocio.whatsapp}
+                locale={locale}
+                labels={{
+                  sectionTitle: tStay("sectionTitle"),
+                  sectionSubtitle: tStay("sectionSubtitle"),
+                  checkIn: tStay("checkIn"),
+                  checkOut: tStay("checkOut"),
+                  guests: tStay("guests"),
+                  nights: tStay("nights"),
+                  nightSingular: tStay("nightSingular"),
+                  estimatedTotal: tStay("estimatedTotal"),
+                  consultWhatsApp: tStay("consultWhatsApp"),
+                  disclaimer: tStay("disclaimer"),
+                  selectRoom: tStay("selectRoom"),
+                  selectedRoom: tStay("selectedRoom"),
+                  perNight: tStay("perNight"),
+                  chooseRoomHint: tStay("chooseRoomHint"),
+                }}
+              />
+            )}
 
           {/* Información de ayuda o tips para la zona */}
           <div className="p-4 rounded-2xl bg-stone-light/40 border border-stone-light/60 text-xs text-stone space-y-1">

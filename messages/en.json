@@ -107,5 +107,21 @@
     "chromeIosStep2": "2. Select",
     "chromeIosStep2Sub": "Add to Home Screen",
     "understood": "Got it!"
+  },
+  "stayCalculator": {
+    "sectionTitle": "Rooms & Accommodation",
+    "sectionSubtitle": "Select an option to estimate your stay",
+    "checkIn": "Check-in",
+    "checkOut": "Check-out",
+    "guests": "Guests",
+    "nights": "nights",
+    "nightSingular": "night",
+    "estimatedTotal": "Estimated total",
+    "consultWhatsApp": "Check Availability on WhatsApp",
+    "disclaimer": "Reference rate subject to direct confirmation with the host depending on season.",
+    "selectRoom": "Estimate this room",
+    "selectedRoom": "✓ Selected for estimate",
+    "perNight": "/ night",
+    "chooseRoomHint": "Choose a room to estimate"
   }
 }

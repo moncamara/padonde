@@ -117,6 +117,90 @@ export function getMockEventos(): EventoConNegocio[] {
         instagram: "@lacumbre.minca",
       },
     },
+    {
+      id: "evt-005",
+      negocio_id: "neg-004",
+      zona_id: "zona-minca",
+      titulo: "Eco-Habitaciones & Cabañas en la Sierra",
+      descripcion: "Descansa entre las nubes en Minca. Despierta con el canto de los tucanes, vista panorámica al valle y restaurante orgánico propio.",
+      tipo: "hospedaje",
+      precio: 65000,
+      precio_moneda: "COP",
+      fecha_inicio: toISO(hoy, 15, 0),
+      fecha_fin: null,
+      imagen_url: "https://images.unsplash.com/photo-1587061949409-02df41d5e562?w=800&q=80",
+      destacado: true,
+      tiene_boleteria: false,
+      activo: true,
+      created_at: new Date().toISOString(),
+      metadata_hospedaje: {
+        check_in_hora: "15:00",
+        check_out_hora: "11:00",
+        google_reputacion: {
+          rating: 4.8,
+          total_reviews: 284,
+          maps_url: "https://maps.google.com/?q=Minca+Sierra+Nevada",
+        },
+        habitaciones: [
+          {
+            id: "hab-dorm",
+            titulo: "Cama en Dormitorio Vista Selva",
+            descripcion: "Dormitorio amplio de 4 camas con lockers individuales, cortina de privacidad y enchufe.",
+            precio_noche_cop: 65000,
+            capacidad_max: 1,
+            fotos: [
+              "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=800&q=80",
+              "https://images.unsplash.com/photo-1590490360182-c33d57733427?w=800&q=80",
+            ],
+            badges: [
+              { icono: "👥", texto: "1 persona" },
+              { icono: "🚿", texto: "Baño compartido" },
+              { icono: "🔒", texto: "Locker individual" },
+              { icono: "🍳", texto: "Desayuno incluido" },
+            ],
+          },
+          {
+            id: "hab-priv-doble",
+            titulo: "Habitación Privada con Balcón",
+            descripcion: "Cama queen, balcón privado con hamaca y vista al atardecer sobre Santa Marta.",
+            precio_noche_cop: 180000,
+            capacidad_max: 2,
+            fotos: [
+              "https://images.unsplash.com/photo-1590490360182-c33d57733427?w=800&q=80",
+              "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800&q=80",
+            ],
+            badges: [
+              { icono: "👥", texto: "Hasta 2 personas" },
+              { icono: "🚿", texto: "Baño privado" },
+              { icono: "🌿", texto: "Balcón con hamaca" },
+              { icono: "🍳", texto: "Desayuno incluido" },
+            ],
+          },
+          {
+            id: "hab-cabana-familiar",
+            titulo: "Cabaña Panorámica del Bosque",
+            descripcion: "Cabaña de dos niveles para grupos o parejas que buscan máxima privacidad y contacto con la naturaleza.",
+            precio_noche_cop: 320000,
+            capacidad_max: 4,
+            fotos: [
+              "https://images.unsplash.com/photo-1587061949409-02df41d5e562?w=800&q=80",
+              "https://images.unsplash.com/photo-1540518614846-7ede433c4ef7?w=800&q=80",
+            ],
+            badges: [
+              { icono: "👥", texto: "Hasta 4 personas" },
+              { icono: "🚿", texto: "Baño privado con tina" },
+              { icono: "🌄", texto: "Vista 360°" },
+              { icono: "🍳", texto: "Desayuno gourmet" },
+            ],
+          },
+        ],
+      },
+      negocio: {
+        nombre: "Hostal La Cumbre",
+        whatsapp: "573002221100",
+        instagram: "@lacumbre.minca",
+      },
+    },
   ];
 }
 

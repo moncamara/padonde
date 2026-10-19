@@ -11,6 +11,7 @@ export function AdminNav({ userEmail }: AdminNavProps) {
   const pathname = usePathname();
 
   const isCartelera = pathname === "/admin" || pathname.endsWith("/admin");
+  const isHospedajes = pathname.includes("/admin/hospedajes");
   const isAliados = pathname.includes("/admin/aliados");
   const isPuntosQR = pathname.includes("/admin/puntos-qr");
 
@@ -54,45 +55,58 @@ export function AdminNav({ userEmail }: AdminNavProps) {
           </div>
         </div>
 
-        {/* Fila 2 en Mobile / Centro en Desktop: Pestañas de Navegación Segmentadas */}
-        <nav className="grid grid-cols-3 sm:flex items-center gap-1 bg-stone-light/40 p-1 rounded-2xl w-full sm:w-auto">
+        {/* Fila 2 en Mobile / Centro en Desktop: Pestañas de Navegación Segmentadas (4 columnas) */}
+        <nav className="grid grid-cols-4 sm:flex items-center gap-1 bg-stone-light/40 p-1 rounded-2xl w-full sm:w-auto">
           <Link
             href="/admin"
             className={[
-              "py-1.5 px-2 sm:px-3.5 rounded-xl font-sans text-xs font-medium transition-all text-center flex items-center justify-center gap-1",
+              "py-1.5 px-1.5 sm:px-3 rounded-xl font-sans text-xs font-medium transition-all text-center flex items-center justify-center gap-1",
               isCartelera
                 ? "bg-white text-forest shadow-xs font-semibold"
                 : "text-stone hover:text-forest",
             ].join(" ")}
           >
             <span>🌿</span>
-            <span>Cartelera</span>
+            <span className="truncate">Cartelera</span>
+          </Link>
+
+          <Link
+            href="/admin/hospedajes"
+            className={[
+              "py-1.5 px-1.5 sm:px-3 rounded-xl font-sans text-xs font-medium transition-all text-center flex items-center justify-center gap-1",
+              isHospedajes
+                ? "bg-white text-forest shadow-xs font-semibold"
+                : "text-stone hover:text-forest",
+            ].join(" ")}
+          >
+            <span>🏡</span>
+            <span className="truncate">Hospedajes</span>
           </Link>
 
           <Link
             href="/admin/aliados"
             className={[
-              "py-1.5 px-2 sm:px-3 rounded-xl font-sans text-xs font-medium transition-all text-center flex items-center justify-center gap-1",
+              "py-1.5 px-1.5 sm:px-3 rounded-xl font-sans text-xs font-medium transition-all text-center flex items-center justify-center gap-1",
               isAliados
                 ? "bg-white text-forest shadow-xs font-semibold"
                 : "text-stone hover:text-forest",
             ].join(" ")}
           >
             <span>👥</span>
-            <span>Aliados</span>
+            <span className="truncate">Aliados</span>
           </Link>
 
           <Link
             href="/admin/puntos-qr"
             className={[
-              "py-1.5 px-2 sm:px-3 rounded-xl font-sans text-xs font-medium transition-all text-center flex items-center justify-center gap-1",
+              "py-1.5 px-1.5 sm:px-3 rounded-xl font-sans text-xs font-medium transition-all text-center flex items-center justify-center gap-1",
               isPuntosQR
                 ? "bg-white text-forest shadow-xs font-semibold"
                 : "text-stone hover:text-forest",
             ].join(" ")}
           >
             <span>📍</span>
-            <span>Puntos QR</span>
+            <span className="truncate">Puntos QR</span>
           </Link>
         </nav>
 

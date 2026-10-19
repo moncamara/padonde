@@ -107,5 +107,21 @@
     "chromeIosStep2": "2. Wähle",
     "chromeIosStep2Sub": "Zum Startbildschirm hinzufügen",
     "understood": "Verstanden!"
+  },
+  "stayCalculator": {
+    "sectionTitle": "Zimmer & Unterkünfte",
+    "sectionSubtitle": "Wähle eine Option, um deinen Aufenthalt zu berechnen",
+    "checkIn": "Anreise (Check-in)",
+    "checkOut": "Abreise (Check-out)",
+    "guests": "Gäste",
+    "nights": "Nächte",
+    "nightSingular": "Nacht",
+    "estimatedTotal": "Geschätzter Gesamtpreis",
+    "consultWhatsApp": "Verfügbarkeit auf WhatsApp anfragen",
+    "disclaimer": "Richtpreis vorbehaltlich direkter Bestätigung durch den Gastgeber je nach Saison.",
+    "selectRoom": "Dieses Zimmer berechnen",
+    "selectedRoom": "✓ Zur Berechnung ausgewählt",
+    "perNight": "/ Nacht",
+    "chooseRoomHint": "Wähle ein Zimmer zur Berechnung"
   }
 }

@@ -963,5 +963,157 @@ export async function toggleActivoAliadoAction(
   }
 }
 
+// ─── GESTIÓN DE HOSPEDAJES (SERVER ACTIONS) ─────────────────────────────────
+
+export interface GuardarHospedajeInput {
+  id?: string; // Si viene id es edición, si no es nuevo
+  nombreNegocio: string;
+  whatsapp: string;
+  instagram?: string;
+  titulo: string;
+  descripcion: string;
+  zonaSlug: string;
+  imagenUrl: string;
+  destacado?: boolean;
+  metadataHospedaje: {
+    check_in_hora?: string;
+    check_out_hora?: string;
+    google_reputacion?: {
+      rating: number;
+      total_reviews: number;
+      maps_url: string;
+    };
+    habitaciones: Array<{
+      id: string;
+      titulo: string;
+      descripcion?: string;
+      precio_noche_cop: number;
+      capacidad_max: number;
+      fotos: string[];
+      badges: Array<{ icono: string; texto: string }>;
+    }>;
+  };
+}
+
+export async function guardarHospedajeAction(input: GuardarHospedajeInput) {
+  try {
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: "No autorizado. Inicia sesión." };
+    }
+
+    // 1. Obtener ID de la zona
+    const { data: zona, error: zonaError } = await supabase
+      .from("zonas")
+      .select("id")
+      .eq("slug", input.zonaSlug)
+      .eq("activa", true)
+      .single();
+
+    if (zonaError || !zona) {
+      return { success: false, error: "Zona no válida o inactiva." };
+    }
+
+    // 2. Buscar o crear negocio (aliado de hospedaje)
+    let negocioId = "";
+    const cleanPhone = input.whatsapp.replace(/\D/g, "");
+
+    const { data: existingNegocio } = await supabase
+      .from("negocios")
+      .select("id")
+      .eq("whatsapp", cleanPhone)
+      .maybeSingle();
+
+    if (existingNegocio) {
+      negocioId = existingNegocio.id;
+      await supabase
+        .from("negocios")
+        .update({
+          nombre: input.nombreNegocio.trim(),
+          instagram: input.instagram?.trim() || null,
+          categoria: "hospedaje",
+        })
+        .eq("id", negocioId);
+    } else {
+      const { data: newNegocio, error: newNegocioError } = await supabase
+        .from("negocios")
+        .insert({
+          zona_id: zona.id,
+          nombre: input.nombreNegocio.trim(),
+          whatsapp: cleanPhone,
+          instagram: input.instagram?.trim() || null,
+          categoria: "hospedaje",
+          plan: "gratis",
+          activo: true,
+        })
+        .select("id")
+        .single();
+
+      if (newNegocioError || !newNegocio) {
+        return { success: false, error: "Error al crear el aliado de hospedaje." };
+      }
+      negocioId = newNegocio.id;
+    }
+
+    // 3. Calcular precio mínimo referencial para el registro
+    const precios = input.metadataHospedaje.habitaciones.map((h) => h.precio_noche_cop);
+    const precioBase = precios.length > 0 ? Math.min(...precios) : 0;
+
+    // 4. Insertar o Actualizar el evento tipo 'hospedaje'
+    const datosHospedaje = {
+      negocio_id: negocioId,
+      zona_id: zona.id,
+      titulo: input.titulo.trim(),
+      descripcion: input.descripcion.trim(),
+      tipo: "hospedaje" as CategoriaEvento,
+      precio: precioBase,
+      precio_moneda: "COP" as const,
+      fecha_inicio: new Date().toISOString(),
+      fecha_fin: null,
+      imagen_url: input.imagenUrl || null,
+      destacado: Boolean(input.destacado),
+      tiene_boleteria: false,
+      activo: true,
+      metadata_hospedaje: input.metadataHospedaje,
+    };
+
+    if (input.id) {
+      // Actualización
+      const { error: updateError } = await supabase
+        .from("eventos")
+        .update(datosHospedaje)
+        .eq("id", input.id);
+
+      if (updateError) {
+        return { success: false, error: updateError.message };
+      }
+    } else {
+      // Creación
+      const { error: insertError } = await supabase
+        .from("eventos")
+        .insert(datosHospedaje);
+
+      if (insertError) {
+        return { success: false, error: insertError.message };
+      }
+    }
+
+    // Revalidar rutas para reflejar cambios de inmediato
+    revalidatePath(`/[locale]/admin/hospedajes`, "page");
+    revalidatePath(`/[locale]/${input.zonaSlug}`, "page");
+
+    return { success: true };
+  } catch (err: any) {
+    console.error("Excepción en guardarHospedajeAction:", err);
+    return { success: false, error: err?.message || "Error al procesar hospedaje." };
+  }
+}
+
+
 
 

@@ -70,8 +70,40 @@ export type Evento = {
   activo: boolean;
   created_at: string;
   traducciones?: Record<string, { titulo: string; descripcion: string }> | null;
+  /** Datos opcionales para hospedajes (habitaciones, cotizador, reputación Google) */
+  metadata_hospedaje?: HospedajeMetadata | null;
   // Relación — se incluye en queries con JOIN
   negocio?: Pick<Negocio, "nombre" | "whatsapp" | "instagram">;
+};
+
+// ─── Tipos de Hospedaje y Cotizador ──────────────────────────────────────────
+
+export type BadgeHabitacion = {
+  icono: string;
+  texto: string;
+};
+
+export type HabitacionHospedaje = {
+  id: string;
+  titulo: string;
+  descripcion?: string;
+  precio_noche_cop: number;
+  capacidad_max: number;
+  fotos: string[];
+  badges: BadgeHabitacion[];
+};
+
+export type GoogleReputacion = {
+  rating: number;             // ej: 4.8
+  total_reviews: number;      // ej: 245
+  maps_url: string;           // ej: "https://maps.app.goo.gl/..."
+};
+
+export type HospedajeMetadata = {
+  check_in_hora?: string;     // ej: "15:00"
+  check_out_hora?: string;    // ej: "11:00"
+  google_reputacion?: GoogleReputacion;
+  habitaciones: HabitacionHospedaje[];
 };
 
 // ─── Tipos de UI (no van a la BD) ────────────────────────────────────────────

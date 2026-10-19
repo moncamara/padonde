@@ -43,6 +43,7 @@ const COLUMNAS_CON_TRADUCCIONES = `
   activo,
   created_at,
   traducciones,
+  metadata_hospedaje,
   negocio:negocios (
     nombre,
     whatsapp,
