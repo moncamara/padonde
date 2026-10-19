@@ -122,5 +122,29 @@
     "selectedRoom": "✓ Sélectionnée pour estimation",
     "perNight": "/ nuit",
     "chooseRoomHint": "Choisissez une chambre pour estimer"
+  },
+  "essentialServices": {
+    "tabCartelera": "Agenda",
+    "tabServicios": "Infos Pratiques & Services",
+    "servicesSubtitle": "Commerces locaux et services essentiels à",
+    "infoUtil": "Infos Pratiques",
+    "openNow": "Ouvert aujourd'hui",
+    "officialPoint": "Point Officiel",
+    "availableServices": "Services disponibles :",
+    "addressTitle": "Localisation :",
+    "openInMaps": "Ouvrir dans Maps ↗",
+    "contactWhatsApp": "Contacter sur WhatsApp",
+    "inPersonOnly": "Accueil et renseignements directement sur place",
+    "defaultWhatsAppMessage": "Bonjour ! Je vous ai vu sur PaDónde {zona} et j'aimerais avoir des informations sur vos services.",
+    "close": "Fermer",
+    "filterAll": "Tous",
+    "empty": "Aucun service trouvé dans cette catégorie.",
+    "categories": {
+      "efectivo": "Espèces & Devises",
+      "transporte": "Motos & Transport",
+      "salud": "Pharmacie & Santé",
+      "comercio": "Boutiques & Souvenirs",
+      "general": "Services Généraux"
+    }
   }
 }

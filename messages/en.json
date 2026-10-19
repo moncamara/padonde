@@ -123,5 +123,29 @@
     "selectedRoom": "✓ Selected for estimate",
     "perNight": "/ night",
     "chooseRoomHint": "Choose a room to estimate"
+  },
+  "essentialServices": {
+    "tabCartelera": "Events Board",
+    "tabServicios": "Essential Info & Services",
+    "servicesSubtitle": "Local businesses and essential services in",
+    "infoUtil": "Essential Info",
+    "openNow": "Open today",
+    "officialPoint": "Official Point",
+    "availableServices": "Available services:",
+    "addressTitle": "Location:",
+    "openInMaps": "Open in Maps ↗",
+    "contactWhatsApp": "Inquire via WhatsApp",
+    "inPersonOnly": "In-person assistance and inquiries directly at their location",
+    "defaultWhatsAppMessage": "Hello! I saw you on PaDónde {zona} and would like to ask about your services.",
+    "close": "Close",
+    "filterAll": "All",
+    "empty": "No services found in this category.",
+    "categories": {
+      "efectivo": "Cash & Currency Exchange",
+      "transporte": "Motorcycle & Transport",
+      "salud": "Pharmacy & First Aid",
+      "comercio": "Shops & Souvenirs",
+      "general": "General Services"
+    }
   }
 }

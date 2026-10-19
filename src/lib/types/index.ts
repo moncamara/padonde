@@ -106,6 +106,37 @@ export type HospedajeMetadata = {
   habitaciones: HabitacionHospedaje[];
 };
 
+// ─── Tipos de Servicios Esenciales e Info Útil ────────────────────────────────
+
+export type CategoriaServicioEsencial =
+  | "efectivo"
+  | "transporte"
+  | "salud"
+  | "comercio"
+  | "general";
+
+export type ServicioEsencial = {
+  id: string;
+  zona_id: string;
+  categoria: CategoriaServicioEsencial;
+  nombre_comercial: string;
+  subtitulo: string;
+  logo_url: string | null;
+  imagen_lugar_url: string | null;
+  whatsapp: string;
+  mensaje_whatsapp_default: string | null;
+  google_maps_url: string | null;
+  direccion_referencia: string;
+  horario_apertura: string;
+  servicios_tags: string[];
+  destacado_patrocinado: boolean;
+  tipo_acuerdo?: "canje_afiche" | "pago_mensual" | "cortesia";
+  orden_prioridad: number;
+  activo: boolean;
+  boton_whatsapp_activo?: boolean;
+  created_at?: string;
+};
+
 // ─── Tipos de UI (no van a la BD) ────────────────────────────────────────────
 
 /** Evento enriquecido con datos del negocio para renderizar en el feed */

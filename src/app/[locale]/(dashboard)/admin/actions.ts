@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { parseLocalColombiaAISO } from "@/lib/utils";
 import { traducirEventoCompleto } from "@/lib/translations/translator";
-import type { CategoriaEvento, PlanNegocio } from "@/lib/types";
+import type { CategoriaEvento, PlanNegocio, CategoriaServicioEsencial, ServicioEsencial } from "@/lib/types";
 
 export interface AdminPublishInput {
   businessName: string;
@@ -1114,6 +1114,253 @@ export async function guardarHospedajeAction(input: GuardarHospedajeInput) {
   }
 }
 
+// ─── GESTIÓN DE SERVICIOS ESENCIALES (SERVER ACTIONS) ───────────────────────────
 
+export interface GuardarServicioEsencialInput {
+  id?: string;
+  zonaSlug: string;
+  categoria: CategoriaServicioEsencial;
+  nombreComercial: string;
+  subtitulo: string;
+  logoUrl?: string | null;
+  imagenLugarUrl?: string | null;
+  whatsapp: string;
+  mensajeWhatsappDefault?: string | null;
+  googleMapsUrl?: string | null;
+  direccionReferencia: string;
+  horarioApertura: string;
+  serviciosTags: string[];
+  destacadoPatrocinado?: boolean;
+  tipoAcuerdo?: "canje_afiche" | "pago_mensual" | "cortesia";
+  ordenPrioridad?: number;
+  activo?: boolean;
+  botonWhatsappActivo?: boolean;
+}
 
+export async function guardarServicioEsencialAction(
+  input: GuardarServicioEsencialInput
+) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
+    if (!user) {
+      return { success: false, error: "No autorizado. Inicia sesión." };
+    }
+
+    // 1. Obtener ID de la zona
+    const { data: zona } = await supabase
+      .from("zonas")
+      .select("id")
+      .eq("slug", input.zonaSlug)
+      .eq("activa", true)
+      .single();
+
+    const zonaId = zona?.id || (input.zonaSlug === "mendihuaca" ? "zona-mendihuaca" : "zona-minca");
+    const cleanPhone = input.whatsapp.replace(/\D/g, "");
+
+    const payload = {
+      zona_id: zonaId,
+      categoria: input.categoria,
+      nombre_comercial: input.nombreComercial.trim(),
+      subtitulo: input.subtitulo.trim(),
+      logo_url: input.logoUrl?.trim() || null,
+      imagen_lugar_url: input.imagenLugarUrl?.trim() || null,
+      whatsapp: cleanPhone,
+      mensaje_whatsapp_default: input.mensajeWhatsappDefault?.trim() || null,
+      google_maps_url: input.googleMapsUrl?.trim() || null,
+      direccion_referencia: input.direccionReferencia.trim(),
+      horario_apertura: input.horarioApertura.trim(),
+      servicios_tags: input.serviciosTags.map((t) => t.trim()).filter(Boolean),
+      destacado_patrocinado: Boolean(input.destacadoPatrocinado),
+      tipo_acuerdo: input.tipoAcuerdo || "canje_afiche",
+      orden_prioridad: Number(input.ordenPrioridad ?? 10),
+      activo: input.activo !== undefined ? Boolean(input.activo) : true,
+      boton_whatsapp_activo:
+        input.botonWhatsappActivo !== undefined
+          ? Boolean(input.botonWhatsappActivo)
+          : true,
+    };
+
+    let servicioGuardado: ServicioEsencial | null = null;
+    const isUuid = Boolean(
+      input.id &&
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          input.id
+        )
+    );
+
+    if (isUuid) {
+      let { data: updated, error: updateError } = await supabase
+        .from("servicios_esenciales")
+        .update(payload)
+        .eq("id", input.id!)
+        .select("*")
+        .single();
+
+      // Si la columna boton_whatsapp_activo aún no ha sido agregada por ALTER TABLE, reintentar sin ella
+      if (updateError && updateError.message?.includes("boton_whatsapp_activo")) {
+        const { boton_whatsapp_activo: _, ...payloadFallback } = payload;
+        const resFallback = await supabase
+          .from("servicios_esenciales")
+          .update(payloadFallback)
+          .eq("id", input.id!)
+          .select("*")
+          .single();
+        updated = resFallback.data;
+        updateError = resFallback.error;
+      }
+
+      if (updateError) {
+        return { success: false, error: updateError.message };
+      }
+      servicioGuardado = updated as ServicioEsencial;
+    } else {
+      let { data: inserted, error: insertError } = await supabase
+        .from("servicios_esenciales")
+        .insert(payload)
+        .select("*")
+        .single();
+
+      // Si la columna boton_whatsapp_activo aún no ha sido agregada por ALTER TABLE, reintentar sin ella
+      if (insertError && insertError.message?.includes("boton_whatsapp_activo")) {
+        const { boton_whatsapp_activo: _, ...payloadFallback } = payload;
+        const resFallback = await supabase
+          .from("servicios_esenciales")
+          .insert(payloadFallback)
+          .select("*")
+          .single();
+        inserted = resFallback.data;
+        insertError = resFallback.error;
+      }
+
+      if (insertError) {
+        return { success: false, error: insertError.message };
+      }
+      servicioGuardado = inserted as ServicioEsencial;
+    }
+
+    revalidatePath(`/[locale]/admin/esenciales`, "page");
+    revalidatePath(`/[locale]/${input.zonaSlug}`, "page");
+
+    return { success: true, servicio: servicioGuardado };
+  } catch (err: any) {
+    console.error("Excepción en guardarServicioEsencialAction:", err);
+    return {
+      success: false,
+      error: err?.message || "Error al procesar servicio esencial.",
+    };
+  }
+}
+
+export async function toggleActivoServicioEsencialAction(
+  id: string,
+  nuevoEstado: boolean,
+  zonaSlug: string = "minca"
+) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: "No autenticado." };
+    }
+
+    const { error } = await supabase
+      .from("servicios_esenciales")
+      .update({ activo: nuevoEstado })
+      .eq("id", id);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    revalidatePath(`/[locale]/admin/esenciales`, "page");
+    revalidatePath(`/[locale]/${zonaSlug}`, "page");
+
+    return { success: true };
+  } catch (err: any) {
+    console.error("Excepción en toggleActivoServicioEsencialAction:", err);
+    return { success: false, error: err?.message || "Error al alternar estado." };
+  }
+}
+
+export async function toggleBotonWhatsappServicioEsencialAction(
+  id: string,
+  nuevoEstado: boolean,
+  zonaSlug: string = "minca"
+) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: "No autenticado." };
+    }
+
+    const { error } = await supabase
+      .from("servicios_esenciales")
+      .update({ boton_whatsapp_activo: nuevoEstado })
+      .eq("id", id);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    revalidatePath(`/[locale]/admin/esenciales`, "page");
+    revalidatePath(`/[locale]/${zonaSlug}`, "page");
+
+    return { success: true };
+  } catch (err: any) {
+    console.error("Excepción en toggleBotonWhatsappServicioEsencialAction:", err);
+    return {
+      success: false,
+      error: err?.message || "Error al alternar visibilidad de WhatsApp.",
+    };
+  }
+}
+
+export async function eliminarServicioEsencialAction(
+  id: string,
+  zonaSlug: string = "minca"
+) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: "No autenticado." };
+    }
+
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      id
+    );
+
+    if (isUuid) {
+      const { error } = await supabase
+        .from("servicios_esenciales")
+        .delete()
+        .eq("id", id);
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+    }
+
+    revalidatePath(`/[locale]/admin/esenciales`, "page");
+    revalidatePath(`/[locale]/${zonaSlug}`, "page");
+
+    return { success: true };
+  } catch (err: any) {
+    console.error("Excepción en eliminarServicioEsencialAction:", err);
+    return { success: false, error: err?.message || "Error al eliminar servicio." };
+  }
+}

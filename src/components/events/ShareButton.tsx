@@ -1,28 +1,60 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
-export function ShareButton({ title }: { title: string }) {
+interface ShareButtonProps {
+  title: string;
+  url?: string;
+}
+
+export function ShareButton({ title, url }: ShareButtonProps) {
   const t = useTranslations("eventDetail");
+  const locale = useLocale();
   const [copied, setCopied] = useState(false);
 
+  // Asegurar que la URL a compartir siempre lleve explícitamente el prefijo del idioma actual
+  function getShareUrl(): string {
+    if (url) return url;
+    if (typeof window !== "undefined") {
+      const origin = window.location.origin;
+      const path = window.location.pathname;
+      const search = window.location.search;
+
+      // Si el pathname ya empieza con /es, /en, /fr, /de
+      const matchLocale = path.match(/^\/(es|en|fr|de)(\/.*|$)/);
+      if (matchLocale) {
+        if (matchLocale[1] === locale) {
+          return `${origin}${path}${search}`;
+        }
+        return `${origin}/${locale}${matchLocale[2]}${search}`;
+      } else {
+        return `${origin}/${locale}${path}${search}`;
+      }
+    }
+    return `https://www.padonde.lat/${locale}`;
+  }
+
   async function handleShare() {
+    const targetUrl = getShareUrl();
+    const shareText = `${title} — PaDónde 🌿`;
+
     if (navigator.share) {
       try {
         await navigator.share({
           title,
-          url: window.location.href,
+          text: shareText,
+          url: targetUrl,
         });
         return;
       } catch (err) {
-        // Ignorar si el usuario cancela
+        // Ignorar si el usuario cancela la ventana nativa
       }
     }
 
     // Fallback: copiar al portapapeles con manejo seguro de permisos
     try {
-      await navigator.clipboard.writeText(window.location.href);
+      await navigator.clipboard.writeText(targetUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {

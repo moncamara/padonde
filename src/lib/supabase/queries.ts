@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { getMockEventos } from "@/lib/mock/eventos";
-import type { EventoConNegocio, ZonaSlug } from "@/lib/types";
+import { MOCK_SERVICIOS_ESENCIALES } from "@/lib/mock/serviciosEsenciales";
+import { getZona } from "@/constants";
+import type { EventoConNegocio, ZonaSlug, ServicioEsencial } from "@/lib/types";
 
 const COLUMNAS_BASE = `
   id,
@@ -157,3 +159,55 @@ export async function getEventoById(id: string): Promise<EventoConNegocio | null
     return mockEventos.find((e) => e.id === id) || null;
   }
 }
+
+/**
+ * Obtiene los servicios esenciales de infraestructura activos para una zona.
+ * Si la tabla aún no existe en Supabase o da error, usa el mock como fallback seguro.
+ */
+export async function getServiciosEsencialesByZona(
+  zonaSlug: ZonaSlug
+): Promise<ServicioEsencial[]> {
+  try {
+    const supabase = await createClient();
+
+    // 1. Obtener ID de la zona por su slug
+    const { data: zona } = await supabase
+      .from("zonas")
+      .select("id")
+      .eq("slug", zonaSlug)
+      .eq("activa", true)
+      .single();
+
+    const zonaId = zona?.id || (zonaSlug === "mendihuaca" ? "zona-mendihuaca" : "zona-minca");
+
+    const { data, error } = await supabase
+      .from("servicios_esenciales")
+      .select("*")
+      .eq("zona_id", zonaId)
+      .eq("activo", true)
+      .order("orden_prioridad", { ascending: true });
+
+    if (error || !data || data.length === 0) {
+      const fallbackList = MOCK_SERVICIOS_ESENCIALES.filter((s) => {
+        const matchesSlug =
+          zonaSlug === "mendihuaca"
+            ? s.zona_id === "zona-mendihuaca"
+            : s.zona_id === "zona-minca";
+        return (s.zona_id === zonaId || matchesSlug) && s.activo;
+      });
+      return fallbackList.sort((a, b) => a.orden_prioridad - b.orden_prioridad);
+    }
+
+    return data as ServicioEsencial[];
+  } catch (err) {
+    console.warn("[getServiciosEsencialesByZona] Fallback a mock:", err);
+    return MOCK_SERVICIOS_ESENCIALES.filter((s) => {
+      const matchesSlug =
+        zonaSlug === "mendihuaca"
+          ? s.zona_id === "zona-mendihuaca"
+          : s.zona_id === "zona-minca";
+      return matchesSlug && s.activo;
+    });
+  }
+}
+

@@ -123,5 +123,29 @@
     "selectedRoom": "✓ Seleccionada para cotizar",
     "perNight": "/ noche",
     "chooseRoomHint": "Elige una habitación para cotizar"
+  },
+  "essentialServices": {
+    "tabCartelera": "Cartelera",
+    "tabServicios": "Info Útil & Servicios",
+    "servicesSubtitle": "Negocios locales y servicios esenciales en",
+    "infoUtil": "Info Útil",
+    "openNow": "Abierto hoy",
+    "officialPoint": "Punto Oficial",
+    "availableServices": "Servicios disponibles:",
+    "addressTitle": "Ubicación:",
+    "openInMaps": "Abrir en Maps ↗",
+    "contactWhatsApp": "Consultar por WhatsApp",
+    "inPersonOnly": "Atención y consultas directamente en su punto físico",
+    "defaultWhatsAppMessage": "¡Hola! Los vi en PaDónde {zona} y me gustaría consultar información de sus servicios.",
+    "close": "Cerrar",
+    "filterAll": "Todos",
+    "empty": "No hay servicios registrados en esta categoría.",
+    "categories": {
+      "efectivo": "Efectivo & Divisas",
+      "transporte": "Motos & Transporte",
+      "salud": "Farmacia & Salud",
+      "comercio": "Tiendas & Souvenirs",
+      "general": "Servicios Generales"
+    }
   }
 }

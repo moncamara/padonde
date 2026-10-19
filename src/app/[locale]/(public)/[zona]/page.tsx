@@ -1,12 +1,12 @@
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/routing";
-import { EventFeed } from "@/components/events/EventFeed";
+import { FeedTabsContainer } from "@/components/layout/FeedTabsContainer";
 import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 import { InstallPrompt } from "@/components/layout/InstallPrompt";
 import { AdminSecretTrigger } from "@/components/layout/AdminSecretTrigger";
 import { getZona, whatsappLink, WHATSAPP_CONTACTO } from "@/constants";
-import { getEventosByZona } from "@/lib/supabase/queries";
+import { getEventosByZona, getServiciosEsencialesByZona } from "@/lib/supabase/queries";
 import { getEventoTraducidoAsync } from "@/lib/translations/eventosTraducciones";
 import type { ZonaSlug } from "@/lib/types";
 import type { Metadata } from "next";
@@ -96,8 +96,12 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
   const tFooter = await getTranslations("footer");
   const tWa = await getTranslations("whatsapp");
 
-  // Obtener eventos desde Supabase
-  let eventos = await getEventosByZona(zonaSlug);
+  // Obtener eventos y servicios esenciales desde Supabase
+  const [eventosRaw, servicios] = await Promise.all([
+    getEventosByZona(zonaSlug),
+    getServiciosEsencialesByZona(zonaSlug),
+  ]);
+  let eventos = eventosRaw;
 
   // Si el idioma no es español, traducir dinámicamente títulos y descripciones
   if (locale !== "es" && eventos.length > 0) {
@@ -166,9 +170,14 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
         </div>
       </header>
 
-      {/* Feed de eventos */}
+      {/* Feed principal y Servicios Esenciales */}
       <div className="max-w-lg mx-auto px-4 py-6">
-        <EventFeed eventos={eventos} zona={zonaSlug} />
+        <FeedTabsContainer
+          eventos={eventos}
+          servicios={servicios}
+          zona={zonaSlug}
+          zonaNombre={zona.nombre}
+        />
       </div>
 
       {/* Footer — invitación a negocios con traducción y enlace a tu WhatsApp */}

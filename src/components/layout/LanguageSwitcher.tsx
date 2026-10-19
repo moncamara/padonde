@@ -10,7 +10,7 @@ const IDIOMAS = [
   { code: "de", label: "DE", flag: "🇩🇪" },
 ];
 
-export function LanguageSwitcher() {
+export function LanguageSwitcher({ className = "" }: { className?: string }) {
   const currentLocale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
@@ -21,7 +21,7 @@ export function LanguageSwitcher() {
   }
 
   return (
-    <div className="flex items-center gap-1 bg-stone-light/60 p-1 rounded-full text-xs font-sans">
+    <div className={`flex items-center gap-1 bg-stone-light/60 p-1 rounded-full text-xs font-sans ${className}`.trim()}>
       {IDIOMAS.map(({ code, label }) => {
         const isActive = currentLocale === code;
         return (
