@@ -72,7 +72,7 @@ export async function getEventosByZona(zonaSlug: ZonaSlug): Promise<EventoConNeg
 
     if (zonaError || !zona) {
       console.warn(`Zona no encontrada en Supabase: ${zonaSlug}`);
-      return [];
+      return getMockEventos(zonaSlug);
     }
 
     // 2. Obtener eventos con su negocio relacionado (todos los activos)
@@ -103,15 +103,19 @@ export async function getEventosByZona(zonaSlug: ZonaSlug): Promise<EventoConNeg
 
     if (eventosError) {
       console.error("Error al obtener eventos de Supabase:", eventosError);
-      return [];
+      return getMockEventos(zonaSlug);
     }
 
     const lista = (eventosData as unknown as (EventoConNegocio & { negocio?: { activo?: boolean } })[]) || [];
     // Ocultar del feed público si el comercio aliado está desactivado
-    return lista.filter((e) => !e.negocio || e.negocio.activo !== false);
+    const filtrados = lista.filter((e) => !e.negocio || e.negocio.activo !== false);
+    if (filtrados.length === 0) {
+      return getMockEventos(zonaSlug);
+    }
+    return filtrados;
   } catch (err) {
     console.error("Excepción en getEventosByZona:", err);
-    return [];
+    return getMockEventos(zonaSlug);
   }
 }
 

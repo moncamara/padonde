@@ -498,6 +498,55 @@ Ce dimanche 18 octobre à 16h00, retrouvons-nous au Silocibe Gastrobar pour cél
 Le cacao nous réunit ! ¿Quiere cacao? 🍫💚`,
     },
   },
+
+  // 🌊 Casa Maya Mendihuaca (Hospedaje & Refugio Frente al Mar)
+  "casa-maya": {
+    en: {
+      titulo: "Casa Maya Mendihuaca — Beachfront Guesthouse & Ocean Sanctuary",
+      descripcion: `Casa Maya Mendihuaca is located directly on Mendihuaca Beach, just steps from the river mouth and the best surf breaks on Colombia's Caribbean coast.
+
+Enjoy private beachfront rooms with ocean-view balconies and hammocks, lush tropical garden, private beach access, free high-speed WiFi, shared kitchen, and communal lounge.
+
+🌊 Casa Maya Highlights:
+• Direct beach access and the sound of waves 24/7.
+• Private balconies with hammocks and panoramic sea & garden views.
+• Peaceful, safe, natural, and pet-friendly environment.
+• Steps from surf lessons and scenic river walks.
+• Rated 9.6/10 by couples and international travelers.
+
+📲 Check room rates on our interactive stay calculator below or message us directly on WhatsApp to book commission-free.`,
+    },
+    de: {
+      titulo: "Casa Maya Mendihuaca — Guesthouse & Strandrefugium am Meer",
+      descripcion: `Casa Maya Mendihuaca liegt direkt am Strand von Mendihuaca, nur wenige Schritte von der Flussmündung und den besten Surfwellen der kolumbianischen Karibikküste entfernt.
+
+Genieße private Zimmer direkt am Strand mit Balkon und Hängematten, tropischem Garten, privatem Strandzugang, kostenlosem WLAN, Gemeinschaftsküche und Lounge.
+
+🌊 Highlights von Casa Maya:
+• Direkter Zugang zum Strand und Meeresrauschen rund um die Uhr.
+• Private Balkone mit Hängematte und Panoramablick auf Meer und Garten.
+• Ruhige, sichere, naturnahe und haustierfreundliche Atmosphäre.
+• Nur wenige Schritte zu Surfstunden und Spaziergängen am Fluss.
+• Mit 9,6/10 bewertet von Paaren und internationalen Reisenden.
+
+📲 Berechne deinen Aufenthalt im interaktiven Zimmerrechner unten oder schreibe uns direkt auf WhatsApp für eine provisionsfreie Buchung.`,
+    },
+    fr: {
+      titulo: "Casa Maya Mendihuaca — Maison d'Hôtes & Refuge Face à la Mer",
+      descripcion: `Casa Maya Mendihuaca est située directement sur la plage de Mendihuaca, à quelques pas de l'embouchure de la rivière et des meilleures vagues de la côte caraïbe colombienne.
+
+Profitez de chambres privées en bord de mer avec balcon et hamacs, jardin tropical, accès à une plage privée, Wi-Fi gratuit, cuisine partagée et salon commun.
+
+🌊 Les atouts de Casa Maya :
+• Accès direct à la plage et bercé par le bruit des vagues 24h/24.
+• Balcons privés avec hamac et vue panoramique sur l'océan et le jardin.
+• Ambiance paisible, sécurisée, naturelle et animaux bienvenus.
+• À quelques pas des cours de surf et des balades au bord de la rivière.
+• Noté 9,6/10 par les couples et les voyageurs internationaux.
+
+📲 Calculez votre séjour sur notre simulateur interactif ci-dessous ou écrivez-nous directement sur WhatsApp pour réserver sans commission d'intermédiaire.`,
+    },
+  },
 };
 
 /**
@@ -549,6 +598,9 @@ function identificarClaveEvento(evento: {
   }
   if (t.includes("quiere cacao") || t.includes("silocibe") || d.includes("silocibe") || d.includes("quiere cacao")) {
     return "silocibe-cacao";
+  }
+  if (t.includes("casa maya") || d.includes("casa maya")) {
+    return "casa-maya";
   }
 
   return null;
