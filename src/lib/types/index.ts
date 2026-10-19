@@ -11,6 +11,7 @@ export type ZonaSlug = "minca" | "tairona" | "santa-marta" | "mendihuaca";
 
 /** Categorías de eventos — usadas para filtros y badges */
 export type CategoriaEvento =
+  | "rumba"
   | "musica"
   | "comida"
   | "bienestar"

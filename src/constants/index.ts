@@ -56,17 +56,20 @@ export type CategoriaConfig = {
 
 /** Categorías con sus etiquetas e íconos para filtros y badges */
 export const CATEGORIAS: CategoriaConfig[] = [
-  { id: "musica",      label: "Música",      labelEn: "Music",     emoji: "🎵" },
-  { id: "comida",      label: "Comida",      labelEn: "Food",      emoji: "🍽️" },
-  { id: "bienestar",   label: "Bienestar",   labelEn: "Wellness",  emoji: "🧘" },
-  { id: "tours",       label: "Tours",       labelEn: "Tours",     emoji: "🌿" },
-  { id: "arte",        label: "Arte & Cultura",  labelEn: "Art & Culture",  emoji: "🎨" },
-  { id: "hospedaje",   label: "Hospedaje",   labelEn: "Stay",      emoji: "🏡" },
-  { id: "artesanias",  label: "Artesanías",  labelEn: "Crafts",    emoji: "🪡" },
+  { id: "rumba",       label: "Rumba",       labelEn: "Party & Nightlife", emoji: "🪩" },
+  { id: "comida",      label: "Comida",      labelEn: "Food",              emoji: "🍽️" },
+  { id: "bienestar",   label: "Bienestar",   labelEn: "Wellness",          emoji: "🧘" },
+  { id: "tours",       label: "Tours",       labelEn: "Tours",             emoji: "🌿" },
+  { id: "arte",        label: "Arte & Cultura", labelEn: "Art & Culture",  emoji: "🎨" },
+  { id: "hospedaje",   label: "Hospedaje",   labelEn: "Stay",              emoji: "🏡" },
+  { id: "artesanias",  label: "Artesanías",  labelEn: "Crafts",            emoji: "🪡" },
 ];
 
 export const getCategoria = (id: CategoriaEvento) =>
-  CATEGORIAS.find((c) => c.id === id) ?? null;
+  CATEGORIAS.find((c) => c.id === id) ??
+  (id === "musica"
+    ? { id: "rumba" as CategoriaEvento, label: "Rumba", labelEn: "Party & Nightlife", emoji: "🪩" }
+    : null);
 
 // ─── Comisiones ───────────────────────────────────────────────────────────────
 

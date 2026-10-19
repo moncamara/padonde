@@ -67,3 +67,70 @@ export function trackWhatsAppClick(data: {
     }
   }
 }
+
+/**
+ * Evento clave de conversión para Servicios Esenciales e Info Útil:
+ * Clic en botón de WhatsApp del aliado fijo (Embassy Bank, Transporte, etc.)
+ */
+export function trackServicioEsencialWhatsAppClick(data: {
+  servicioId: string;
+  nombreComercial: string;
+  categoria: string;
+  zonaNombre: string;
+}) {
+  // 1. Google Analytics 4 (GA4)
+  trackEvent("click_esencial_whatsapp", {
+    event_category: "Conversion",
+    event_label: `${data.nombreComercial} (${data.categoria}) - ${data.zonaNombre}`,
+    service_id: data.servicioId,
+    service_name: data.nombreComercial,
+    category: data.categoria,
+    destination: data.zonaNombre,
+  });
+
+  // 2. Registro interno en tiempo real para Panel Admin
+  if (typeof window !== "undefined") {
+    try {
+      const payload = JSON.stringify({
+        ubicacion: "servicio_esencial",
+        servicioId: data.servicioId,
+      });
+
+      if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
+        const blob = new Blob([payload], { type: "application/json" });
+        navigator.sendBeacon("/api/analytics/click-whatsapp", blob);
+      }
+    } catch {
+      // Silencioso
+    }
+  }
+}
+
+/**
+ * Evento de Google Analytics: Clic en enlace de Google Maps de un Servicio Esencial
+ */
+export function trackServicioEsencialMapsClick(data: {
+  servicioId: string;
+  nombreComercial: string;
+  categoria: string;
+}) {
+  trackEvent("click_esencial_maps", {
+    event_category: "Engagement",
+    event_label: `${data.nombreComercial} (${data.categoria})`,
+    service_id: data.servicioId,
+    service_name: data.nombreComercial,
+    category: data.categoria,
+  });
+}
+
+/**
+ * Evento de Google Analytics: Cambio de Pestaña principal (Cartelera vs Info Útil)
+ */
+export function trackTabChange(tab: "eventos" | "servicios", zonaNombre: string) {
+  trackEvent("switch_feed_tab", {
+    event_category: "Navigation",
+    tab_name: tab,
+    destination: zonaNombre,
+  });
+}
+

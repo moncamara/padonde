@@ -4,6 +4,10 @@ import { useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import type { CategoriaServicioEsencial, ServicioEsencial } from "@/lib/types";
 import { getServicioEsencialTraducido } from "@/lib/translations/serviciosTraducciones";
+import {
+  trackServicioEsencialWhatsAppClick,
+  trackServicioEsencialMapsClick,
+} from "@/lib/analytics";
 
 interface ServiciosListProps {
   servicios: ServicioEsencial[];
@@ -180,6 +184,13 @@ export function ServiciosList({ servicios, zonaNombre }: ServiciosListProps) {
                       href={servicio.google_maps_url}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={() => {
+                        trackServicioEsencialMapsClick({
+                          servicioId: rawServicio.id,
+                          nombreComercial: rawServicio.nombre_comercial,
+                          categoria: rawServicio.categoria,
+                        });
+                      }}
                       className="text-terra hover:text-terra-dark font-medium underline underline-offset-2 shrink-0 self-start sm:self-auto"
                     >
                       {t("openInMaps")}
@@ -194,6 +205,14 @@ export function ServiciosList({ servicios, zonaNombre }: ServiciosListProps) {
                       href={waUrl}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={() => {
+                        trackServicioEsencialWhatsAppClick({
+                          servicioId: rawServicio.id,
+                          nombreComercial: rawServicio.nombre_comercial,
+                          categoria: rawServicio.categoria,
+                          zonaNombre,
+                        });
+                      }}
                       className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-forest hover:bg-forest/90 text-cream font-sans text-xs sm:text-sm font-semibold tracking-wide shadow-xs active:scale-[0.98] transition-all"
                     >
                       <span className="text-base">💬</span>

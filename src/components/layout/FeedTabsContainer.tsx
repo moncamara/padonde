@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { EventFeed } from "@/components/events/EventFeed";
 import { ServiciosList } from "@/components/services/ServiciosList";
 import type { EventoConNegocio, ServicioEsencial } from "@/lib/types";
+import { trackTabChange } from "@/lib/analytics";
 
 interface FeedTabsContainerProps {
   eventos: EventoConNegocio[];
@@ -30,12 +31,19 @@ export function FeedTabsContainer({
     }
   }, [searchParams]);
 
+  const handleSwitchTab = (nuevaTab: "eventos" | "servicios") => {
+    if (nuevaTab !== tabActiva) {
+      setTabActiva(nuevaTab);
+      trackTabChange(nuevaTab, zonaNombre);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Switcher Superior de Pestañas (Cartelera vs. Info Útil) */}
       <div className="flex items-center p-1 bg-stone-light/40 rounded-2xl max-w-sm mx-auto shadow-2xs">
         <button
-          onClick={() => setTabActiva("eventos")}
+          onClick={() => handleSwitchTab("eventos")}
           className={[
             "flex-1 py-2 px-3 rounded-xl font-sans text-xs font-semibold transition-all duration-150 cursor-pointer flex items-center justify-center gap-1.5",
             tabActiva === "eventos"
@@ -48,7 +56,7 @@ export function FeedTabsContainer({
         </button>
 
         <button
-          onClick={() => setTabActiva("servicios")}
+          onClick={() => handleSwitchTab("servicios")}
           className={[
             "flex-1 py-2 px-3 rounded-xl font-sans text-xs font-semibold transition-all duration-150 cursor-pointer flex items-center justify-center gap-1.5",
             tabActiva === "servicios"
