@@ -14,26 +14,36 @@ interface AdminSecretTriggerProps {
 export function AdminSecretTrigger({ children }: AdminSecretTriggerProps) {
   const router = useRouter();
   const clicksRef = useRef<number[]>([]);
+  const isTouchRef = useRef(false);
 
-  const handleTrigger = () => {
+  const registerTap = () => {
     const now = Date.now();
-    // Conservar solo los clics hechos en los últimos 900ms
-    clicksRef.current = [...clicksRef.current.filter((time) => now - time < 900), now];
+    // En móviles, ventana de 1500ms (1.5s) para los 3 toques
+    clicksRef.current = [...clicksRef.current.filter((time) => now - time < 1500), now];
 
     if (clicksRef.current.length >= 3) {
       clicksRef.current = [];
-      router.push("/admin");
+      window.location.href = "/admin";
     }
   };
 
   return (
     <div
-      onClick={handleTrigger}
-      className="cursor-pointer select-none active:opacity-85 transition-opacity"
+      onClick={() => {
+        // En desktop usa el click normal; en táctil ya lo capturó touchStart
+        if (!isTouchRef.current) {
+          registerTap();
+        }
+      }}
+      onTouchStart={() => {
+        isTouchRef.current = true;
+        registerTap();
+      }}
+      className="cursor-pointer select-none active:opacity-70 transition-opacity touch-manipulation"
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
-        if (e.key === "Enter") handleTrigger();
+        if (e.key === "Enter") registerTap();
       }}
     >
       {children}
