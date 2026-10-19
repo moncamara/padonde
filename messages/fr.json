@@ -91,5 +91,20 @@
   "whatsapp": {
     "message": "Bonjour ! J'ai vu votre publication \"{titulo}\" sur PaDónde. [Réservation PaDónde 🌿] J'aimerais connaître les disponibilités et comment venir.",
     "businessMessage": "Bonjour ! J'ai un commerce ou événement à {zona} et j'aimerais le publier sur PaDónde. 🌿"
+  },
+  "pwa": {
+    "title": "Gardez PaDónde sur votre téléphone",
+    "subtitle": "Accès instantané • Sans téléchargement ni espace requis",
+    "button": "Créer un raccourci",
+    "instructionsTitle": "Comment créer le raccourci :",
+    "safariStep1": "1. Touchez le bouton Partager",
+    "safariStep1Sub": "dans la barre inférieure de Safari.",
+    "safariStep2": "2. Sélectionnez",
+    "safariStep2Sub": "Sur l'écran d'accueil",
+    "chromeIosStep1": "1. Touchez Partager ou le menu",
+    "chromeIosStep1Sub": "dans Chrome.",
+    "chromeIosStep2": "2. Sélectionnez",
+    "chromeIosStep2Sub": "Ajouter à l'écran d'accueil",
+    "understood": "Compris !"
   }
 }

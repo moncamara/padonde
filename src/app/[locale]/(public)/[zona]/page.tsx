@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/routing";
 import { EventFeed } from "@/components/events/EventFeed";
 import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
+import { InstallPrompt } from "@/components/layout/InstallPrompt";
 import { getZona, whatsappLink, WHATSAPP_CONTACTO } from "@/constants";
 import { getEventosByZona } from "@/lib/supabase/queries";
 import { getEventoTraducidoAsync } from "@/lib/translations/eventosTraducciones";
@@ -170,7 +171,7 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
       </div>
 
       {/* Footer — invitación a negocios con traducción y enlace a tu WhatsApp */}
-      <footer className="text-center py-8 px-4">
+      <footer className="text-center py-8 px-4 pb-20">
         <p className="font-sans text-xs text-stone">
           {tFooter("cta", { zona: zona.nombre })}{" "}
           <a
@@ -183,6 +184,9 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
           </a>
         </p>
       </footer>
+
+      {/* Acceso directo PWA discreto (sólo en móviles) */}
+      <InstallPrompt />
     </main>
   );
 }

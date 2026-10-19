@@ -92,5 +92,20 @@
   "whatsapp": {
     "message": "Hi! I saw your post \"{titulo}\" on PaDónde. [PaDónde Booking 🌿] I'd like to check availability and directions.",
     "businessMessage": "Hi! I run a business or event in {zona} and I'd like to post it on PaDónde. 🌿"
+  },
+  "pwa": {
+    "title": "Keep PaDónde on your phone",
+    "subtitle": "Instant access • No downloads or storage needed",
+    "button": "Add shortcut",
+    "instructionsTitle": "How to add the quick shortcut:",
+    "safariStep1": "1. Tap the Share button",
+    "safariStep1Sub": "at the bottom bar in Safari.",
+    "safariStep2": "2. Select",
+    "safariStep2Sub": "Add to Home Screen",
+    "chromeIosStep1": "1. Tap Share or the menu",
+    "chromeIosStep1Sub": "in Chrome.",
+    "chromeIosStep2": "2. Select",
+    "chromeIosStep2Sub": "Add to Home Screen",
+    "understood": "Got it!"
   }
 }

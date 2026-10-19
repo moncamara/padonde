@@ -92,5 +92,20 @@
   "whatsapp": {
     "message": "Hola! Vi tu publicación \"{titulo}\" en PaDónde. [Reserva PaDónde 🌿] Me interesa saber disponibilidad y cómo llegar.",
     "businessMessage": "Hola! Tengo un negocio o evento en {zona} y me gustaría publicarlo en PaDónde. 🌿"
+  },
+  "pwa": {
+    "title": "Lleva PaDónde en tu celular",
+    "subtitle": "Acceso rápido • Sin descargas ni ocupar tu memoria",
+    "button": "Crear acceso",
+    "instructionsTitle": "Cómo crear el acceso rápido:",
+    "safariStep1": "1. Toca el botón Compartir",
+    "safariStep1Sub": "en la barra inferior de Safari.",
+    "safariStep2": "2. Selecciona",
+    "safariStep2Sub": "Añadir a la pantalla de inicio",
+    "chromeIosStep1": "1. Toca Compartir o el menú",
+    "chromeIosStep1Sub": "arriba o abajo en Chrome.",
+    "chromeIosStep2": "2. Selecciona",
+    "chromeIosStep2Sub": "Añadir a pantalla de inicio",
+    "understood": "¡Entendido!"
   }
 }

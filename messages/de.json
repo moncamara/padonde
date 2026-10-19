@@ -92,5 +92,20 @@
   "whatsapp": {
     "message": "Hallo! Ich habe deinen Beitrag \"{titulo}\" auf PaDónde gesehen. [Reservierung PaDónde 🌿] Ich interessiere mich für Verfügbarkeit und Anfahrt.",
     "businessMessage": "Hallo! Ich habe ein Unternehmen oder Event in {zona} und möchte es auf PaDónde veröffentlichen. 🌿"
+  },
+  "pwa": {
+    "title": "PaDónde auf deinem Smartphone",
+    "subtitle": "Schnellzugriff • Ohne Downloads oder Speicherverbrauch",
+    "button": "Kurzbefehl erstellen",
+    "instructionsTitle": "So erstellst du den Schnellzugriff:",
+    "safariStep1": "1. Tippe auf das Teilen-Symbol",
+    "safariStep1Sub": "in der unteren Leiste von Safari.",
+    "safariStep2": "2. Wähle",
+    "safariStep2Sub": "Zum Home-Bildschirm",
+    "chromeIosStep1": "1. Tippe auf Teilen oder das Menü",
+    "chromeIosStep1Sub": "in Chrome.",
+    "chromeIosStep2": "2. Wähle",
+    "chromeIosStep2Sub": "Zum Startbildschirm hinzufügen",
+    "understood": "Verstanden!"
   }
 }

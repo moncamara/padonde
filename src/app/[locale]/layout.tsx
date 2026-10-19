@@ -45,6 +45,10 @@ export const metadata: Metadata = {
   authors: [{ name: "PaDónde" }],
   creator: "PaDónde",
   publisher: "PaDónde",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
   alternates: {
     canonical: "./",
     languages: {
