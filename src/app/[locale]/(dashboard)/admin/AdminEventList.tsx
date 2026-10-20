@@ -415,6 +415,7 @@ export function AdminEventList({ eventos, negocios = [], locale }: AdminEventLis
                           whatsapp: negocio.whatsapp,
                           zonaSlug: ev.zonaSlug,
                           zonaNombre: ev.zonaNombre,
+                          tipoCategoria: ev.tipo,
                           esPrimerEvento: totalEvs <= 1,
                         });
                       }}

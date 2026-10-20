@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { Link } from "@/i18n/routing";
 import { ModalEditarHospedaje } from "./ModalEditarHospedaje";
+import { ModalNotificarAliado, type EventoNotificarData } from "../ModalNotificarAliado";
 
 interface AdminHospedajesListProps {
   hospedajes: any[];
@@ -18,6 +19,7 @@ export function AdminHospedajesList({
 }: AdminHospedajesListProps) {
   const [modalAbierto, setModalAbierto] = useState(false);
   const [hospedajeEnEdicion, setHospedajeEnEdicion] = useState<any | null>(null);
+  const [hospedajeANotificar, setHospedajeANotificar] = useState<EventoNotificarData | null>(null);
 
   const abrirNuevo = () => {
     setHospedajeEnEdicion(null);
@@ -152,7 +154,7 @@ export function AdminHospedajesList({
                 </div>
 
                 {/* Acciones */}
-                <div className="flex items-center justify-between pt-2 border-t border-stone-light/40">
+                <div className="flex items-center justify-between pt-2 border-t border-stone-light/40 flex-wrap gap-2">
                   <Link
                     href={`/${zonaSlug}/${hosp.id}`}
                     target="_blank"
@@ -161,12 +163,36 @@ export function AdminHospedajesList({
                     <span>Ver ficha pública ↗</span>
                   </Link>
 
-                  <button
-                    onClick={() => abrirEditar(hosp)}
-                    className="px-3 py-1.5 bg-forest/10 hover:bg-forest text-forest hover:text-cream text-xs font-sans font-medium rounded-xl transition-all"
-                  >
-                    ✏️ Editar y Tarifas
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    {hosp.negocio?.whatsapp && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setHospedajeANotificar({
+                            id: hosp.id,
+                            titulo: hosp.titulo,
+                            negocioNombre: hosp.negocio.nombre,
+                            whatsapp: hosp.negocio.whatsapp,
+                            zonaSlug: zonaSlug,
+                            zonaNombre: zonaNombre,
+                            tipoCategoria: "hospedaje",
+                          })
+                        }
+                        className="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-sans font-semibold rounded-xl transition-all flex items-center gap-1 shadow-2xs cursor-pointer active:scale-95"
+                        title="Enviar mensaje gana-gana al WhatsApp del hospedaje"
+                      >
+                        <span>📲</span>
+                        <span>Notificar</span>
+                      </button>
+                    )}
+
+                    <button
+                      onClick={() => abrirEditar(hosp)}
+                      className="px-3 py-1.5 bg-forest/10 hover:bg-forest text-forest hover:text-cream text-xs font-sans font-medium rounded-xl transition-all cursor-pointer"
+                    >
+                      ✏️ Editar y Tarifas
+                    </button>
+                  </div>
                 </div>
               </article>
             );
@@ -182,6 +208,13 @@ export function AdminHospedajesList({
           onClose={() => setModalAbierto(false)}
         />
       )}
+
+      {/* Modal para Notificar al Hospedaje por WhatsApp */}
+      <ModalNotificarAliado
+        evento={hospedajeANotificar}
+        isOpen={Boolean(hospedajeANotificar)}
+        onClose={() => setHospedajeANotificar(null)}
+      />
     </div>
   );
 }

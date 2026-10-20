@@ -10,6 +10,7 @@ export interface EventoNotificarData {
   whatsapp: string;
   zonaSlug?: string;
   zonaNombre?: string;
+  tipoCategoria?: string;
   esPrimerEvento?: boolean;
 }
 
@@ -19,7 +20,7 @@ interface ModalNotificarAliadoProps {
   onClose: () => void;
 }
 
-export type TipoMensajeAliado = "revision" | "bienvenida";
+export type TipoMensajeAliado = "hospedaje" | "revision" | "bienvenida";
 
 /**
  * Formatea un número telefónico para lectura humana amigable (ej: +57 301 301 0194)
@@ -35,6 +36,46 @@ export function formatearTelefonoVisual(telefono?: string): string {
     return `+57 ${clean.slice(0, 3)} ${clean.slice(3, 6)} ${clean.slice(6)}`;
   }
   return `+${clean}`;
+}
+
+/**
+ * Mensaje especializado para Hostales, Eco-lodges y Alojamientos.
+ * Enfoque: Gana-Gana transparente, cero comisiones vs Booking/Airbnb y reservas directas a su WhatsApp.
+ */
+export function generarMensajeHospedajeAliado(
+  negocioNombre: string,
+  tituloEvento: string,
+  eventoId: string,
+  zonaSlug?: string,
+  zonaNombre?: string,
+  whatsapp?: string
+): string {
+  const slug = zonaSlug || "minca";
+  const destinoNombre = zonaNombre || (slug === "mendihuaca" ? "Mendihuaca" : "Minca");
+  const urlPublicacion = `https://www.padonde.lat/es/${slug}/${eventoId}`;
+  const urlCartelera = `https://www.padonde.lat/es/${slug}`;
+  const wpVisual = formatearTelefonoVisual(whatsapp);
+  const textoWhatsapp = wpVisual ? ` (${wpVisual})` : "";
+
+  return `🌿 ¡Hola ${negocioNombre}! Un saludo muy especial desde PaDónde ${destinoNombre}.
+
+Para apoyar el turismo local y la visibilidad de los alojamientos de nuestra región, nos tomamos la iniciativa de crearles una vitrina de presentación de cortesía en la nueva plataforma turística digital de ${destinoNombre}: PaDónde 📲✨
+
+👉 Pueden ver cómo luce su espacio aquí:
+${urlPublicacion}
+
+Nuestra propuesta es un gana-gana transparente para su hospedaje:
+• En PaDónde los viajeros buscan dónde hospedarse y qué planes hacer en la zona.
+• Cuando un huésped quiere cotizar o reservar, va DIRECTO a su WhatsApp registrado${textoWhatsapp}, 100% libre de comisiones de intermediarios (a diferencia de Booking o Airbnb que retienen el 15% o 20%, aquí el valor total es para ustedes). 💬
+
+Queremos pedirles un favor muy especial: ¿Podrían echarle un ojito y confirmarnos si todo está en orden?
+• Que los tipos de habitaciones y tarifas base coincidan con su oferta actual.
+• Que su WhatsApp registrado para recibir reservas sea el correcto${textoWhatsapp}.
+• Y sobre todo... ¡que les encanten las fotos y la presentación de su lugar!
+
+Esta vitrina está activa y destacada como cortesía. Échenle una mirada a toda la plataforma en ${urlCartelera} y nos cuentan si desean actualizar fotos, precios o cualquier detalle.
+
+¡Un abrazo y muchos éxitos con las reservas de esta temporada! 🏡🌿`;
 }
 
 /**
@@ -77,7 +118,7 @@ Pueden compartir este enlace en sus historias o redes para que la comunidad y tu
 }
 
 /**
- * Genera el texto del mensaje comercial y de bienvenida para el aliado por cortesía inicial (1ª vez).
+ * Genera el texto del mensaje comercial y de bienvenida para el aliado por cortesía inicial (1ª vez para eventos/actividades).
  * Diseñado con tono cálido, halagador y con la semilla de cortesía de apertura.
  */
 export function generarMensajeBienvenidaAliado(
@@ -131,12 +172,38 @@ export function ModalNotificarAliado({
     if (evento) {
       const cleanPhone = evento.whatsapp.replace(/\D/g, "");
       setTelefono(cleanPhone);
-      // Si explícitamente se marca como primer evento, se usa bienvenida; de lo contrario, revisión habitual
-      const plantillaInicial: TipoMensajeAliado =
-        evento.esPrimerEvento ? "bienvenida" : "revision";
+
+      // Detección inteligente de plantilla inicial:
+      // 1. Si es de categoría hospedaje o título alude a hostal/hotel -> plantilla hospedaje gana-gana
+      // 2. Si es primer evento general -> bienvenida
+      // 3. De lo contrario -> revisión
+      const esHospedaje =
+        evento.tipoCategoria === "hospedaje" ||
+        evento.titulo?.toLowerCase().includes("hospedaje") ||
+        evento.titulo?.toLowerCase().includes("hostal") ||
+        evento.titulo?.toLowerCase().includes("hotel") ||
+        evento.titulo?.toLowerCase().includes("lodge");
+
+      const plantillaInicial: TipoMensajeAliado = esHospedaje
+        ? "hospedaje"
+        : evento.esPrimerEvento
+        ? "bienvenida"
+        : "revision";
+
       setTipoPlantilla(plantillaInicial);
 
-      if (plantillaInicial === "bienvenida") {
+      if (plantillaInicial === "hospedaje") {
+        setMensaje(
+          generarMensajeHospedajeAliado(
+            evento.negocioNombre,
+            evento.titulo,
+            evento.id,
+            evento.zonaSlug,
+            evento.zonaNombre,
+            cleanPhone
+          )
+        );
+      } else if (plantillaInicial === "bienvenida") {
         setMensaje(
           generarMensajeBienvenidaAliado(
             evento.negocioNombre,
@@ -166,7 +233,18 @@ export function ModalNotificarAliado({
   function cambiarPlantilla(tipo: TipoMensajeAliado) {
     if (!evento) return;
     setTipoPlantilla(tipo);
-    if (tipo === "bienvenida") {
+    if (tipo === "hospedaje") {
+      setMensaje(
+        generarMensajeHospedajeAliado(
+          evento.negocioNombre,
+          evento.titulo,
+          evento.id,
+          evento.zonaSlug,
+          evento.zonaNombre,
+          telefono
+        )
+      );
+    } else if (tipo === "bienvenida") {
       setMensaje(
         generarMensajeBienvenidaAliado(
           evento.negocioNombre,
@@ -257,30 +335,42 @@ export function ModalNotificarAliado({
                 Haz clic para alternar el mensaje
               </span>
             </label>
-            <div className="grid grid-cols-2 gap-2 p-1 bg-cream/70 rounded-2xl border border-stone-light/80">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 p-1 bg-cream/70 rounded-2xl border border-stone-light/80">
+              <button
+                type="button"
+                onClick={() => cambiarPlantilla("hospedaje")}
+                className={`py-2 px-2 rounded-xl text-xs font-sans transition-all flex items-center justify-center gap-1.5 cursor-pointer text-center ${
+                  tipoPlantilla === "hospedaje"
+                    ? "bg-forest text-white font-semibold shadow-xs"
+                    : "text-forest/80 hover:text-forest hover:bg-white/60"
+                }`}
+              >
+                <span>🏡</span>
+                <span>Hospedajes (Gana-Gana)</span>
+              </button>
               <button
                 type="button"
                 onClick={() => cambiarPlantilla("revision")}
-                className={`py-2 px-2.5 rounded-xl text-xs font-sans transition-all flex flex-col sm:flex-row items-center justify-center gap-1 cursor-pointer text-center ${
+                className={`py-2 px-2 rounded-xl text-xs font-sans transition-all flex items-center justify-center gap-1.5 cursor-pointer text-center ${
                   tipoPlantilla === "revision"
                     ? "bg-forest text-white font-semibold shadow-xs"
                     : "text-forest/80 hover:text-forest hover:bg-white/60"
                 }`}
               >
                 <span>📢</span>
-                <span>Publicación Lista (Revisión)</span>
+                <span>Eventos (Revisión)</span>
               </button>
               <button
                 type="button"
                 onClick={() => cambiarPlantilla("bienvenida")}
-                className={`py-2 px-2.5 rounded-xl text-xs font-sans transition-all flex flex-col sm:flex-row items-center justify-center gap-1 cursor-pointer text-center ${
+                className={`py-2 px-2 rounded-xl text-xs font-sans transition-all flex items-center justify-center gap-1.5 cursor-pointer text-center ${
                   tipoPlantilla === "bienvenida"
                     ? "bg-terra text-white font-semibold shadow-xs"
                     : "text-forest/80 hover:text-forest hover:bg-white/60"
                 }`}
               >
                 <span>🎁</span>
-                <span>Bienvenida (1ª vez / Cortesía)</span>
+                <span>Bienvenida Eventos</span>
               </button>
             </div>
           </div>
