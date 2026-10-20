@@ -20,7 +20,7 @@ interface ModalNotificarAliadoProps {
   onClose: () => void;
 }
 
-export type TipoMensajeAliado = "hospedaje" | "revision" | "bienvenida";
+export type TipoMensajeAliado = "hospedaje" | "correccion" | "revision" | "bienvenida";
 
 /**
  * Formatea un número telefónico para lectura humana amigable (ej: +57 301 301 0194)
@@ -72,6 +72,40 @@ Queremos pedirles un favor muy especial: ¿Podrían echarle un ojito y confirmar
 Esta vitrina está activa y destacada como cortesía. Échenle una mirada a toda la plataforma en ${urlCartelera} y nos cuentan si desean actualizar fotos, precios o cualquier detalle.
 
 ¡Un abrazo y muchos éxitos con las reservas de esta temporada! 🏡🌿`;
+}
+
+/**
+ * Mensaje para cuando el aliado nos pidió un ajuste o corrección (fotos, precios, teléfono, info),
+ * o para dar seguimiento en una segunda comunicación.
+ */
+export function generarMensajeCorreccionAliado(
+  negocioNombre: string,
+  tituloEvento: string,
+  eventoId: string,
+  zonaSlug?: string,
+  zonaNombre?: string,
+  whatsapp?: string,
+  esHospedaje?: boolean
+): string {
+  const slug = zonaSlug || "minca";
+  const destinoNombre = zonaNombre || (slug === "mendihuaca" ? "Mendihuaca" : "Minca");
+  const urlPublicacion = `https://www.padonde.lat/es/${slug}/${eventoId}`;
+  const wpVisual = formatearTelefonoVisual(whatsapp);
+  const textoWhatsapp = wpVisual ? ` (${wpVisual})` : "";
+  const tipoReferencia = esHospedaje ? "en su perfil de hospedaje" : `en su publicación: "${tituloEvento}"`;
+
+  return `🌿 ¡Hola ${negocioNombre}! Un gusto saludarte de nuevo desde PaDónde ${destinoNombre}.
+
+¡Listo! Ya quedaron aplicados los ajustes que nos comentaste ${tipoReferencia} 📲✨
+
+👉 Pueden revisar nuevamente cómo luce aquí:
+${urlPublicacion}
+
+Verificamos que todo esté en orden y que las reservas directas sigan conectadas a su WhatsApp${textoWhatsapp}. 
+
+Si en algún momento necesitan actualizar fotos, tarifas, nuevos planes o promociones de temporada, con el mayor gusto nos escriben por aquí y lo dejamos al día.
+
+¡Seguimos en contacto y les deseamos muchos éxitos con las reservas! 🏡🚀`;
 }
 
 /**
@@ -240,6 +274,25 @@ export function ModalNotificarAliado({
           telefono
         )
       );
+    } else if (tipo === "correccion") {
+      const esHospedaje =
+        evento.tipoCategoria === "hospedaje" ||
+        evento.titulo?.toLowerCase().includes("hospedaje") ||
+        evento.titulo?.toLowerCase().includes("hostal") ||
+        evento.titulo?.toLowerCase().includes("hotel") ||
+        evento.titulo?.toLowerCase().includes("lodge");
+
+      setMensaje(
+        generarMensajeCorreccionAliado(
+          evento.negocioNombre,
+          evento.titulo,
+          evento.id,
+          evento.zonaSlug,
+          evento.zonaNombre,
+          telefono,
+          esHospedaje
+        )
+      );
     } else if (tipo === "bienvenida") {
       setMensaje(
         generarMensajeBienvenidaAliado(
@@ -331,7 +384,7 @@ export function ModalNotificarAliado({
                 Haz clic para alternar el mensaje
               </span>
             </label>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 p-1 bg-cream/70 rounded-2xl border border-stone-light/80">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-1 bg-cream/70 rounded-2xl border border-stone-light/80">
               <button
                 type="button"
                 onClick={() => cambiarPlantilla("hospedaje")}
@@ -342,7 +395,19 @@ export function ModalNotificarAliado({
                 }`}
               >
                 <span>🏡</span>
-                <span>Hospedajes (Gana-Gana)</span>
+                <span>Hospedaje</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => cambiarPlantilla("correccion")}
+                className={`py-2 px-2 rounded-xl text-xs font-sans transition-all flex items-center justify-center gap-1.5 cursor-pointer text-center ${
+                  tipoPlantilla === "correccion"
+                    ? "bg-forest text-white font-semibold shadow-xs"
+                    : "text-forest/80 hover:text-forest hover:bg-white/60"
+                }`}
+              >
+                <span>✏️</span>
+                <span>Ajustes Listos</span>
               </button>
               <button
                 type="button"
@@ -354,7 +419,7 @@ export function ModalNotificarAliado({
                 }`}
               >
                 <span>📢</span>
-                <span>Eventos (Revisión)</span>
+                <span>Eventos</span>
               </button>
               <button
                 type="button"
@@ -366,7 +431,7 @@ export function ModalNotificarAliado({
                 }`}
               >
                 <span>🎁</span>
-                <span>Bienvenida Eventos</span>
+                <span>Bienvenida</span>
               </button>
             </div>
           </div>
