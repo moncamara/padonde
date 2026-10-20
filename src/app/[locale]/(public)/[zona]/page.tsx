@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/routing";
 import { FeedTabsContainer } from "@/components/layout/FeedTabsContainer";
 import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
+import { ShareButton } from "@/components/events/ShareButton";
 import { InstallPrompt } from "@/components/layout/InstallPrompt";
 import { AdminSecretTrigger } from "@/components/layout/AdminSecretTrigger";
 import { getZona, whatsappLink, WHATSAPP_CONTACTO } from "@/constants";
@@ -165,8 +166,17 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
             </p>
           </AdminSecretTrigger>
 
-          {/* Selector de idioma ES / EN / FR */}
-          <LanguageSwitcher />
+          {/* Acciones: Compartir PWA + Selector de idioma */}
+          <div className="flex items-center gap-2">
+            <ShareButton
+              title={`PaDónde 🌿 Cartelera de ${zona.nombre}`}
+              text={`Descubre planes, hospedajes y eventos en vivo en ${zona.nombre} — PaDónde 🌿`}
+              url={`https://www.padonde.lat/${locale}/${zonaSlug}`}
+              zonaNombre={zona.nombre}
+              variant="header"
+            />
+            <LanguageSwitcher />
+          </div>
         </div>
       </header>
 
@@ -180,8 +190,18 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
         />
       </div>
 
-      {/* Footer — invitación a negocios con traducción y enlace a tu WhatsApp */}
-      <footer className="text-center py-8 px-4 pb-20">
+      {/* Footer — compartir PWA e invitación a negocios con traducción y enlace a tu WhatsApp */}
+      <footer className="text-center py-8 px-4 pb-24 space-y-4">
+        <div className="max-w-xs mx-auto">
+          <ShareButton
+            title={`PaDónde 🌿 Cartelera de ${zona.nombre}`}
+            text={`Descubre planes, hospedajes y eventos en vivo en ${zona.nombre} — PaDónde 🌿`}
+            url={`https://www.padonde.lat/${locale}/${zonaSlug}`}
+            zonaNombre={zona.nombre}
+            variant="full"
+          />
+        </div>
+
         <p className="font-sans text-xs text-stone">
           {tFooter("cta", { zona: zona.nombre })}{" "}
           <a

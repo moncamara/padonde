@@ -179,7 +179,10 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
             <LanguageSwitcher className="bg-cream/90 backdrop-blur-md shadow-xs" />
             <ShareButton
               title={evento.titulo}
+              text={`${evento.titulo} en ${evento.negocio.nombre} (${zona.nombre}) — PaDónde 🌿`}
               url={`https://www.padonde.lat/${locale}/${zonaSlug}/${id}`}
+              zonaNombre={zona.nombre}
+              variant="detail"
             />
           </div>
         </div>

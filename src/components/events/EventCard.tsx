@@ -8,6 +8,7 @@ import { formatHora, formatPrecio, mensajeWhatsApp, truncar, getEtiquetaHorario 
 import { getEventoTraducido } from "@/lib/translations/eventosTraducciones";
 import type { EventoConNegocio } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
+import { ShareButton } from "@/components/events/ShareButton";
 import { trackWhatsAppClick } from "@/lib/analytics";
 
 interface EventCardProps {
@@ -121,32 +122,40 @@ export function EventCard({ evento: rawEvento, zona, priority = false }: EventCa
             )}
           </div>
 
-          {/* Botón directo de reserva por WhatsApp */}
-          <a
-            href={waLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="pointer-events-auto z-20"
-            onClick={(e) => {
-              e.stopPropagation();
-              trackWhatsAppClick({
-                eventoId: rawEvento.id,
-                eventoTitulo: rawEvento.titulo,
-                negocioNombre: rawEvento.negocio.nombre,
-                negocioId: rawEvento.negocio_id,
-                ubicacion: "tarjeta",
-                precio: rawEvento.precio,
-              });
-            }}
-          >
-            <Button
-              size="sm"
-              className="bg-terra hover:bg-terra-dark text-white font-medium shadow-xs text-xs px-3.5 py-2 flex items-center gap-1.5 active:scale-95 transition-transform"
+          {/* Acciones: Compartir rápido + Botón directo de reserva por WhatsApp */}
+          <div className="flex items-center gap-1.5 pointer-events-auto z-20">
+            <ShareButton
+              title={evento.titulo}
+              text={`${evento.titulo} en ${evento.negocio.nombre} — PaDónde 🌿`}
+              url={`https://www.padonde.lat/${locale}/${zona}/${evento.id}`}
+              variant="icon"
+            />
+
+            <a
+              href={waLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => {
+                e.stopPropagation();
+                trackWhatsAppClick({
+                  eventoId: rawEvento.id,
+                  eventoTitulo: rawEvento.titulo,
+                  negocioNombre: rawEvento.negocio.nombre,
+                  negocioId: rawEvento.negocio_id,
+                  ubicacion: "tarjeta",
+                  precio: rawEvento.precio,
+                });
+              }}
             >
-              <span>💬</span>
-              <span>{tCard("reserve")}</span>
-            </Button>
-          </a>
+              <Button
+                size="sm"
+                className="bg-terra hover:bg-terra-dark text-white font-medium shadow-xs text-xs px-3.5 py-2 flex items-center gap-1.5 active:scale-95 transition-transform"
+              >
+                <span>💬</span>
+                <span>{tCard("reserve")}</span>
+              </Button>
+            </a>
+          </div>
         </div>
       </div>
     </article>

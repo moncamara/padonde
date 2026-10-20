@@ -148,5 +148,17 @@
       "comercio": "Tiendas & Souvenirs",
       "general": "Servicios Generales"
     }
+  },
+  "shareModal": {
+    "button": "Compartir",
+    "title": "Compartir PaDónde",
+    "subtitle": "Comparte esta cartelera con amigos, huéspedes o aliados",
+    "shareWhatsApp": "Enviar por WhatsApp",
+    "nativeShare": "Más opciones (AirDrop, Apps...)",
+    "copyLink": "Copiar enlace",
+    "copied": "¡Enlace copiado!",
+    "qrTitle": "Escanear Código QR",
+    "qrSubtitle": "Apunta la cámara de otro celular aquí para abrir al instante",
+    "close": "Cerrar"
   }
 }

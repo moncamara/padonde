@@ -147,5 +147,17 @@
       "comercio": "Boutiques & Souvenirs",
       "general": "Services Généraux"
     }
+  },
+  "shareModal": {
+    "button": "Partager",
+    "title": "Partager PaDónde",
+    "subtitle": "Partagez cet agenda avec vos amis, clients ou partenaires",
+    "shareWhatsApp": "Partager par WhatsApp",
+    "nativeShare": "Plus d'options (AirDrop, Apps...)",
+    "copyLink": "Copier le lien",
+    "copied": "Lien copié !",
+    "qrTitle": "Scanner le QR Code",
+    "qrSubtitle": "Pointez l'appareil photo d'un téléphone ici pour ouvrir directement",
+    "close": "Fermer"
   }
 }

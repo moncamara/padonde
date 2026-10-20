@@ -148,5 +148,17 @@
       "comercio": "Geschäfte & Souvenirs",
       "general": "Allgemeine Dienste"
     }
+  },
+  "shareModal": {
+    "button": "Teilen",
+    "title": "PaDónde teilen",
+    "subtitle": "Teile diesen Live-Kalender mit Freunden, Gästen oder Partnern",
+    "shareWhatsApp": "Über WhatsApp teilen",
+    "nativeShare": "Weitere Optionen (AirDrop, Apps...)",
+    "copyLink": "Link kopieren",
+    "copied": "Link kopiert!",
+    "qrTitle": "QR-Code scannen",
+    "qrSubtitle": "Mit der Handykamera hier scannen, um sofort zu öffnen",
+    "close": "Schließen"
   }
 }

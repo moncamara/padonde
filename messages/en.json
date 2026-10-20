@@ -148,5 +148,17 @@
       "comercio": "Shops & Souvenirs",
       "general": "General Services"
     }
+  },
+  "shareModal": {
+    "button": "Share",
+    "title": "Share PaDónde",
+    "subtitle": "Share this live tourist board with friends, guests or allies",
+    "shareWhatsApp": "Share via WhatsApp",
+    "nativeShare": "More options (AirDrop, Apps...)",
+    "copyLink": "Copy link",
+    "copied": "Link copied!",
+    "qrTitle": "Scan QR Code",
+    "qrSubtitle": "Point any phone camera here to open instantly",
+    "close": "Close"
   }
 }

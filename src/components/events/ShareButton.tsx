@@ -2,16 +2,29 @@
 
 import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { ShareModal } from "@/components/layout/ShareModal";
+import { trackEvent } from "@/lib/analytics";
 
 interface ShareButtonProps {
   title: string;
+  text?: string;
   url?: string;
+  zonaNombre?: string;
+  variant?: "header" | "detail" | "icon" | "full";
+  className?: string;
 }
 
-export function ShareButton({ title, url }: ShareButtonProps) {
-  const t = useTranslations("eventDetail");
+export function ShareButton({
+  title,
+  text,
+  url,
+  zonaNombre,
+  variant = "header",
+  className = "",
+}: ShareButtonProps) {
+  const t = useTranslations("shareModal");
   const locale = useLocale();
-  const [copied, setCopied] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Asegurar que la URL a compartir siempre lleve explícitamente el prefijo del idioma actual
   function getShareUrl(): string {
@@ -21,7 +34,6 @@ export function ShareButton({ title, url }: ShareButtonProps) {
       const path = window.location.pathname;
       const search = window.location.search;
 
-      // Si el pathname ya empieza con /es, /en, /fr, /de
       const matchLocale = path.match(/^\/(es|en|fr|de)(\/.*|$)/);
       if (matchLocale) {
         if (matchLocale[1] === locale) {
@@ -35,41 +47,73 @@ export function ShareButton({ title, url }: ShareButtonProps) {
     return `https://www.padonde.lat/${locale}`;
   }
 
-  async function handleShare() {
-    const targetUrl = getShareUrl();
-    const shareText = `${title} — PaDónde 🌿`;
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const finalUrl = getShareUrl();
+    trackEvent("share_open_modal", { title, url: finalUrl });
+    setIsModalOpen(true);
+  };
 
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title,
-          text: shareText,
-          url: targetUrl,
-        });
-        return;
-      } catch (err) {
-        // Ignorar si el usuario cancela la ventana nativa
-      }
-    }
-
-    // Fallback: copiar al portapapeles con manejo seguro de permisos
-    try {
-      await navigator.clipboard.writeText(targetUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Si el navegador bloquea el clipboard (ej. sin foco de ventana), continuar sin error
-    }
-  }
+  const finalUrl = getShareUrl();
 
   return (
-    <button
-      onClick={handleShare}
-      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-cream border border-stone-light text-forest hover:border-forest text-xs font-sans font-medium transition-all duration-150 cursor-pointer shadow-xs active:scale-95"
-      aria-label={t("share")}
-    >
-      <span>📤</span>
-      <span>{copied ? t("copied") : t("share")}</span>
-    </button>
+    <>
+      {variant === "header" && (
+        <button
+          onClick={handleClick}
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/95 hover:bg-white border border-stone-light/90 text-forest text-xs font-sans font-medium transition-all duration-150 cursor-pointer shadow-2xs active:scale-95 ${className}`}
+          aria-label={t("button")}
+          title={t("button")}
+        >
+          <span className="text-sm">📤</span>
+          <span className="inline font-medium">{t("button")}</span>
+        </button>
+      )}
+
+      {variant === "detail" && (
+        <button
+          onClick={handleClick}
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-cream/90 backdrop-blur-md border border-stone-light text-forest hover:bg-cream text-xs font-sans font-medium transition-all duration-150 cursor-pointer shadow-xs active:scale-95 ${className}`}
+          aria-label={t("button")}
+          title={t("button")}
+        >
+          <span className="text-sm">📤</span>
+          <span>{t("button")}</span>
+        </button>
+      )}
+
+      {variant === "icon" && (
+        <button
+          onClick={handleClick}
+          className={`w-9 h-9 rounded-full bg-stone-light/30 hover:bg-stone-light/60 text-forest flex items-center justify-center transition-all duration-150 cursor-pointer active:scale-95 shadow-2xs ${className}`}
+          aria-label={t("button")}
+          title={t("button")}
+        >
+          <span className="text-sm">📤</span>
+        </button>
+      )}
+
+      {variant === "full" && (
+        <button
+          onClick={handleClick}
+          className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-white border border-stone-light text-forest hover:bg-stone-light/20 font-sans font-medium text-sm transition-all duration-150 cursor-pointer active:scale-[0.98] shadow-xs ${className}`}
+          aria-label={t("button")}
+        >
+          <span className="text-base">📤</span>
+          <span>{t("title")}</span>
+        </button>
+      )}
+
+      {/* Modal interactivo de compartir */}
+      <ShareModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={title}
+        text={text}
+        url={finalUrl}
+        zonaNombre={zonaNombre}
+      />
+    </>
   );
 }
