@@ -1,8 +1,6 @@
 "use client";
 
-import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { ShareModal } from "@/components/layout/ShareModal";
 import { trackEvent } from "@/lib/analytics";
 
 interface ShareButtonProps {
@@ -22,9 +20,8 @@ export function ShareButton({
   variant = "header",
   className = "",
 }: ShareButtonProps) {
-  const t = useTranslations("shareModal");
   const locale = useLocale();
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const t = useTranslations("shareModal");
 
   // Asegurar que la URL a compartir siempre lleve explícitamente el prefijo del idioma actual
   function getShareUrl(): string {
@@ -47,73 +44,80 @@ export function ShareButton({
     return `https://www.padonde.lat/${locale}`;
   }
 
-  const handleClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const finalUrl = getShareUrl();
-    trackEvent("share_open_modal", { title, url: finalUrl });
-    setIsModalOpen(true);
-  };
-
   const finalUrl = getShareUrl();
+
+  const shareText =
+    text ||
+    (zonaNombre
+      ? `Descubre qué hacer hoy en ${zonaNombre}: planes, hospedajes, eventos en vivo y tours en PaDónde 🌿`
+      : `${title} — PaDónde 🌿`);
+
+  const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(
+    `${shareText}\n\n👉 ${finalUrl}`
+  )}`;
 
   return (
     <>
       {variant === "header" && (
-        <button
-          onClick={handleClick}
+        <a
+          href={whatsappUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => trackEvent("share_whatsapp_click", { title, url: finalUrl })}
           className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/95 hover:bg-white border border-stone-light/90 text-forest text-xs font-sans font-medium transition-all duration-150 cursor-pointer shadow-2xs active:scale-95 ${className}`}
-          aria-label={t("button")}
-          title={t("button")}
+          aria-label={t("shareWhatsApp")}
+          title={t("shareWhatsApp")}
         >
-          <span className="text-sm">📤</span>
+          <span className="text-sm">💬</span>
           <span className="inline font-medium">{t("button")}</span>
-        </button>
+        </a>
       )}
 
       {variant === "detail" && (
-        <button
-          onClick={handleClick}
+        <a
+          href={whatsappUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => trackEvent("share_whatsapp_click", { title, url: finalUrl })}
           className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-cream/90 backdrop-blur-md border border-stone-light text-forest hover:bg-cream text-xs font-sans font-medium transition-all duration-150 cursor-pointer shadow-xs active:scale-95 ${className}`}
-          aria-label={t("button")}
-          title={t("button")}
+          aria-label={t("shareWhatsApp")}
+          title={t("shareWhatsApp")}
         >
-          <span className="text-sm">📤</span>
+          <span className="text-sm">💬</span>
           <span>{t("button")}</span>
-        </button>
+        </a>
       )}
 
       {variant === "icon" && (
-        <button
-          onClick={handleClick}
+        <a
+          href={whatsappUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => {
+            e.stopPropagation();
+            trackEvent("share_whatsapp_click", { title, url: finalUrl });
+          }}
           className={`w-9 h-9 rounded-full bg-stone-light/30 hover:bg-stone-light/60 text-forest flex items-center justify-center transition-all duration-150 cursor-pointer active:scale-95 shadow-2xs ${className}`}
-          aria-label={t("button")}
-          title={t("button")}
+          aria-label={t("shareWhatsApp")}
+          title={t("shareWhatsApp")}
         >
-          <span className="text-sm">📤</span>
-        </button>
+          <span className="text-sm">💬</span>
+        </a>
       )}
 
       {variant === "full" && (
-        <button
-          onClick={handleClick}
-          className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-white border border-stone-light text-forest hover:bg-stone-light/20 font-sans font-medium text-sm transition-all duration-150 cursor-pointer active:scale-[0.98] shadow-xs ${className}`}
-          aria-label={t("button")}
+        <a
+          href={whatsappUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => trackEvent("share_whatsapp_click", { title, url: finalUrl })}
+          className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-[#25D366] hover:bg-[#20ba59] text-white font-sans font-semibold text-sm transition-all duration-150 cursor-pointer active:scale-[0.98] shadow-xs ${className}`}
+          aria-label={t("shareWhatsApp")}
         >
-          <span className="text-base">📤</span>
-          <span>{t("title")}</span>
-        </button>
+          <span className="text-base">💬</span>
+          <span>{t("shareWhatsApp")}</span>
+        </a>
       )}
-
-      {/* Modal interactivo de compartir */}
-      <ShareModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title={title}
-        text={text}
-        url={finalUrl}
-        zonaNombre={zonaNombre}
-      />
     </>
   );
 }
