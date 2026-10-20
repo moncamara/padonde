@@ -421,15 +421,26 @@ export function AdminEventList({ eventos, negocios = [], locale }: AdminEventLis
                     </button>
                   )}
 
-                  <button
-                    type="button"
-                    onClick={() => setEventoAEditar(ev)}
-                    className="text-xs text-forest hover:text-terra px-2.5 py-1.5 rounded-xl border border-stone-light/70 bg-white/80 hover:bg-white transition-colors flex items-center gap-1 font-medium font-sans shadow-2xs cursor-pointer"
-                    title="Editar información del evento"
-                  >
-                    <span>✏️</span>
-                    <span className="font-sans">Editar</span>
-                  </button>
+                  {ev.tipo === "hospedaje" ? (
+                    <Link
+                      href="/admin/hospedajes"
+                      className="text-xs text-forest hover:text-terra px-2.5 py-1.5 rounded-xl border border-stone-light/70 bg-white/80 hover:bg-white transition-colors flex items-center gap-1 font-semibold font-sans shadow-2xs"
+                      title="Editar habitaciones, fotos y tarifas en el módulo de Hospedajes"
+                    >
+                      <span>🏡</span>
+                      <span className="font-sans">Editar Hospedaje</span>
+                    </Link>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setEventoAEditar(ev)}
+                      className="text-xs text-forest hover:text-terra px-2.5 py-1.5 rounded-xl border border-stone-light/70 bg-white/80 hover:bg-white transition-colors flex items-center gap-1 font-medium font-sans shadow-2xs cursor-pointer"
+                      title="Editar información del evento"
+                    >
+                      <span>✏️</span>
+                      <span className="font-sans">Editar</span>
+                    </button>
+                  )}
 
                   <Link
                     href={`/${ev.zonaSlug || "minca"}/${ev.id}`}

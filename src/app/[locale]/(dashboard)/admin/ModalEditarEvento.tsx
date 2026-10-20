@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Link } from "@/i18n/routing";
 import Image from "next/image";
 import { CATEGORIAS } from "@/constants";
 import {
@@ -208,6 +209,26 @@ export function ModalEditarEvento({
 
         {/* Contenido scrolleable del formulario */}
         <form onSubmit={handleSubmit} className="overflow-y-auto p-5 sm:p-6 space-y-4 sm:space-y-5 text-left flex-1">
+          {evento.tipo === "hospedaje" && (
+            <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-sans text-emerald-950 shadow-2xs">
+              <div className="flex items-center gap-2.5">
+                <span className="text-2xl">🏡</span>
+                <div>
+                  <p className="font-bold text-forest">Este registro es un Hospedaje</p>
+                  <p className="text-[11px] text-emerald-800">
+                    Las habitaciones, fotos de cuartos y tarifas se administran en su módulo dedicado:
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/admin/hospedajes"
+                className="px-3.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold shrink-0 transition-colors shadow-xs text-center"
+              >
+                Ir a Hospedajes →
+              </Link>
+            </div>
+          )}
+
           {error && (
             <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 font-sans">
               ⚠️ {error}

@@ -36,6 +36,7 @@ export function PuntosQRMetricas() {
   const [tarifaPorEscaneo, setTarifaPorEscaneo] = useState<number>(500);
   const [baseFijo, setBaseFijo] = useState<number>(0);
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [filtroBitacora, setFiltroBitacora] = useState<"todos" | "validos" | "repetidos">("validos");
 
   const cargarMetricas = useCallback(async () => {
     try {
@@ -244,82 +245,145 @@ export function PuntosQRMetricas() {
         </div>
       </div>
 
-      {/* Bitácora en Vivo de los Últimos Escaneos */}
+      {/* Bitácora en Vivo de los Últimos Escaneos con Pestañas y Scroll Acotado */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="font-serif text-sm font-bold text-forest">
-            Bitácora de Escaneos Recientes
-          </h3>
-          <span className="text-xs text-stone font-sans">
-            Total registrados: {data.totales}
-          </span>
-        </div>
+        {(() => {
+          const escaneosValidos = data.ultimosEscaneos.filter(
+            (e) => e.esPrimerEscaneo && e.esValido
+          );
+          const escaneosRepetidos = data.ultimosEscaneos.filter(
+            (e) => !e.esPrimerEscaneo
+          );
+          const escaneosVisibles =
+            filtroBitacora === "validos"
+              ? escaneosValidos
+              : filtroBitacora === "repetidos"
+              ? escaneosRepetidos
+              : data.ultimosEscaneos;
 
-        {data.ultimosEscaneos.length === 0 ? (
-          <div className="p-6 rounded-2xl bg-cream/40 border border-stone-light/60 text-center">
-            <span className="text-2xl">📱</span>
-            <p className="font-sans text-xs text-stone mt-1.5">
-              Aún no hay escaneos registrados para este código.
-            </p>
-            <p className="font-sans text-[11px] text-stone/70 mt-0.5">
-              Cuando el chico comience a mostrar el QR en la estación, verás cada celular entrar aquí en tiempo real.
-            </p>
-          </div>
-        ) : (
-          <div className="divide-y divide-stone-light/60 border border-stone-light/80 rounded-2xl overflow-hidden bg-white">
-            {data.ultimosEscaneos.map((esc) => {
-              const iconDisp =
-                esc.dispositivoTipo === "iphone"
-                  ? "🍏 iPhone"
-                  : esc.dispositivoTipo === "android"
-                  ? "🤖 Android"
-                  : "💻 Web";
-
-              const isValid = esc.esPrimerEscaneo && esc.esValido;
-              const isRepeated = !esc.esPrimerEscaneo;
-
-              return (
-                <div
-                  key={esc.id}
-                  className="p-3 flex items-center justify-between gap-3 text-xs font-sans hover:bg-stone-50/50 transition-colors"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-sm">
-                      {isValid ? "✅" : isRepeated ? "⚠️" : "⏱️"}
-                    </span>
-                    <div>
-                      <p className="font-medium text-forest">
-                        {iconDisp}{" "}
-                        <span className="text-stone font-normal">
-                          · {esc.puntoId}
-                        </span>
-                      </p>
-                      <p className="text-[10px] text-stone">
-                        {formatHora(esc.createdAt)} ({getTiempoRelativo(esc.createdAt)})
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="text-right">
-                    {isValid ? (
-                      <span className="inline-block px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-semibold">
-                        Válido (+{esc.tiempoPermanenciaSeg}s)
-                      </span>
-                    ) : isRepeated ? (
-                      <span className="inline-block px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-medium">
-                        Repetido (No paga)
-                      </span>
-                    ) : (
-                      <span className="inline-block px-2 py-0.5 rounded-full bg-stone-100 text-stone text-[10px] font-medium">
-                        Rebote (&lt;5s)
-                      </span>
-                    )}
-                  </div>
+          return (
+            <>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-stone-light/60 pb-2">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-serif text-sm font-bold text-forest">
+                    Bitácora de Escaneos Recientes
+                  </h3>
+                  <span className="text-[11px] text-stone font-sans">
+                    ({data.totales} total)
+                  </span>
                 </div>
-              );
-            })}
-          </div>
-        )}
+
+                {/* Selector de Pestañas / Filtro */}
+                <div className="flex items-center gap-1 bg-stone-100 p-1 rounded-xl border border-stone-light/60 text-xs font-sans self-start sm:self-auto">
+                  <button
+                    type="button"
+                    onClick={() => setFiltroBitacora("validos")}
+                    className={`px-2.5 py-1 rounded-lg font-bold transition-all flex items-center gap-1 text-[11px] ${
+                      filtroBitacora === "validos"
+                        ? "bg-emerald-700 text-white shadow-2xs"
+                        : "text-stone hover:text-forest"
+                    }`}
+                  >
+                    <span>✅ Válidos ({escaneosValidos.length})</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFiltroBitacora("repetidos")}
+                    className={`px-2.5 py-1 rounded-lg font-bold transition-all flex items-center gap-1 text-[11px] ${
+                      filtroBitacora === "repetidos"
+                        ? "bg-amber-600 text-white shadow-2xs"
+                        : "text-stone hover:text-forest"
+                    }`}
+                  >
+                    <span>⚠️ Repetidos ({escaneosRepetidos.length})</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFiltroBitacora("todos")}
+                    className={`px-2.5 py-1 rounded-lg font-bold transition-all flex items-center gap-1 text-[11px] ${
+                      filtroBitacora === "todos"
+                        ? "bg-forest text-white shadow-2xs"
+                        : "text-stone hover:text-forest"
+                    }`}
+                  >
+                    <span>Todos ({data.ultimosEscaneos.length})</span>
+                  </button>
+                </div>
+              </div>
+
+              {escaneosVisibles.length === 0 ? (
+                <div className="p-6 rounded-2xl bg-cream/40 border border-stone-light/60 text-center">
+                  <span className="text-2xl">
+                    {filtroBitacora === "validos" ? "✅" : filtroBitacora === "repetidos" ? "🛡️" : "📱"}
+                  </span>
+                  <p className="font-sans text-xs text-stone mt-1.5">
+                    {filtroBitacora === "validos"
+                      ? "Aún no hay escaneos válidos con permanencia en este turno."
+                      : filtroBitacora === "repetidos"
+                      ? "Excelente, no hay reintentos repetidos ni intentos de fraude registrados."
+                      : "Aún no hay escaneos registrados para este código."}
+                  </p>
+                </div>
+              ) : (
+                <div className="divide-y divide-stone-light/60 border border-stone-light/80 rounded-2xl overflow-hidden bg-white max-h-80 overflow-y-auto shadow-2xs">
+                  {escaneosVisibles.map((esc) => {
+                    const iconDisp =
+                      esc.dispositivoTipo === "iphone"
+                        ? "🍏 iPhone"
+                        : esc.dispositivoTipo === "android"
+                        ? "🤖 Android"
+                        : "💻 Web";
+
+                    const isValid = esc.esPrimerEscaneo && esc.esValido;
+                    const isRepeated = !esc.esPrimerEscaneo;
+
+                    return (
+                      <div
+                        key={esc.id}
+                        className="p-3 flex items-center justify-between gap-3 text-xs font-sans hover:bg-stone-50/50 transition-colors"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-sm">
+                            {isValid ? "✅" : isRepeated ? "⚠️" : "⏱️"}
+                          </span>
+                          <div>
+                            <p className="font-medium text-forest">
+                              {iconDisp}{" "}
+                              <span className="text-stone font-normal">
+                                · {esc.puntoId}
+                              </span>
+                            </p>
+                            <p className="text-[10px] text-stone">
+                              {formatHora(esc.createdAt)} ({getTiempoRelativo(esc.createdAt)})
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="text-right">
+                          {isValid ? (
+                            <span className="inline-block px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-semibold">
+                              Válido (+{esc.tiempoPermanenciaSeg}s)
+                            </span>
+                          ) : isRepeated ? (
+                            <span className="inline-block px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-medium">
+                              Repetido (No paga)
+                            </span>
+                          ) : (
+                            <span className="inline-block px-2 py-0.5 rounded-full bg-stone-100 text-stone text-[10px] font-medium">
+                              Rebote (&lt;5s)
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </>
+          );
+        })()}
       </div>
     </div>
   );
