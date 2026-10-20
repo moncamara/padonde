@@ -160,6 +160,42 @@ export function ModalEditarHospedaje({
     }
   };
 
+  // Eliminar una foto individual de la habitación
+  const eliminarFotoHabitacion = (indexHab: number, fotoIndex: number) => {
+    setHabitaciones((prev) => {
+      const copy = [...prev];
+      const fotosActuales = copy[indexHab].fotos || [];
+      copy[indexHab].fotos = fotosActuales.filter((_: string, i: number) => i !== fotoIndex);
+      return copy;
+    });
+  };
+
+  // Reordenar foto para colocarla como portada (índice 0)
+  const hacerFotoPortadaHabitacion = (indexHab: number, fotoIndex: number) => {
+    setHabitaciones((prev) => {
+      const copy = [...prev];
+      const fotosActuales = [...(copy[indexHab].fotos || [])];
+      if (fotoIndex > 0 && fotoIndex < fotosActuales.length) {
+        const [foto] = fotosActuales.splice(fotoIndex, 1);
+        fotosActuales.unshift(foto);
+        copy[indexHab].fotos = fotosActuales;
+      }
+      return copy;
+    });
+  };
+
+  // Agregar foto mediante URL externa o ruta local
+  const agregarFotoPorUrl = (indexHab: number, url: string) => {
+    const cleanUrl = url.trim();
+    if (!cleanUrl) return;
+    setHabitaciones((prev) => {
+      const copy = [...prev];
+      const fotosActuales = copy[indexHab].fotos || [];
+      copy[indexHab].fotos = [...fotosActuales, cleanUrl];
+      return copy;
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
@@ -499,25 +535,18 @@ export function ModalEditarHospedaje({
                         className="w-full bg-white border border-stone-light rounded-xl px-3 py-2 text-forest focus:outline-none focus:border-forest"
                       />
                     </div>
-
-                    <div>
-                      <label className="block text-stone font-medium mb-1">
-                        Fotos de la Habitación
-                      </label>
-                      <input
-                        type="file"
-                        multiple
-                        accept="image/*"
-                        onChange={(e) => handleUploadFotoHabitacion(index, e)}
-                        className="text-xs text-stone"
-                      />
-                      {hab.fotos?.length > 0 && (
-                        <p className="text-[11px] text-green-700 mt-1">
-                          ✓ {hab.fotos.length} {hab.fotos.length === 1 ? "foto" : "fotos"} añadidas
-                        </p>
-                      )}
-                    </div>
                   </div>
+
+                  {/* Galería y Gestor de Fotografías de la Habitación */}
+                  <HabitacionFotosManager
+                    indexHab={index}
+                    fotos={hab.fotos || []}
+                    isSubiendo={isSubiendoFoto}
+                    onUploadFiles={handleUploadFotoHabitacion}
+                    onAddUrl={agregarFotoPorUrl}
+                    onRemoveFoto={eliminarFotoHabitacion}
+                    onSetPortada={hacerFotoPortadaHabitacion}
+                  />
 
                   {/* Badges tipo chip seleccionables */}
                   <div>
@@ -581,3 +610,155 @@ export function ModalEditarHospedaje({
     </div>
   );
 }
+
+// ─── Sub-componente Gestor de Fotos de Habitación ────────────────────────────
+
+interface HabitacionFotosManagerProps {
+  indexHab: number;
+  fotos: string[];
+  isSubiendo: boolean;
+  onUploadFiles: (indexHab: number, e: React.ChangeEvent<HTMLInputElement>) => void;
+  onAddUrl: (indexHab: number, url: string) => void;
+  onRemoveFoto: (indexHab: number, fotoIndex: number) => void;
+  onSetPortada: (indexHab: number, fotoIndex: number) => void;
+}
+
+function HabitacionFotosManager({
+  indexHab,
+  fotos = [],
+  isSubiendo,
+  onUploadFiles,
+  onAddUrl,
+  onRemoveFoto,
+  onSetPortada,
+}: HabitacionFotosManagerProps) {
+  const [urlInput, setUrlInput] = useState("");
+  const [mostrarInputUrl, setMostrarInputUrl] = useState(false);
+
+  const handleAgregarUrl = () => {
+    if (!urlInput.trim()) return;
+    onAddUrl(indexHab, urlInput.trim());
+    setUrlInput("");
+    setMostrarInputUrl(false);
+  };
+
+  return (
+    <div className="space-y-2.5 pt-1">
+      <div className="flex items-center justify-between">
+        <label className="block text-stone font-semibold text-xs">
+          Fotografías de la Habitación ({fotos.length})
+        </label>
+        <span className="text-[11px] text-stone">
+          {fotos.length === 0
+            ? "Sin fotos asignadas"
+            : `${fotos.length} ${fotos.length === 1 ? "foto en galería" : "fotos en galería"}`}
+        </span>
+      </div>
+
+      {/* Galería de Miniaturas */}
+      {fotos.length > 0 ? (
+        <div className="flex flex-wrap gap-2.5 p-2.5 bg-white rounded-2xl border border-stone-light/70 shadow-2xs">
+          {fotos.map((src, fIdx) => (
+            <div
+              key={`${src}-${fIdx}`}
+              className="relative w-20 h-20 rounded-xl overflow-hidden border border-stone-light/80 shadow-2xs group bg-stone-100 flex-shrink-0"
+            >
+              <img
+                src={src}
+                alt={`Foto habitación ${fIdx + 1}`}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.opacity = "0.5";
+                }}
+              />
+
+              {/* Distintivo de Portada */}
+              {fIdx === 0 ? (
+                <span className="absolute bottom-1 left-1 bg-forest/90 text-cream text-[9px] font-sans font-bold px-1.5 py-0.5 rounded shadow-xs">
+                  ⭐ Portada
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => onSetPortada(indexHab, fIdx)}
+                  title="Establecer como foto principal"
+                  className="absolute bottom-1 left-1 bg-black/70 hover:bg-forest text-cream text-[9px] font-sans font-medium px-1.5 py-0.5 rounded shadow-xs transition-colors opacity-90 sm:opacity-0 sm:group-hover:opacity-100"
+                >
+                  ⭐ Principal
+                </button>
+              )}
+
+              {/* Botón Eliminar individual */}
+              <button
+                type="button"
+                onClick={() => onRemoveFoto(indexHab, fIdx)}
+                title="Eliminar esta foto"
+                className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/70 hover:bg-red-600 text-white text-[10px] flex items-center justify-center transition-colors shadow-xs"
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="p-3 bg-stone-light/20 rounded-xl border border-dashed border-stone-light/70 text-center">
+          <p className="text-[11px] text-stone font-sans">
+            📷 No hay fotos asignadas a esta habitación. Agrega fotos para que el carrusel público se visualice atractivo.
+          </p>
+        </div>
+      )}
+
+      {/* Controles de Carga: Archivo local o URL */}
+      <div className="flex flex-wrap items-center gap-2 pt-0.5">
+        <label className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-forest/10 hover:bg-forest/20 text-forest text-xs font-semibold rounded-xl cursor-pointer transition-colors border border-forest/20">
+          <span>📁</span>
+          <span>{isSubiendo ? "Subiendo imágenes..." : "Subir desde dispositivo"}</span>
+          <input
+            type="file"
+            multiple
+            accept="image/*"
+            disabled={isSubiendo}
+            onChange={(e) => onUploadFiles(indexHab, e)}
+            className="hidden"
+          />
+        </label>
+
+        <button
+          type="button"
+          onClick={() => setMostrarInputUrl((prev) => !prev)}
+          className="inline-flex items-center gap-1 px-3 py-1.5 bg-stone-light/30 hover:bg-stone-light/50 text-stone hover:text-forest text-xs font-medium rounded-xl transition-colors border border-stone-light/60"
+        >
+          <span>🔗</span>
+          <span>{mostrarInputUrl ? "Ocultar URL" : "Agregar por URL"}</span>
+        </button>
+      </div>
+
+      {/* Input para agregar URL directa */}
+      {mostrarInputUrl && (
+        <div className="flex items-center gap-2 pt-1 animate-fadeIn">
+          <input
+            type="text"
+            value={urlInput}
+            onChange={(e) => setUrlInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleAgregarUrl();
+              }
+            }}
+            placeholder="Pega la URL de la imagen (ej: https://... o /images/...)"
+            className="flex-1 bg-white border border-stone-light rounded-xl px-3 py-1.5 text-xs text-forest focus:outline-none focus:border-forest"
+          />
+          <button
+            type="button"
+            onClick={handleAgregarUrl}
+            className="px-3 py-1.5 bg-forest text-cream text-xs font-semibold rounded-xl hover:bg-forest-dark transition-colors"
+          >
+            + Añadir
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
