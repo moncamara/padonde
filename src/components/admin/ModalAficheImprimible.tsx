@@ -24,7 +24,10 @@ export function ModalAficheImprimible({
 
   if (!isOpen) return null;
 
-  const nombreLugar = puntoNombre.trim() || "Minca & Sierra Nevada";
+  const nombreLugar = puntoNombre.trim();
+  const displayUrl = urlDestino
+    ? urlDestino.replace(/^https?:\/\/(www\.)?/, "")
+    : `padonde.lat?src=${srcParam}`;
 
   function getAficheHTML() {
     const isPared = formato === "pared";
@@ -264,7 +267,7 @@ export function ModalAficheImprimible({
       <div class="badge-brand">
         <span>🌿</span>
         <span>PaDónde</span>
-        <span class="sub">Minca & Sierra Nevada</span>
+        <span class="sub">Cartelera en Vivo</span>
       </div>
       ${
         nombreLugar
@@ -274,11 +277,11 @@ export function ModalAficheImprimible({
     </div>
 
     <div class="titles-block">
-      <h1 class="title-es">¿Qué hacer hoy en Minca?</h1>
-      <p class="title-en">What to do today in Minca?</p>
+      <h1 class="title-es">¿Qué hacer hoy?</h1>
+      <p class="title-en">What to do today?</p>
       <div class="langs-grid">
-        <div class="lang-pill">🇩🇪 Was geht heute in Minca?</div>
-        <div class="lang-pill">🇫🇷 Que faire aujourd'hui à Minca ?</div>
+        <div class="lang-pill">🇩🇪 Was geht heute?</div>
+        <div class="lang-pill">🇫🇷 Que faire aujourd'hui ?</div>
       </div>
     </div>
 
@@ -290,26 +293,26 @@ export function ModalAficheImprimible({
           alt="Código QR PaDónde"
           class="qr-image"
         />
-        <p class="qr-link">padonde.lat/es/minca?src=${srcParam}</p>
+        <p class="qr-link">${displayUrl}</p>
       </div>
     </div>
 
     <div class="categories-grid">
       <div class="cat-card">
         <p class="cat-title">🎵 Música & Atardeceres</p>
-        <p class="cat-sub">Live Music · Live-Musik</p>
+        <p class="cat-sub">Live Music · Nightlife</p>
       </div>
       <div class="cat-card">
-        <p class="cat-title">🍫 Cacao & Café de Origen</p>
-        <p class="cat-sub">Cacao Tours · Kakao & Café</p>
+        <p class="cat-title">🍽️ Gastronomía & Café</p>
+        <p class="cat-sub">Food, Drinks & Local Flavors</p>
       </div>
       <div class="cat-card">
-        <p class="cat-title">🦜 Cascadas & Aves</p>
-        <p class="cat-sub">Birding · Waterfalls</p>
+        <p class="cat-title">🏖️ Playas, Cascadas & Tours</p>
+        <p class="cat-sub">Beaches, Nature & Tours</p>
       </div>
       <div class="cat-card">
-        <p class="cat-title">🧘 Yoga, Cabañas & Bienestar</p>
-        <p class="cat-sub">Eco-Lodge · Sauna · Wellness</p>
+        <p class="cat-title">🏡 Hospedaje, Cabañas & Relax</p>
+        <p class="cat-sub">Hotels, Cabins & Wellness</p>
       </div>
     </div>
 
@@ -320,7 +323,7 @@ export function ModalAficheImprimible({
         <span class="wa">💬 Reserva directa por WhatsApp</span>
       </div>
       <p class="footer-sub">
-        Cartelera turística comunitaria de Minca, Sierra Nevada de Santa Marta 🌿 <strong>www.padonde.lat</strong>
+        Cartelera turística en vivo · Eventos, hospedajes y planes 🌿 <strong>www.padonde.lat</strong>
       </p>
     </div>
   </div>
@@ -518,7 +521,7 @@ export function ModalAficheImprimible({
   <table class="poster-table" align="center" cellpadding="0" cellspacing="0">
     <tr>
       <td class="header-cell">
-        <div class="badge-brand">🌿 PaDónde · Minca & Sierra Nevada</div>
+        <div class="badge-brand">🌿 PaDónde · Cartelera en Vivo</div>
         ${
           nombreLugar
             ? `<div class="badge-point">PUNTO OFICIAL: <strong>${nombreLugar.toUpperCase()}</strong></div>`
@@ -528,10 +531,10 @@ export function ModalAficheImprimible({
     </tr>
     <tr>
       <td class="title-cell">
-        <div class="title-es">¿Qué hacer hoy en Minca?</div>
-        <div class="title-en">What to do today in Minca?</div>
+        <div class="title-es">¿Qué hacer hoy?</div>
+        <div class="title-en">What to do today?</div>
         <div style="font-size: 9pt; color: #2e4d36; font-weight: bold;">
-          🇩🇪 Was geht heute in Minca? &nbsp;|&nbsp; 🇫🇷 Que faire aujourd'hui à Minca ?
+          🇩🇪 Was geht heute? &nbsp;|&nbsp; 🇫🇷 Que faire aujourd'hui ?
         </div>
       </td>
     </tr>
@@ -540,7 +543,7 @@ export function ModalAficheImprimible({
         <div class="scan-badge">📸 ESCANEAR CON TU CÁMARA</div>
         <br/>
         <img src="${qrBase64}" width="${qrPixelSize}" height="${qrPixelSize}" class="qr-img" alt="QR PaDónde" />
-        <div class="qr-url">padonde.lat/es/minca?src=${srcParam}</div>
+        <div class="qr-url">${displayUrl}</div>
       </td>
     </tr>
     <tr>
@@ -549,21 +552,21 @@ export function ModalAficheImprimible({
           <tr>
             <td class="cat-item">
               <strong style="color: #1c3829;">🎵 Música & Atardeceres</strong><br/>
-              <span style="color: #8a7e6e; font-size: 8.5pt;">Live Music · Live-Musik</span>
+              <span style="color: #8a7e6e; font-size: 8.5pt;">Live Music · Nightlife</span>
             </td>
             <td class="cat-item">
-              <strong style="color: #1c3829;">🍫 Cacao & Café de Origen</strong><br/>
-              <span style="color: #8a7e6e; font-size: 8.5pt;">Cacao Tours · Kakao & Café</span>
+              <strong style="color: #1c3829;">🍽️ Gastronomía & Café</strong><br/>
+              <span style="color: #8a7e6e; font-size: 8.5pt;">Food, Drinks & Local Flavors</span>
             </td>
           </tr>
           <tr>
             <td class="cat-item">
-              <strong style="color: #1c3829;">🦜 Cascadas & Aves</strong><br/>
-              <span style="color: #8a7e6e; font-size: 8.5pt;">Birding · Waterfalls</span>
+              <strong style="color: #1c3829;">🏖️ Playas, Cascadas & Tours</strong><br/>
+              <span style="color: #8a7e6e; font-size: 8.5pt;">Beaches, Nature & Tours</span>
             </td>
             <td class="cat-item">
-              <strong style="color: #1c3829;">🧘 Yoga, Cabañas & Bienestar</strong><br/>
-              <span style="color: #8a7e6e; font-size: 8.5pt;">Eco-Lodge · Sauna · Wellness</span>
+              <strong style="color: #1c3829;">🏡 Hospedaje, Cabañas & Relax</strong><br/>
+              <span style="color: #8a7e6e; font-size: 8.5pt;">Hotels, Cabins & Wellness</span>
             </td>
           </tr>
         </table>
@@ -574,7 +577,7 @@ export function ModalAficheImprimible({
         <strong style="color: #1c3829;">⚡ Sin descargar apps</strong> &nbsp;·&nbsp;
         <strong style="color: #047857;">💬 Reserva directa por WhatsApp</strong>
         <br/><br/>
-        Cartelera turística comunitaria de Minca, Sierra Nevada de Santa Marta 🌿 <strong>www.padonde.lat</strong>
+        Cartelera turística en vivo · Eventos, hospedajes y planes 🌿 <strong>www.padonde.lat</strong>
       </td>
     </tr>
   </table>
@@ -587,7 +590,7 @@ export function ModalAficheImprimible({
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      const cleanName = (puntoNombre || "minca")
+      const cleanName = (puntoNombre || "punto")
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-");
       link.download = `afiche-padonde-${cleanName}-${formato}.doc`;
@@ -674,7 +677,7 @@ export function ModalAficheImprimible({
       const badgeY = margin + 110 * scale;
       ctx.fillStyle = "#1c3829";
       ctx.font = `bold ${Math.round(54 * scale)}px 'Playfair Display', Georgia, serif`;
-      ctx.fillText("🌿 PaDónde · Minca & Sierra Nevada", canvasWidth / 2, badgeY);
+      ctx.fillText("🌿 PaDónde · Cartelera en Vivo", canvasWidth / 2, badgeY);
 
       // Punto Oficial
       if (nombreLugar) {
@@ -687,11 +690,11 @@ export function ModalAficheImprimible({
       const titleY = badgeY + (nombreLugar ? 160 : 120) * scale;
       ctx.fillStyle = "#1c3829";
       ctx.font = `900 ${Math.round(96 * scale)}px 'Playfair Display', Georgia, serif`;
-      ctx.fillText("¿Qué hacer hoy en Minca?", canvasWidth / 2, titleY);
+      ctx.fillText("¿Qué hacer hoy?", canvasWidth / 2, titleY);
 
       ctx.fillStyle = "#c4622d";
       ctx.font = `italic bold ${Math.round(56 * scale)}px 'Playfair Display', Georgia, serif`;
-      ctx.fillText("What to do today in Minca?", canvasWidth / 2, titleY + 75 * scale);
+      ctx.fillText("What to do today?", canvasWidth / 2, titleY + 75 * scale);
 
       // Pastillas Alemán y Francés
       const pillsY = titleY + 120 * scale;
@@ -711,7 +714,7 @@ export function ModalAficheImprimible({
 
       ctx.fillStyle = "#1c3829";
       ctx.font = `italic 600 ${Math.round(32 * scale)}px 'Inter', sans-serif`;
-      ctx.fillText("🇩🇪 Was geht heute in Minca?", pill1X + pillW / 2, pillYPos + 44 * scale);
+      ctx.fillText("🇩🇪 Was geht heute?", pill1X + pillW / 2, pillYPos + 44 * scale);
 
       // Pastilla Francés
       const pill2X = pill1X + pillW + 40 * scale;
@@ -723,7 +726,7 @@ export function ModalAficheImprimible({
       ctx.stroke();
 
       ctx.fillStyle = "#1c3829";
-      ctx.fillText("🇫🇷 Que faire aujourd'hui à Minca ?", pill2X + pillW / 2, pillYPos + 44 * scale);
+      ctx.fillText("🇫🇷 Que faire aujourd'hui ?", pill2X + pillW / 2, pillYPos + 44 * scale);
 
       // 7. Contenedor del Código QR Central
       const qrBoxSize = isPared ? 1120 : 840;
@@ -760,7 +763,7 @@ export function ModalAficheImprimible({
       // Enlace web debajo del QR
       ctx.fillStyle = "#8a7e6e";
       ctx.font = `bold ${Math.round(32 * scale)}px monospace`;
-      ctx.fillText(`padonde.lat/es/minca?src=${srcParam}`, canvasWidth / 2, qrY + qrBoxSize + 70 * scale);
+      ctx.fillText(displayUrl, canvasWidth / 2, qrY + qrBoxSize + 70 * scale);
 
       // 8. Cuadrícula de Categorías (4 tarjetas 2x2)
       const catY = qrY + qrContainerH + 40 * scale;
@@ -768,10 +771,10 @@ export function ModalAficheImprimible({
       const catH = 145 * scale;
 
       const categorias = [
-        { t: "🎵 Música & Atardeceres", s: "Live Music · Live-Musik" },
-        { t: "🍫 Cacao & Café de Origen", s: "Cacao Tours · Kakao & Café" },
-        { t: "🦜 Cascadas & Aves", s: "Birding · Waterfalls" },
-        { t: "🧘 Yoga, Cabañas & Bienestar", s: "Eco-Lodge · Sauna · Wellness" },
+        { t: "🎵 Música & Atardeceres", s: "Live Music · Nightlife" },
+        { t: "🍽️ Gastronomía & Café", s: "Food, Drinks & Local Flavors" },
+        { t: "🏖️ Playas, Cascadas & Tours", s: "Beaches, Nature & Tours" },
+        { t: "🏡 Hospedaje, Cabañas & Relax", s: "Hotels, Cabins & Wellness" },
       ];
 
       categorias.forEach((c, i) => {
@@ -805,13 +808,13 @@ export function ModalAficheImprimible({
 
       ctx.fillStyle = "#8a7e6e";
       ctx.font = `${Math.round(27 * scale)}px 'Inter', sans-serif`;
-      ctx.fillText("Cartelera turística comunitaria de Minca, Sierra Nevada de Santa Marta 🌿 www.padonde.lat", canvasWidth / 2, footerY + 45 * scale);
+      ctx.fillText("Cartelera turística en vivo · Eventos, hospedajes y planes 🌿 www.padonde.lat", canvasWidth / 2, footerY + 45 * scale);
 
       // 10. Descargar archivo JPG
       const jpgData = canvas.toDataURL("image/jpeg", 0.95);
       const link = document.createElement("a");
       link.href = jpgData;
-      const cleanName = (puntoNombre || "minca").toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      const cleanName = (puntoNombre || "punto").toLowerCase().replace(/[^a-z0-9]+/g, "-");
       link.download = `afiche-padonde-${cleanName}-${formato}-alta-resolucion.jpg`;
       document.body.appendChild(link);
       link.click();
@@ -934,7 +937,7 @@ export function ModalAficheImprimible({
               <div className="inline-flex items-center gap-2 px-3 py-0.5 rounded-full bg-forest/5 border border-forest/15">
                 <span className="text-base">🌿</span>
                 <span className="font-serif text-base font-bold tracking-tight text-forest">
-                  PaDónde <span className="font-sans font-light text-xs text-stone">Minca</span>
+                  PaDónde <span className="font-sans font-medium text-xs text-stone">· Cartelera en Vivo</span>
                 </span>
               </div>
 
@@ -949,19 +952,19 @@ export function ModalAficheImprimible({
             <div className="text-center space-y-2">
               <div className="space-y-0.5">
                 <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl text-forest font-black tracking-tight leading-tight">
-                  ¿Qué hacer hoy en Minca?
+                  ¿Qué hacer hoy?
                 </h1>
                 <p className="font-serif italic text-base sm:text-xl text-terra font-bold">
-                  What to do today in Minca?
+                  What to do today?
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-2 max-w-sm mx-auto text-xs font-sans text-forest/90 pt-0.5">
                 <div className="bg-forest/5 p-1.5 rounded-lg border border-forest/10 font-medium">
-                  🇩🇪 <em>Was geht heute in Minca?</em>
+                  🇩🇪 <em>Was geht heute?</em>
                 </div>
                 <div className="bg-forest/5 p-1.5 rounded-lg border border-forest/10 font-medium">
-                  🇫🇷 <em>Que faire aujourd&apos;hui à Minca ?</em>
+                  🇫🇷 <em>Que faire aujourd&apos;hui ?</em>
                 </div>
               </div>
             </div>
@@ -982,7 +985,7 @@ export function ModalAficheImprimible({
                 />
 
                 <p className="text-[11px] font-mono text-stone font-semibold mt-2">
-                  padonde.lat/es/minca?src={srcParam}
+                  {displayUrl}
                 </p>
               </div>
             </div>
@@ -991,19 +994,19 @@ export function ModalAficheImprimible({
             <div className="grid grid-cols-2 gap-2 text-center text-xs font-sans">
               <div className="p-2.5 rounded-xl bg-forest/5 border border-stone-light/80">
                 <p className="font-bold text-forest text-xs sm:text-sm">🎵 Música & Atardeceres</p>
-                <p className="text-[11px] text-stone">Live Music · Live-Musik</p>
+                <p className="text-[11px] text-stone">Live Music · Nightlife</p>
               </div>
               <div className="p-2.5 rounded-xl bg-forest/5 border border-stone-light/80">
-                <p className="font-bold text-forest text-xs sm:text-sm">🍫 Cacao & Café de Origen</p>
-                <p className="text-[11px] text-stone">Cacao Tours · Kakao & Café</p>
+                <p className="font-bold text-forest text-xs sm:text-sm">🍽️ Gastronomía & Café</p>
+                <p className="text-[11px] text-stone">Food, Drinks & Local Flavors</p>
               </div>
               <div className="p-2.5 rounded-xl bg-forest/5 border border-stone-light/80">
-                <p className="font-bold text-forest text-xs sm:text-sm">🦜 Cascadas & Aves</p>
-                <p className="text-[11px] text-stone">Birding · Waterfalls</p>
+                <p className="font-bold text-forest text-xs sm:text-sm">🏖️ Playas, Cascadas & Tours</p>
+                <p className="text-[11px] text-stone">Beaches, Nature & Tours</p>
               </div>
               <div className="p-2.5 rounded-xl bg-forest/5 border border-stone-light/80">
-                <p className="font-bold text-forest text-xs sm:text-sm">🧘 Yoga, Cabañas & Bienestar</p>
-                <p className="text-[11px] text-stone">Eco-Lodge · Sauna · Wellness</p>
+                <p className="font-bold text-forest text-xs sm:text-sm">🏡 Hospedaje, Cabañas & Relax</p>
+                <p className="text-[11px] text-stone">Hotels, Cabins & Wellness</p>
               </div>
             </div>
 
@@ -1019,7 +1022,7 @@ export function ModalAficheImprimible({
                 </span>
               </div>
               <p className="text-[10px] text-stone">
-                Cartelera turística comunitaria de Minca, Sierra Nevada de Santa Marta 🌿 <strong>www.padonde.lat</strong>
+                Cartelera turística en vivo · Eventos, hospedajes y planes 🌿 <strong>www.padonde.lat</strong>
               </p>
             </div>
           </div>

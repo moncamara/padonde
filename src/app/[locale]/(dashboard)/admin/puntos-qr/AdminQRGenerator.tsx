@@ -317,7 +317,7 @@ export function AdminQRGenerator({ locale }: { locale: string }) {
                   <a
                     href={qrPresetUrl}
                     target="_blank"
-                    download={`qr-minca-${preset.src}.png`}
+                    download={`qr-${preset.src}.png`}
                     className="py-1.5 px-2.5 rounded-xl text-xs font-sans font-medium text-stone bg-white border border-stone-light hover:bg-stone-50 transition-colors flex items-center gap-1 shrink-0"
                     title="Descargar solo imagen del código QR"
                   >
