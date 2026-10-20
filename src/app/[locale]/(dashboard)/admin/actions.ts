@@ -144,6 +144,8 @@ export async function adminPublishEventAction(
       return { success: false, error: "Error al registrar el evento en Supabase." };
     }
 
+    // Revalidar inmediatamente todo el sitio (CDN y rutas públicas en todos los idiomas)
+    revalidatePath("/", "layout");
     revalidatePath(`/[locale]/${input.zonaSlug}`, "page");
     revalidatePath(`/[locale]/admin`, "page");
 
