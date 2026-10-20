@@ -68,7 +68,8 @@ export function AdminQRGenerator({ locale }: { locale: string }) {
   const [slugPersonalizado, setSlugPersonalizado] = useState("");
   const [zonaSeleccionada, setZonaSeleccionada] = useState("minca");
   const [copiadoSrc, setCopiadoSrc] = useState<string | null>(null);
-  const [dominioBase, setDominioBase] = useState("https://padonde.lat");
+  const DOMINIO_OFICIAL = "https://www.padonde.lat";
+  const [dominioBase, setDominioBase] = useState(DOMINIO_OFICIAL);
   const [aficheModal, setAficheModal] = useState<{
     isOpen: boolean;
     nombre: string;
@@ -77,10 +78,22 @@ export function AdminQRGenerator({ locale }: { locale: string }) {
     src: string;
   } | null>(null);
 
-  // Sincronizar origen del navegador tras montaje para evitar errores de hidratación SSR
+  // Garantizar que los códigos QR y afiches físicos NUNCA usen localhost,
+  // incluso si el administrador está en un entorno local o de desarrollo.
   useEffect(() => {
     if (typeof window !== "undefined") {
-      setDominioBase(window.location.origin);
+      const origin = window.location.origin;
+      // Solo si el origen es un dominio público real (no localhost ni IPs privadas)
+      if (
+        origin &&
+        !origin.includes("localhost") &&
+        !origin.includes("127.0.0.1") &&
+        !origin.includes("0.0.0.0")
+      ) {
+        setDominioBase(origin);
+      } else {
+        setDominioBase(DOMINIO_OFICIAL);
+      }
     }
   }, []);
 

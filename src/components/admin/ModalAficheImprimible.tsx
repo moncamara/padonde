@@ -25,8 +25,19 @@ export function ModalAficheImprimible({
   if (!isOpen) return null;
 
   const nombreLugar = puntoNombre.trim();
-  const displayUrl = urlDestino
-    ? urlDestino.replace(/^https?:\/\/(www\.)?/, "")
+  // Sanitizar siempre para garantizar que NUNCA aparezca localhost en afiches ni en los QR impresos
+  const urlSeguraDestino = (urlDestino || `https://www.padonde.lat/es/minca?src=${srcParam || "punto-fisico"}`)
+    .replace(/^https?:\/\/(localhost(:\d+)?|127\.0\.0\.1(:\d+)?)/, "https://www.padonde.lat");
+
+  const qrImageUrlSegura =
+    qrImageUrl && !qrImageUrl.includes("localhost") && !qrImageUrl.includes("127.0.0.1")
+      ? qrImageUrl
+      : `https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=12&data=${encodeURIComponent(
+          urlSeguraDestino
+        )}`;
+
+  const displayUrl = urlSeguraDestino
+    ? urlSeguraDestino.replace(/^https?:\/\/(www\.)?/, "")
     : `padonde.lat?src=${srcParam}`;
 
   function getAficheHTML() {
@@ -290,7 +301,7 @@ export function ModalAficheImprimible({
       <div class="qr-wrapper">
         <div class="qr-badge-scan">📸 Escanear con tu cámara</div>
         <img
-          src="${qrImageUrl}"
+          src="${qrImageUrlSegura}"
           alt="Código QR PaDónde"
           class="qr-image"
         />
@@ -373,9 +384,9 @@ export function ModalAficheImprimible({
     setImprimiendo(true);
     try {
       // 1. Convertir el QR a Base64 para incrustarlo de forma 100% autónoma y offline en el SVG
-      let qrBase64 = qrImageUrl;
+      let qrBase64 = qrImageUrlSegura;
       try {
-        const response = await fetch(qrImageUrl);
+        const response = await fetch(qrImageUrlSegura);
         const blob = await response.blob();
         qrBase64 = await new Promise<string>((resolve) => {
           const reader = new FileReader();
@@ -511,7 +522,7 @@ export function ModalAficheImprimible({
   async function handleDownloadSoloQRSVG() {
     setImprimiendo(true);
     try {
-      const targetUrl = urlDestino || `https://padonde.lat?src=${srcParam}`;
+      const targetUrl = urlSeguraDestino || `https://www.padonde.lat/es/minca?src=${srcParam}`;
       const svgQrUrl = `https://api.qrserver.com/v1/create-qr-code/?format=svg&margin=10&data=${encodeURIComponent(
         targetUrl
       )}`;
@@ -687,7 +698,7 @@ export function ModalAficheImprimible({
                 </div>
 
                 <img
-                  src={qrImageUrl}
+                  src={qrImageUrlSegura}
                   alt={`Código QR ${nombreLugar}`}
                   className="w-44 h-44 sm:w-52 sm:h-52 object-contain rounded-xl"
                   style={{ imageRendering: "pixelated" }}
