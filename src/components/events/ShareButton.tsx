@@ -49,8 +49,8 @@ export function ShareButton({
   const shareText =
     text ||
     (zonaNombre
-      ? `Descubre qué hacer hoy en ${zonaNombre}: planes, hospedajes, eventos en vivo y tours en PaDónde 🌿`
-      : `${title} — PaDónde 🌿`);
+      ? `Descubre planes, eventos, rumba, hospedajes en ${zonaNombre} - PaDónde`
+      : `${title} - PaDónde`);
 
   const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(
     `${shareText}\n\n👉 ${finalUrl}`

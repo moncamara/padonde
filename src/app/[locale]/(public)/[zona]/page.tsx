@@ -170,7 +170,7 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
           <div className="flex items-center gap-2">
             <ShareButton
               title={`PaDónde 🌿 Cartelera de ${zona.nombre}`}
-              text={`Descubre planes, hospedajes y eventos en vivo en ${zona.nombre} — PaDónde 🌿`}
+              text={`Descubre planes, eventos, rumba, hospedajes en ${zona.nombre} - PaDónde`}
               url={`https://www.padonde.lat/${locale}/${zonaSlug}`}
               zonaNombre={zona.nombre}
               variant="header"
@@ -195,7 +195,7 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
         <div className="max-w-xs mx-auto">
           <ShareButton
             title={`PaDónde 🌿 Cartelera de ${zona.nombre}`}
-            text={`Descubre planes, hospedajes y eventos en vivo en ${zona.nombre} — PaDónde 🌿`}
+            text={`Descubre planes, eventos, rumba, hospedajes en ${zona.nombre} - PaDónde`}
             url={`https://www.padonde.lat/${locale}/${zonaSlug}`}
             zonaNombre={zona.nombre}
             variant="full"
