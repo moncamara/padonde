@@ -33,8 +33,8 @@ export function PuntosQRMetricas() {
   });
 
   // Calculadora de pago dinámico
-  const [tarifaPorEscaneo, setTarifaPorEscaneo] = useState<number>(700);
-  const [baseFijo, setBaseFijo] = useState<number>(40000);
+  const [tarifaPorEscaneo, setTarifaPorEscaneo] = useState<number>(500);
+  const [baseFijo, setBaseFijo] = useState<number>(0);
   const [autoRefresh, setAutoRefresh] = useState(true);
 
   const cargarMetricas = useCallback(async () => {
@@ -237,7 +237,8 @@ export function PuntosQRMetricas() {
               ${pagoTotalEstimado.toLocaleString("es-CO")} COP
             </span>
             <span className="text-[10px] text-cream/60">
-              Base (${baseFijo.toLocaleString("es-CO")}) + {data.unicosValidados} únicos (${totalComision.toLocaleString("es-CO")})
+              {baseFijo > 0 ? `Base ($${baseFijo.toLocaleString("es-CO")}) + ` : ""}
+              {data.unicosValidados} únicos (${totalComision.toLocaleString("es-CO")})
             </span>
           </div>
         </div>
