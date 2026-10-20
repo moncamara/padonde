@@ -3,7 +3,6 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/routing";
 import { FeedTabsContainer } from "@/components/layout/FeedTabsContainer";
 import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
-import { ZoneSwitcher } from "@/components/layout/ZoneSwitcher";
 import { ShareButton } from "@/components/events/ShareButton";
 import { InstallPrompt } from "@/components/layout/InstallPrompt";
 import { AdminSecretTrigger } from "@/components/layout/AdminSecretTrigger";
@@ -155,6 +154,13 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
+      {/* Persistencia silenciosa de la última zona visitada para el acceso directo PWA */}
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `document.cookie = "padonde_zona=${zonaSlug}; path=/; max-age=31536000; SameSite=Lax";`,
+        }}
+      />
+
       {/* Header sticky con blur y selector de idioma */}
       <header className="sticky top-0 z-10 bg-cream/90 backdrop-blur-sm border-b border-stone-light px-4 py-3">
         <div className="max-w-lg mx-auto flex items-center justify-between gap-3">
@@ -164,10 +170,9 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
                 PaDónde
               </h1>
             </AdminSecretTrigger>
-            <div className="flex items-center gap-1.5 font-sans text-xs text-stone">
-              <span>{tHeader("subtitle")}</span>
-              <ZoneSwitcher currentZona={zonaSlug} />
-            </div>
+            <p className="font-sans text-xs text-stone mt-0.5">
+              {tHeader("subtitle")} {zona.nombre}
+            </p>
           </div>
 
           {/* Columna derecha: Idiomas arriba, Compartir abajo pegado a la derecha */}
