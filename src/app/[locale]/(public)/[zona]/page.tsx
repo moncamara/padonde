@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/routing";
 import { FeedTabsContainer } from "@/components/layout/FeedTabsContainer";
 import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
+import { ZoneSwitcher } from "@/components/layout/ZoneSwitcher";
 import { ShareButton } from "@/components/events/ShareButton";
 import { InstallPrompt } from "@/components/layout/InstallPrompt";
 import { AdminSecretTrigger } from "@/components/layout/AdminSecretTrigger";
@@ -156,18 +157,22 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
 
       {/* Header sticky con blur y selector de idioma */}
       <header className="sticky top-0 z-10 bg-cream/90 backdrop-blur-sm border-b border-stone-light px-4 py-3">
-        <div className="max-w-lg mx-auto flex items-center justify-between">
-          <AdminSecretTrigger>
-            <h1 className="font-serif text-3xl text-forest tracking-tight">
-              PaDónde
-            </h1>
-            <p className="font-sans text-xs text-stone mt-0.5">
-              {tHeader("subtitle")} {zona.nombre}
-            </p>
-          </AdminSecretTrigger>
+        <div className="max-w-lg mx-auto flex items-center justify-between gap-3">
+          <div className="space-y-0.5">
+            <AdminSecretTrigger>
+              <h1 className="font-serif text-3xl text-forest tracking-tight leading-none">
+                PaDónde
+              </h1>
+            </AdminSecretTrigger>
+            <div className="flex items-center gap-1.5 font-sans text-xs text-stone">
+              <span>{tHeader("subtitle")}</span>
+              <ZoneSwitcher currentZona={zonaSlug} />
+            </div>
+          </div>
 
-          {/* Acciones: Compartir PWA + Selector de idioma */}
-          <div className="flex items-center gap-2">
+          {/* Columna derecha: Idiomas arriba, Compartir abajo pegado a la derecha */}
+          <div className="flex flex-col items-end gap-1.5 shrink-0">
+            <LanguageSwitcher />
             <ShareButton
               title={`PaDónde 🌿 Cartelera de ${zona.nombre}`}
               text={`Descubre planes, eventos, rumba, hospedajes en ${zona.nombre} - PaDónde`}
@@ -175,7 +180,6 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
               zonaNombre={zona.nombre}
               variant="header"
             />
-            <LanguageSwitcher />
           </div>
         </div>
       </header>
