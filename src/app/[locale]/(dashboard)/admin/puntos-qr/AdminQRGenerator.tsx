@@ -101,6 +101,9 @@ export function AdminQRGenerator({ locale }: { locale: string }) {
   const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=12&data=${encodeURIComponent(
     urlGenerada
   )}`;
+  const qrSvgUrl = `https://api.qrserver.com/v1/create-qr-code/?format=svg&margin=12&data=${encodeURIComponent(
+    urlGenerada
+  )}`;
 
   function handleCopiar(texto: string, id: string) {
     navigator.clipboard.writeText(texto);
@@ -133,7 +136,7 @@ export function AdminQRGenerator({ locale }: { locale: string }) {
                 type="text"
                 value={nombrePunto}
                 onChange={(e) => handleNombreChange(e.target.value)}
-                placeholder="Ej. Hostal Casa Loma, Café Minca..."
+                placeholder="Ej. Hostal Casa Loma, Café Central..."
                 className="w-full px-3.5 py-2 text-xs bg-white rounded-xl border border-stone-light/80 placeholder:text-stone/60 focus:outline-none focus:ring-1 focus:ring-forest text-forest"
               />
             </div>
@@ -163,7 +166,7 @@ export function AdminQRGenerator({ locale }: { locale: string }) {
                   type="text"
                   value={slugPersonalizado}
                   onChange={(e) => setSlugPersonalizado(e.target.value)}
-                  placeholder="ej. casa-loma"
+                  placeholder="ej. recepcion-principal"
                   className="w-full px-3 py-2 text-xs bg-white rounded-xl border border-stone-light/80 focus:outline-none focus:ring-1 focus:ring-forest text-forest font-mono text-[11px]"
                 />
               </div>
@@ -205,7 +208,7 @@ export function AdminQRGenerator({ locale }: { locale: string }) {
 
             <div className="space-y-1">
               <p className="font-serif text-sm text-forest font-bold">
-                {nombrePunto || "PaDónde Minca"}
+                {nombrePunto || "PaDónde"}
               </p>
               <p className="font-mono text-[10px] text-stone">
                 ?src={slugFinal}
@@ -218,7 +221,7 @@ export function AdminQRGenerator({ locale }: { locale: string }) {
                 onClick={() =>
                   setAficheModal({
                     isOpen: true,
-                    nombre: nombrePunto || "PaDónde Minca",
+                    nombre: nombrePunto || "PaDónde",
                     url: urlGenerada,
                     qrUrl: qrImageUrl,
                     src: slugFinal,
@@ -231,25 +234,26 @@ export function AdminQRGenerator({ locale }: { locale: string }) {
               </button>
 
               <a
-                href={qrImageUrl}
+                href={qrSvgUrl}
                 target="_blank"
-                download={`qr-padonde-${slugFinal}.png`}
-                className="w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-sans font-semibold bg-white border border-stone-light text-forest hover:bg-stone-50 transition-all flex items-center justify-center gap-1.5 shadow-2xs"
+                download={`qr-padonde-${slugFinal}.svg`}
+                className="w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-sans font-semibold bg-white border border-stone-light text-forest hover:bg-stone-50 transition-all flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
+                title="Descargar solo código QR en formato vectorial SVG"
               >
-                <span>📥</span>
-                <span>Descargar PNG</span>
+                <span>📐</span>
+                <span>Descargar SVG</span>
               </a>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Puntos Físicos Estratégicos Pre-configurados en Minca */}
+      {/* Puntos Físicos Estratégicos Pre-configurados */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="font-serif text-lg text-forest font-bold">
-              Puntos Físicos Sugeridos en Minca
+              Puntos Físicos Sugeridos
             </h3>
             <p className="font-sans text-xs text-stone mt-0.5">
               Ubicaciones clave con alto tráfico turístico donde ubicar afiches o material POP.
@@ -264,6 +268,9 @@ export function AdminQRGenerator({ locale }: { locale: string }) {
           {PRESETS_MINCA.map((preset) => {
             const urlPreset = `${dominioBase}/${locale}/minca?src=${preset.src}`;
             const qrPresetUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=10&data=${encodeURIComponent(
+              urlPreset
+            )}`;
+            const qrPresetSvgUrl = `https://api.qrserver.com/v1/create-qr-code/?format=svg&margin=10&data=${encodeURIComponent(
               urlPreset
             )}`;
 
@@ -315,14 +322,14 @@ export function AdminQRGenerator({ locale }: { locale: string }) {
                   </button>
 
                   <a
-                    href={qrPresetUrl}
+                    href={qrPresetSvgUrl}
                     target="_blank"
-                    download={`qr-${preset.src}.png`}
-                    className="py-1.5 px-2.5 rounded-xl text-xs font-sans font-medium text-stone bg-white border border-stone-light hover:bg-stone-50 transition-colors flex items-center gap-1 shrink-0"
-                    title="Descargar solo imagen del código QR"
+                    download={`qr-${preset.src}.svg`}
+                    className="py-1.5 px-2.5 rounded-xl text-xs font-sans font-semibold text-indigo-800 bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 transition-colors flex items-center gap-1 shrink-0 cursor-pointer"
+                    title="Descargar solo código QR en formato vectorial SVG"
                   >
-                    <span>🖼️</span>
-                    <span>PNG</span>
+                    <span>📐</span>
+                    <span>SVG</span>
                   </a>
                 </div>
               </article>
