@@ -367,11 +367,11 @@ export function ModalAficheImprimible({
     }, 450);
   }
 
-  // Descarga directa en archivo .doc compatible con Microsoft Word y Google Docs
-  async function handleDownloadWord() {
+  // Descarga en formato SVG vectorial (ideal para litografías, corte e imprenta profesional con resolución infinita)
+  async function handleDownloadSVG() {
     setImprimiendo(true);
     try {
-      // 1. Descargar la imagen del QR y convertirla a Base64 para incrustarla directamente en el Word
+      // 1. Convertir el QR a Base64 para incrustarlo de forma 100% autónoma y offline en el SVG
       let qrBase64 = qrImageUrl;
       try {
         const response = await fetch(qrImageUrl);
@@ -386,445 +386,128 @@ export function ModalAficheImprimible({
       }
 
       const isPared = formato === "pared";
-      // Dimensiones calibradas para encajar exactamente en 1 sola hoja carta sin desborde
-      const qrPixelSize = isPared ? 250 : 190;
-      const titlePt = isPared ? "24pt" : "19pt";
-      const subPt = isPared ? "14pt" : "12pt";
+      const width = isPared ? 720 : 540;
+      const height = isPared ? 1040 : 800;
+      const cx = width / 2;
 
-      // Plantilla optimizada en formato HTML/Word con tablas (compatible 100% con Microsoft Word y Google Docs)
-      const wordHtml = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-<head>
-  <!--[if gte mso 9]>
-  <xml>
-    <w:WordDocument>
-      <w:View>Print</w:View>
-      <w:Zoom>100</w:Zoom>
-      <w:DoNotOptimizeForBrowser/>
-    </w:WordDocument>
-  </xml>
-  <![endif]-->
-  <meta charset='utf-8'>
-  <title>Afiche PaDónde - ${nombreLugar}</title>
-  <style>
-    @page {
-      size: letter portrait;
-      margin: 0.35in;
-    }
-    body {
-      font-family: 'Helvetica Neue', Arial, sans-serif;
-      color: #1c3829;
-      background: #ffffff;
-      margin: 0;
-      padding: 0;
-    }
-    table.poster-table {
-      width: 100%;
-      max-width: 580px;
-      margin: 0 auto;
-      border: 3px solid #1c3829;
-      border-collapse: separate;
-      background-color: #ffffff;
-      page-break-inside: avoid;
-      break-inside: avoid;
-    }
-    td.header-cell {
-      padding: 10px 16px 6px 16px;
-      text-align: center;
-      background-color: #fcfbf9;
-      border-bottom: 2px solid #1c3829;
-    }
-    .badge-brand {
-      font-size: 13pt;
-      font-weight: bold;
-      color: #1c3829;
-      margin-bottom: 2px;
-    }
-    .badge-point {
-      font-size: 9pt;
-      text-transform: uppercase;
-      color: #8a7e6e;
-      letter-spacing: 1px;
-    }
-    td.title-cell {
-      padding: 10px 16px 6px 16px;
-      text-align: center;
-    }
-    .title-es {
-      font-size: ${titlePt};
-      font-weight: 900;
-      color: #1c3829;
-      line-height: 1.1;
-      margin: 0 0 2px 0;
-    }
-    .title-en {
-      font-size: ${subPt};
-      font-weight: bold;
-      font-style: italic;
-      color: #c4622d;
-      margin: 0 0 6px 0;
-    }
-    td.qr-cell {
-      padding: 8px 16px;
-      text-align: center;
-      background-color: #f7f5f0;
-    }
-    .scan-badge {
-      display: inline-block;
-      background-color: #1c3829;
-      color: #ffffff;
-      font-size: 9pt;
-      font-weight: bold;
-      text-transform: uppercase;
-      padding: 3px 14px;
-      margin-bottom: 6px;
-    }
-    .qr-img {
-      width: ${qrPixelSize}px;
-      height: ${qrPixelSize}px;
-      border: 1px solid #1c3829;
-      display: block;
-      margin: 0 auto;
-    }
-    .qr-url {
-      font-family: monospace;
-      font-size: 9pt;
-      color: #8a7e6e;
-      font-weight: bold;
-      margin-top: 6px;
-    }
-    td.cats-cell {
-      padding: 8px 16px;
-    }
-    table.cats-table {
-      width: 100%;
-      border-collapse: separate;
-    }
-    td.cat-item {
-      width: 50%;
-      padding: 6px 8px;
-      background-color: #f9f8f5;
-      border: 1px solid #e0ded9;
-      text-align: center;
-      font-size: 9pt;
-    }
-    td.footer-cell {
-      padding: 8px 16px;
-      text-align: center;
-      background-color: #fcfbf9;
-      border-top: 1px solid #e0ded9;
-      font-size: 8.5pt;
-      color: #8a7e6e;
-    }
-  </style>
-</head>
-<body>
-  <table class="poster-table" align="center" cellpadding="0" cellspacing="0">
-    <tr>
-      <td class="header-cell">
-        <div class="badge-brand">🌿 PaDónde · Cartelera en Vivo</div>
-        ${
-          nombreLugar
-            ? `<div class="badge-point">PUNTO OFICIAL: <strong>${nombreLugar.toUpperCase()}</strong></div>`
-            : ""
-        }
-      </td>
-    </tr>
-    <tr>
-      <td class="title-cell">
-        <div class="title-es">¿Qué hacer hoy?</div>
-        <div class="title-en">What to do today?</div>
-        <div style="font-size: 9pt; color: #2e4d36; font-weight: bold;">
-          🇩🇪 Was geht heute? &nbsp;|&nbsp; 🇫🇷 Que faire aujourd'hui ?
-        </div>
-      </td>
-    </tr>
-    <tr>
-      <td class="qr-cell">
-        <div class="scan-badge">📸 ESCANEAR CON TU CÁMARA</div>
-        <br/>
-        <img src="${qrBase64}" width="${qrPixelSize}" height="${qrPixelSize}" class="qr-img" alt="QR PaDónde" />
-        <div class="qr-url">${displayUrl}</div>
-      </td>
-    </tr>
-    <tr>
-      <td class="cats-cell">
-        <table class="cats-table" cellpadding="3" cellspacing="4">
-          <tr>
-            <td class="cat-item">
-              <strong style="color: #1c3829;">🎵 Música & Atardeceres</strong><br/>
-              <span style="color: #8a7e6e; font-size: 8.5pt;">Live Music · Nightlife</span>
-            </td>
-            <td class="cat-item">
-              <strong style="color: #1c3829;">🍽️ Gastronomía & Café</strong><br/>
-              <span style="color: #8a7e6e; font-size: 8.5pt;">Food, Drinks & Local Flavors</span>
-            </td>
-          </tr>
-          <tr>
-            <td class="cat-item">
-              <strong style="color: #1c3829;">🏖️ Playas, Cascadas & Tours</strong><br/>
-              <span style="color: #8a7e6e; font-size: 8.5pt;">Beaches, Nature & Tours</span>
-            </td>
-            <td class="cat-item">
-              <strong style="color: #1c3829;">🏡 Hospedaje, Cabañas & Relax</strong><br/>
-              <span style="color: #8a7e6e; font-size: 8.5pt;">Hotels, Cabins & Wellness</span>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-    <tr>
-      <td class="footer-cell">
-        <strong style="color: #1c3829;">⚡ Sin descargar apps</strong> &nbsp;·&nbsp;
-        <strong style="color: #047857;">💬 Reserva directa por WhatsApp</strong>
-        <br/><br/>
-        Cartelera turística en vivo · Eventos, hospedajes y planes 🌿 <strong>www.padonde.lat</strong>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`;
+      const titleY = nombreLugar ? (isPared ? 155 : 130) : (isPared ? 135 : 115);
+      const subTitleY = titleY + (isPared ? 34 : 26);
+      const pillsY = subTitleY + (isPared ? 24 : 18);
 
-      const blob = new Blob(["\ufeff" + wordHtml], {
-        type: "application/msword;charset=utf-8",
-      });
+      const qrBoxSize = isPared ? 280 : 210;
+      const qrBoxH = qrBoxSize + (isPared ? 56 : 46);
+      const qrY = pillsY + (isPared ? 35 : 28);
+
+      const catY = qrY + qrBoxH + (isPared ? 26 : 20);
+      const catW = (width - 70) / 2;
+      const catH = isPared ? 62 : 48;
+
+      const footerY = height - (isPared ? 55 : 42);
+
+      const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&amp;family=Inter:wght@400;500;600;700;800&amp;display=swap');
+      .font-serif { font-family: 'Playfair Display', Georgia, serif; }
+      .font-sans { font-family: 'Inter', -apple-system, sans-serif; }
+      .font-mono { font-family: monospace; }
+    </style>
+    <linearGradient id="topBarGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1c3829" />
+      <stop offset="50%" stop-color="#c4622d" />
+      <stop offset="100%" stop-color="#1c3829" />
+    </linearGradient>
+  </defs>
+
+  <!-- Fondo y Borde Principal -->
+  <rect x="10" y="10" width="${width - 20}" height="${height - 20}" rx="28" ry="28" fill="#ffffff" stroke="#1c3829" stroke-width="4" />
+
+  <!-- Barra Superior de Gradiente -->
+  <rect x="12" y="12" width="${width - 24}" height="10" rx="4" ry="4" fill="url(#topBarGrad)" />
+
+  <!-- Badge Marca -->
+  <rect x="${cx - 130}" y="36" width="260" height="34" rx="17" ry="17" fill="#1c3829" fill-opacity="0.08" stroke="#1c3829" stroke-opacity="0.22" stroke-width="1.5" />
+  <text x="${cx}" y="59" text-anchor="middle" fill="#1c3829" class="font-serif" font-size="16" font-weight="bold">🌿 PaDónde · <tspan class="font-sans" font-size="13" font-weight="600" fill="#8a7e6e">Cartelera en Vivo</tspan></text>
+
+  <!-- Punto Oficial (opcional) -->
+  ${
+    nombreLugar
+      ? `<text x="${cx}" y="94" text-anchor="middle" fill="#8a7e6e" class="font-sans" font-size="11" font-weight="700" letter-spacing="1">📍 PUNTO OFICIAL: <tspan fill="#1c3829">${nombreLugar.toUpperCase()}</tspan></text>`
+      : ""
+  }
+
+  <!-- Títulos Principales Cuadrilingües -->
+  <text x="${cx}" y="${titleY}" text-anchor="middle" fill="#1c3829" class="font-serif" font-size="${isPared ? 38 : 28}" font-weight="900">¿Qué hacer hoy?</text>
+  <text x="${cx}" y="${subTitleY}" text-anchor="middle" fill="#c4622d" class="font-serif" font-style="italic" font-size="${isPared ? 22 : 17}" font-weight="bold">What to do today?</text>
+
+  <!-- Pastillas Alemán / Francés -->
+  <rect x="${cx - (isPared ? 230 : 175)}" y="${pillsY}" width="${isPared ? 220 : 170}" height="${isPared ? 28 : 24}" rx="8" ry="8" fill="#1c3829" fill-opacity="0.05" stroke="#1c3829" stroke-opacity="0.15" stroke-width="1" />
+  <text x="${cx - (isPared ? 120 : 90)}" y="${pillsY + (isPared ? 19 : 16)}" text-anchor="middle" fill="#1c3829" class="font-sans" font-size="${isPared ? 12 : 10}" font-weight="600" font-style="italic">🇩🇪 Was geht heute?</text>
+
+  <rect x="${cx + (isPared ? 10 : 5)}" y="${pillsY}" width="${isPared ? 220 : 170}" height="${isPared ? 28 : 24}" rx="8" ry="8" fill="#1c3829" fill-opacity="0.05" stroke="#1c3829" stroke-opacity="0.15" stroke-width="1" />
+  <text x="${cx + (isPared ? 120 : 90)}" y="${pillsY + (isPared ? 19 : 16)}" text-anchor="middle" fill="#1c3829" class="font-sans" font-size="${isPared ? 12 : 10}" font-weight="600" font-style="italic">🇫🇷 Que faire aujourd'hui ?</text>
+
+  <!-- Contenedor QR -->
+  <rect x="${cx - qrBoxSize / 2}" y="${qrY}" width="${qrBoxSize}" height="${qrBoxH}" rx="20" ry="20" fill="#faf8f5" stroke="#1c3829" stroke-opacity="0.25" stroke-width="2" />
+
+  <!-- Badge Escaneo -->
+  <rect x="${cx - (isPared ? 100 : 85)}" y="${qrY - (isPared ? 13 : 11)}" width="${isPared ? 200 : 170}" height="${isPared ? 26 : 22}" rx="${isPared ? 13 : 11}" ry="${isPared ? 13 : 11}" fill="#1c3829" />
+  <text x="${cx}" y="${qrY + (isPared ? 4 : 3)}" text-anchor="middle" fill="#ffffff" class="font-sans" font-size="${isPared ? 10 : 9}" font-weight="bold" letter-spacing="1">📸 ESCANEAR CON TU CÁMARA</text>
+
+  <!-- Imagen QR -->
+  <image href="${qrBase64}" x="${cx - (qrBoxSize - 36) / 2}" y="${qrY + 18}" width="${qrBoxSize - 36}" height="${qrBoxSize - 36}" preserveAspectRatio="xMidYMid meet" />
+
+  <!-- Enlace debajo del QR -->
+  <text x="${cx}" y="${qrY + qrBoxSize + (isPared ? 8 : 6)}" text-anchor="middle" fill="#8a7e6e" class="font-mono" font-size="${isPared ? 12 : 10}" font-weight="bold">${displayUrl}</text>
+
+  <!-- Tarjetas de Categorías (2x2) -->
+  <g>
+    <!-- Cat 1 -->
+    <rect x="25" y="${catY}" width="${catW}" height="${catH}" rx="12" ry="12" fill="#fcfbf9" stroke="#e5dfd5" stroke-width="1.5" />
+    <text x="${25 + catW / 2}" y="${catY + (isPared ? 26 : 20)}" text-anchor="middle" fill="#1c3829" class="font-sans" font-size="${isPared ? 13 : 11}" font-weight="bold">🎵 Música &amp; Atardeceres</text>
+    <text x="${25 + catW / 2}" y="${catY + (isPared ? 46 : 36)}" text-anchor="middle" fill="#8a7e6e" class="font-sans" font-size="${isPared ? 11 : 9}">Live Music · Nightlife</text>
+
+    <!-- Cat 2 -->
+    <rect x="${35 + catW}" y="${catY}" width="${catW}" height="${catH}" rx="12" ry="12" fill="#fcfbf9" stroke="#e5dfd5" stroke-width="1.5" />
+    <text x="${35 + catW + catW / 2}" y="${catY + (isPared ? 26 : 20)}" text-anchor="middle" fill="#1c3829" class="font-sans" font-size="${isPared ? 13 : 11}" font-weight="bold">🍽️ Gastronomía &amp; Café</text>
+    <text x="${35 + catW + catW / 2}" y="${catY + (isPared ? 46 : 36)}" text-anchor="middle" fill="#8a7e6e" class="font-sans" font-size="${isPared ? 11 : 9}">Food, Drinks &amp; Local Flavors</text>
+
+    <!-- Cat 3 -->
+    <rect x="25" y="${catY + catH + 10}" width="${catW}" height="${catH}" rx="12" ry="12" fill="#fcfbf9" stroke="#e5dfd5" stroke-width="1.5" />
+    <text x="${25 + catW / 2}" y="${catY + catH + 10 + (isPared ? 26 : 20)}" text-anchor="middle" fill="#1c3829" class="font-sans" font-size="${isPared ? 13 : 11}" font-weight="bold">🏖️ Playas, Cascadas &amp; Tours</text>
+    <text x="${25 + catW / 2}" y="${catY + catH + 10 + (isPared ? 46 : 36)}" text-anchor="middle" fill="#8a7e6e" class="font-sans" font-size="${isPared ? 11 : 9}">Beaches, Nature &amp; Tours</text>
+
+    <!-- Cat 4 -->
+    <rect x="${35 + catW}" y="${catY + catH + 10}" width="${catW}" height="${catH}" rx="12" ry="12" fill="#fcfbf9" stroke="#e5dfd5" stroke-width="1.5" />
+    <text x="${35 + catW + catW / 2}" y="${catY + catH + 10 + (isPared ? 26 : 20)}" text-anchor="middle" fill="#1c3829" class="font-sans" font-size="${isPared ? 13 : 11}" font-weight="bold">🏡 Hospedaje, Cabañas &amp; Relax</text>
+    <text x="${35 + catW + catW / 2}" y="${catY + catH + 10 + (isPared ? 46 : 36)}" text-anchor="middle" fill="#8a7e6e" class="font-sans" font-size="${isPared ? 11 : 9}">Hotels, Cabins &amp; Wellness</text>
+  </g>
+
+  <!-- Pie de Página -->
+  <line x1="30" y1="${footerY - (isPared ? 26 : 20)}" x2="${width - 30}" y2="${footerY - (isPared ? 26 : 20)}" stroke="#e0ded9" stroke-width="1" />
+  <text x="${cx}" y="${footerY - (isPared ? 8 : 6)}" text-anchor="middle" fill="#1c3829" class="font-sans" font-size="${isPared ? 12 : 10}" font-weight="bold">⚡ Sin descargar apps   ·   <tspan fill="#047857">💬 Reserva directa por WhatsApp</tspan></text>
+  <text x="${cx}" y="${footerY + (isPared ? 16 : 12)}" text-anchor="middle" fill="#8a7e6e" class="font-sans" font-size="${isPared ? 10 : 8.5}">Cartelera turística en vivo · Eventos, hospedajes y planes 🌿 <tspan font-weight="bold" fill="#1c3829">www.padonde.lat</tspan></text>
+</svg>`;
+
+      const blob = new Blob([svgContent], { type: "image/svg+xml;charset=utf-8" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      const cleanName = (puntoNombre || "punto")
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-");
-      link.download = `afiche-padonde-${cleanName}-${formato}.doc`;
+      const cleanName = (puntoNombre || "punto").toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      link.download = `afiche-padonde-${cleanName}-${formato}.svg`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
     } catch (err) {
-      console.error("Error al exportar Word:", err);
+      console.error("Error al exportar SVG:", err);
     } finally {
       setImprimiendo(false);
     }
   }
 
-  // Descarga directa en imagen JPG de Alta Resolución (300 DPI aprox, para imprenta o compartir)
-  async function handleDownloadJpg() {
-    setImprimiendo(true);
-    try {
-      const isPared = formato === "pared";
-      // Dimensiones de alta resolución (Póster A4/Carta: 2400 x 3200 px | Hablador Mesa: 1800 x 2400 px)
-      const canvasWidth = isPared ? 2400 : 1800;
-      const canvasHeight = isPared ? 3200 : 2400;
 
-      const canvas = document.createElement("canvas");
-      canvas.width = canvasWidth;
-      canvas.height = canvasHeight;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-
-      // 1. Obtener imagen QR de alta resolución en Base64 para evitar taint en canvas
-      let qrBase64 = qrImageUrl;
-      try {
-        const highResQrUrl = qrImageUrl.includes("size=")
-          ? qrImageUrl.replace(/size=\d+x\d+/, "size=1200x1200")
-          : qrImageUrl;
-        const res = await fetch(highResQrUrl);
-        const blob = await res.blob();
-        qrBase64 = await new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.readAsDataURL(blob);
-        });
-      } catch {
-        // Fallback si fetch falla
-      }
-
-      const qrImage = new window.Image();
-      await new Promise<void>((resolve, reject) => {
-        qrImage.onload = () => resolve();
-        qrImage.onerror = () => reject();
-        qrImage.src = qrBase64;
-      });
-
-      // Factor de escala entre 'pared' y 'mesa'
-      const scale = isPared ? 1 : 0.75;
-      const margin = 80 * scale;
-
-      // 2. Fondo Blanco Nítido
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-
-      // 3. Borde exterior elegante Verde Bosque
-      const radius = 50 * scale;
-      ctx.lineWidth = 14 * scale;
-      ctx.strokeStyle = "#1c3829";
-      ctx.beginPath();
-      ctx.roundRect(margin, margin, canvasWidth - margin * 2, canvasHeight - margin * 2, radius);
-      ctx.stroke();
-
-      // 4. Barra superior tricolor
-      const grad = ctx.createLinearGradient(margin, margin, canvasWidth - margin, margin);
-      grad.addColorStop(0, "#1c3829");
-      grad.addColorStop(0.5, "#c4622d");
-      grad.addColorStop(1, "#1c3829");
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.roundRect(margin + 20 * scale, margin + 8 * scale, canvasWidth - (margin + 20 * scale) * 2, 24 * scale, 12 * scale);
-      ctx.fill();
-
-      // 5. Encabezado de Marca
-      ctx.textAlign = "center";
-
-      // Badge PaDónde
-      const badgeY = margin + 110 * scale;
-      ctx.fillStyle = "#1c3829";
-      ctx.font = `bold ${Math.round(54 * scale)}px 'Playfair Display', Georgia, serif`;
-      ctx.fillText("🌿 PaDónde · Cartelera en Vivo", canvasWidth / 2, badgeY);
-
-      // Punto Oficial
-      if (nombreLugar) {
-        ctx.fillStyle = "#8a7e6e";
-        ctx.font = `bold ${Math.round(34 * scale)}px 'Inter', -apple-system, sans-serif`;
-        ctx.fillText(`📍 PUNTO OFICIAL: ${nombreLugar.toUpperCase()}`, canvasWidth / 2, badgeY + 60 * scale);
-      }
-
-      // 6. Títulos Principales en Español e Inglés
-      const titleY = badgeY + (nombreLugar ? 160 : 120) * scale;
-      ctx.fillStyle = "#1c3829";
-      ctx.font = `900 ${Math.round(96 * scale)}px 'Playfair Display', Georgia, serif`;
-      ctx.fillText("¿Qué hacer hoy?", canvasWidth / 2, titleY);
-
-      ctx.fillStyle = "#c4622d";
-      ctx.font = `italic bold ${Math.round(56 * scale)}px 'Playfair Display', Georgia, serif`;
-      ctx.fillText("What to do today?", canvasWidth / 2, titleY + 75 * scale);
-
-      // Pastillas Alemán y Francés
-      const pillsY = titleY + 120 * scale;
-      const pillW = (canvasWidth - margin * 2 - 120 * scale) / 2;
-      const pillH = 65 * scale;
-      const pillYPos = pillsY;
-
-      // Pastilla Alemán
-      const pill1X = margin + 40 * scale;
-      ctx.fillStyle = "rgba(28, 56, 41, 0.05)";
-      ctx.beginPath();
-      ctx.roundRect(pill1X, pillYPos, pillW, pillH, 18 * scale);
-      ctx.fill();
-      ctx.lineWidth = 2 * scale;
-      ctx.strokeStyle = "rgba(28, 56, 41, 0.15)";
-      ctx.stroke();
-
-      ctx.fillStyle = "#1c3829";
-      ctx.font = `italic 600 ${Math.round(32 * scale)}px 'Inter', sans-serif`;
-      ctx.fillText("🇩🇪 Was geht heute?", pill1X + pillW / 2, pillYPos + 44 * scale);
-
-      // Pastilla Francés
-      const pill2X = pill1X + pillW + 40 * scale;
-      ctx.fillStyle = "rgba(28, 56, 41, 0.05)";
-      ctx.beginPath();
-      ctx.roundRect(pill2X, pillYPos, pillW, pillH, 18 * scale);
-      ctx.fill();
-      ctx.strokeStyle = "rgba(28, 56, 41, 0.15)";
-      ctx.stroke();
-
-      ctx.fillStyle = "#1c3829";
-      ctx.fillText("🇫🇷 Que faire aujourd'hui ?", pill2X + pillW / 2, pillYPos + 44 * scale);
-
-      // 7. Contenedor del Código QR Central
-      const qrBoxSize = isPared ? 1120 : 840;
-      const qrX = (canvasWidth - qrBoxSize) / 2;
-      const qrY = pillYPos + pillH + 45 * scale;
-      const qrContainerH = qrBoxSize + 110 * scale;
-
-      // Caja contenedor
-      ctx.fillStyle = "#faf8f5";
-      ctx.beginPath();
-      ctx.roundRect(qrX, qrY, qrBoxSize, qrContainerH, 40 * scale);
-      ctx.fill();
-      ctx.lineWidth = 6 * scale;
-      ctx.strokeStyle = "rgba(28, 56, 41, 0.3)";
-      ctx.stroke();
-
-      // Badge superior: Escanear con tu cámara
-      const scanBadgeW = 560 * scale;
-      const scanBadgeH = 55 * scale;
-      ctx.fillStyle = "#1c3829";
-      ctx.beginPath();
-      ctx.roundRect(canvasWidth / 2 - scanBadgeW / 2, qrY - scanBadgeH / 2, scanBadgeW, scanBadgeH, scanBadgeH / 2);
-      ctx.fill();
-
-      ctx.fillStyle = "#ffffff";
-      ctx.font = `bold ${Math.round(28 * scale)}px 'Inter', sans-serif`;
-      ctx.fillText("📸 ESCANEAR CON TU CÁMARA", canvasWidth / 2, qrY + 8 * scale);
-
-      // Dibujo del QR
-      const qrImgPadding = 60 * scale;
-      const qrImgSize = qrBoxSize - qrImgPadding * 2;
-      ctx.drawImage(qrImage, qrX + qrImgPadding, qrY + 45 * scale, qrImgSize, qrImgSize);
-
-      // Enlace web debajo del QR
-      ctx.fillStyle = "#8a7e6e";
-      ctx.font = `bold ${Math.round(32 * scale)}px monospace`;
-      ctx.fillText(displayUrl, canvasWidth / 2, qrY + qrBoxSize + 70 * scale);
-
-      // 8. Cuadrícula de Categorías (4 tarjetas 2x2)
-      const catY = qrY + qrContainerH + 40 * scale;
-      const catW = (canvasWidth - margin * 2 - 80 * scale) / 2;
-      const catH = 145 * scale;
-
-      const categorias = [
-        { t: "🎵 Música & Atardeceres", s: "Live Music · Nightlife" },
-        { t: "🍽️ Gastronomía & Café", s: "Food, Drinks & Local Flavors" },
-        { t: "🏖️ Playas, Cascadas & Tours", s: "Beaches, Nature & Tours" },
-        { t: "🏡 Hospedaje, Cabañas & Relax", s: "Hotels, Cabins & Wellness" },
-      ];
-
-      categorias.forEach((c, i) => {
-        const col = i % 2;
-        const row = Math.floor(i / 2);
-        const bx = margin + 30 * scale + col * (catW + 20 * scale);
-        const by = catY + row * (catH + 20 * scale);
-
-        ctx.fillStyle = "#fcfbf9";
-        ctx.beginPath();
-        ctx.roundRect(bx, by, catW, catH, 20 * scale);
-        ctx.fill();
-        ctx.lineWidth = 3 * scale;
-        ctx.strokeStyle = "#e5dfd5";
-        ctx.stroke();
-
-        ctx.fillStyle = "#1c3829";
-        ctx.font = `bold ${Math.round(38 * scale)}px 'Inter', sans-serif`;
-        ctx.fillText(c.t, bx + catW / 2, by + 58 * scale);
-
-        ctx.fillStyle = "#8a7e6e";
-        ctx.font = `${Math.round(29 * scale)}px 'Inter', sans-serif`;
-        ctx.fillText(c.s, bx + catW / 2, by + 105 * scale);
-      });
-
-      // 9. Pie de Página
-      const footerY = canvasHeight - margin - 100 * scale;
-      ctx.fillStyle = "#1c3829";
-      ctx.font = `bold ${Math.round(34 * scale)}px 'Inter', sans-serif`;
-      ctx.fillText("⚡ Sin descargar apps   ·   💬 Reserva directa con anfitriones por WhatsApp", canvasWidth / 2, footerY);
-
-      ctx.fillStyle = "#8a7e6e";
-      ctx.font = `${Math.round(27 * scale)}px 'Inter', sans-serif`;
-      ctx.fillText("Cartelera turística en vivo · Eventos, hospedajes y planes 🌿 www.padonde.lat", canvasWidth / 2, footerY + 45 * scale);
-
-      // 10. Descargar archivo JPG
-      const jpgData = canvas.toDataURL("image/jpeg", 0.95);
-      const link = document.createElement("a");
-      link.href = jpgData;
-      const cleanName = (puntoNombre || "punto").toLowerCase().replace(/[^a-z0-9]+/g, "-");
-      link.download = `afiche-padonde-${cleanName}-${formato}-alta-resolucion.jpg`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } catch (err) {
-      console.error("Error al exportar JPG:", err);
-    } finally {
-      setImprimiendo(false);
-    }
-  }
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6">
@@ -840,7 +523,7 @@ export function ModalAficheImprimible({
               </h3>
             </div>
             <p className="text-xs text-stone font-sans mt-0.5">
-              Diseñado en <strong>4 idiomas (ES, EN, DE, FR)</strong> para imprimir o descargar en alta resolución.
+              Diseñado en <strong>4 idiomas (ES, EN, DE, FR)</strong> para imprimir en PDF o exportar en vector SVG.
             </p>
           </div>
 
@@ -873,28 +556,16 @@ export function ModalAficheImprimible({
               </button>
             </div>
 
-            {/* Botón Descargar en JPG Alta Resolución */}
+            {/* Botón Descargar en SVG Vectorial */}
             <button
               type="button"
-              onClick={handleDownloadJpg}
+              onClick={handleDownloadSVG}
               disabled={imprimiendo}
-              className="px-3.5 py-2 bg-amber-600 hover:bg-amber-700 disabled:opacity-60 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-xs cursor-pointer transition-all active:scale-95"
-              title="Descargar imagen JPG nítida de alta resolución (300 DPI)"
+              className="px-3.5 py-2 bg-indigo-700 hover:bg-indigo-800 disabled:opacity-60 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-xs cursor-pointer transition-all active:scale-95"
+              title="Descargar archivo vectorial SVG (resolución infinita, ideal para litografías, imprentas o corte)"
             >
-              <span>🖼️</span>
-              <span>JPG Alta Calidad</span>
-            </button>
-
-            {/* Botón Descargar en Word */}
-            <button
-              type="button"
-              onClick={handleDownloadWord}
-              disabled={imprimiendo}
-              className="px-3.5 py-2 bg-blue-700 hover:bg-blue-800 disabled:opacity-60 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-xs cursor-pointer transition-all active:scale-95"
-              title="Descargar editable en formato Microsoft Word (.doc)"
-            >
-              <span>📝</span>
-              <span>Word (.doc)</span>
+              <span>📐</span>
+              <span>{imprimiendo ? "Generando..." : "Descargar SVG"}</span>
             </button>
 
             {/* Botón Imprimir / PDF */}
@@ -903,6 +574,7 @@ export function ModalAficheImprimible({
               onClick={handlePrint}
               disabled={imprimiendo}
               className="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-60 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-xs cursor-pointer transition-all active:scale-95"
+              title="Imprimir directamente o guardar en PDF tamaño carta/A4"
             >
               <span>🖨️</span>
               <span>{imprimiendo ? "Preparando..." : "Imprimir / PDF"}</span>
