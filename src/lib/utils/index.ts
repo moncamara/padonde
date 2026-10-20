@@ -320,6 +320,13 @@ export function getEtiquetaHorario(
     return `🔄 ${diasTexto} · ${hora}`;
   }
 
+  // Si es un evento de varios días (rango continuo con fecha_fin en otro día)
+  const ymdInicio = getFechaYMDDesdeISO(evento.fecha_inicio);
+  const ymdFin = evento.fecha_fin ? getFechaYMDDesdeISO(evento.fecha_fin) : null;
+  if (ymdFin && ymdFin > ymdInicio && evento.fecha_fin) {
+    return `${formatFecha(evento.fecha_inicio, locale)} — ${formatFecha(evento.fecha_fin, locale)}`;
+  }
+
   return `${formatFecha(evento.fecha_inicio, locale)} · ${hora}`;
 }
 

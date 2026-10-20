@@ -11,6 +11,8 @@ import {
   extraerRecurrencia,
   formatearDiasRecurrencia,
   limpiarDescripcionRecurrencia,
+  getFechaYMDDesdeISO,
+  getFechaYMDColombia,
 } from "@/lib/utils";
 import { getEventoTraducido, getEventoTraducidoAsync } from "@/lib/translations/eventosTraducciones";
 import { Button } from "@/components/ui/Button";
@@ -108,6 +110,12 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
   const rec = extraerRecurrencia(evento.descripcion);
   const fecha = formatFecha(evento.fecha_inicio, locale);
   const hora = formatHora(evento.fecha_inicio);
+  const ymdInicio = getFechaYMDDesdeISO(evento.fecha_inicio);
+  const ymdFin = evento.fecha_fin ? getFechaYMDDesdeISO(evento.fecha_fin) : null;
+  const esMultiDia = Boolean(ymdFin && ymdFin > ymdInicio && evento.fecha_fin);
+  const hoyYmd = getFechaYMDColombia();
+  const esUltimoDia = Boolean(ymdFin && ymdFin === hoyYmd);
+  const fechaFinTexto = evento.fecha_fin ? formatFecha(evento.fecha_fin, locale) : "";
 
   const precioDisplay =
     evento.precio === null || evento.precio === 0
@@ -289,11 +297,32 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
                 <span className="text-base">{rec.esRecurrente ? "🔄" : "📅"}</span>
                 <p className="text-xs text-stone mt-1">{tDetail("dateTime")}</p>
                 <p className="font-sans font-semibold text-sm text-forest capitalize">
-                  {rec.esRecurrente ? formatearDiasRecurrencia(rec.dias, locale) : fecha}
+                  {rec.esRecurrente
+                    ? formatearDiasRecurrencia(rec.dias, locale)
+                    : esMultiDia
+                    ? `${fecha} — ${fechaFinTexto}`
+                    : fecha}
                 </p>
                 <p className="text-xs text-stone mt-0.5">
-                  {hora}
-                  {rec.esRecurrente && evento.fecha_fin ? ` · ${tDetail("until")} ${formatFecha(evento.fecha_fin, locale)}` : ""}
+                  {rec.esRecurrente ? (
+                    <>
+                      {hora}
+                      {evento.fecha_fin ? ` · ${tDetail("until")} ${fechaFinTexto}` : ""}
+                    </>
+                  ) : esMultiDia ? (
+                    <>
+                      {hora}
+                      {esUltimoDia ? (
+                        <span className="ml-1 text-terra font-semibold">
+                          · {locale === "en" ? "Ends today!" : locale === "fr" ? "Se termine aujourd'hui !" : locale === "de" ? "Endet heute!" : "¡Finaliza hoy!"}
+                        </span>
+                      ) : (
+                        ` · ${tDetail("until")} ${fechaFinTexto}`
+                      )}
+                    </>
+                  ) : (
+                    hora
+                  )}
                 </p>
               </div>
             )}

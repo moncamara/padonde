@@ -13,7 +13,7 @@ SET
     precio = 333000,
     precio_moneda = 'COP',
     fecha_inicio = '2026-10-19 09:00:00-05',
-    fecha_fin = '2026-10-23 13:00:00-05',
+    fecha_fin = '2026-10-20 23:59:59-05',
     imagen_url = 'https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/eventos_reales/casa-cora-coctel-rio.webp',
     destacado = true,
     activo = true
