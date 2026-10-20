@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "@/i18n/routing";
 import { AdminNav } from "../AdminNav";
+import { PuntosQRMetricas } from "./PuntosQRMetricas";
 import { AdminQRGenerator } from "./AdminQRGenerator";
 import type { Metadata } from "next";
 
@@ -81,6 +82,9 @@ export default async function AdminPuntosQRPage({
             <p className="text-[10px] text-stone mt-0.5 truncate">💬 WhatsApp listo</p>
           </div>
         </div>
+
+        {/* Auditoría Antifraude y Métricas en Vivo */}
+        <PuntosQRMetricas />
 
         {/* Módulo Generador y Presets */}
         <AdminQRGenerator locale={locale} />

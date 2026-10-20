@@ -5,6 +5,7 @@ import { FeedTabsContainer } from "@/components/layout/FeedTabsContainer";
 import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 import { ShareButton } from "@/components/events/ShareButton";
 import { InstallPrompt } from "@/components/layout/InstallPrompt";
+import { QRScanTracker } from "@/components/layout/QRScanTracker";
 import { AdminSecretTrigger } from "@/components/layout/AdminSecretTrigger";
 import { getZona, whatsappLink, WHATSAPP_CONTACTO } from "@/constants";
 import { getEventosByZona, getServiciosEsencialesByZona } from "@/lib/supabase/queries";
@@ -226,6 +227,9 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
 
       {/* Acceso directo PWA discreto (sólo en móviles) */}
       <InstallPrompt />
+
+      {/* Rastreador de escaneo físico QR con antifraude */}
+      <QRScanTracker zonaSlug={zonaSlug} />
     </main>
   );
 }

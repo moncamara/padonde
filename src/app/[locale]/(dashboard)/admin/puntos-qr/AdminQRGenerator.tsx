@@ -13,6 +13,13 @@ interface PuntoPreset {
 
 const PRESETS_MINCA: PuntoPreset[] = [
   {
+    id: "promotor-estacion",
+    nombre: "Promotor Estación de Transporte",
+    tipo: "transporte",
+    src: "promotor-estacion",
+    descripcion: "Activación en calle y llegada de colectivos/vans",
+  },
+  {
     id: "rio-elemento",
     nombre: "Hostal Rio Elemento",
     tipo: "hostal",
