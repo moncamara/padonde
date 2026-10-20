@@ -403,7 +403,11 @@ export function AdminEventList({ eventos, negocios = [], locale }: AdminEventLis
                   {negocio?.whatsapp && (
                     <button
                       type="button"
-                      onClick={() =>
+                      onClick={() => {
+                        const totalEvs = listaEventos.filter(
+                          (e) => (negocio && e.negocio?.id === negocio.id) || e.negocio_id === ev.negocio_id
+                        ).length;
+
                         setEventoANotificar({
                           id: ev.id,
                           titulo: ev.titulo,
@@ -411,10 +415,11 @@ export function AdminEventList({ eventos, negocios = [], locale }: AdminEventLis
                           whatsapp: negocio.whatsapp,
                           zonaSlug: ev.zonaSlug,
                           zonaNombre: ev.zonaNombre,
-                        })
-                      }
+                          esPrimerEvento: totalEvs <= 1,
+                        });
+                      }}
                       className="text-xs text-emerald-800 hover:text-emerald-900 px-2.5 py-1.5 rounded-xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 transition-colors flex items-center gap-1 font-medium font-sans shadow-2xs cursor-pointer active:scale-95"
-                      title="Enviar mensaje de bienvenida y revisión al WhatsApp del aliado"
+                      title="Enviar mensaje de revisión y confirmación al WhatsApp del aliado"
                     >
                       <span>📲</span>
                       <span className="font-sans">Notificar</span>

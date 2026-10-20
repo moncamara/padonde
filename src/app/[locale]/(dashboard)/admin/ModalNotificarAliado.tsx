@@ -10,6 +10,7 @@ export interface EventoNotificarData {
   whatsapp: string;
   zonaSlug?: string;
   zonaNombre?: string;
+  esPrimerEvento?: boolean;
 }
 
 interface ModalNotificarAliadoProps {
@@ -18,9 +19,46 @@ interface ModalNotificarAliadoProps {
   onClose: () => void;
 }
 
+export type TipoMensajeAliado = "revision" | "bienvenida";
+
 /**
- * Genera el texto del mensaje comercial y de bienvenida para el aliado.
- * Diseñado con tono cálido, halagador y con la semilla de suscripción futura.
+ * Mensaje estándar para eventos compartidos por el aliado o publicaciones recurrentes.
+ * Tono cercano, ágil y enfocado en revisión/confirmación y tráfico a WhatsApp.
+ */
+export function generarMensajeRevisionAliado(
+  negocioNombre: string,
+  tituloEvento: string,
+  eventoId: string,
+  zonaSlug?: string,
+  zonaNombre?: string
+): string {
+  const slug = zonaSlug || "minca";
+  const destinoNombre = zonaNombre || (slug === "mendihuaca" ? "Mendihuaca" : "Minca");
+  const urlPublicacion = `https://www.padonde.lat/es/${slug}/${eventoId}`;
+  const urlCartelera = `https://www.padonde.lat/es/${slug}`;
+
+  return `🌿 ¡Hola ${negocioNombre}! Un saludo muy especial desde PaDónde ${destinoNombre}.
+
+¡Ya está lista y publicada la información de su evento: "${tituloEvento}" en la cartelera digital! 📲✨
+
+👉 Pueden ver cómo luce su publicación aquí:
+${urlPublicacion}
+
+Les compartimos el enlace para que puedan echarle un ojito y confirmarnos si todo está perfecto:
+• Que los horarios y días coincidan con su agenda.
+• Que el valor o condiciones de reserva estén al día.
+• Y sobre todo... ¡que les encante cómo luce su imagen en la plataforma!
+
+En PaDónde los viajeros buscan qué hacer hoy, mañana y los fines de semana, y cuando tocan en "Reservar" van directo a su WhatsApp, sin comisiones ni intermediarios. 💬
+
+Pueden compartir este enlace en sus historias o redes para que la comunidad y turistas se enteren. Échenle una mirada a toda la cartelera en ${urlCartelera} y nos cuentan si desean ajustar cualquier detalle.
+
+¡Un abrazo y muchos éxitos con este planazo! 🌿🚀`;
+}
+
+/**
+ * Genera el texto del mensaje comercial y de bienvenida para el aliado por cortesía inicial (1ª vez).
+ * Diseñado con tono cálido, halagador y con la semilla de cortesía de apertura.
  */
 export function generarMensajeBienvenidaAliado(
   negocioNombre: string,
@@ -61,12 +99,47 @@ export function ModalNotificarAliado({
   onClose,
 }: ModalNotificarAliadoProps) {
   const [telefono, setTelefono] = useState("");
+  const [tipoPlantilla, setTipoPlantilla] = useState<TipoMensajeAliado>("revision");
   const [mensaje, setMensaje] = useState("");
   const [copiado, setCopiado] = useState(false);
 
   useEffect(() => {
     if (evento) {
       setTelefono(evento.whatsapp.replace(/\D/g, ""));
+      // Si explícitamente se marca como primer evento, se usa bienvenida; de lo contrario, revisión habitual
+      const plantillaInicial: TipoMensajeAliado =
+        evento.esPrimerEvento ? "bienvenida" : "revision";
+      setTipoPlantilla(plantillaInicial);
+
+      if (plantillaInicial === "bienvenida") {
+        setMensaje(
+          generarMensajeBienvenidaAliado(
+            evento.negocioNombre,
+            evento.titulo,
+            evento.id,
+            evento.zonaSlug,
+            evento.zonaNombre
+          )
+        );
+      } else {
+        setMensaje(
+          generarMensajeRevisionAliado(
+            evento.negocioNombre,
+            evento.titulo,
+            evento.id,
+            evento.zonaSlug,
+            evento.zonaNombre
+          )
+        );
+      }
+      setCopiado(false);
+    }
+  }, [evento]);
+
+  function cambiarPlantilla(tipo: TipoMensajeAliado) {
+    if (!evento) return;
+    setTipoPlantilla(tipo);
+    if (tipo === "bienvenida") {
       setMensaje(
         generarMensajeBienvenidaAliado(
           evento.negocioNombre,
@@ -76,9 +149,18 @@ export function ModalNotificarAliado({
           evento.zonaNombre
         )
       );
-      setCopiado(false);
+    } else {
+      setMensaje(
+        generarMensajeRevisionAliado(
+          evento.negocioNombre,
+          evento.titulo,
+          evento.id,
+          evento.zonaSlug,
+          evento.zonaNombre
+        )
+      );
     }
-  }, [evento]);
+  }
 
   if (!isOpen || !evento) return null;
 
@@ -108,7 +190,7 @@ export function ModalNotificarAliado({
               </h2>
             </div>
             <p className="text-xs text-stone font-sans mt-0.5">
-              Comparte el enlace de su publicación por WhatsApp para que revisen y aprueben los datos.
+              Comparte el enlace de su publicación por WhatsApp para que revisen y confirmen los datos.
             </p>
           </div>
           <button
@@ -138,11 +220,47 @@ export function ModalNotificarAliado({
             />
           </div>
 
+          {/* Selector de Plantilla */}
+          <div className="space-y-1.5">
+            <label className="font-semibold text-forest flex items-center justify-between">
+              <span>Tipo de Mensaje:</span>
+              <span className="text-[10px] text-stone font-normal">
+                Haz clic para alternar el mensaje
+              </span>
+            </label>
+            <div className="grid grid-cols-2 gap-2 p-1 bg-cream/70 rounded-2xl border border-stone-light/80">
+              <button
+                type="button"
+                onClick={() => cambiarPlantilla("revision")}
+                className={`py-2 px-2.5 rounded-xl text-xs font-sans transition-all flex flex-col sm:flex-row items-center justify-center gap-1 cursor-pointer text-center ${
+                  tipoPlantilla === "revision"
+                    ? "bg-forest text-white font-semibold shadow-xs"
+                    : "text-forest/80 hover:text-forest hover:bg-white/60"
+                }`}
+              >
+                <span>📢</span>
+                <span>Publicación Lista (Revisión)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => cambiarPlantilla("bienvenida")}
+                className={`py-2 px-2.5 rounded-xl text-xs font-sans transition-all flex flex-col sm:flex-row items-center justify-center gap-1 cursor-pointer text-center ${
+                  tipoPlantilla === "bienvenida"
+                    ? "bg-terra text-white font-semibold shadow-xs"
+                    : "text-forest/80 hover:text-forest hover:bg-white/60"
+                }`}
+              >
+                <span>🎁</span>
+                <span>Bienvenida (1ª vez / Cortesía)</span>
+              </button>
+            </div>
+          </div>
+
           {/* Vista previa del mensaje */}
           <div className="space-y-1">
             <div className="flex items-center justify-between">
               <label className="font-semibold text-forest">
-                Mensaje personalizado (puedes editar antes de enviar):
+                Mensaje personalizado (puedes editar libremente antes de enviar):
               </label>
               <button
                 type="button"

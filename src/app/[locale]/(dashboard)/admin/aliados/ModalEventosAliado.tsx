@@ -189,10 +189,11 @@ export function ModalEventosAliado({
                               whatsapp: aliado.whatsapp,
                               zonaSlug: aliado.zonaSlug,
                               zonaNombre: aliado.zonaNombre,
+                              esPrimerEvento: (aliado.totalEventos || aliado.eventos?.length || 0) <= 1,
                             })
                           }
                           className="px-2.5 py-1 rounded-xl text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-300 hover:bg-emerald-100 transition-colors cursor-pointer flex items-center gap-1 shadow-2xs active:scale-95"
-                          title="Enviar mensaje de cortesía y revisión al WhatsApp del aliado"
+                          title="Enviar mensaje de revisión o cortesía al WhatsApp del aliado"
                         >
                           <span>📲</span>
                           <span>Notificar</span>
