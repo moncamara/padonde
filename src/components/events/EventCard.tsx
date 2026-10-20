@@ -48,7 +48,7 @@ export function EventCard({ evento: rawEvento, zona, priority = false }: EventCa
   const waLink = whatsappLink(evento.negocio.whatsapp, mensajeDirecto);
 
   return (
-    <article className="group relative w-full rounded-3xl overflow-hidden bg-white border border-stone-light/80 shadow-xs hover:shadow-md hover:border-stone/60 transition-all duration-300 flex flex-col">
+    <article className="group relative isolate w-full rounded-3xl overflow-hidden bg-white border border-stone-light/80 shadow-xs hover:shadow-md hover:border-stone/60 transition-all duration-300 flex flex-col">
       {/* 1. Enlace global clickeable que cubre toda la tarjeta */}
       <Link
         href={`/${zona}/${evento.id}`}

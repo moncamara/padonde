@@ -163,7 +163,7 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
       />
 
       {/* Header sticky con blur y selector de idioma */}
-      <header className="sticky top-0 z-10 bg-cream/90 backdrop-blur-sm border-b border-stone-light px-4 py-3">
+      <header className="sticky top-0 z-40 bg-cream/95 backdrop-blur-md border-b border-stone-light px-4 py-3">
         <div className="max-w-lg mx-auto flex items-center justify-between gap-3">
           <div className="space-y-0.5">
             <AdminSecretTrigger>
