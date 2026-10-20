@@ -1,31 +1,130 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { Link } from "@/i18n/routing";
-import { CATEGORIAS } from "@/constants";
+import { CATEGORIAS, getCategoria } from "@/constants";
 import { uploadEventImage } from "@/lib/supabase/storage";
 import { adminPublishEventAction } from "../actions";
 import { Button } from "@/components/ui/Button";
 import type { CategoriaEvento } from "@/lib/types";
 
+export interface AliadoResumen {
+  id: string;
+  nombre: string;
+  whatsapp: string;
+  instagram?: string | null;
+  categoria?: string;
+  zonaSlug?: string;
+  zonaNombre?: string;
+  activo?: boolean;
+}
+
 interface AdminPublishFormProps {
   defaultZona?: string;
   initialNegocio?: {
+    id?: string;
     nombre: string;
     whatsapp: string;
     instagram?: string | null;
     categoria?: string;
+    zonaSlug?: string;
   };
+  aliados?: AliadoResumen[];
 }
 
 export function AdminPublishForm({
   defaultZona = "minca",
   initialNegocio,
+  aliados = [],
 }: AdminPublishFormProps) {
-  const [zonaSlug, setZonaSlug] = useState<string>(defaultZona);
+  const [zonaSlug, setZonaSlug] = useState<string>(
+    initialNegocio?.zonaSlug || defaultZona
+  );
   const [businessName, setBusinessName] = useState(initialNegocio?.nombre || "");
   const [whatsapp, setWhatsapp] = useState(initialNegocio?.whatsapp || "");
   const [instagram, setInstagram] = useState(initialNegocio?.instagram || "");
+  const [selectedAliadoId, setSelectedAliadoId] = useState<string | null>(
+    initialNegocio?.id || null
+  );
+
+  // Estados del dropdown buscador de aliados
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Cerrar dropdown al hacer click afuera o presionar Escape
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
+  // Filtrado en tiempo real sin importar acentos ni mayúsculas
+  const aliadosFiltrados = useMemo(() => {
+    if (!aliados || aliados.length === 0) return [];
+    const q = businessName
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim();
+
+    if (!q) return aliados;
+
+    return aliados.filter((a) => {
+      const matchNombre = a.nombre
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .includes(q);
+      const matchWp = a.whatsapp?.includes(q.replace(/\D/g, ""));
+      const matchIg = a.instagram
+        ? a.instagram.toLowerCase().includes(q)
+        : false;
+      const matchCat = a.categoria
+        ? a.categoria.toLowerCase().includes(q)
+        : false;
+      return matchNombre || matchWp || matchIg || matchCat;
+    });
+  }, [aliados, businessName]);
+
+  const aliadoSeleccionado = useMemo(() => {
+    if (!selectedAliadoId) return null;
+    return aliados.find((a) => a.id === selectedAliadoId) || null;
+  }, [aliados, selectedAliadoId]);
+
+  function handleSelectAliado(aliado: AliadoResumen) {
+    setBusinessName(aliado.nombre);
+    setWhatsapp(aliado.whatsapp);
+    setInstagram(aliado.instagram || "");
+    if (aliado.categoria) {
+      setCategory(aliado.categoria as CategoriaEvento);
+    }
+    if (aliado.zonaSlug) {
+      setZonaSlug(aliado.zonaSlug);
+    }
+    setSelectedAliadoId(aliado.id);
+    setIsDropdownOpen(false);
+  }
+
+  function handleLimpiarAliado() {
+    setSelectedAliadoId(null);
+    setBusinessName("");
+    setWhatsapp("");
+    setInstagram("");
+    setIsDropdownOpen(true);
+  }
   const [eventTitle, setEventTitle] = useState("");
   const [category, setCategory] = useState<CategoriaEvento>(
     (initialNegocio?.categoria as CategoriaEvento) || "comida"
@@ -132,9 +231,60 @@ export function AdminPublishForm({
 
       {/* 1. NEGOCIO */}
       <section className="bg-white/70 backdrop-blur-sm rounded-3xl p-6 border border-stone-light/70 space-y-4">
-        <h2 className="font-serif text-lg text-forest flex items-center gap-2">
-          <span>📍</span> 1. Negocio / Anfitrión
-        </h2>
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="font-serif text-lg text-forest flex items-center gap-2">
+            <span>📍</span> 1. Negocio / Anfitrión
+          </h2>
+          {aliados.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setIsDropdownOpen((prev) => !prev)}
+              className="text-xs text-forest hover:text-terra font-medium font-sans flex items-center gap-1.5 transition-colors px-2.5 py-1 rounded-lg bg-cream border border-stone-light/70 hover:border-forest"
+            >
+              <span>👥</span>
+              {isDropdownOpen ? "Ocultar lista" : `Listar aliados (${aliados.length})`}
+            </button>
+          )}
+        </div>
+
+        {/* Banner de Aliado Seleccionado */}
+        {aliadoSeleccionado ? (
+          <div className="p-3.5 bg-emerald-50/90 border border-emerald-200/90 rounded-2xl flex items-center justify-between gap-3 text-xs font-sans shadow-xs">
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="w-9 h-9 rounded-xl bg-white flex items-center justify-center text-lg border border-emerald-200 shadow-xs shrink-0">
+                {getCategoria(aliadoSeleccionado.categoria as any)?.emoji || "🏢"}
+              </span>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="font-semibold text-emerald-950 truncate text-sm">
+                    {aliadoSeleccionado.nombre}
+                  </p>
+                  <span className="text-[10px] bg-emerald-600 text-white px-2 py-0.5 rounded-full font-medium">
+                    ✓ Aliado Vinculado
+                  </span>
+                </div>
+                <p className="text-[11px] text-emerald-800 flex items-center gap-2 mt-0.5">
+                  <span className="font-medium">
+                    {aliadoSeleccionado.zonaNombre || (zonaSlug === "mendihuaca" ? "Mendihuaca" : "Minca")}
+                  </span>
+                  {aliadoSeleccionado.whatsapp && (
+                    <span>• WA: {aliadoSeleccionado.whatsapp}</span>
+                  )}
+                  {aliadoSeleccionado.instagram && (
+                    <span>• IG: {aliadoSeleccionado.instagram}</span>
+                  )}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleLimpiarAliado}
+              className="text-[11px] text-emerald-900 hover:text-red-600 font-semibold underline shrink-0 px-2 py-1 rounded-lg hover:bg-emerald-100/50 transition-colors"
+            >
+              Cambiar
+            </button>
+          </div>
+        ) : null}
 
         {/* Selector de Zona */}
         <div>
@@ -169,18 +319,145 @@ export function AdminPublishForm({
           </div>
         </div>
 
-        <div>
-          <label className="block text-xs font-medium text-forest mb-1.5 font-sans">
-            Nombre del Negocio *
-          </label>
-          <input
-            type="text"
-            required
-            value={businessName}
-            onChange={(e) => setBusinessName(e.target.value)}
-            placeholder="Ej. Café Sierra, Hostal Casa Loma..."
-            className="w-full px-4 py-3 rounded-xl border border-stone-light bg-cream text-forest text-sm font-sans focus:outline-none focus:border-forest transition-colors"
-          />
+        {/* Input Buscador / Nombre de Negocio con Combobox */}
+        <div ref={dropdownRef} className="relative">
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="block text-xs font-medium text-forest font-sans">
+              Nombre del Negocio o Aliado *
+            </label>
+            <span className="text-[11px] text-stone font-sans">
+              Escribe para filtrar o desplegar la lista
+            </span>
+          </div>
+
+          <div className="relative">
+            <input
+              type="text"
+              required
+              value={businessName}
+              onFocus={() => {
+                if (aliados.length > 0) setIsDropdownOpen(true);
+              }}
+              onChange={(e) => {
+                const val = e.target.value;
+                setBusinessName(val);
+                setIsDropdownOpen(true);
+                // Si el usuario edita el texto y ya no coincide con el seleccionado, desvincular
+                if (selectedAliadoId) {
+                  const actual = aliados.find((a) => a.id === selectedAliadoId);
+                  if (!actual || actual.nombre !== val) {
+                    setSelectedAliadoId(null);
+                  }
+                }
+              }}
+              placeholder="Ej. Casa Maya, Café Sierra, Hostal Casa Loma..."
+              className="w-full pl-4 pr-10 py-3 rounded-xl border border-stone-light bg-cream text-forest text-sm font-sans focus:outline-none focus:border-forest transition-colors"
+            />
+
+            {/* Botón a la derecha del input: flecha para desplegar o cerrar */}
+            <button
+              type="button"
+              onClick={() => setIsDropdownOpen((prev) => !prev)}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center text-stone hover:text-forest transition-colors rounded-lg hover:bg-stone-light/40"
+              title={isDropdownOpen ? "Cerrar lista" : "Desplegar lista de aliados"}
+            >
+              <span className={`text-xs transition-transform duration-200 inline-block ${isDropdownOpen ? "rotate-180 text-forest" : ""}`}>
+                ▼
+              </span>
+            </button>
+          </div>
+
+          {/* Menú Dropdown Autocompletado */}
+          {isDropdownOpen && (
+            <div className="absolute left-0 right-0 top-full mt-1.5 z-40 bg-white rounded-2xl border border-stone-light shadow-xl overflow-hidden animate-in fade-in max-h-72 flex flex-col">
+              <div className="px-3.5 py-2 bg-stone-50 border-b border-stone-light/80 flex items-center justify-between text-[11px] font-sans text-stone">
+                <span>
+                  {aliadosFiltrados.length === 0
+                    ? "Sin coincidencias"
+                    : `Mostrando ${aliadosFiltrados.length} aliado${aliadosFiltrados.length === 1 ? "" : "s"}`}
+                </span>
+                <span className="text-[10px] text-stone/80">
+                  Clic para autocompletar datos
+                </span>
+              </div>
+
+              <div className="overflow-y-auto divide-y divide-stone-100 flex-1">
+                {aliadosFiltrados.length > 0 ? (
+                  aliadosFiltrados.map((aliado) => {
+                    const isSelected = selectedAliadoId === aliado.id;
+                    const catObj = getCategoria(aliado.categoria as any);
+                    return (
+                      <button
+                        key={aliado.id}
+                        type="button"
+                        onClick={() => handleSelectAliado(aliado)}
+                        className={`w-full text-left px-3.5 py-2.5 hover:bg-cream/90 transition-colors flex items-center justify-between gap-3 cursor-pointer ${
+                          isSelected ? "bg-emerald-50/70" : ""
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span className="w-8 h-8 rounded-xl bg-cream flex items-center justify-center text-sm shrink-0 border border-stone-light/60">
+                            {catObj?.emoji || "📍"}
+                          </span>
+                          <div className="min-w-0">
+                            <p className="font-semibold text-xs text-forest truncate flex items-center gap-1.5">
+                              <span>{aliado.nombre}</span>
+                              {isSelected && (
+                                <span className="text-[10px] bg-emerald-600 text-white px-1.5 py-0.2 rounded-full font-sans">
+                                  ✓ Seleccionado
+                                </span>
+                              )}
+                            </p>
+                            <p className="text-[10px] text-stone truncate font-sans">
+                              {aliado.whatsapp ? `WA: ${aliado.whatsapp}` : "Sin WhatsApp"}
+                              {aliado.instagram ? ` · IG: ${aliado.instagram}` : ""}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="shrink-0 text-right">
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-forest/5 text-forest font-medium border border-forest/10">
+                            {aliado.zonaSlug === "mendihuaca" ? "🌊 Mendihuaca" : "🌿 Minca"}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })
+                ) : (
+                  <div className="p-4 text-center space-y-1">
+                    <p className="text-xs text-forest font-medium font-sans">
+                      No encontramos "{businessName}" en los aliados registrados
+                    </p>
+                    <p className="text-[11px] text-stone font-sans">
+                      Puedes continuar y se registrará automáticamente como un nuevo aliado al publicar.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {businessName.trim().length > 0 && !selectedAliadoId && (
+                <div className="p-2 bg-cream/50 border-t border-stone-light/60 text-center">
+                  <button
+                    type="button"
+                    onClick={() => setIsDropdownOpen(false)}
+                    className="text-[11px] text-forest hover:text-terra font-medium underline"
+                  >
+                    Usar "{businessName}" como nuevo aliado
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Ayuda visual inferior */}
+          {!selectedAliadoId && businessName.trim().length > 1 && (
+            <p className="text-[11px] text-terra/90 mt-1.5 font-sans flex items-center gap-1">
+              <span>✨</span>
+              <span>
+                Nuevo aliado: se creará automáticamente en Supabase al publicar.
+              </span>
+            </p>
+          )}
         </div>
 
         <div>

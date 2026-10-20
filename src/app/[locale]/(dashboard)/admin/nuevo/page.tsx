@@ -28,24 +28,56 @@ export default async function AdminNuevoEventoPage({
     redirect({ href: "/admin/login", locale });
   }
 
+  // Cargar aliados existentes y zonas para autocompletado y vinculación
+  const [negociosRes, zonasRes] = await Promise.all([
+    supabase
+      .from("negocios")
+      .select("id, nombre, whatsapp, instagram, categoria, zona_id, activo")
+      .order("nombre", { ascending: true }),
+    supabase.from("zonas").select("id, nombre, slug"),
+  ]);
+
+  const rawNegocios = negociosRes.data || [];
+  const rawZonas = zonasRes.data || [];
+  const mapaZonas: Record<string, { slug: string; nombre: string }> = {};
+  for (const z of rawZonas) {
+    mapaZonas[z.id] = { slug: z.slug, nombre: z.nombre };
+  }
+
+  const aliados = rawNegocios.map((n) => ({
+    id: n.id,
+    nombre: n.nombre,
+    whatsapp: n.whatsapp || "",
+    instagram: n.instagram || "",
+    categoria: n.categoria || "comida",
+    zona_id: n.zona_id,
+    zonaSlug: n.zona_id && mapaZonas[n.zona_id] ? mapaZonas[n.zona_id].slug : "minca",
+    zonaNombre: n.zona_id && mapaZonas[n.zona_id] ? mapaZonas[n.zona_id].nombre : "Minca",
+    activo: n.activo,
+  }));
+
   let defaultNegocio:
     | {
+        id?: string;
         nombre: string;
         whatsapp: string;
         instagram?: string | null;
         categoria?: string;
+        zonaSlug?: string;
       }
     | undefined = undefined;
 
   if (negocioId) {
-    const { data: n } = await supabase
-      .from("negocios")
-      .select("nombre, whatsapp, instagram, categoria")
-      .eq("id", negocioId)
-      .single();
-
-    if (n) {
-      defaultNegocio = n as any;
+    const encontrado = aliados.find((a) => a.id === negocioId);
+    if (encontrado) {
+      defaultNegocio = {
+        id: encontrado.id,
+        nombre: encontrado.nombre,
+        whatsapp: encontrado.whatsapp,
+        instagram: encontrado.instagram,
+        categoria: encontrado.categoria,
+        zonaSlug: encontrado.zonaSlug,
+      };
     }
   }
 
@@ -71,11 +103,15 @@ export default async function AdminNuevoEventoPage({
           <p className="font-sans text-xs text-stone mt-1">
             {defaultNegocio
               ? `Datos de ${defaultNegocio.nombre} precargados. Completa los detalles de la experiencia.`
-              : "Este evento se publicará inmediatamente en la cartelera seleccionada."}
+              : "Selecciona un aliado existente o escribe uno nuevo para publicar en la cartelera."}
           </p>
         </div>
 
-        <AdminPublishForm defaultZona="minca" initialNegocio={defaultNegocio} />
+        <AdminPublishForm
+          defaultZona={defaultNegocio?.zonaSlug || "minca"}
+          initialNegocio={defaultNegocio}
+          aliados={aliados}
+        />
       </main>
     </div>
   );
