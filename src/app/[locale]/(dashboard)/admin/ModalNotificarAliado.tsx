@@ -22,6 +22,22 @@ interface ModalNotificarAliadoProps {
 export type TipoMensajeAliado = "revision" | "bienvenida";
 
 /**
+ * Formatea un número telefónico para lectura humana amigable (ej: +57 301 301 0194)
+ */
+export function formatearTelefonoVisual(telefono?: string): string {
+  if (!telefono) return "";
+  const clean = telefono.replace(/\D/g, "");
+  if (!clean) return "";
+  if (clean.startsWith("57") && clean.length === 12) {
+    return `+57 ${clean.slice(2, 5)} ${clean.slice(5, 8)} ${clean.slice(8)}`;
+  }
+  if (clean.length === 10) {
+    return `+57 ${clean.slice(0, 3)} ${clean.slice(3, 6)} ${clean.slice(6)}`;
+  }
+  return `+${clean}`;
+}
+
+/**
  * Mensaje estándar para eventos compartidos por el aliado o publicaciones recurrentes.
  * Tono cercano, ágil y enfocado en revisión/confirmación y tráfico a WhatsApp.
  */
@@ -30,12 +46,15 @@ export function generarMensajeRevisionAliado(
   tituloEvento: string,
   eventoId: string,
   zonaSlug?: string,
-  zonaNombre?: string
+  zonaNombre?: string,
+  whatsapp?: string
 ): string {
   const slug = zonaSlug || "minca";
   const destinoNombre = zonaNombre || (slug === "mendihuaca" ? "Mendihuaca" : "Minca");
   const urlPublicacion = `https://www.padonde.lat/es/${slug}/${eventoId}`;
   const urlCartelera = `https://www.padonde.lat/es/${slug}`;
+  const wpVisual = formatearTelefonoVisual(whatsapp);
+  const textoWhatsapp = wpVisual ? ` (${wpVisual})` : "";
 
   return `🌿 ¡Hola ${negocioNombre}! Un saludo muy especial desde PaDónde ${destinoNombre}.
 
@@ -47,9 +66,10 @@ ${urlPublicacion}
 Les compartimos el enlace para que puedan echarle un ojito y confirmarnos si todo está perfecto:
 • Que los horarios y días coincidan con su agenda.
 • Que el valor o condiciones de reserva estén al día.
+• Que su WhatsApp registrado para recibir reservas sea el correcto${textoWhatsapp}.
 • Y sobre todo... ¡que les encante cómo luce su imagen en la plataforma!
 
-En PaDónde los viajeros buscan qué hacer hoy, mañana y los fines de semana, y cuando tocan en "Reservar" van directo a su WhatsApp, sin comisiones ni intermediarios. 💬
+En PaDónde los viajeros buscan qué hacer hoy, mañana y los fines de semana, y cuando tocan en "Reservar" van directo a su WhatsApp${textoWhatsapp}, sin comisiones ni intermediarios. 💬
 
 Pueden compartir este enlace en sus historias o redes para que la comunidad y turistas se enteren. Échenle una mirada a toda la cartelera en ${urlCartelera} y nos cuentan si desean ajustar cualquier detalle.
 
@@ -65,12 +85,15 @@ export function generarMensajeBienvenidaAliado(
   tituloEvento: string,
   eventoId: string,
   zonaSlug?: string,
-  zonaNombre?: string
+  zonaNombre?: string,
+  whatsapp?: string
 ): string {
   const slug = zonaSlug || "minca";
   const destinoNombre = zonaNombre || (slug === "mendihuaca" ? "Mendihuaca" : "Minca");
   const urlPublicacion = `https://www.padonde.lat/es/${slug}/${eventoId}`;
   const urlCartelera = `https://www.padonde.lat/es/${slug}`;
+  const wpVisual = formatearTelefonoVisual(whatsapp);
+  const textoWhatsapp = wpVisual ? ` (${wpVisual})` : "";
 
   return `🌿 ¡Hola ${negocioNombre}! Un saludo muy especial desde PaDónde ${destinoNombre}.
 
@@ -84,9 +107,10 @@ ${urlPublicacion}
 Queremos pedirles un favor muy especial: ¿Podrían echarle un ojito y confirmarnos si todo está perfecto?
 • Que los horarios y días coincidan con su agenda.
 • Que el valor o condiciones de reserva estén al día.
+• Que su WhatsApp registrado para recibir reservas sea el correcto${textoWhatsapp}.
 • Y sobre todo... ¡que les encante cómo luce su imagen en la plataforma!
 
-En PaDónde los viajeros buscan qué hacer hoy, mañana y los fines de semana, y cuando tocan en "Reservar" van directo a su WhatsApp, sin comisiones ni intermediarios. 💬
+En PaDónde los viajeros buscan qué hacer hoy, mañana y los fines de semana, y cuando tocan en "Reservar" van directo a su WhatsApp${textoWhatsapp}, sin comisiones ni intermediarios. 💬
 
 Esta publicación estará activa y destacada como cortesía de apertura. Échenle una mirada a toda la cartelera en ${urlCartelera} y nos cuentan si desean ajustar cualquier detalle.
 
@@ -105,7 +129,8 @@ export function ModalNotificarAliado({
 
   useEffect(() => {
     if (evento) {
-      setTelefono(evento.whatsapp.replace(/\D/g, ""));
+      const cleanPhone = evento.whatsapp.replace(/\D/g, "");
+      setTelefono(cleanPhone);
       // Si explícitamente se marca como primer evento, se usa bienvenida; de lo contrario, revisión habitual
       const plantillaInicial: TipoMensajeAliado =
         evento.esPrimerEvento ? "bienvenida" : "revision";
@@ -118,7 +143,8 @@ export function ModalNotificarAliado({
             evento.titulo,
             evento.id,
             evento.zonaSlug,
-            evento.zonaNombre
+            evento.zonaNombre,
+            cleanPhone
           )
         );
       } else {
@@ -128,7 +154,8 @@ export function ModalNotificarAliado({
             evento.titulo,
             evento.id,
             evento.zonaSlug,
-            evento.zonaNombre
+            evento.zonaNombre,
+            cleanPhone
           )
         );
       }
@@ -146,7 +173,8 @@ export function ModalNotificarAliado({
           evento.titulo,
           evento.id,
           evento.zonaSlug,
-          evento.zonaNombre
+          evento.zonaNombre,
+          telefono
         )
       );
     } else {
@@ -156,7 +184,8 @@ export function ModalNotificarAliado({
           evento.titulo,
           evento.id,
           evento.zonaSlug,
-          evento.zonaNombre
+          evento.zonaNombre,
+          telefono
         )
       );
     }
