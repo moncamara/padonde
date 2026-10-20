@@ -64,10 +64,6 @@ Para apoyar el turismo local y la visibilidad de los alojamientos de nuestra reg
 👉 Pueden ver cómo luce su espacio aquí:
 ${urlPublicacion}
 
-Nuestra propuesta es un gana-gana transparente para su hospedaje:
-• En PaDónde los viajeros buscan dónde hospedarse y qué planes hacer en la zona.
-• Cuando un huésped quiere cotizar o reservar, va DIRECTO a su WhatsApp registrado${textoWhatsapp}, 100% libre de comisiones de intermediarios (a diferencia de Booking o Airbnb que retienen el 15% o 20%, aquí el valor total es para ustedes). 💬
-
 Queremos pedirles un favor muy especial: ¿Podrían echarle un ojito y confirmarnos si todo está en orden?
 • Que los tipos de habitaciones y tarifas base coincidan con su oferta actual.
 • Que su WhatsApp registrado para recibir reservas sea el correcto${textoWhatsapp}.
