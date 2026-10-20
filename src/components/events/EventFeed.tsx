@@ -52,19 +52,26 @@ export function EventFeed({ eventos, zona }: EventFeedProps) {
         }
       }
 
-      // 2. Destacados primero (en la vista de un día específico o dentro del mismo día en próximos)
+      // 2. Prioridad de categoría: eventos y actividades van primero; hospedajes van al final del día
+      const esHospedajeA = a.tipo === "hospedaje";
+      const esHospedajeB = b.tipo === "hospedaje";
+      if (esHospedajeA !== esHospedajeB) {
+        return esHospedajeA ? 1 : -1;
+      }
+
+      // 3. Destacados primero (dentro del mismo grupo)
       if (a.destacado !== b.destacado) {
         return a.destacado ? -1 : 1;
       }
 
-      // 3. De acuerdo a las horas de los eventos: del más temprano al más tarde (hora Colombia)
+      // 4. De acuerdo a las horas de los eventos: del más temprano al más tarde (hora Colombia)
       const minA = getMinutosDelDiaColombia(a.fecha_inicio);
       const minB = getMinutosDelDiaColombia(b.fecha_inicio);
       if (minA !== minB) {
         return minA - minB;
       }
 
-      // 4. Desempate determinista por título
+      // 5. Desempate determinista por título
       return a.titulo.localeCompare(b.titulo);
     });
   }, [eventos, filtroTiempo, filtroCategoria]);
