@@ -297,9 +297,21 @@ export function getEtiquetaHorario(
     fecha_inicio: string;
     fecha_fin?: string | null;
     descripcion?: string | null;
+    tipo?: string | null;
   },
   locale = "es"
 ): string {
+  // Para hospedajes y alojamientos, no mostramos fecha puntual de creación, sino disponibilidad
+  if (evento.tipo === "hospedaje") {
+    const labels: Record<string, string> = {
+      es: "Reserva directa · Todo el año",
+      en: "Direct booking · Year-round",
+      fr: "Réservation directe · Toute l'année",
+      de: "Direktbuchung · Ganzjährig",
+    };
+    return `🏡 ${labels[locale] || labels.es}`;
+  }
+
   const rec = extraerRecurrencia(evento.descripcion);
   const hora = formatHora(evento.fecha_inicio);
 

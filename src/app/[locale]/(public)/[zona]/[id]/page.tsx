@@ -265,26 +265,45 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
 
           {/* Tarjetas de metadata rápida: Fecha, Hora y Precio */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="p-3.5 rounded-2xl bg-white/60 border border-stone-light/70 shadow-xs">
-              <span className="text-base">{rec.esRecurrente ? "🔄" : "📅"}</span>
-              <p className="text-xs text-stone mt-1">{tDetail("dateTime")}</p>
-              <p className="font-sans font-semibold text-sm text-forest capitalize">
-                {rec.esRecurrente ? formatearDiasRecurrencia(rec.dias, locale) : fecha}
-              </p>
-              <p className="text-xs text-stone mt-0.5">
-                {hora}
-                {rec.esRecurrente && evento.fecha_fin ? ` · ${tDetail("until")} ${formatFecha(evento.fecha_fin, locale)}` : ""}
-              </p>
-            </div>
+            {evento.tipo === "hospedaje" ? (
+              <div className="p-3.5 rounded-2xl bg-white/60 border border-stone-light/70 shadow-xs">
+                <span className="text-base">🕒</span>
+                <p className="text-xs text-stone mt-1">
+                  {locale === "en" ? "Check-in / Out" : "Disponibilidad"}
+                </p>
+                <p className="font-sans font-semibold text-sm text-forest capitalize">
+                  {evento.metadata_hospedaje?.check_in_hora
+                    ? `In: ${evento.metadata_hospedaje.check_in_hora} · Out: ${evento.metadata_hospedaje.check_out_hora || "11:00"}`
+                    : (locale === "en" ? "Daily check-in" : "Check-in diario")}
+                </p>
+                <p className="text-xs text-stone mt-0.5">
+                  {locale === "en" ? "Year-round availability" : "Disponible todo el año"}
+                </p>
+              </div>
+            ) : (
+              <div className="p-3.5 rounded-2xl bg-white/60 border border-stone-light/70 shadow-xs">
+                <span className="text-base">{rec.esRecurrente ? "🔄" : "📅"}</span>
+                <p className="text-xs text-stone mt-1">{tDetail("dateTime")}</p>
+                <p className="font-sans font-semibold text-sm text-forest capitalize">
+                  {rec.esRecurrente ? formatearDiasRecurrencia(rec.dias, locale) : fecha}
+                </p>
+                <p className="text-xs text-stone mt-0.5">
+                  {hora}
+                  {rec.esRecurrente && evento.fecha_fin ? ` · ${tDetail("until")} ${formatFecha(evento.fecha_fin, locale)}` : ""}
+                </p>
+              </div>
+            )}
 
             <div className="p-3.5 rounded-2xl bg-white/60 border border-stone-light/70 shadow-xs">
               <span className="text-base">🏷️</span>
               <p className="text-xs text-stone mt-1">{tDetail("price")}</p>
               <p className="font-sans font-semibold text-base text-forest">
-                {precioDisplay}
+                {evento.tipo === "hospedaje" && evento.precio ? `Desde ${precioDisplay}` : precioDisplay}
               </p>
               {evento.precio !== null && evento.precio > 0 && (
-                <p className="text-[10px] text-stone">{tDetail("perPerson")}</p>
+                <p className="text-[10px] text-stone">
+                  {evento.tipo === "hospedaje" ? (locale === "en" ? "per night" : "por noche") : tDetail("perPerson")}
+                </p>
               )}
             </div>
           </div>
