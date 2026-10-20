@@ -228,20 +228,21 @@ export function AdminQRGenerator({ locale }: { locale: string }) {
                   })
                 }
                 className="w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-sans font-semibold bg-emerald-700 text-white hover:bg-emerald-800 transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer active:scale-95"
+                title="Generar y previsualizar afiche o hablador completo (PDF o SVG)"
               >
                 <span>📄</span>
-                <span>Generar Afiche / PDF</span>
+                <span>Generar Afiche (PDF / SVG)</span>
               </button>
 
               <a
                 href={qrSvgUrl}
                 target="_blank"
-                download={`qr-padonde-${slugFinal}.svg`}
+                download={`solo-qr-padonde-${slugFinal}.svg`}
                 className="w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-sans font-semibold bg-white border border-stone-light text-forest hover:bg-stone-50 transition-all flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
-                title="Descargar solo código QR en formato vectorial SVG"
+                title="Descargar únicamente el código QR en formato vectorial SVG"
               >
                 <span>📐</span>
-                <span>Descargar SVG</span>
+                <span>Solo QR (SVG)</span>
               </a>
             </div>
           </div>
@@ -315,21 +316,21 @@ export function AdminQRGenerator({ locale }: { locale: string }) {
                       })
                     }
                     className="py-1.5 px-3 rounded-xl text-xs font-sans font-semibold text-emerald-800 bg-emerald-50 border border-emerald-300 hover:bg-emerald-100 transition-colors flex items-center gap-1 shrink-0 cursor-pointer shadow-2xs"
-                    title="Generar afiche o hablador imprimible para este punto"
+                    title="Generar afiche o hablador completo (PDF o SVG)"
                   >
                     <span>📄</span>
-                    <span>Afiche PDF</span>
+                    <span>Afiche (PDF/SVG)</span>
                   </button>
 
                   <a
                     href={qrPresetSvgUrl}
                     target="_blank"
-                    download={`qr-${preset.src}.svg`}
+                    download={`solo-qr-${preset.src}.svg`}
                     className="py-1.5 px-2.5 rounded-xl text-xs font-sans font-semibold text-indigo-800 bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 transition-colors flex items-center gap-1 shrink-0 cursor-pointer"
-                    title="Descargar solo código QR en formato vectorial SVG"
+                    title="Descargar únicamente el código QR en formato vectorial SVG"
                   >
                     <span>📐</span>
-                    <span>SVG</span>
+                    <span>Solo QR (SVG)</span>
                   </a>
                 </div>
               </article>

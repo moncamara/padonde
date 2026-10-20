@@ -484,7 +484,6 @@ export function ModalAficheImprimible({
     <text x="${35 + catW + catW / 2}" y="${catY + catH + 10 + (isPared ? 46 : 36)}" text-anchor="middle" fill="#8a7e6e" class="font-sans" font-size="${isPared ? 11 : 9}">Hotels, Cabins &amp; Wellness</text>
   </g>
 
-  <!-- Pie de Página -->
   <line x1="30" y1="${footerY - (isPared ? 26 : 20)}" x2="${width - 30}" y2="${footerY - (isPared ? 26 : 20)}" stroke="#e0ded9" stroke-width="1" />
   <text x="${cx}" y="${footerY - (isPared ? 8 : 6)}" text-anchor="middle" fill="#1c3829" class="font-sans" font-size="${isPared ? 12 : 10}" font-weight="bold">⚡ Sin descargar apps   ·   <tspan fill="#047857">💬 Reserva directa por WhatsApp</tspan></text>
   <text x="${cx}" y="${footerY + (isPared ? 16 : 12)}" text-anchor="middle" fill="#8a7e6e" class="font-sans" font-size="${isPared ? 10 : 8.5}">Cartelera turística en vivo · Eventos, hospedajes y planes 🌿 <tspan font-weight="bold" fill="#1c3829">www.padonde.lat</tspan></text>
@@ -495,7 +494,7 @@ export function ModalAficheImprimible({
       const link = document.createElement("a");
       link.href = url;
       const cleanName = (puntoNombre || "punto").toLowerCase().replace(/[^a-z0-9]+/g, "-");
-      link.download = `afiche-padonde-${cleanName}-${formato}.svg`;
+      link.download = `afiche-completo-padonde-${cleanName}-${formato}.svg`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -507,7 +506,32 @@ export function ModalAficheImprimible({
     }
   }
 
-
+  // Descarga únicamente el código QR en formato SVG vectorial independiente
+  async function handleDownloadSoloQRSVG() {
+    setImprimiendo(true);
+    try {
+      const targetUrl = urlDestino || `https://padonde.lat?src=${srcParam}`;
+      const svgQrUrl = `https://api.qrserver.com/v1/create-qr-code/?format=svg&margin=10&data=${encodeURIComponent(
+        targetUrl
+      )}`;
+      const res = await fetch(svgQrUrl);
+      const svgText = await res.text();
+      const blob = new Blob([svgText], { type: "image/svg+xml;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      const cleanName = (puntoNombre || "punto").toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      link.download = `solo-qr-${cleanName}-${srcParam}.svg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Error al descargar solo QR SVG:", err);
+    } finally {
+      setImprimiendo(false);
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6">
@@ -523,7 +547,7 @@ export function ModalAficheImprimible({
               </h3>
             </div>
             <p className="text-xs text-stone font-sans mt-0.5">
-              Diseñado en <strong>4 idiomas (ES, EN, DE, FR)</strong> para imprimir en PDF o exportar en vector SVG.
+              Genera el afiche completo o descarga solo el código QR por separado en <strong>vector SVG o PDF</strong>.
             </p>
           </div>
 
@@ -556,16 +580,28 @@ export function ModalAficheImprimible({
               </button>
             </div>
 
-            {/* Botón Descargar en SVG Vectorial */}
+            {/* Botón Descargar TODO el Afiche en SVG */}
             <button
               type="button"
               onClick={handleDownloadSVG}
               disabled={imprimiendo}
               className="px-3.5 py-2 bg-indigo-700 hover:bg-indigo-800 disabled:opacity-60 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-xs cursor-pointer transition-all active:scale-95"
-              title="Descargar archivo vectorial SVG (resolución infinita, ideal para litografías, imprentas o corte)"
+              title="Descargar TODO el afiche diseñado en vector SVG (afiche completo con títulos, categorías y QR)"
             >
               <span>📐</span>
-              <span>{imprimiendo ? "Generando..." : "Descargar SVG"}</span>
+              <span>{imprimiendo ? "Generando..." : "Afiche SVG"}</span>
+            </button>
+
+            {/* Botón Descargar SOLO el Código QR en SVG */}
+            <button
+              type="button"
+              onClick={handleDownloadSoloQRSVG}
+              disabled={imprimiendo}
+              className="px-3 py-2 bg-slate-700 hover:bg-slate-800 disabled:opacity-60 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-xs cursor-pointer transition-all active:scale-95"
+              title="Descargar ÚNICAMENTE el código QR en formato vectorial SVG independiente"
+            >
+              <span>🔲</span>
+              <span>Solo QR SVG</span>
             </button>
 
             {/* Botón Imprimir / PDF */}
@@ -574,7 +610,7 @@ export function ModalAficheImprimible({
               onClick={handlePrint}
               disabled={imprimiendo}
               className="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-60 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-xs cursor-pointer transition-all active:scale-95"
-              title="Imprimir directamente o guardar en PDF tamaño carta/A4"
+              title="Imprimir directamente o guardar el afiche completo en PDF"
             >
               <span>🖨️</span>
               <span>{imprimiendo ? "Preparando..." : "Imprimir / PDF"}</span>
