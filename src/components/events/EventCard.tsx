@@ -113,11 +113,18 @@ export function EventCard({ evento: rawEvento, zona, priority = false }: EventCa
         <div className="flex items-center justify-between gap-3 pt-2.5 border-t border-stone-light/60">
           <div className="flex flex-col">
             <span className="text-forest font-sans font-bold text-base tracking-tight">
-              {precioDisplay}
+              {evento.tipo === "hospedaje" && evento.precio ? `Desde ${precioDisplay}` : precioDisplay}
+              {evento.precio !== null && evento.precio > 0 && (
+                <span className="text-[10px] font-normal text-stone ml-1">COP</span>
+              )}
             </span>
             {evento.precio !== null && evento.precio > 0 && (
               <span className="text-stone text-[10px] font-sans">
-                {tCard("perPerson")}
+                {evento.tipo === "hospedaje"
+                  ? locale === "en"
+                    ? "per night"
+                    : "por noche"
+                  : tCard("perPerson")}
               </span>
             )}
           </div>

@@ -203,8 +203,8 @@ export function ModalEditarHospedaje({
 
     try {
       const metadataHospedaje = {
-        check_in_hora: "15:00",
-        check_out_hora: "11:00",
+        check_in_hora: hospedaje?.metadata_hospedaje?.check_in_hora || "14:00",
+        check_out_hora: hospedaje?.metadata_hospedaje?.check_out_hora || "11:00",
         google_reputacion:
           ratingGoogle && reviewsGoogle && mapsUrl
             ? {

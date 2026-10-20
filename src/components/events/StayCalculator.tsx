@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { generarEnlaceWhatsAppHospedaje } from "@/lib/whatsappHospedaje";
+import { trackWhatsAppClick } from "@/lib/analytics";
 import { RoomCard } from "./RoomCard";
 import type { HabitacionHospedaje } from "@/lib/types";
 
@@ -10,6 +11,8 @@ interface StayCalculatorProps {
   hostalNombre: string;
   whatsapp: string;
   locale: string;
+  eventoId?: string;
+  negocioId?: string;
   labels: {
     sectionTitle: string;
     sectionSubtitle: string;
@@ -33,6 +36,8 @@ export function StayCalculator({
   hostalNombre,
   whatsapp,
   locale,
+  eventoId,
+  negocioId,
   labels,
 }: StayCalculatorProps) {
   // 1. Habitación seleccionada (por defecto la primera)
@@ -52,12 +57,12 @@ export function StayCalculator({
   // 3. Huéspedes
   const [huespedes, setHuespedes] = useState<number>(1);
 
-  // 4. Cálculo reactivo de noches (mínimo 1)
-  const fechaIn = new Date(checkIn);
-  const fechaOut = new Date(checkOut);
+  // 4. Cálculo reactivo de noches con validación estricta (mínimo 1)
+  const fechaIn = new Date(checkIn + "T12:00:00-05:00");
+  const fechaOut = new Date(checkOut + "T12:00:00-05:00");
   const diffTime = fechaOut.getTime() - fechaIn.getTime();
-  const nochesCalc = Math.round(diffTime / (1000 * 60 * 60 * 24));
-  const noches = isNaN(nochesCalc) || nochesCalc < 1 ? 1 : nochesCalc;
+  const diffDias = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  const noches = !isNaN(diffDias) && diffDias > 0 ? diffDias : 1;
 
   // 5. Cálculo del precio total estimado
   const precioNoche = habitacionSeleccionada ? habitacionSeleccionada.precio_noche_cop : 0;
@@ -81,11 +86,25 @@ export function StayCalculator({
   const handleCheckInChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setCheckIn(val);
-    // Si la fecha de salida es menor o igual, ajustarla automáticamente a checkIn + 1 día
-    if (new Date(checkOut) <= new Date(val)) {
-      const nextDay = new Date(val);
+    const dIn = new Date(val + "T12:00:00-05:00");
+    const dOut = new Date(checkOut + "T12:00:00-05:00");
+    if (dOut <= dIn) {
+      const nextDay = new Date(dIn);
       nextDay.setDate(nextDay.getDate() + 1);
       setCheckOut(nextDay.toISOString().split("T")[0]);
+    }
+  };
+
+  const handleCheckOutChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    const dIn = new Date(checkIn + "T12:00:00-05:00");
+    const dOut = new Date(val + "T12:00:00-05:00");
+    if (dOut <= dIn) {
+      const nextDay = new Date(dIn);
+      nextDay.setDate(nextDay.getDate() + 1);
+      setCheckOut(nextDay.toISOString().split("T")[0]);
+    } else {
+      setCheckOut(val);
     }
   };
 
@@ -156,7 +175,7 @@ export function StayCalculator({
               type="date"
               min={checkIn}
               value={checkOut}
-              onChange={(e) => setCheckOut(e.target.value)}
+              onChange={handleCheckOutChange}
               className="w-full bg-cream/70 border border-stone-light/80 rounded-xl px-2.5 py-2 text-xs font-sans text-forest focus:outline-none focus:border-forest transition-colors"
             />
           </div>
@@ -216,11 +235,23 @@ export function StayCalculator({
           </div>
         </div>
 
-        {/* Botón Principal de WhatsApp con Lead Estructurado */}
+        {/* Botón Principal de WhatsApp con Lead Estructurado y Telemetría GA4/Interna */}
         <a
           href={waUrl}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={() => {
+            trackWhatsAppClick({
+              eventoId: eventoId || hostalNombre,
+              eventoTitulo: habitacionSeleccionada
+                ? `${hostalNombre} — ${habitacionSeleccionada.titulo}`
+                : `${hostalNombre} — Cotización`,
+              negocioNombre: hostalNombre,
+              negocioId,
+              ubicacion: "detalle",
+              precio: precioTotal,
+            });
+          }}
           className="w-full py-3.5 bg-forest text-cream text-xs sm:text-sm font-sans font-semibold rounded-2xl hover:bg-forest-dark active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-md"
         >
           <span>💬</span>

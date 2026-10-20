@@ -43,6 +43,12 @@ export async function generateMetadata({ params }: EventoDetailPageProps): Promi
   const canonicalUrl = `https://www.padonde.lat/${locale}/${zonaSlug}/${id}`;
   const title = `${evento.titulo} — ${evento.negocio.nombre} (${nombreZona})`;
 
+  const absoluteImageUrl = evento.imagen_url
+    ? evento.imagen_url.startsWith("http")
+      ? evento.imagen_url
+      : `https://www.padonde.lat${evento.imagen_url.startsWith("/") ? "" : "/"}${evento.imagen_url}`
+    : "https://www.padonde.lat/og_minca.jpg";
+
   return {
     title,
     description: descripcionLimpia.slice(0, 160),
@@ -61,22 +67,20 @@ export async function generateMetadata({ params }: EventoDetailPageProps): Promi
       url: canonicalUrl,
       type: "website",
       locale: locale === "en" ? "en_US" : locale === "fr" ? "fr_FR" : locale === "de" ? "de_DE" : "es_CO",
-      images: evento.imagen_url
-        ? [
-            {
-              url: evento.imagen_url,
-              width: 1200,
-              height: 630,
-              alt: evento.titulo,
-            },
-          ]
-        : undefined,
+      images: [
+        {
+          url: absoluteImageUrl,
+          width: 1200,
+          height: 630,
+          alt: evento.titulo,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description: descripcionLimpia.slice(0, 160),
-      images: evento.imagen_url ? [evento.imagen_url] : undefined,
+      images: [absoluteImageUrl],
     },
   };
 }
@@ -327,6 +331,8 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
                 hostalNombre={evento.negocio.nombre}
                 whatsapp={evento.negocio.whatsapp}
                 locale={locale}
+                eventoId={evento.id}
+                negocioId={evento.negocio_id}
                 labels={{
                   sectionTitle: tStay("sectionTitle"),
                   sectionSubtitle: tStay("sectionSubtitle"),
