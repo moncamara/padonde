@@ -353,8 +353,17 @@ export function eventoCoincideConFiltroTiempo(
   filtro: string,
   now: Date = new Date(),
   fechaFinIso?: string | null,
-  descripcion?: string | null
+  descripcion?: string | null,
+  tipo?: string | null
 ): boolean {
+  // Los hospedajes y alojamientos tienen disponibilidad permanente (todo el año).
+  // Coinciden con cualquier día del calendario (hoy, mañana, días específicos, todos).
+  if (tipo === "hospedaje") {
+    // Si se consulta "proximos" (agenda lejana futura), no se muestran como eventos futuros generales
+    if (filtro === "proximos") return false;
+    return true;
+  }
+
   // Caso especial: Planes futuros más allá del rango de 7 días visible en la barra
   if (filtro === "proximos") {
     // La barra muestra 7 días individuales: hoy (día 0) hasta hoy + 6 días

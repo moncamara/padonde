@@ -30,12 +30,20 @@ export function EventFeed({ eventos, zona }: EventFeedProps) {
   const eventosFiltrados = useMemo(() => {
     const now = nowRef.current;
     const filtrados = eventos.filter((e) => {
+      // 1. Si el usuario filtra específicamente por la categoría "hospedaje",
+      // mostramos todos los hospedajes activos de forma permanente
+      if (filtroCategoria === "hospedaje") {
+        return e.tipo === "hospedaje";
+      }
+
+      // 2. Para el resto de categorías o vista general ("Todos"):
       const pasaFecha = eventoCoincideConFiltroTiempo(
         e.fecha_inicio,
         filtroTiempo,
         now,
         e.fecha_fin,
-        e.descripcion
+        e.descripcion,
+        e.tipo
       );
       const pasaCategoria = filtroCategoria === null || e.tipo === filtroCategoria;
 

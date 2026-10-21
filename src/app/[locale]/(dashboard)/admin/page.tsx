@@ -105,13 +105,14 @@ export default async function AdminDashboardPage({
 
   const eventosVigentes = eventos.filter((e) => {
     if (!e.activo) return false;
+    if (e.tipo === "hospedaje") return true;
     const ymdInicio = getFechaYMDDesdeISO(e.fecha_inicio);
     const ymdFin = e.fecha_fin ? getFechaYMDDesdeISO(e.fecha_fin) : null;
     return ymdFin ? ymdFin >= hoyYMD : ymdInicio >= hoyYMD;
   });
 
   const eventosHoy = eventosVigentes.filter((e) =>
-    eventoCoincideConFiltroTiempo(e.fecha_inicio, "hoy", new Date(), e.fecha_fin, e.descripcion)
+    eventoCoincideConFiltroTiempo(e.fecha_inicio, "hoy", new Date(), e.fecha_fin, e.descripcion, e.tipo)
   ).length;
   const destacadosActivos = eventosVigentes.filter((e) => e.destacado).length;
   const eventosPausados = eventos.filter((e) => !e.activo).length;

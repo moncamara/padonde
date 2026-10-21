@@ -88,7 +88,7 @@ export function AdminEventList({ eventos, negocios = [], locale }: AdminEventLis
     for (const ev of eventosFiltrados) {
       const ymdInicio = getFechaYMDDesdeISO(ev.fecha_inicio);
       const ymdFin = ev.fecha_fin ? getFechaYMDDesdeISO(ev.fecha_fin) : null;
-      const yaPaso = ymdFin ? ymdFin < hoyYMD : ymdInicio < hoyYMD;
+      const yaPaso = ev.tipo === "hospedaje" ? false : ymdFin ? ymdFin < hoyYMD : ymdInicio < hoyYMD;
 
       if (!ev.activo && !yaPaso) {
         // Pausado manualmente pero con fecha actual/futura
