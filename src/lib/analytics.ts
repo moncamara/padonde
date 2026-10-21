@@ -10,11 +10,27 @@ declare global {
 }
 
 /**
+ * Detecta si el dispositivo actual pertenece a un administrador
+ * (marcado por cookie al entrar al panel) para no contaminar analíticas con pruebas internas.
+ */
+export function isAdminDevice(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return document.cookie.includes("padonde_admin_device=true");
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Registra un evento personalizado en Google Analytics
  */
 export function trackEvent(eventName: string, params: Record<string, any> = {}) {
-  if (typeof window !== "undefined" && typeof window.gtag === "function") {
-    window.gtag("event", eventName, params);
+  if (typeof window !== "undefined") {
+    if (isAdminDevice()) return;
+    if (typeof window.gtag === "function") {
+      window.gtag("event", eventName, params);
+    }
   }
 }
 
@@ -30,6 +46,11 @@ export function trackWhatsAppClick(data: {
   ubicacion: "tarjeta" | "detalle";
   precio?: number | null;
 }) {
+  if (isAdminDevice()) {
+    // El administrador está probando botones; no contaminamos métricas de conversión
+    return;
+  }
+
   // 1. Google Analytics 4 (GA4)
   trackEvent("click_reserva_whatsapp", {
     event_category: "Conversion",

@@ -3,10 +3,25 @@ import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json().catch(() => ({}));
-    const { eventoId, negocioId: inputNegocioId, ubicacion = "tarjeta" } = body;
+    // 1. Filtro Anti-Admin: Si el dispositivo está marcado como admin o tiene sesión activa,
+    // respondemos exitosamente pero omitimos la inserción para no contaminar métricas reales.
+    const isAdminCookie = request.cookies.get("padonde_admin_device")?.value === "true";
+    if (isAdminCookie) {
+      return NextResponse.json({ success: true, recorded: false, reason: "admin_cookie" });
+    }
 
     const supabase = await createClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (user) {
+      return NextResponse.json({ success: true, recorded: false, reason: "admin_session" });
+    }
+
+    const body = await request.json().catch(() => ({}));
+    const { eventoId, negocioId: inputNegocioId, ubicacion = "tarjeta" } = body;
 
     let negocioId = inputNegocioId;
 

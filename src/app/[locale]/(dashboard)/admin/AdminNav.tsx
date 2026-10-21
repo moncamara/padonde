@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { Link, usePathname } from "@/i18n/routing";
 import { logoutAction } from "./login/actions";
 
@@ -9,6 +10,16 @@ interface AdminNavProps {
 
 export function AdminNav({ userEmail }: AdminNavProps) {
   const pathname = usePathname();
+
+  useEffect(() => {
+    // Marca el dispositivo del administrador para que sus clics y pruebas
+    // no contaminen las métricas de WhatsApp ni escaneos QR en analíticas.
+    try {
+      document.cookie = "padonde_admin_device=true; path=/; max-age=31536000; SameSite=Lax";
+    } catch {
+      // Ignorar
+    }
+  }, []);
 
   const isCartelera = pathname === "/admin" || pathname.endsWith("/admin");
   const isHospedajes = pathname.includes("/admin/hospedajes");
