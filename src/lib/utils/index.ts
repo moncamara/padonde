@@ -474,3 +474,56 @@ export function mensajeWhatsApp(
 ): string {
   return `Hola! Vi tu publicación "${nombreEvento}" en PaDónde. [Reserva PaDónde 🌿] Me interesa saber disponibilidad y cómo llegar.`;
 }
+
+// ─── Demografía y Origen de Turistas (QR) ────────────────────────────────────
+
+export interface OrigenTurista {
+  esExtranjero: boolean;
+  etiqueta: string;
+  pais: string;
+  flag: string;
+}
+
+/**
+ * Deduce si un escaneo QR proviene de un turista extranjero o nacional
+ * analizando el idioma y región del sistema de su celular (ej: en-US, fr-FR, es-CO).
+ */
+export function parseOrigenTurista(rawLang?: string | null): OrigenTurista {
+  if (!rawLang || !rawLang.trim()) {
+    return { esExtranjero: false, etiqueta: "🇨🇴 Nacional", pais: "Colombia", flag: "🇨🇴" };
+  }
+  const clean = rawLang.split(",")[0].trim().toLowerCase();
+
+  if (clean.startsWith("es-co")) {
+    return { esExtranjero: false, etiqueta: "🇨🇴 Nacional", pais: "Colombia", flag: "🇨🇴" };
+  }
+  if (clean.startsWith("es-")) {
+    return { esExtranjero: true, etiqueta: "🌎 Extranjero", pais: "Hispanoamérica / España", flag: "🌎" };
+  }
+  if (clean === "es") {
+    return { esExtranjero: false, etiqueta: "🇨🇴 Nacional / Hispano", pais: "Colombia / Latam", flag: "🇨🇴" };
+  }
+  if (clean.startsWith("en")) {
+    return { esExtranjero: true, etiqueta: "🇺🇸 Extranjero", pais: "Inglés (EE.UU. / UK)", flag: "🇺🇸" };
+  }
+  if (clean.startsWith("fr")) {
+    return { esExtranjero: true, etiqueta: "🇫🇷 Extranjero", pais: "Francés (Francia / Canadá)", flag: "🇫🇷" };
+  }
+  if (clean.startsWith("de")) {
+    return { esExtranjero: true, etiqueta: "🇩🇪 Extranjero", pais: "Alemán (Alemania / Suiza)", flag: "🇩🇪" };
+  }
+  if (clean.startsWith("it")) {
+    return { esExtranjero: true, etiqueta: "🇮🇹 Extranjero", pais: "Italiano", flag: "🇮🇹" };
+  }
+  if (clean.startsWith("nl")) {
+    return { esExtranjero: true, etiqueta: "🇳🇱 Extranjero", pais: "Holandés", flag: "🇳🇱" };
+  }
+  if (clean.startsWith("pt")) {
+    return { esExtranjero: true, etiqueta: "🇧🇷 Extranjero", pais: "Portugués", flag: "🇧🇷" };
+  }
+  if (clean.startsWith("he") || clean.startsWith("iw")) {
+    return { esExtranjero: true, etiqueta: "🇮🇱 Extranjero", pais: "Israel", flag: "🇮🇱" };
+  }
+
+  return { esExtranjero: true, etiqueta: "🌍 Extranjero", pais: clean.toUpperCase(), flag: "🌍" };
+}

@@ -11,6 +11,12 @@ interface EscaneoLog {
   esValido: boolean;
   tiempoPermanenciaSeg: number;
   createdAt: string;
+  origen?: {
+    esExtranjero: boolean;
+    etiqueta: string;
+    pais: string;
+    flag: string;
+  };
 }
 
 interface MetricasData {
@@ -18,6 +24,8 @@ interface MetricasData {
   unicosValidados: number;
   unicosSinPermanencia: number;
   repetidos: number;
+  totalExtranjeros?: number;
+  totalNacionales?: number;
   ultimosEscaneos: EscaneoLog[];
 }
 
@@ -29,6 +37,8 @@ export function PuntosQRMetricas() {
     unicosValidados: 0,
     unicosSinPermanencia: 0,
     repetidos: 0,
+    totalExtranjeros: 0,
+    totalNacionales: 0,
     ultimosEscaneos: [],
   });
 
@@ -138,53 +148,69 @@ export function PuntosQRMetricas() {
         </div>
       </div>
 
-      {/* 3 Tarjetas de Estado del Promotor */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      {/* 4 Tarjetas de Estado y Demografía del Promotor */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {/* 1. ÚNICOS VALIDADOS (A PAGAR) */}
-        <div className="p-4 rounded-2xl bg-emerald-50/80 border border-emerald-200/80 shadow-2xs">
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-emerald-50/80 border border-emerald-200/80 shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-sans font-semibold uppercase tracking-wider text-emerald-800">
+            <span className="text-[11px] sm:text-xs font-sans font-semibold uppercase tracking-wider text-emerald-800">
               ✅ Únicos a Pagar
             </span>
-            <span className="text-lg">🎯</span>
+            <span className="text-base sm:text-lg">🎯</span>
           </div>
-          <p className="font-serif text-3xl sm:text-4xl text-emerald-900 font-extrabold mt-1">
+          <p className="font-serif text-2xl sm:text-4xl text-emerald-900 font-extrabold mt-1">
             {data.unicosValidados}
           </p>
-          <p className="text-[11px] text-emerald-700 font-medium mt-1">
-            Celulares nuevos con permanencia real (&ge; 5s)
+          <p className="text-[10px] sm:text-[11px] text-emerald-700 font-medium mt-1">
+            Permanencia real (&ge; 5s)
           </p>
         </div>
 
-        {/* 2. DESCARTADOS (AUTO-ESCANEOS REPETIDOS) */}
-        <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200/80 shadow-2xs">
+        {/* 2. PERFIL TURISTAS (EXTRANJEROS VS NACIONALES) */}
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-sky-50/80 border border-sky-200/80 shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-sans font-semibold uppercase tracking-wider text-amber-800">
-              ⚠️ Repetidos (Descartados)
+            <span className="text-[11px] sm:text-xs font-sans font-semibold uppercase tracking-wider text-sky-800">
+              🌍 Extranjeros
             </span>
-            <span className="text-lg">🛡️</span>
+            <span className="text-base sm:text-lg">✈️</span>
           </div>
-          <p className="font-serif text-3xl sm:text-4xl text-amber-900 font-extrabold mt-1">
+          <p className="font-serif text-2xl sm:text-4xl text-sky-900 font-extrabold mt-1">
+            {data.totalExtranjeros ?? 0}
+          </p>
+          <p className="text-[10px] sm:text-[11px] text-sky-700 font-medium mt-1">
+            vs {data.totalNacionales ?? 0} nacionales
+          </p>
+        </div>
+
+        {/* 3. DESCARTADOS (AUTO-ESCANEOS REPETIDOS) */}
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-amber-50/70 border border-amber-200/80 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] sm:text-xs font-sans font-semibold uppercase tracking-wider text-amber-800">
+              ⚠️ Repetidos
+            </span>
+            <span className="text-base sm:text-lg">🛡️</span>
+          </div>
+          <p className="font-serif text-2xl sm:text-4xl text-amber-900 font-extrabold mt-1">
             {data.repetidos}
           </p>
-          <p className="text-[11px] text-amber-700 font-medium mt-1">
-            Mismo celular escaneando de nuevo (antifraude)
+          <p className="text-[10px] sm:text-[11px] text-amber-700 font-medium mt-1">
+            Mismo celular (antifraude)
           </p>
         </div>
 
-        {/* 3. REBOTES RÁPIDOS (< 5s) */}
-        <div className="p-4 rounded-2xl bg-stone-50 border border-stone-light/80 shadow-2xs">
+        {/* 4. REBOTES RÁPIDOS (< 5s) */}
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-stone-50 border border-stone-light/80 shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-sans font-semibold uppercase tracking-wider text-stone">
+            <span className="text-[11px] sm:text-xs font-sans font-semibold uppercase tracking-wider text-stone">
               ⏱️ Sin Permanencia
             </span>
-            <span className="text-lg">⚡</span>
+            <span className="text-base sm:text-lg">⚡</span>
           </div>
-          <p className="font-serif text-3xl sm:text-4xl text-stone-dark font-extrabold mt-1">
+          <p className="font-serif text-2xl sm:text-4xl text-stone-dark font-extrabold mt-1">
             {data.unicosSinPermanencia}
           </p>
-          <p className="text-[11px] text-stone text-[11px] mt-1">
-            Abrieron y cerraron de inmediato (&lt; 5s)
+          <p className="text-[10px] sm:text-[11px] text-stone mt-1">
+            Cerraron de inmediato (&lt; 5s)
           </p>
         </div>
       </div>
@@ -349,11 +375,22 @@ export function PuntosQRMetricas() {
                             {isValid ? "✅" : isRepeated ? "⚠️" : "⏱️"}
                           </span>
                           <div>
-                            <p className="font-medium text-forest">
-                              {iconDisp}{" "}
+                            <p className="font-medium text-forest flex items-center gap-1.5 flex-wrap">
+                              <span>{iconDisp}</span>
                               <span className="text-stone font-normal">
                                 · {esc.puntoId}
                               </span>
+                              {esc.origen && (
+                                <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold ${
+                                  esc.origen.esExtranjero
+                                    ? "bg-sky-100 text-sky-800 border border-sky-200"
+                                    : "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                                }`}>
+                                  <span>{esc.origen.flag}</span>
+                                  <span>{esc.origen.etiqueta}</span>
+                                  <span className="text-stone font-normal text-[9px]">({esc.origen.pais})</span>
+                                </span>
+                              )}
                             </p>
                             <p className="text-[10px] text-stone">
                               {formatHora(esc.createdAt)} ({getTiempoRelativo(esc.createdAt)})

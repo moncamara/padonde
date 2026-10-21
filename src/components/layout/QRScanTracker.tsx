@@ -48,6 +48,7 @@ export function QRScanTracker({ zonaSlug }: QRScanTrackerProps) {
         puntoId: src,
         zonaSlug,
         dispositivoId: deviceId,
+        idioma: typeof navigator !== "undefined" ? (navigator.language || "") : "",
       }),
     })
       .then((res) => res.json())

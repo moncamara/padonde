@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { parseOrigenTurista } from "@/lib/utils";
 
 export async function GET(request: NextRequest) {
   try {
@@ -49,23 +50,41 @@ export async function GET(request: NextRequest) {
     // Celulares repetidos (auto-escaneos o personas que ya lo habían escaneado)
     const repetidos = lista.filter((e) => !e.es_primer_escaneo).length;
 
-    // Últimos 30 escaneos para la bitácora en vivo
-    const ultimosEscaneos = lista.slice(0, 30).map((e) => ({
-      id: e.id,
-      puntoId: e.punto_id,
-      zonaSlug: e.zona_slug,
-      dispositivoTipo: e.dispositivo_tipo,
-      esPrimerEscaneo: e.es_primer_escaneo,
-      esValido: e.es_valido,
-      tiempoPermanenciaSeg: e.tiempo_permanencia_seg,
-      createdAt: e.created_at,
-    }));
+    // Análisis demográfico del lote de escaneos
+    let totalExtranjeros = 0;
+    let totalNacionales = 0;
+
+    // Últimos 40 escaneos para la bitácora en vivo
+    const ultimosEscaneos = lista.slice(0, 40).map((e) => {
+      const matchLang = e.user_agent?.match(/\[LANG:([^\]]+)\]/);
+      const rawLang = matchLang ? matchLang[1] : null;
+      const origen = parseOrigenTurista(rawLang);
+
+      if (e.es_primer_escaneo && e.es_valido) {
+        if (origen.esExtranjero) totalExtranjeros++;
+        else totalNacionales++;
+      }
+
+      return {
+        id: e.id,
+        puntoId: e.punto_id,
+        zonaSlug: e.zona_slug,
+        dispositivoTipo: e.dispositivo_tipo,
+        esPrimerEscaneo: e.es_primer_escaneo,
+        esValido: e.es_valido,
+        tiempoPermanenciaSeg: e.tiempo_permanencia_seg,
+        createdAt: e.created_at,
+        origen,
+      };
+    });
 
     return NextResponse.json({
       totales,
       unicosValidados,
       unicosSinPermanencia,
       repetidos,
+      totalExtranjeros,
+      totalNacionales,
       ultimosEscaneos,
     });
   } catch (err: any) {

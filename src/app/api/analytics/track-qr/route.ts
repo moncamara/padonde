@@ -5,7 +5,7 @@ import crypto from "crypto";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}));
-    const { puntoId, zonaSlug = "minca", dispositivoId } = body;
+    const { puntoId, zonaSlug = "minca", dispositivoId, idioma: clientIdioma } = body;
 
     if (!puntoId || !dispositivoId) {
       return NextResponse.json({ success: false, error: "Parámetros incompletos" }, { status: 400 });
@@ -21,6 +21,11 @@ export async function POST(request: NextRequest) {
     } else if (/macintosh|windows|linux/i.test(userAgent)) {
       dispositivoTipo = "desktop";
     }
+
+    // 1b. Extraer idioma del turista (del cliente o cabeceras HTTP)
+    const headerLang = request.headers.get("accept-language")?.split(",")[0]?.trim() || "";
+    const idiomaDetectado = (clientIdioma || headerLang || "es-CO").slice(0, 15);
+    const userAgentConLang = `[LANG:${idiomaDetectado}] ${userAgent}`.slice(0, 250);
 
     // 2. Hash unidireccional de IP para auditoría y anti-fraude anónimo
     const forwardedFor = request.headers.get("x-forwarded-for") || "";
@@ -64,7 +69,7 @@ export async function POST(request: NextRequest) {
         es_primer_escaneo: esPrimerEscaneo,
         es_valido: false, // Se valida a los 5 segundos de permanencia
         dispositivo_tipo: dispositivoTipo,
-        user_agent: userAgent.slice(0, 250),
+        user_agent: userAgentConLang,
         ip_hash: ipHash,
       })
       .select("id")
