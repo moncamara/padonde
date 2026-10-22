@@ -34,6 +34,7 @@ export interface EventoAdminItem {
   activo: boolean;
   descripcion?: string | null;
   imagen_url?: string | null;
+  video_url?: string | null;
   negocio_id?: string;
   zona_id?: string;
   zonaSlug?: string;

@@ -23,6 +23,7 @@ import { StayCalculator } from "@/components/events/StayCalculator";
 import { GoogleRatingBadge } from "@/components/events/GoogleRatingBadge";
 import { DetailBackButton } from "@/components/events/DetailBackButton";
 import { DetailSlideWrapper } from "@/components/events/DetailSlideWrapper";
+import { EventVideoPlayer } from "@/components/events/EventVideoPlayer";
 import type { ZonaSlug } from "@/lib/types";
 import type { Metadata } from "next";
 
@@ -349,6 +350,15 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
               {limpiarDescripcionRecurrencia(evento.descripcion) || tDetail("noDescription")}
             </div>
           </section>
+
+          {/* Video / Reel de la Experiencia (Bajo demanda, cero consumo inicial) */}
+          {evento.video_url && (
+            <EventVideoPlayer
+              videoUrl={evento.video_url}
+              posterUrl={evento.imagen_url}
+              title={evento.titulo}
+            />
+          )}
 
           {/* Módulo de Hospedaje: Habitaciones y Pre-cotizador reactivo */}
           {evento.tipo === "hospedaje" &&

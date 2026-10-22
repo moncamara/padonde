@@ -13,7 +13,7 @@ import {
   inyectarRecurrencia,
   formatearDiasRecurrencia,
 } from "@/lib/utils";
-import { uploadEventImage } from "@/lib/supabase/storage";
+import { uploadEventImage, uploadEventVideo } from "@/lib/supabase/storage";
 import { editarEventoAdminAction, eliminarEventoAdminAction } from "./actions";
 import { Button } from "@/components/ui/Button";
 import type { CategoriaEvento } from "@/lib/types";
@@ -76,6 +76,11 @@ export function ModalEditarEvento({
     evento.imagen_url || null
   );
 
+  // Manejo de video / reel
+  const [videoUrl, setVideoUrl] = useState(evento.video_url || "");
+  const [archivoVideo, setArchivoVideo] = useState<File | null>(null);
+  const [videoNombre, setVideoNombre] = useState<string | null>(null);
+
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmarEliminar, setConfirmarEliminar] = useState(false);
@@ -86,6 +91,14 @@ export function ModalEditarEvento({
     if (file) {
       setArchivoFoto(file);
       setPreviewFoto(URL.createObjectURL(file));
+    }
+  }
+
+  function handleVideoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) {
+      setArchivoVideo(file);
+      setVideoNombre(file.name);
     }
   }
 
@@ -110,6 +123,12 @@ export function ModalEditarEvento({
         if (uploadedUrl) finalImg = uploadedUrl;
       }
 
+      let finalVideo = videoUrl;
+      if (archivoVideo) {
+        const uploadedVideo = await uploadEventVideo(archivoVideo);
+        if (uploadedVideo) finalVideo = uploadedVideo;
+      }
+
       const descripcionFinal = esRecurrente
         ? inyectarRecurrencia(descripcion, diasSeleccionados)
         : limpiarDescripcionRecurrencia(descripcion);
@@ -123,6 +142,7 @@ export function ModalEditarEvento({
         dateTime,
         fechaFin: esRecurrente || fechaFin ? fechaFin : null,
         imageUrl: finalImg || undefined,
+        videoUrl: finalVideo || null,
         destacado,
         activo,
         negocioId: negocioId || undefined,
@@ -147,6 +167,7 @@ export function ModalEditarEvento({
         destacado,
         activo,
         imagen_url: finalImg,
+        video_url: finalVideo || null,
         negocio_id: negocioId || evento.negocio_id,
         negocio: negocioSeleccionado
           ? {
@@ -513,6 +534,55 @@ export function ModalEditarEvento({
                 </p>
               </div>
             </div>
+          </div>
+
+          {/* 8. Video / Reel Vertical (Opcional) */}
+          <div className="space-y-2 p-3.5 rounded-2xl bg-stone-50 border border-stone-light/70">
+            <label className="block text-xs font-semibold text-forest font-sans flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <span>🎬</span> Video / Reel vertical (Opcional)
+              </span>
+              {videoUrl && !archivoVideo && (
+                <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-medium">
+                  ✓ Video activo
+                </span>
+              )}
+            </label>
+
+            <input
+              type="file"
+              accept="video/mp4,video/quicktime,video/webm"
+              onChange={handleVideoChange}
+              className="block w-full text-xs text-stone file:mr-2.5 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-terra/10 file:text-terra hover:file:bg-terra/20 cursor-pointer"
+            />
+
+            {videoNombre ? (
+              <p className="text-[11px] text-forest font-medium">
+                Nuevo video seleccionado: {videoNombre}
+              </p>
+            ) : videoUrl ? (
+              <div className="flex items-center justify-between text-xs pt-1">
+                <a
+                  href={videoUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-terra hover:underline truncate max-w-[220px]"
+                >
+                  Ver video actual
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setVideoUrl("")}
+                  className="text-red-600 hover:text-red-700 font-medium text-[11px]"
+                >
+                  Quitar video
+                </button>
+              </div>
+            ) : (
+              <p className="text-[10px] text-stone font-sans">
+                MP4 de WhatsApp o Instagram Reels. Cero lentitud en la carga inicial.
+              </p>
+            )}
           </div>
 
           {/* 8. Switches de Control (Destacado y Activo) */}

@@ -44,6 +44,7 @@ export default async function AdminDashboardPage({
       fecha_inicio,
       fecha_fin,
       imagen_url,
+      video_url,
       destacado,
       tiene_boleteria,
       activo,

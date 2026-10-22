@@ -88,15 +88,22 @@ export function EventCard({ evento: rawEvento, zona, priority = false }: EventCa
           </div>
         )}
 
-        {/* Badges superiores flotantes (Categoría y Destacado) */}
+        {/* Badges superiores flotantes (Categoría, Video y Destacado) */}
         <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none z-20">
-          {categoria ? (
-            <span className="bg-black/50 backdrop-blur-md text-white text-xs font-sans font-medium px-3 py-1 rounded-full border border-white/20 shadow-xs">
-              {categoria.emoji} {tCat(evento.tipo)}
-            </span>
-          ) : (
-            <span />
-          )}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {categoria ? (
+              <span className="bg-black/50 backdrop-blur-md text-white text-xs font-sans font-medium px-3 py-1 rounded-full border border-white/20 shadow-xs">
+                {categoria.emoji} {tCat(evento.tipo)}
+              </span>
+            ) : null}
+
+            {evento.video_url && (
+              <span className="bg-black/60 backdrop-blur-md text-white text-xs font-sans font-semibold px-2.5 py-1 rounded-full border border-amber-400/40 shadow-xs flex items-center gap-1 text-amber-300">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                🎬 Reel
+              </span>
+            )}
+          </div>
 
           {evento.destacado && (
             <span className="bg-terra text-white text-xs font-sans font-semibold px-3 py-1 rounded-full shadow-xs">

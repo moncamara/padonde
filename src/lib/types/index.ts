@@ -66,6 +66,7 @@ export type Evento = {
   fecha_inicio: string;            // ISO 8601
   fecha_fin: string | null;        // null = evento puntual sin duración definida
   imagen_url: string | null;
+  video_url?: string | null;
   destacado: boolean;              // Los planes pro/premium pueden destacar eventos
   tiene_boleteria: boolean;        // Si tiene venta de tickets integrada
   activo: boolean;

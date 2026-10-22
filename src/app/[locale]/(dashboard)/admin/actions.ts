@@ -16,6 +16,7 @@ export interface AdminPublishInput {
   price: number;
   description: string;
   imageUrl?: string;
+  videoUrl?: string;
   isFeatured?: boolean;
   zonaSlug: string;
 }
@@ -118,6 +119,7 @@ export async function adminPublishEventAction(
       imagen_url:
         input.imageUrl ||
         "https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&q=80",
+      video_url: input.videoUrl || null,
       destacado: Boolean(input.isFeatured),
       tiene_boleteria: false,
       activo: true,
@@ -655,6 +657,7 @@ export interface EditarEventoAdminInput {
   dateTime: string;
   fechaFin?: string | null;
   imageUrl?: string;
+  videoUrl?: string | null;
   destacado: boolean;
   activo: boolean;
   negocioId?: string;
@@ -687,6 +690,10 @@ export async function editarEventoAdminAction(input: EditarEventoAdminInput) {
 
     if (input.imageUrl) {
       updatePayload.imagen_url = input.imageUrl;
+    }
+
+    if (input.videoUrl !== undefined) {
+      updatePayload.video_url = input.videoUrl;
     }
 
     if (input.negocioId) {

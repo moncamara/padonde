@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { Link } from "@/i18n/routing";
 import { CATEGORIAS, getCategoria } from "@/constants";
-import { uploadEventImage } from "@/lib/supabase/storage";
+import { uploadEventImage, uploadEventVideo, extractVideoThumbnail } from "@/lib/supabase/storage";
 import { adminPublishEventAction } from "../actions";
 import { Button } from "@/components/ui/Button";
 import type { CategoriaEvento } from "@/lib/types";
@@ -137,9 +137,38 @@ export function AdminPublishForm({
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
+  // Video / Reel opcional
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null);
+  const [isProcessingVideo, setIsProcessingVideo] = useState(false);
+  const [autoExtractedPoster, setAutoExtractedPoster] = useState<File | null>(null);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createdEventId, setCreatedEventId] = useState<string | null>(null);
+
+  async function handleVideoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const selected = e.target.files?.[0];
+    if (selected) {
+      setVideoFile(selected);
+      setVideoPreviewUrl(URL.createObjectURL(selected));
+      setIsProcessingVideo(true);
+      try {
+        const poster = await extractVideoThumbnail(selected, 1.0);
+        if (poster) {
+          setAutoExtractedPoster(poster);
+          // Si el usuario aún no ha seleccionado foto de portada manual, previsualizar el poster del video
+          if (!file) {
+            setPreviewUrl(URL.createObjectURL(poster));
+          }
+        }
+      } catch (err) {
+        console.warn("No se pudo extraer portada automática del video:", err);
+      } finally {
+        setIsProcessingVideo(false);
+      }
+    }
+  }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const selected = e.target.files?.[0];
@@ -156,10 +185,21 @@ export function AdminPublishForm({
 
     try {
       let finalImageUrl: string | undefined = undefined;
+      let finalVideoUrl: string | undefined = undefined;
 
+      // 1. Subir video si fue seleccionado
+      if (videoFile) {
+        const uploadedVideo = await uploadEventVideo(videoFile);
+        if (uploadedVideo) finalVideoUrl = uploadedVideo;
+      }
+
+      // 2. Subir imagen manual o poster extraído automáticamente
       if (file) {
         const uploaded = await uploadEventImage(file);
         if (uploaded) finalImageUrl = uploaded;
+      } else if (autoExtractedPoster) {
+        const uploadedPoster = await uploadEventImage(autoExtractedPoster);
+        if (uploadedPoster) finalImageUrl = uploadedPoster;
       }
 
       const result = await adminPublishEventAction({
@@ -172,6 +212,7 @@ export function AdminPublishForm({
         price: parseFloat(price) || 0,
         description,
         imageUrl: finalImageUrl,
+        videoUrl: finalVideoUrl,
         isFeatured,
         zonaSlug,
       });
@@ -578,13 +619,79 @@ export function AdminPublishForm({
         </div>
       </section>
 
-      {/* 3. FOTO */}
-      <section className="bg-white/70 backdrop-blur-sm rounded-3xl p-6 border border-stone-light/70 space-y-4">
-        <h2 className="font-serif text-lg text-forest flex items-center gap-2">
-          <span>📸</span> 3. Imagen del Evento
-        </h2>
-
+      {/* 3. MULTIMEDIA (FOTO Y/O VIDEO REEL) */}
+      <section className="bg-white/70 backdrop-blur-sm rounded-3xl p-6 border border-stone-light/70 space-y-6">
         <div>
+          <h2 className="font-serif text-lg text-forest flex items-center gap-2">
+            <span>🎬</span> 3. Multimedia del Evento
+          </h2>
+          <p className="font-sans text-xs text-stone mt-1">
+            Puedes subir un Reel vertical de WhatsApp/Instagram y una foto de portada.
+          </p>
+        </div>
+
+        {/* Video / Reel opcional */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-semibold text-forest font-sans flex items-center gap-1.5">
+              <span>▶</span> Video / Reel vertical (Opcional)
+            </label>
+            {isProcessingVideo && (
+              <span className="text-[11px] text-terra animate-pulse font-medium">
+                Generando portada automática...
+              </span>
+            )}
+          </div>
+
+          <input
+            type="file"
+            accept="video/mp4,video/quicktime,video/webm"
+            id="video-admin-input"
+            onChange={handleVideoChange}
+            className="hidden"
+          />
+          <label
+            htmlFor="video-admin-input"
+            className="flex flex-col items-center justify-center p-5 border-2 border-dashed border-stone-light hover:border-forest rounded-2xl cursor-pointer bg-cream transition-all duration-150"
+          >
+            {videoPreviewUrl ? (
+              <div className="flex flex-col items-center gap-2 py-2 text-center">
+                <span className="text-3xl">🎬</span>
+                <p className="font-sans text-xs font-semibold text-forest">
+                  {videoFile?.name}
+                </p>
+                <span className="text-[11px] text-stone">
+                  {((videoFile?.size || 0) / (1024 * 1024)).toFixed(1)} MB · Clic para cambiar video
+                </span>
+                <span className="text-[10px] bg-forest/10 text-forest px-2.5 py-1 rounded-full font-medium">
+                  ✓ Portada de video extraída automáticamente
+                </span>
+              </div>
+            ) : (
+              <div className="text-center space-y-1.5 py-1">
+                <span className="text-2xl">📹</span>
+                <p className="font-sans text-xs font-medium text-forest">
+                  Subir Reel o Video vertical (MP4 de WhatsApp)
+                </p>
+                <p className="text-[11px] text-stone">
+                  Hasta 30-60 segundos · Cero impacto en velocidad de carga
+                </p>
+              </div>
+            )}
+          </label>
+        </div>
+
+        {/* Foto de Portada / Flyer */}
+        <div className="space-y-2">
+          <label className="text-xs font-semibold text-forest font-sans flex items-center justify-between">
+            <span>Foto de Portada / Flyer</span>
+            {autoExtractedPoster && !file && (
+              <span className="text-[11px] text-forest/70 font-normal">
+                (Usando fotograma automático del video)
+              </span>
+            )}
+          </label>
+
           <input
             type="file"
             accept="image/*"
@@ -594,10 +701,10 @@ export function AdminPublishForm({
           />
           <label
             htmlFor="photo-admin-input"
-            className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-stone-light hover:border-forest rounded-2xl cursor-pointer bg-cream transition-all duration-150"
+            className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-stone-light hover:border-forest rounded-2xl cursor-pointer bg-cream transition-all duration-150"
           >
             {previewUrl ? (
-              <div className="relative w-full h-48 rounded-xl overflow-hidden">
+              <div className="relative w-full h-40 rounded-xl overflow-hidden">
                 <img
                   src={previewUrl}
                   alt="Preview"
@@ -605,12 +712,12 @@ export function AdminPublishForm({
                 />
               </div>
             ) : (
-              <div className="text-center space-y-2">
-                <span className="text-3xl">📷</span>
-                <p className="font-sans text-sm font-medium text-forest">
+              <div className="text-center space-y-1.5 py-2">
+                <span className="text-2xl">📷</span>
+                <p className="font-sans text-xs font-medium text-forest">
                   Seleccionar foto del plan
                 </p>
-                <p className="text-xs text-stone">JPG, PNG o WebP</p>
+                <p className="text-[11px] text-stone">JPG, PNG o WebP</p>
               </div>
             )}
           </label>
