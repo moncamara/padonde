@@ -30,6 +30,7 @@
    Base global
 ───────────────────────────────────────────── */
 html {
+  background-color: var(--color-cream);
   /* Scroll inmediato para permitir restauración precisa en navegación móvil */
   scroll-behavior: auto;
   overflow-x: hidden;
@@ -118,9 +119,11 @@ body {
   will-change: transform;
 }
 
-.animate-slide-out-right {
-  animation: slideOutToRight 230ms cubic-bezier(0.4, 0, 1, 1) both !important;
-  will-change: transform;
+.detail-exit {
+  opacity: 0.85;
+  transform: translate3d(24px, 0, 0);
+  transition: transform 90ms ease-in, opacity 90ms ease-in;
+  pointer-events: none;
 }
 
 .page-enter {
