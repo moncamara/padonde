@@ -45,12 +45,12 @@ export function InstallPrompt() {
 
     setIsInAppBrowser(inApp);
 
-    // 3. Verificar si el usuario lo descartó recientemente (3 días)
+    // 3. Verificar si el usuario lo descartó recientemente (14 días)
     const dismissedTime = localStorage.getItem("padonde_pwa_dismissed");
     let fueDescartado = false;
     if (dismissedTime) {
       const daysSinceDismiss = (Date.now() - parseInt(dismissedTime, 10)) / (1000 * 60 * 60 * 24);
-      if (daysSinceDismiss < 3) {
+      if (daysSinceDismiss < 14) {
         fueDescartado = true;
       }
     }
