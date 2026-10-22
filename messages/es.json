@@ -83,8 +83,8 @@
     "subtitle": "¿Qué hacer hoy en {zona}?"
   },
   "footer": {
-    "cta": "¿Tienes un negocio en {zona}?",
-    "ctaLink": "Publica aquí"
+    "cta": "¿Tienes un negocio o evento en {zona}?",
+    "ctaLink": "Publica en la cartelera →"
   },
   "price": {
     "free": "Gratis",

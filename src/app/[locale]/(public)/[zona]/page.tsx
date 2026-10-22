@@ -202,14 +202,15 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
       </div>
 
       {/* Footer — invitación a negocios con traducción y enlace a tu WhatsApp */}
-      <footer className="text-center py-8 px-4 pb-24 space-y-4">
-        <p className="font-sans text-xs text-stone">
-          {tFooter("cta", { zona: zona.nombre })}{" "}
+      <footer className="text-center py-8 px-4 pb-24">
+        <p className="font-sans text-sm text-stone-dark inline-flex items-center justify-center gap-1.5 flex-wrap">
+          <span className="text-base select-none">🌿</span>
+          <span className="font-medium">{tFooter("cta", { zona: zona.nombre })}</span>
           <a
             href={waComercialLink}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-terra underline underline-offset-2 hover:text-terra-dark font-medium"
+            className="font-bold text-terra hover:text-terra-dark underline underline-offset-4 decoration-terra/60 hover:decoration-terra transition-colors ml-0.5"
           >
             {tFooter("ctaLink")}
           </a>

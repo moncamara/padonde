@@ -83,8 +83,8 @@
     "subtitle": "Was tun heute in {zona}?"
   },
   "footer": {
-    "cta": "Hast du ein Unternehmen in {zona}?",
-    "ctaLink": "Hier inserieren"
+    "cta": "Hast du ein Unternehmen oder Event in {zona}?",
+    "ctaLink": "Hier in der Cartelera eintragen →"
   },
   "price": {
     "free": "Kostenlos",

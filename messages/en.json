@@ -83,8 +83,8 @@
     "subtitle": "What to do today in {zona}?"
   },
   "footer": {
-    "cta": "Do you own a business in {zona}?",
-    "ctaLink": "Post here"
+    "cta": "Do you have a business or event in {zona}?",
+    "ctaLink": "Feature your plan here →"
   },
   "price": {
     "free": "Free",
