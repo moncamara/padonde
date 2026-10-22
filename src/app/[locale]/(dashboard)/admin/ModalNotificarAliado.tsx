@@ -20,7 +20,7 @@ interface ModalNotificarAliadoProps {
   onClose: () => void;
 }
 
-export type TipoMensajeAliado = "hospedaje" | "correccion" | "revision" | "bienvenida";
+export type TipoMensajeAliado = "hospedaje" | "correccion" | "revision" | "bienvenida" | "propuesta";
 
 /**
  * Formatea un número telefónico para lectura humana amigable (ej: +57 301 301 0194)
@@ -188,6 +188,73 @@ Esta publicación estará activa y destacada como cortesía de apertura. Échenl
 ¡Un abrazo y muchos éxitos con este planazo! 🌿✨`;
 }
 
+/**
+ * Genera el mensaje de propuesta comercial y negociación con la ficha en vivo y tarifas claras.
+ */
+export function generarMensajePropuestaAliado(
+  negocioNombre: string,
+  tituloEvento: string,
+  eventoId: string,
+  zonaSlug?: string,
+  zonaNombre?: string,
+  whatsapp?: string,
+  tipoCategoria?: string
+): string {
+  const slug = zonaSlug || "minca";
+  const destinoNombre = zonaNombre || (slug === "mendihuaca" ? "Mendihuaca" : "Minca");
+  const urlPublicacion = `https://www.padonde.lat/es/${slug}/${eventoId}`;
+  const wpVisual = formatearTelefonoVisual(whatsapp);
+  const textoWhatsapp = wpVisual ? ` (${wpVisual})` : "";
+
+  const esHosp =
+    tipoCategoria === "hospedaje" ||
+    tituloEvento.toLowerCase().includes("hostal") ||
+    tituloEvento.toLowerCase().includes("hospedaje") ||
+    tituloEvento.toLowerCase().includes("lodge");
+
+  const argumentoComisiones = esHosp
+    ? "Booking y Airbnb se quedan con el 15% al 20% de cada noche. En PaDónde los turistas cotizan y reservan DIRECTO a tu WhatsApp sin comisiones ni intermediarios. Con 1 sola reserva al mes ya libraste el valor."
+    : "Las agencias de Santa Marta suelen cobrar del 20% al 30% por mandarte turistas. En PaDónde los viajeros te escriben directo a tu WhatsApp y tú cobras el 100% de tus cupos. Con 1 solo cliente que te compre ya pagas la plataforma y te queda ganancia.";
+
+  const tipoPlanTexto = esHosp
+    ? "Hospedajes, Cabañas & Glampings"
+    : "Tours, Guías & Experiencias";
+
+  return `🌿 *Propuesta Especial PaDónde ${destinoNombre}* 🌿
+
+¡Hola ${negocioNombre}! Qué gusto saludarte.
+
+Te escribo porque estamos impulsando la cartelera turística digital de ${destinoNombre} y ya te dejamos montada la ficha de tu experiencia: *"${tituloEvento}"* para que la revises en vivo con sus fotos, videos/reels y tarifas:
+
+📲 *Toca aquí para ver tu publicación en vivo:*
+👉 ${urlPublicacion}
+
+Échale una mirada y fíjate en esto:
+• Puedes ver tus fotos, horarios y descripción detallada.
+• Puedes darle play al video/reel vertical.
+• Toca en *"Reservar por WhatsApp"* para comprobar que te llega directo a tu número${textoWhatsapp}.
+• La plataforma traduce automáticamente al inglés, alemán y francés para mochileros extranjeros.
+
+---
+
+📋 *Nuestra Propuesta Comercial:*
+${argumentoComisiones}
+
+• *Plan:* ${tipoPlanTexto}
+💰 *Tarifa Mensual:* $50.000 COP
+⭐ *Plan Trimestral:* $125.000 COP *(Ahorras $25.000)*
+
+✨ *Beneficios incluidos:*
+• Ficha activa con fotos, video/reel y botón directo a tu WhatsApp
+• Cero comisiones (el 100% del pago de los turistas es tuyo)
+• Publicación destacada en la cartelera semanal de ${destinoNombre}
+• Insignia de negocio / experiencia local verificada
+
+🎁 *Por lanzamiento, ya te dejamos la publicación activa y destacada durante 15 días de cortesía para que compruebes cuántos viajeros te contactan.* 🚀
+
+¿Pudiste abrir el enlace? ¿Te gusta cómo quedó o le afinamos algún horario/precio? 📲✨`;
+}
+
 export function ModalNotificarAliado({
   evento,
   isOpen,
@@ -263,7 +330,19 @@ export function ModalNotificarAliado({
   function cambiarPlantilla(tipo: TipoMensajeAliado) {
     if (!evento) return;
     setTipoPlantilla(tipo);
-    if (tipo === "hospedaje") {
+    if (tipo === "propuesta") {
+      setMensaje(
+        generarMensajePropuestaAliado(
+          evento.negocioNombre,
+          evento.titulo,
+          evento.id,
+          evento.zonaSlug,
+          evento.zonaNombre,
+          telefono,
+          evento.tipoCategoria
+        )
+      );
+    } else if (tipo === "hospedaje") {
       setMensaje(
         generarMensajeHospedajeAliado(
           evento.negocioNombre,
@@ -384,11 +463,35 @@ export function ModalNotificarAliado({
                 Haz clic para alternar el mensaje
               </span>
             </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-1 bg-cream/70 rounded-2xl border border-stone-light/80">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 p-1 bg-cream/70 rounded-2xl border border-stone-light/80">
+              <button
+                type="button"
+                onClick={() => cambiarPlantilla("propuesta")}
+                className={`py-2 px-1 rounded-xl text-xs font-sans transition-all flex items-center justify-center gap-1 cursor-pointer text-center ${
+                  tipoPlantilla === "propuesta"
+                    ? "bg-emerald-700 text-white font-semibold shadow-xs"
+                    : "text-emerald-900/80 hover:text-emerald-950 hover:bg-emerald-50/70"
+                }`}
+              >
+                <span>💼</span>
+                <span>Propuesta</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => cambiarPlantilla("bienvenida")}
+                className={`py-2 px-1 rounded-xl text-xs font-sans transition-all flex items-center justify-center gap-1 cursor-pointer text-center ${
+                  tipoPlantilla === "bienvenida"
+                    ? "bg-terra text-white font-semibold shadow-xs"
+                    : "text-forest/80 hover:text-forest hover:bg-white/60"
+                }`}
+              >
+                <span>🎁</span>
+                <span>Bienvenida</span>
+              </button>
               <button
                 type="button"
                 onClick={() => cambiarPlantilla("hospedaje")}
-                className={`py-2 px-2 rounded-xl text-xs font-sans transition-all flex items-center justify-center gap-1.5 cursor-pointer text-center ${
+                className={`py-2 px-1 rounded-xl text-xs font-sans transition-all flex items-center justify-center gap-1 cursor-pointer text-center ${
                   tipoPlantilla === "hospedaje"
                     ? "bg-forest text-white font-semibold shadow-xs"
                     : "text-forest/80 hover:text-forest hover:bg-white/60"
@@ -399,20 +502,8 @@ export function ModalNotificarAliado({
               </button>
               <button
                 type="button"
-                onClick={() => cambiarPlantilla("correccion")}
-                className={`py-2 px-2 rounded-xl text-xs font-sans transition-all flex items-center justify-center gap-1.5 cursor-pointer text-center ${
-                  tipoPlantilla === "correccion"
-                    ? "bg-forest text-white font-semibold shadow-xs"
-                    : "text-forest/80 hover:text-forest hover:bg-white/60"
-                }`}
-              >
-                <span>✏️</span>
-                <span>Ajustes Listos</span>
-              </button>
-              <button
-                type="button"
                 onClick={() => cambiarPlantilla("revision")}
-                className={`py-2 px-2 rounded-xl text-xs font-sans transition-all flex items-center justify-center gap-1.5 cursor-pointer text-center ${
+                className={`py-2 px-1 rounded-xl text-xs font-sans transition-all flex items-center justify-center gap-1 cursor-pointer text-center ${
                   tipoPlantilla === "revision"
                     ? "bg-forest text-white font-semibold shadow-xs"
                     : "text-forest/80 hover:text-forest hover:bg-white/60"
@@ -423,15 +514,15 @@ export function ModalNotificarAliado({
               </button>
               <button
                 type="button"
-                onClick={() => cambiarPlantilla("bienvenida")}
-                className={`py-2 px-2 rounded-xl text-xs font-sans transition-all flex items-center justify-center gap-1.5 cursor-pointer text-center ${
-                  tipoPlantilla === "bienvenida"
-                    ? "bg-terra text-white font-semibold shadow-xs"
+                onClick={() => cambiarPlantilla("correccion")}
+                className={`py-2 px-1 rounded-xl text-xs font-sans transition-all flex items-center justify-center gap-1 cursor-pointer text-center ${
+                  tipoPlantilla === "correccion"
+                    ? "bg-forest text-white font-semibold shadow-xs"
                     : "text-forest/80 hover:text-forest hover:bg-white/60"
                 }`}
               >
-                <span>🎁</span>
-                <span>Bienvenida</span>
+                <span>✏️</span>
+                <span>Ajustes</span>
               </button>
             </div>
           </div>
