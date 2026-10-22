@@ -163,8 +163,8 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
         }}
       />
 
-      {/* Header sticky con blur y selector de idioma */}
-      <header className="sticky top-0 z-40 bg-cream/95 backdrop-blur-md border-b border-stone-light px-4 py-3">
+      {/* Header fijo superior con blur y selector de idioma */}
+      <header className="fixed top-0 left-0 right-0 z-40 bg-cream/95 backdrop-blur-md border-b border-stone-light/80 px-4 py-3 shadow-xs">
         <div className="max-w-lg mx-auto flex items-center justify-between gap-3">
           <div className="space-y-0.5">
             <AdminSecretTrigger>
@@ -190,6 +190,9 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
           </div>
         </div>
       </header>
+
+      {/* Espaciador para evitar solapamiento bajo el header fijo */}
+      <div className="h-16 sm:h-18" aria-hidden="true" />
 
       {/* Feed principal y Servicios Esenciales */}
       <div className="max-w-lg mx-auto px-4 py-6">

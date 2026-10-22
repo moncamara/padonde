@@ -25,7 +25,7 @@ export function DetailSlideWrapper({ children }: DetailSlideWrapperProps) {
     <div
       id="detail-page-wrapper"
       className={[
-        "min-h-screen bg-cream pb-32 overflow-x-hidden",
+        "min-h-screen bg-cream pb-32",
         isEntering ? "animate-slide-in-right" : "",
       ].join(" ")}
     >
