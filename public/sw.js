@@ -4,10 +4,17 @@
  * Optimizada para conexiones móviles intermitentes 3G/4G en la Sierra Nevada (Minca).
  */
 
-const CACHE_VERSION = 'padonde-v4';
+const CACHE_VERSION = 'padonde-v5';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const PAGES_CACHE = `${CACHE_VERSION}-pages`;
 const IMAGES_CACHE = `${CACHE_VERSION}-images`;
+
+// Escuchar mensaje de actualización inmediata desde la app
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
 
 // Recursos estáticos mínimos indispensables precacheados durante la instalación
 const PRECACHE_ASSETS = [
