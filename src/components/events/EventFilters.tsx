@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { CATEGORIAS } from "@/constants";
+import { CarouselWrapper } from "@/components/ui/CarouselWrapper";
 import {
   getOpcionesTiempoColombia,
   TIMEZONE_COLOMBIA,
@@ -73,8 +74,12 @@ export function EventFilters({
 
   return (
     <div className="space-y-4">
-      {/* 1. SELECTOR DE TIEMPO DESLIZABLE (Hoy, Mañana, Días específicos, Fin de semana) */}
-      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
+      {/* 1. SELECTOR DE TIEMPO DESLIZABLE */}
+      <CarouselWrapper
+        containerClassName="flex gap-2 overflow-x-auto pb-1 scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0"
+        ariaLabel="fechas"
+        step={160}
+      >
         {opcionesTiempo.map(({ id, label }) => (
           <button
             key={id}
@@ -89,51 +94,50 @@ export function EventFilters({
             {label}
           </button>
         ))}
-      </div>
+      </CarouselWrapper>
 
-      {/* 2. FILTROS DE CATEGORÍA CON PEEK EFFECT E INDICADOR DE DESLIZAMIENTO */}
-      <div className="relative">
-        <div className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
-          {/* Botón para ver "Todos los planes de este día" */}
-          <button
-            onClick={() => handleCategoria(null)}
-            className={[
-              "flex-shrink-0 flex flex-col items-center justify-center gap-1 min-w-[70px] px-3.5 py-2.5 rounded-2xl text-xs font-sans transition-all duration-150 cursor-pointer shadow-xs",
-              categoriaActiva === null
-                ? "bg-forest text-white"
-                : "bg-white/60 border border-stone-light/60 text-stone hover:text-forest",
-            ].join(" ")}
-          >
-            <span className="text-xl">✨</span>
-            <span className="font-medium tracking-tight">{tCat("all")}</span>
-          </button>
+      {/* 2. FILTROS DE CATEGORÍA CON FLECHAS SEMITRANSPARENTES */}
+      <CarouselWrapper
+        containerClassName="flex gap-2.5 overflow-x-auto pb-1 scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0"
+        ariaLabel="categorías de eventos"
+        step={240}
+      >
+        {/* Botón para ver "Todos los planes de este día" */}
+        <button
+          onClick={() => handleCategoria(null)}
+          className={[
+            "flex-shrink-0 flex flex-col items-center justify-center gap-1 min-w-[70px] px-3.5 py-2.5 rounded-2xl text-xs font-sans transition-all duration-150 cursor-pointer shadow-xs",
+            categoriaActiva === null
+              ? "bg-forest text-white"
+              : "bg-white/60 border border-stone-light/60 text-stone hover:text-forest",
+          ].join(" ")}
+        >
+          <span className="text-xl">✨</span>
+          <span className="font-medium tracking-tight">{tCat("all")}</span>
+        </button>
 
-          {/* Categorías específicas */}
-          {CATEGORIAS.map(({ id, emoji }) => {
-            const isSelected = categoriaActiva === id;
-            return (
-              <button
-                key={id}
-                onClick={() => handleCategoria(isSelected ? null : id)}
-                className={[
-                  "flex-shrink-0 flex flex-col items-center justify-center gap-1 min-w-[72px] px-3.5 py-2.5 rounded-2xl text-xs font-sans transition-all duration-150 cursor-pointer shadow-xs",
-                  isSelected
-                    ? "bg-forest text-white"
-                    : "bg-white/60 border border-stone-light/60 text-stone hover:text-forest",
-                ].join(" ")}
-              >
-                <span className="text-xl">{emoji}</span>
-                <span className="font-medium tracking-tight truncate max-w-[84px]">
-                  {tCat(id)}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Gradiente sutil a la derecha para indicar que hay más opciones para arrastrar */}
-        <div className="pointer-events-none absolute right-0 top-0 bottom-1 w-8 bg-gradient-to-l from-cream to-transparent sm:hidden" />
-      </div>
+        {/* Categorías específicas */}
+        {CATEGORIAS.map(({ id, emoji }) => {
+          const isSelected = categoriaActiva === id;
+          return (
+            <button
+              key={id}
+              onClick={() => handleCategoria(isSelected ? null : id)}
+              className={[
+                "flex-shrink-0 flex flex-col items-center justify-center gap-1 min-w-[72px] px-3.5 py-2.5 rounded-2xl text-xs font-sans transition-all duration-150 cursor-pointer shadow-xs",
+                isSelected
+                  ? "bg-forest text-white"
+                  : "bg-white/60 border border-stone-light/60 text-stone hover:text-forest",
+              ].join(" ")}
+            >
+              <span className="text-xl">{emoji}</span>
+              <span className="font-medium tracking-tight truncate max-w-[84px]">
+                {tCat(id)}
+              </span>
+            </button>
+          );
+        })}
+      </CarouselWrapper>
     </div>
   );
 }

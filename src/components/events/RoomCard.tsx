@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useRef, useCallback } from "react";
 import Image from "next/image";
 import type { HabitacionHospedaje } from "@/lib/types";
 
@@ -25,6 +26,27 @@ export function RoomCard({
   tPerNight,
 }: RoomCardProps) {
   const { id, titulo, precio_noche_cop, fotos, badges, descripcion } = habitacion;
+  const galleryRef = useRef<HTMLDivElement>(null);
+  const [canLeft, setCanLeft] = useState(false);
+  const [canRight, setCanRight] = useState(Boolean(fotos && fotos.length > 1));
+  const [photoIndex, setPhotoIndex] = useState(0);
+
+  const checkScroll = useCallback(() => {
+    const el = galleryRef.current;
+    if (!el || !fotos || fotos.length <= 1) return;
+    const { scrollLeft, scrollWidth, clientWidth } = el;
+    setCanLeft(scrollLeft > 4);
+    setCanRight(scrollLeft + clientWidth < scrollWidth - 4);
+    const index = Math.round(scrollLeft / clientWidth);
+    setPhotoIndex(Math.min(Math.max(0, index), fotos.length - 1));
+  }, [fotos]);
+
+  const scrollPhoto = (direction: "left" | "right") => {
+    const el = galleryRef.current;
+    if (!el) return;
+    const amount = direction === "left" ? -el.clientWidth : el.clientWidth;
+    el.scrollBy({ left: amount, behavior: "smooth" });
+  };
 
   return (
     <article
@@ -35,32 +57,72 @@ export function RoomCard({
           : "border-stone-light/70 hover:border-stone"
       }`}
     >
-      {/* Mini-Carrusel con CSS Scroll Snap Nativo */}
-      <div className="relative aspect-[16/10] w-full overflow-x-auto flex snap-x snap-mandatory scrollbar-none bg-stone-light/30">
-        {fotos && fotos.length > 0 ? (
-          fotos.map((src, idx) => (
-            <div key={idx} className="relative min-w-full h-full snap-center flex-shrink-0">
-              <Image
-                src={src}
-                alt={`${titulo} - foto ${idx + 1}`}
-                fill
-                sizes="(max-width: 640px) 100vw, 480px"
-                className="object-cover"
-                loading={idx === 0 ? "eager" : "lazy"}
-              />
+      {/* Mini-Carrusel con Flechas Semitransparentes */}
+      <div className="relative aspect-[16/10] w-full group/photo bg-stone-light/30">
+        <div
+          ref={galleryRef}
+          onScroll={checkScroll}
+          className="w-full h-full overflow-x-auto flex snap-x snap-mandatory scrollbar-none"
+        >
+          {fotos && fotos.length > 0 ? (
+            fotos.map((src, idx) => (
+              <div key={idx} className="relative min-w-full h-full snap-center flex-shrink-0">
+                <Image
+                  src={src}
+                  alt={`${titulo} - foto ${idx + 1}`}
+                  fill
+                  sizes="(max-width: 640px) 100vw, 480px"
+                  className="object-cover"
+                  loading={idx === 0 ? "eager" : "lazy"}
+                />
+              </div>
+            ))
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-stone-light/40 text-stone text-xs font-sans">
+              🏡 Sin fotografías
             </div>
-          ))
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-stone-light/40 text-stone text-xs font-sans">
-            🏡 Sin fotografías
-          </div>
-        )}
+          )}
+        </div>
 
-        {/* Indicador de fotos si hay más de 1 */}
+        {/* Flechas semitransparentes flotantes */}
         {fotos && fotos.length > 1 && (
-          <span className="absolute bottom-2 right-2 bg-black/60 backdrop-blur-xs text-white text-[10px] font-sans px-2 py-0.5 rounded-full pointer-events-none">
-            1/{fotos.length} • desliza
-          </span>
+          <>
+            {canLeft && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  scrollPhoto("left");
+                }}
+                className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-7 h-7 rounded-full bg-black/40 hover:bg-black/70 text-white backdrop-blur-md border border-white/20 flex items-center justify-center transition-all active:scale-90 cursor-pointer shadow-sm"
+                aria-label="Foto anterior"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+            )}
+
+            {canRight && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  scrollPhoto("right");
+                }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-7 h-7 rounded-full bg-black/40 hover:bg-black/70 text-white backdrop-blur-md border border-white/20 flex items-center justify-center transition-all active:scale-90 cursor-pointer shadow-sm"
+                aria-label="Foto siguiente"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            )}
+
+            <span className="absolute bottom-2 right-2 bg-black/60 backdrop-blur-xs text-white text-[10px] font-sans px-2 py-0.5 rounded-full pointer-events-none">
+              {photoIndex + 1}/{fotos.length}
+            </span>
+          </>
         )}
       </div>
 

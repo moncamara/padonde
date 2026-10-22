@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import type { CategoriaServicioEsencial, ServicioEsencial } from "@/lib/types";
+import { CarouselWrapper } from "@/components/ui/CarouselWrapper";
 import { getServicioEsencialTraducido } from "@/lib/translations/serviciosTraducciones";
 import {
   trackServicioEsencialWhatsAppClick,
@@ -51,35 +52,36 @@ export function ServiciosList({ servicios, zonaNombre }: ServiciosListProps) {
         </p>
       </div>
 
-      {/* Carrusel horizontal de categorías de servicios */}
-      <div className="relative">
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 px-1">
-          {CATEGORIAS_CONFIG.map(({ id, emoji, labelKey }) => {
-            const isSelected = categoriaActiva === id;
-            const label =
-              id === "todas"
-                ? t("filterAll")
-                : t(`categories.${id as CategoriaServicioEsencial}`);
+      {/* Carrusel horizontal de categorías de servicios con flechas semitransparentes */}
+      <CarouselWrapper
+        containerClassName="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 px-1"
+        ariaLabel="categorías de servicios"
+        step={200}
+      >
+        {CATEGORIAS_CONFIG.map(({ id, emoji, labelKey }) => {
+          const isSelected = categoriaActiva === id;
+          const label =
+            id === "todas"
+              ? t("filterAll")
+              : t(`categories.${id as CategoriaServicioEsencial}`);
 
-            return (
-              <button
-                key={id}
-                onClick={() => setCategoriaActiva(id)}
-                className={[
-                  "shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-sans transition-all duration-150 cursor-pointer shadow-2xs active:scale-95",
-                  isSelected
-                    ? "bg-forest text-cream font-semibold shadow-xs"
-                    : "bg-white/80 border border-stone-light/70 text-stone hover:text-forest hover:bg-white",
-                ].join(" ")}
-              >
-                <span className="text-sm">{emoji}</span>
-                <span className="tracking-tight whitespace-nowrap">{label}</span>
-              </button>
-            );
-          })}
-        </div>
-        <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-cream to-transparent sm:hidden" />
-      </div>
+          return (
+            <button
+              key={id}
+              onClick={() => setCategoriaActiva(id)}
+              className={[
+                "shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-sans transition-all duration-150 cursor-pointer shadow-2xs active:scale-95",
+                isSelected
+                  ? "bg-forest text-cream font-semibold shadow-xs"
+                  : "bg-white/80 border border-stone-light/70 text-stone hover:text-forest hover:bg-white",
+              ].join(" ")}
+            >
+              <span className="text-sm">{emoji}</span>
+              <span className="tracking-tight whitespace-nowrap">{label}</span>
+            </button>
+          );
+        })}
+      </CarouselWrapper>
 
       {/* Lista de Tarjetas de Servicios */}
       {serviciosFiltrados.length === 0 ? (
