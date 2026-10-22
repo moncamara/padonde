@@ -26,10 +26,11 @@ export function AdminNav({ userEmail }: AdminNavProps) {
   const isAliados = pathname.includes("/admin/aliados");
   const isPuntosQR = pathname.includes("/admin/puntos-qr");
   const isEsenciales = pathname.includes("/admin/esenciales");
+  const isTarifas = pathname.includes("/admin/tarifas");
 
   return (
     <header className="sticky top-0 z-20 bg-cream/95 backdrop-blur-md border-b border-stone-light/80 px-3 sm:px-6 py-2.5 sm:py-3 transition-all">
-      <div className="max-w-4xl mx-auto flex flex-col gap-2.5 sm:gap-0 sm:flex-row sm:items-center sm:justify-between">
+      <div className="max-w-5xl mx-auto flex flex-col gap-2.5 sm:gap-0 sm:flex-row sm:items-center sm:justify-between">
         {/* Fila 1 en Mobile / Lado Izquierdo en Desktop: Logo y Acciones Rápidas */}
         <div className="flex items-center justify-between">
           <Link href="/admin" className="flex items-center gap-2 group">
@@ -67,71 +68,84 @@ export function AdminNav({ userEmail }: AdminNavProps) {
           </div>
         </div>
 
-        {/* Fila 2 en Mobile / Centro en Desktop: Pestañas de Navegación Segmentadas (5 columnas) */}
-        <nav className="grid grid-cols-5 sm:flex items-center gap-1 bg-stone-light/40 p-1 rounded-2xl w-full sm:w-auto">
+        {/* Fila 2 en Mobile / Centro en Desktop: Pestañas de Navegación Segmentadas (Scrollable en mobile) */}
+        <nav className="flex items-center gap-1 bg-stone-light/40 p-1 rounded-2xl w-full sm:w-auto overflow-x-auto no-scrollbar">
           <Link
             href="/admin"
             className={[
-              "py-1.5 px-1 sm:px-3 rounded-xl font-sans text-[11px] sm:text-xs font-medium transition-all text-center flex items-center justify-center gap-1",
+              "py-1.5 px-2.5 sm:px-3 rounded-xl font-sans text-[11px] sm:text-xs font-medium transition-all text-center flex items-center justify-center gap-1 shrink-0",
               isCartelera
                 ? "bg-white text-forest shadow-xs font-semibold"
                 : "text-stone hover:text-forest",
             ].join(" ")}
           >
             <span>🌿</span>
-            <span className="truncate">Cartelera</span>
+            <span>Cartelera</span>
           </Link>
 
           <Link
             href="/admin/hospedajes"
             className={[
-              "py-1.5 px-1 sm:px-3 rounded-xl font-sans text-[11px] sm:text-xs font-medium transition-all text-center flex items-center justify-center gap-1",
+              "py-1.5 px-2.5 sm:px-3 rounded-xl font-sans text-[11px] sm:text-xs font-medium transition-all text-center flex items-center justify-center gap-1 shrink-0",
               isHospedajes
                 ? "bg-white text-forest shadow-xs font-semibold"
                 : "text-stone hover:text-forest",
             ].join(" ")}
           >
             <span>🏡</span>
-            <span className="truncate">Hospedajes</span>
+            <span>Hospedajes</span>
           </Link>
 
           <Link
             href="/admin/aliados"
             className={[
-              "py-1.5 px-1 sm:px-3 rounded-xl font-sans text-[11px] sm:text-xs font-medium transition-all text-center flex items-center justify-center gap-1",
+              "py-1.5 px-2.5 sm:px-3 rounded-xl font-sans text-[11px] sm:text-xs font-medium transition-all text-center flex items-center justify-center gap-1 shrink-0",
               isAliados
                 ? "bg-white text-forest shadow-xs font-semibold"
                 : "text-stone hover:text-forest",
             ].join(" ")}
           >
             <span>👥</span>
-            <span className="truncate">Aliados</span>
+            <span>Aliados</span>
+          </Link>
+
+          <Link
+            href="/admin/tarifas"
+            className={[
+              "py-1.5 px-2.5 sm:px-3 rounded-xl font-sans text-[11px] sm:text-xs font-medium transition-all text-center flex items-center justify-center gap-1 shrink-0",
+              isTarifas
+                ? "bg-forest text-white shadow-xs font-semibold"
+                : "text-terra hover:text-terra-dark font-semibold bg-terra/5",
+            ].join(" ")}
+          >
+            <span>💼</span>
+            <span>Tarifas</span>
           </Link>
 
           <Link
             href="/admin/puntos-qr"
             className={[
-              "py-1.5 px-1 sm:px-3 rounded-xl font-sans text-[11px] sm:text-xs font-medium transition-all text-center flex items-center justify-center gap-1",
+              "py-1.5 px-2.5 sm:px-3 rounded-xl font-sans text-[11px] sm:text-xs font-medium transition-all text-center flex items-center justify-center gap-1 shrink-0",
               isPuntosQR
                 ? "bg-white text-forest shadow-xs font-semibold"
                 : "text-stone hover:text-forest",
             ].join(" ")}
           >
             <span>📍</span>
-            <span className="truncate">Puntos QR</span>
+            <span>Puntos QR</span>
           </Link>
 
           <Link
             href="/admin/esenciales"
             className={[
-              "py-1.5 px-1 sm:px-3 rounded-xl font-sans text-[11px] sm:text-xs font-medium transition-all text-center flex items-center justify-center gap-1",
+              "py-1.5 px-2.5 sm:px-3 rounded-xl font-sans text-[11px] sm:text-xs font-medium transition-all text-center flex items-center justify-center gap-1 shrink-0",
               isEsenciales
                 ? "bg-white text-forest shadow-xs font-semibold"
                 : "text-stone hover:text-forest",
             ].join(" ")}
           >
             <span>💡</span>
-            <span className="truncate">Esenciales</span>
+            <span>Esenciales</span>
           </Link>
         </nav>
 
