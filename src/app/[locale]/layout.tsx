@@ -5,7 +5,6 @@ import { getMessages, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
 import GoogleAnalytics from "@/components/analytics/GoogleAnalytics";
-import { OfflineIndicator } from "@/components/layout/OfflineIndicator";
 import { ServiceWorkerRegister } from "@/components/layout/ServiceWorkerRegister";
 import "../globals.css";
 
@@ -126,7 +125,6 @@ export default async function LocaleLayout({
       <body className="min-h-full flex flex-col antialiased">
         <GoogleAnalytics />
         <NextIntlClientProvider messages={messages}>
-          <OfflineIndicator />
           <ServiceWorkerRegister />
           {children}
         </NextIntlClientProvider>
