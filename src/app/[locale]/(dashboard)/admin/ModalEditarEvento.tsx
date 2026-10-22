@@ -51,6 +51,17 @@ export function ModalEditarEvento({
       : "0"
   );
 
+  // Calificación / Reputación Google Maps (Opcional)
+  const [ratingGoogle, setRatingGoogle] = useState(
+    evento.metadata_hospedaje?.google_reputacion?.rating?.toString() || ""
+  );
+  const [reviewsGoogle, setReviewsGoogle] = useState(
+    evento.metadata_hospedaje?.google_reputacion?.total_reviews?.toString() || ""
+  );
+  const [mapsUrl, setMapsUrl] = useState(
+    evento.metadata_hospedaje?.google_reputacion?.maps_url || ""
+  );
+
   // Recurrencia y días de la semana
   const recInicial = extraerRecurrencia(evento.descripcion);
   const [esRecurrente, setEsRecurrente] = useState(recInicial.esRecurrente);
@@ -133,6 +144,15 @@ export function ModalEditarEvento({
         ? inyectarRecurrencia(descripcion, diasSeleccionados)
         : limpiarDescripcionRecurrencia(descripcion);
 
+      const googleReputacion =
+        ratingGoogle && reviewsGoogle && mapsUrl
+          ? {
+              rating: parseFloat(ratingGoogle),
+              total_reviews: parseInt(reviewsGoogle, 10),
+              maps_url: mapsUrl.trim(),
+            }
+          : null;
+
       const res = await editarEventoAdminAction({
         eventoId: evento.id,
         titulo: titulo.trim(),
@@ -146,6 +166,7 @@ export function ModalEditarEvento({
         destacado,
         activo,
         negocioId: negocioId || undefined,
+        googleReputacion,
       });
 
       if (!res.success) {
@@ -169,6 +190,15 @@ export function ModalEditarEvento({
         imagen_url: finalImg,
         video_url: finalVideo || null,
         negocio_id: negocioId || evento.negocio_id,
+        metadata_hospedaje: googleReputacion
+          ? {
+              ...(evento.metadata_hospedaje || {}),
+              google_reputacion: googleReputacion,
+            }
+          : {
+              ...(evento.metadata_hospedaje || {}),
+              google_reputacion: undefined,
+            },
         negocio: negocioSeleccionado
           ? {
               id: negocioSeleccionado.id,
@@ -583,6 +613,67 @@ export function ModalEditarEvento({
                 MP4 de WhatsApp o Instagram Reels. Cero lentitud en la carga inicial.
               </p>
             )}
+          </div>
+
+          {/* 9. Reputación de Google Maps (Opcional) */}
+          <div className="space-y-3 p-3.5 rounded-2xl bg-stone-50 border border-stone-light/70 font-sans text-xs">
+            <div className="flex items-center justify-between">
+              <span className="font-semibold text-forest flex items-center gap-1.5">
+                <span>⭐</span> Calificación en Google Maps (Opcional)
+              </span>
+              {ratingGoogle && (
+                <span className="text-[10px] bg-amber-100 text-amber-900 px-2 py-0.5 rounded-full font-medium">
+                  ★ {ratingGoogle} ({reviewsGoogle || 0})
+                </span>
+              )}
+            </div>
+            <p className="text-stone text-[11px] leading-relaxed">
+              Muestra las estrellas y número de opiniones en la ficha pública con enlace directo a Maps.
+            </p>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-stone font-medium mb-1">
+                  Puntaje (ej: 4.8)
+                </label>
+                <input
+                  type="number"
+                  step="0.1"
+                  min="1"
+                  max="5"
+                  value={ratingGoogle}
+                  onChange={(e) => setRatingGoogle(e.target.value)}
+                  placeholder="4.8"
+                  className="w-full bg-white border border-stone-light rounded-xl px-3 py-2 text-forest focus:outline-none focus:border-forest text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="block text-stone font-medium mb-1">
+                  Número de Reseñas
+                </label>
+                <input
+                  type="number"
+                  value={reviewsGoogle}
+                  onChange={(e) => setReviewsGoogle(e.target.value)}
+                  placeholder="245"
+                  className="w-full bg-white border border-stone-light rounded-xl px-3 py-2 text-forest focus:outline-none focus:border-forest text-xs"
+                />
+              </div>
+
+              <div className="col-span-2 sm:col-span-1">
+                <label className="block text-stone font-medium mb-1">
+                  Enlace a Google Maps
+                </label>
+                <input
+                  type="url"
+                  value={mapsUrl}
+                  onChange={(e) => setMapsUrl(e.target.value)}
+                  placeholder="https://maps.app.goo.gl/..."
+                  className="w-full bg-white border border-stone-light rounded-xl px-3 py-2 text-forest focus:outline-none focus:border-forest text-xs"
+                />
+              </div>
+            </div>
           </div>
 
           {/* 8. Switches de Control (Destacado y Activo) */}

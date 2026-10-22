@@ -105,7 +105,7 @@ export type HospedajeMetadata = {
   check_in_hora?: string;     // ej: "15:00"
   check_out_hora?: string;    // ej: "11:00"
   google_reputacion?: GoogleReputacion;
-  habitaciones: HabitacionHospedaje[];
+  habitaciones?: HabitacionHospedaje[];
 };
 
 // ─── Tipos de Servicios Esenciales e Info Útil ────────────────────────────────

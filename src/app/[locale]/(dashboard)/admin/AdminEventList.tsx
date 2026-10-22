@@ -45,6 +45,7 @@ export interface EventoAdminItem {
     whatsapp: string;
   } | null;
   clicsCount?: number;
+  metadata_hospedaje?: any | null;
 }
 
 interface AdminEventListProps {
@@ -358,6 +359,15 @@ export function AdminEventList({ eventos, negocios = [], locale }: AdminEventLis
                   >
                     📲 {ev.clicsCount || 0} clics
                   </span>
+
+                  {ev.metadata_hospedaje?.google_reputacion?.rating && (
+                    <span
+                      className="text-[10px] bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-full font-medium"
+                      title="Calificación en Google Maps"
+                    >
+                      ★ {ev.metadata_hospedaje.google_reputacion.rating.toFixed(1)} ({ev.metadata_hospedaje.google_reputacion.total_reviews})
+                    </span>
+                  )}
                 </div>
 
                 {/* Datos del Negocio y Fecha */}

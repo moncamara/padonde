@@ -143,6 +143,11 @@ export function AdminPublishForm({
   const [isProcessingVideo, setIsProcessingVideo] = useState(false);
   const [autoExtractedPoster, setAutoExtractedPoster] = useState<File | null>(null);
 
+  // Reputación Google Maps (Opcional)
+  const [ratingGoogle, setRatingGoogle] = useState("");
+  const [reviewsGoogle, setReviewsGoogle] = useState("");
+  const [mapsUrl, setMapsUrl] = useState("");
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createdEventId, setCreatedEventId] = useState<string | null>(null);
@@ -202,6 +207,15 @@ export function AdminPublishForm({
         if (uploadedPoster) finalImageUrl = uploadedPoster;
       }
 
+      const googleReputacion =
+        ratingGoogle && reviewsGoogle && mapsUrl
+          ? {
+              rating: parseFloat(ratingGoogle),
+              total_reviews: parseInt(reviewsGoogle, 10),
+              maps_url: mapsUrl.trim(),
+            }
+          : undefined;
+
       const result = await adminPublishEventAction({
         businessName,
         whatsapp,
@@ -215,6 +229,7 @@ export function AdminPublishForm({
         videoUrl: finalVideoUrl,
         isFeatured,
         zonaSlug,
+        googleReputacion,
       });
 
       if (!result.success) {
@@ -752,6 +767,69 @@ export function AdminPublishForm({
             ⭐ Fijar como evento Destacado arriba del feed (Plan Pago)
           </span>
         </label>
+      </section>
+
+      {/* 4. REPUTACIÓN DE GOOGLE MAPS (OPCIONAL) */}
+      <section className="bg-white/70 backdrop-blur-sm rounded-3xl p-6 border border-stone-light/70 space-y-4">
+        <div>
+          <h2 className="font-serif text-lg text-forest flex items-center justify-between">
+            <span className="flex items-center gap-2">
+              <span>⭐</span> 4. Calificación en Google Maps (Opcional)
+            </span>
+            {ratingGoogle && (
+              <span className="text-xs bg-amber-100 text-amber-900 px-2.5 py-0.5 rounded-full font-medium font-sans">
+                ★ {ratingGoogle} ({reviewsGoogle || 0})
+              </span>
+            )}
+          </h2>
+          <p className="font-sans text-xs text-stone mt-1">
+            Si el anfitrión o restaurante tiene ficha en Google Maps, puedes mostrar su calificación y enlace a reseñas.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-xs font-medium text-forest mb-1.5 font-sans">
+              Puntaje (ej: 4.8)
+            </label>
+            <input
+              type="number"
+              step="0.1"
+              min="1"
+              max="5"
+              value={ratingGoogle}
+              onChange={(e) => setRatingGoogle(e.target.value)}
+              placeholder="4.8"
+              className="w-full px-4 py-3 rounded-xl border border-stone-light bg-cream text-forest text-sm font-sans focus:outline-none focus:border-forest transition-colors"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-forest mb-1.5 font-sans">
+              Total de Reseñas
+            </label>
+            <input
+              type="number"
+              value={reviewsGoogle}
+              onChange={(e) => setReviewsGoogle(e.target.value)}
+              placeholder="185"
+              className="w-full px-4 py-3 rounded-xl border border-stone-light bg-cream text-forest text-sm font-sans focus:outline-none focus:border-forest transition-colors"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-forest mb-1.5 font-sans">
+              Enlace de Google Maps
+            </label>
+            <input
+              type="url"
+              value={mapsUrl}
+              onChange={(e) => setMapsUrl(e.target.value)}
+              placeholder="https://maps.app.goo.gl/..."
+              className="w-full px-4 py-3 rounded-xl border border-stone-light bg-cream text-forest text-sm font-sans focus:outline-none focus:border-forest transition-colors"
+            />
+          </div>
+        </div>
       </section>
 
       <Button

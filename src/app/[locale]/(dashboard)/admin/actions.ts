@@ -19,6 +19,11 @@ export interface AdminPublishInput {
   videoUrl?: string;
   isFeatured?: boolean;
   zonaSlug: string;
+  googleReputacion?: {
+    rating: number;
+    total_reviews: number;
+    maps_url: string;
+  };
 }
 
 export interface AdminPublishResult {
@@ -123,6 +128,9 @@ export async function adminPublishEventAction(
       destacado: Boolean(input.isFeatured),
       tiene_boleteria: false,
       activo: true,
+      metadata_hospedaje: input.googleReputacion
+        ? { google_reputacion: input.googleReputacion }
+        : null,
     };
 
     let { data: nuevoEvento, error: evError } = await supabase
@@ -661,6 +669,11 @@ export interface EditarEventoAdminInput {
   destacado: boolean;
   activo: boolean;
   negocioId?: string;
+  googleReputacion?: {
+    rating: number;
+    total_reviews: number;
+    maps_url: string;
+  } | null;
 }
 
 /**
@@ -698,6 +711,24 @@ export async function editarEventoAdminAction(input: EditarEventoAdminInput) {
 
     if (input.negocioId) {
       updatePayload.negocio_id = input.negocioId;
+    }
+
+    if (input.googleReputacion !== undefined) {
+      const { data: currentEvent } = await supabase
+        .from("eventos")
+        .select("metadata_hospedaje")
+        .eq("id", input.eventoId)
+        .single();
+      const currentMeta = (currentEvent?.metadata_hospedaje as Record<string, any>) || {};
+      if (input.googleReputacion === null) {
+        delete currentMeta.google_reputacion;
+        updatePayload.metadata_hospedaje = Object.keys(currentMeta).length > 0 ? currentMeta : null;
+      } else {
+        updatePayload.metadata_hospedaje = {
+          ...currentMeta,
+          google_reputacion: input.googleReputacion,
+        };
+      }
     }
 
     try {

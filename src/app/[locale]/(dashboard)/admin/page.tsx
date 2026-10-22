@@ -48,6 +48,7 @@ export default async function AdminDashboardPage({
       destacado,
       tiene_boleteria,
       activo,
+      metadata_hospedaje,
       negocio:negocios (
         id,
         nombre,

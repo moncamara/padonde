@@ -115,12 +115,26 @@ export function EventCard({ evento: rawEvento, zona, priority = false }: EventCa
       {/* 3. Cuerpo de la tarjeta (Debajo de la foto con legibilidad 100% garantizada) */}
       <div className="p-4 sm:p-5 flex flex-col justify-between flex-1 space-y-3 bg-white">
         <div className="space-y-1.5">
-          {/* Nombre del Aliado y Horario Inteligente */}
-          <p className="text-stone text-xs font-sans font-medium tracking-wide flex items-center gap-1.5 flex-wrap">
+          {/* Nombre del Aliado, Horario Inteligente y Calificación Google */}
+          <div className="text-stone text-xs font-sans font-medium tracking-wide flex items-center gap-1.5 flex-wrap">
             <span className="text-forest font-semibold">{evento.negocio.nombre}</span>
             <span>·</span>
             <span className="text-stone">{getEtiquetaHorario(evento, locale)}</span>
-          </p>
+            {evento.metadata_hospedaje?.google_reputacion?.rating && (
+              <>
+                <span>·</span>
+                <span className="inline-flex items-center gap-0.5 text-amber-700 font-semibold bg-amber-50 px-1.5 py-0.5 rounded-md border border-amber-200/80 text-[11px]">
+                  <span>★</span>
+                  <span>{evento.metadata_hospedaje.google_reputacion.rating.toFixed(1)}</span>
+                  {evento.metadata_hospedaje.google_reputacion.total_reviews && (
+                    <span className="text-stone font-normal text-[10px]">
+                      ({evento.metadata_hospedaje.google_reputacion.total_reviews})
+                    </span>
+                  )}
+                </span>
+              </>
+            )}
+          </div>
 
           {/* Título de la Experiencia en Tipografía Serif */}
           <h2 className="font-serif text-forest text-lg sm:text-xl font-bold leading-snug tracking-tight group-hover:text-terra transition-colors line-clamp-2">
