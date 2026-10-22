@@ -619,28 +619,85 @@ export function AdminPublishForm({
         </div>
       </section>
 
-      {/* 3. MULTIMEDIA (FOTO Y/O VIDEO REEL) */}
+      {/* 3. MULTIMEDIA (FOTO DE PORTADA Y VIDEO REEL) */}
       <section className="bg-white/70 backdrop-blur-sm rounded-3xl p-6 border border-stone-light/70 space-y-6">
         <div>
           <h2 className="font-serif text-lg text-forest flex items-center gap-2">
-            <span>🎬</span> 3. Multimedia del Evento
+            <span>📸</span> 3. Multimedia del Evento
           </h2>
           <p className="font-sans text-xs text-stone mt-1">
-            Puedes subir un Reel vertical de WhatsApp/Instagram y una foto de portada.
+            Puedes subir tu <strong>foto de portada oficial</strong> (para que se vea impecable en la cartelera) y opcionalmente un <strong>Reel o Video</strong> vertical.
           </p>
         </div>
 
-        {/* Video / Reel opcional */}
+        {/* 1. Foto de Portada / Flyer Oficial (Prioridad visual) */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <label className="text-xs font-semibold text-forest font-sans flex items-center gap-1.5">
-              <span>▶</span> Video / Reel vertical (Opcional)
+              <span>📷</span> Foto de Portada Oficial (Fija en la cartelera)
             </label>
-            {isProcessingVideo && (
-              <span className="text-[11px] text-terra animate-pulse font-medium">
-                Generando portada automática...
+            {file ? (
+              <span className="text-[11px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-medium">
+                ✓ Tu foto personalizada
               </span>
+            ) : autoExtractedPoster ? (
+              <span className="text-[11px] text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full font-medium">
+                Fotograma automático del video (toca para cambiar por tu foto)
+              </span>
+            ) : null}
+          </div>
+
+          <input
+            type="file"
+            accept="image/*"
+            id="photo-admin-input"
+            onChange={handleFileChange}
+            className="hidden"
+          />
+          <label
+            htmlFor="photo-admin-input"
+            className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-stone-light hover:border-forest rounded-2xl cursor-pointer bg-cream transition-all duration-150"
+          >
+            {previewUrl ? (
+              <div className="relative w-full h-44 rounded-xl overflow-hidden group">
+                <img
+                  src={previewUrl}
+                  alt="Preview Portada"
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-semibold">
+                  📷 Clic para cambiar por otra foto
+                </div>
+              </div>
+            ) : (
+              <div className="text-center space-y-1.5 py-3">
+                <span className="text-3xl">📷</span>
+                <p className="font-sans text-xs font-semibold text-forest">
+                  Seleccionar foto de portada bonita
+                </p>
+                <p className="text-[11px] text-stone">
+                  JPG, PNG o WebP · Esta es la imagen fija que verán los turistas
+                </p>
+              </div>
             )}
+          </label>
+        </div>
+
+        {/* 2. Video / Reel opcional */}
+        <div className="space-y-2 pt-2 border-t border-stone-light/60">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-semibold text-forest font-sans flex items-center gap-1.5">
+              <span>🎬</span> Video / Reel vertical (Opcional)
+            </label>
+            {isProcessingVideo ? (
+              <span className="text-[11px] text-terra animate-pulse font-medium">
+                Procesando video...
+              </span>
+            ) : videoFile ? (
+              <span className="text-[11px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-medium">
+                ✓ Video adjunto listo
+              </span>
+            ) : null}
           </div>
 
           <input
@@ -663,61 +720,21 @@ export function AdminPublishForm({
                 <span className="text-[11px] text-stone">
                   {((videoFile?.size || 0) / (1024 * 1024)).toFixed(1)} MB · Clic para cambiar video
                 </span>
-                <span className="text-[10px] bg-forest/10 text-forest px-2.5 py-1 rounded-full font-medium">
-                  ✓ Portada de video extraída automáticamente
+                <span className="text-[10px] text-forest/80 font-medium">
+                  {file
+                    ? "✓ Tu foto elegida arriba se usará de portada fija, el video se reproduce al tocarlo."
+                    : "✓ Puedes subir una foto arriba para reemplazar la portada fija si lo deseas."}
                 </span>
               </div>
             ) : (
               <div className="text-center space-y-1.5 py-1">
                 <span className="text-2xl">📹</span>
                 <p className="font-sans text-xs font-medium text-forest">
-                  Subir Reel o Video vertical (MP4 de WhatsApp)
+                  Adjuntar Video o Reel vertical (MP4 de WhatsApp)
                 </p>
                 <p className="text-[11px] text-stone">
-                  Hasta 30-60 segundos · Cero impacto en velocidad de carga
+                  Los turistas podrán reproducirlo al tocar en el plan. Cero consumo de datos en la cartelera.
                 </p>
-              </div>
-            )}
-          </label>
-        </div>
-
-        {/* Foto de Portada / Flyer */}
-        <div className="space-y-2">
-          <label className="text-xs font-semibold text-forest font-sans flex items-center justify-between">
-            <span>Foto de Portada / Flyer</span>
-            {autoExtractedPoster && !file && (
-              <span className="text-[11px] text-forest/70 font-normal">
-                (Usando fotograma automático del video)
-              </span>
-            )}
-          </label>
-
-          <input
-            type="file"
-            accept="image/*"
-            id="photo-admin-input"
-            onChange={handleFileChange}
-            className="hidden"
-          />
-          <label
-            htmlFor="photo-admin-input"
-            className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-stone-light hover:border-forest rounded-2xl cursor-pointer bg-cream transition-all duration-150"
-          >
-            {previewUrl ? (
-              <div className="relative w-full h-40 rounded-xl overflow-hidden">
-                <img
-                  src={previewUrl}
-                  alt="Preview"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            ) : (
-              <div className="text-center space-y-1.5 py-2">
-                <span className="text-2xl">📷</span>
-                <p className="font-sans text-xs font-medium text-forest">
-                  Seleccionar foto del plan
-                </p>
-                <p className="text-[11px] text-stone">JPG, PNG o WebP</p>
               </div>
             )}
           </label>
