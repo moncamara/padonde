@@ -224,7 +224,7 @@ export function generarMensajePropuestaAliado(
 
 ¡Hola ${negocioNombre}! Qué gusto saludarte.
 
-Te escribo porque estamos impulsando la cartelera turística digital de ${destinoNombre} y ya te dejamos montada la ficha de tu experiencia: *"${tituloEvento}"* para que la revises en vivo con sus fotos, videos/reels y tarifas:
+Te comparto la propuesta que preparamos para ustedes. Ya te dejamos montada la ficha de tu experiencia: *"${tituloEvento}"* para que la revises en vivo con sus fotos, videos/reels y tarifas:
 
 📲 *Toca aquí para ver tu publicación en vivo:*
 👉 ${urlPublicacion}
