@@ -4,7 +4,7 @@
  * Optimizada para conexiones móviles intermitentes 3G/4G en la Sierra Nevada (Minca).
  */
 
-const CACHE_VERSION = 'padonde-v3';
+const CACHE_VERSION = 'padonde-v4';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const PAGES_CACHE = `${CACHE_VERSION}-pages`;
 const IMAGES_CACHE = `${CACHE_VERSION}-images`;
@@ -148,34 +148,22 @@ self.addEventListener('fetch', (event) => {
             if (mincaCached) return mincaCached;
           }
 
-          // Fallback limpio y seguro para detalles no precacheados (NO redirige ni refresca)
+          // Redirección sutil, limpia e imperceptible a la navegación de donde venía (mismo color #F4F1EA)
           return new Response(
             `<!DOCTYPE html>
             <html lang="es">
             <head>
               <meta charset="utf-8" />
-              <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-              <title>PaDónde — Modo Sin Conexión</title>
-              <style>
-                body { margin: 0; padding: 24px 16px; background-color: #F4F1EA; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; min-height: 100vh; display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
-                .card { background: #FFFFFF; border-radius: 24px; padding: 32px 24px; max-width: 380px; width: 100%; text-align: center; box-shadow: 0 4px 20px rgba(28, 56, 41, 0.08); border: 1px solid rgba(226, 221, 209, 0.8); }
-                .icon { font-size: 42px; margin-bottom: 12px; }
-                h1 { font-family: Georgia, serif; color: #1C3829; font-size: 22px; margin: 0 0 10px; font-weight: 700; }
-                p { color: #6E6456; font-size: 14px; line-height: 1.5; margin: 0 0 24px; }
-                .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; box-sizing: border-box; background: #1C3829; color: #F4F1EA; padding: 14px 20px; border-radius: 16px; font-weight: 600; font-size: 14px; text-decoration: none; border: none; cursor: pointer; }
-                .btn:active { transform: scale(0.98); }
-              </style>
+              <style>html,body{margin:0;padding:0;background:#F4F1EA;height:100%;overflow:hidden;}</style>
+              <script>
+                if (window.history.length > 1) {
+                  window.history.back();
+                } else {
+                  window.location.replace('/es/minca');
+                }
+              </script>
             </head>
-            <body>
-              <div class="card">
-                <div class="icon">🌿</div>
-                <h1>Sin señal en la montaña</h1>
-                <p>Este detalle específico no alcanzó a guardarse antes de perder la conexión. Puedes volver a la cartelera para consultar todos los eventos, hospedajes y servicios ya guardados en tu teléfono.</p>
-                <button class="btn" onclick="if(window.history.length > 1){ window.history.back(); } else { window.location.href='/es/minca'; }">
-                  ← Volver a la Cartelera
-                </button>
-              </div>
-            </body>
+            <body></body>
             </html>`,
             {
               status: 200,
@@ -188,16 +176,28 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // ESTRATEGIA D: Otras peticiones (RSC, JSON de datos) -> Network con fallback a caché
+  // ESTRATEGIA D: Otras peticiones (RSC, JSON de datos, navegación SPA) -> Network con fallback a caché
   event.respondWith(
     fetch(request)
       .then((response) => {
         if (response && response.status === 200) {
           const clone = response.clone();
-          caches.open(STATIC_CACHE).then((cache) => cache.put(request, clone));
+          const targetCache =
+            url.searchParams.has('_rsc') || !url.pathname.includes('.')
+              ? PAGES_CACHE
+              : STATIC_CACHE;
+          caches.open(targetCache).then((cache) => cache.put(request, clone));
         }
         return response;
       })
-      .catch(() => caches.match(request, { ignoreSearch: true }))
+      .catch(async () => {
+        const cached = await caches.match(request, { ignoreSearch: true });
+        if (cached) return cached;
+        // Si es una petición RSC que no está en caché, responder vacío para evitar errores abruptos
+        if (url.searchParams.has('_rsc') || request.headers.get('RSC') === '1') {
+          return new Response(null, { status: 204 });
+        }
+        return new Response(null, { status: 404 });
+      })
   );
 });

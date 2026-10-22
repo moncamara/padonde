@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useRef, useEffect } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { EventCard } from "@/components/events/EventCard";
 import { EventFilters } from "@/components/events/EventFilters";
 import type { CategoriaEvento, EventoConNegocio, FiltroTiempo } from "@/lib/types";
@@ -21,6 +21,7 @@ interface EventFeedProps {
  */
 export function EventFeed({ eventos, zona }: EventFeedProps) {
   const tFeed = useTranslations("feed");
+  const locale = useLocale();
 
   const [filtroTiempo, setFiltroTiempoState] = useState<FiltroTiempo>(() => {
     if (typeof window !== "undefined") {
@@ -120,22 +121,30 @@ export function EventFeed({ eventos, zona }: EventFeedProps) {
     if (typeof window === "undefined" || !("caches" in window) || !navigator.onLine) return;
 
     const warmUp = () => {
-      const toWarm = eventos.slice(0, 15);
+      // Pre-calentar hasta 20 tarjetas visibles con su URL canónica y payload RSC
+      const toWarm = eventos.slice(0, 20);
       toWarm.forEach((evento, i) => {
         setTimeout(() => {
           if (navigator.onLine) {
-            fetch(`/${zona}/${evento.id}`, { priority: "low" as any }).catch(() => {});
+            const path = `/${locale}/${zona}/${evento.id}`;
+            // 1. Precachear HTML de navegación
+            fetch(path, { priority: "low" as any }).catch(() => {});
+            // 2. Precachear payload RSC para que la transición client-side funcione offline
+            fetch(`${path}?_rsc`, {
+              headers: { RSC: "1" },
+              priority: "low" as any,
+            }).catch(() => {});
           }
-        }, 1200 + i * 200);
+        }, 600 + i * 150);
       });
     };
 
     if ("requestIdleCallback" in window) {
       (window as any).requestIdleCallback(warmUp);
     } else {
-      setTimeout(warmUp, 1800);
+      setTimeout(warmUp, 1500);
     }
-  }, [eventos, zona]);
+  }, [eventos, zona, locale]);
 
   const nowRef = useRef(new Date());
 
