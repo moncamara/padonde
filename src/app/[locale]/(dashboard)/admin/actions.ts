@@ -1423,3 +1423,65 @@ export async function eliminarServicioEsencialAction(
     return { success: false, error: err?.message || "Error al eliminar servicio." };
   }
 }
+
+/**
+ * Server Action para importar una imagen desde una URL externa (Booking, web, etc.)
+ * y guardarla permanentemente en Supabase Storage sin restricciones de CORS.
+ */
+export async function importarImagenDesdeUrlAction(
+  imageUrl: string
+): Promise<{ success: boolean; url?: string; error?: string }> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: "Debes iniciar sesión para importar imágenes." };
+    }
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+
+    const res = await fetch(imageUrl, {
+      signal: controller.signal,
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+      },
+    });
+    clearTimeout(timeout);
+
+    if (!res.ok) {
+      return { success: false, error: `Error HTTP ${res.status} al descargar imagen externa.` };
+    }
+
+    const contentType = res.headers.get("content-type") || "image/jpeg";
+    const arrayBuffer = await res.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    let ext = "jpg";
+    if (contentType.includes("png")) ext = "png";
+    else if (contentType.includes("webp")) ext = "webp";
+
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${ext}`;
+    const filePath = `eventos/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("eventos")
+      .upload(filePath, buffer, {
+        contentType,
+        cacheControl: "31536000",
+        upsert: false,
+      });
+
+    if (uploadError) {
+      return { success: false, error: uploadError.message };
+    }
+
+    const { data } = supabase.storage.from("eventos").getPublicUrl(filePath);
+    return { success: true, url: data.publicUrl };
+  } catch (err: any) {
+    return { success: false, error: err?.message || "Error al importar imagen." };
+  }
+}
