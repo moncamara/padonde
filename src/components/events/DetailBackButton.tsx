@@ -28,8 +28,8 @@ export function DetailBackButton({
       const wrapper = document.getElementById("detail-page-wrapper");
       if (wrapper) {
         wrapper.classList.remove("animate-slide-in-right");
-        wrapper.classList.add("detail-exit");
-        setTimeout(navigate, 80);
+        wrapper.classList.add("animate-slide-out-right");
+        setTimeout(navigate, 210);
         return;
       }
     }
