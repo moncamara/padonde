@@ -201,18 +201,8 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
         />
       </div>
 
-      {/* Footer — compartir PWA e invitación a negocios con traducción y enlace a tu WhatsApp */}
+      {/* Footer — invitación a negocios con traducción y enlace a tu WhatsApp */}
       <footer className="text-center py-8 px-4 pb-24 space-y-4">
-        <div className="max-w-xs mx-auto">
-          <ShareButton
-            title={`PaDónde 🌿 Cartelera de ${zona.nombre}`}
-            text={`Descubre planes, eventos, rumba, hospedajes en ${zona.nombre} - PaDónde`}
-            url={`https://www.padonde.lat/${locale}/${zonaSlug}`}
-            zonaNombre={zona.nombre}
-            variant="full"
-          />
-        </div>
-
         <p className="font-sans text-xs text-stone">
           {tFooter("cta", { zona: zona.nombre })}{" "}
           <a

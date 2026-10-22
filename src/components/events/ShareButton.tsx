@@ -13,6 +13,27 @@ interface ShareButtonProps {
   className?: string;
 }
 
+function ShareIcon({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <circle cx="18" cy="5" r="3" />
+      <circle cx="6" cy="12" r="3" />
+      <circle cx="18" cy="19" r="3" />
+      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+      <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+    </svg>
+  );
+}
+
 export function ShareButton({
   title,
   text,
@@ -126,7 +147,7 @@ export function ShareButton({
           aria-label={t("button")}
           title={t("button")}
         >
-          <span className="text-sm">💬</span>
+          <ShareIcon className="w-3.5 h-3.5 text-forest shrink-0" />
           <span className="inline font-medium">{t("button")}</span>
         </button>
       )}
@@ -139,7 +160,7 @@ export function ShareButton({
           aria-label={t("button")}
           title={t("button")}
         >
-          <span className="text-sm">💬</span>
+          <ShareIcon className="w-3.5 h-3.5 text-forest shrink-0" />
           <span>{t("button")}</span>
         </button>
       )}
@@ -152,7 +173,7 @@ export function ShareButton({
           aria-label={t("button")}
           title={t("button")}
         >
-          <span className="text-sm">💬</span>
+          <ShareIcon className="w-4 h-4 text-forest shrink-0" />
         </button>
       )}
 
@@ -163,7 +184,7 @@ export function ShareButton({
           className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-forest hover:bg-forest-dark text-white font-sans font-semibold text-sm transition-all duration-150 cursor-pointer active:scale-[0.98] shadow-xs ${className}`}
           aria-label={t("button")}
         >
-          <span className="text-base">💬</span>
+          <ShareIcon className="w-4 h-4 text-white shrink-0" />
           <span>{t("button")}</span>
         </button>
       )}
@@ -182,8 +203,10 @@ export function ShareButton({
           >
             {/* Header del Modal */}
             <div className="flex items-center justify-between pb-2 border-b border-stone-light/60">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">💬</span>
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-forest/10 flex items-center justify-center">
+                  <ShareIcon className="w-4 h-4 text-forest" />
+                </div>
                 <div>
                   <h3 className="font-serif text-base sm:text-lg font-bold text-forest">
                     {t("title")}
