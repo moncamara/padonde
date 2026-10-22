@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
-import { redirect } from "@/i18n/routing";
+import { Link, redirect } from "@/i18n/routing";
+import { Button } from "@/components/ui/Button";
 import { AdminNav } from "../AdminNav";
 import { AdminAliadosList, type AliadoItem } from "./AdminAliadosList";
 import { ModalKitProspeccion } from "./ModalKitProspeccion";
@@ -162,7 +163,13 @@ export default async function AdminAliadosPage({
               Controla renovaciones y genera mensajes de cobro por WhatsApp en 1 clic.
             </p>
           </div>
-          <div className="shrink-0">
+          <div className="flex items-center gap-2 shrink-0 flex-wrap">
+            <Link href="/admin/nuevo">
+              <Button size="sm" className="shadow-xs py-2 px-3 text-xs flex items-center gap-1.5 cursor-pointer">
+                <span>+</span>
+                <span>Publicar Plan / Nuevo Aliado</span>
+              </Button>
+            </Link>
             <ModalKitProspeccion />
           </div>
         </div>
