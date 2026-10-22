@@ -225,6 +225,16 @@ export function AdminEsencialesList({
                           ★ Patrocinado
                         </span>
                       )}
+                      {(s.imagen_lugar_url || s.metadata_comercial?.imagenes?.length) && (
+                        <span className="font-sans text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+                          📷 Foto
+                        </span>
+                      )}
+                      {s.metadata_comercial?.video_url && (
+                        <span className="font-sans text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+                          🎬 Reel
+                        </span>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-1.5">

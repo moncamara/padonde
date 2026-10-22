@@ -1164,6 +1164,8 @@ export interface GuardarServicioEsencialInput {
   subtitulo: string;
   logoUrl?: string | null;
   imagenLugarUrl?: string | null;
+  imagenes?: string[];
+  videoUrl?: string | null;
   whatsapp: string;
   mensajeWhatsappDefault?: string | null;
   googleMapsUrl?: string | null;
@@ -1201,13 +1203,18 @@ export async function guardarServicioEsencialAction(
     const zonaId = zona?.id || (input.zonaSlug === "mendihuaca" ? "zona-mendihuaca" : "zona-minca");
     const cleanPhone = input.whatsapp.replace(/\D/g, "");
 
-    const payload = {
+    const imagenesValidas = (input.imagenes || []).map((img) => img.trim()).filter(Boolean);
+    const imagenPrincipal =
+      input.imagenLugarUrl?.trim() ||
+      (imagenesValidas.length > 0 ? imagenesValidas[0] : null);
+
+    const payload: Record<string, any> = {
       zona_id: zonaId,
       categoria: input.categoria,
       nombre_comercial: input.nombreComercial.trim(),
       subtitulo: input.subtitulo.trim(),
       logo_url: input.logoUrl?.trim() || null,
-      imagen_lugar_url: input.imagenLugarUrl?.trim() || null,
+      imagen_lugar_url: imagenPrincipal,
       whatsapp: cleanPhone,
       mensaje_whatsapp_default: input.mensajeWhatsappDefault?.trim() || null,
       google_maps_url: input.googleMapsUrl?.trim() || null,
@@ -1222,6 +1229,10 @@ export async function guardarServicioEsencialAction(
         input.botonWhatsappActivo !== undefined
           ? Boolean(input.botonWhatsappActivo)
           : true,
+      metadata_comercial: {
+        imagenes: imagenesValidas,
+        video_url: input.videoUrl?.trim() || null,
+      },
     };
 
     let servicioGuardado: ServicioEsencial | null = null;
@@ -1240,9 +1251,12 @@ export async function guardarServicioEsencialAction(
         .select("*")
         .single();
 
-      // Si la columna boton_whatsapp_activo aún no ha sido agregada por ALTER TABLE, reintentar sin ella
-      if (updateError && updateError.message?.includes("boton_whatsapp_activo")) {
-        const { boton_whatsapp_activo: _, ...payloadFallback } = payload;
+      // Si la columna boton_whatsapp_activo o metadata_comercial aún no existen, reintentar con fallback
+      if (updateError && (updateError.message?.includes("boton_whatsapp_activo") || updateError.message?.includes("metadata_comercial"))) {
+        const payloadFallback = { ...payload };
+        if (updateError.message.includes("boton_whatsapp_activo")) delete payloadFallback.boton_whatsapp_activo;
+        if (updateError.message.includes("metadata_comercial")) delete payloadFallback.metadata_comercial;
+
         const resFallback = await supabase
           .from("servicios_esenciales")
           .update(payloadFallback)
@@ -1264,9 +1278,12 @@ export async function guardarServicioEsencialAction(
         .select("*")
         .single();
 
-      // Si la columna boton_whatsapp_activo aún no ha sido agregada por ALTER TABLE, reintentar sin ella
-      if (insertError && insertError.message?.includes("boton_whatsapp_activo")) {
-        const { boton_whatsapp_activo: _, ...payloadFallback } = payload;
+      // Si la columna boton_whatsapp_activo o metadata_comercial aún no existen, reintentar con fallback
+      if (insertError && (insertError.message?.includes("boton_whatsapp_activo") || insertError.message?.includes("metadata_comercial"))) {
+        const payloadFallback = { ...payload };
+        if (insertError.message.includes("boton_whatsapp_activo")) delete payloadFallback.boton_whatsapp_activo;
+        if (insertError.message.includes("metadata_comercial")) delete payloadFallback.metadata_comercial;
+
         const resFallback = await supabase
           .from("servicios_esenciales")
           .insert(payloadFallback)

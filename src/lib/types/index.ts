@@ -117,6 +117,12 @@ export type CategoriaServicioEsencial =
   | "comercio"
   | "general";
 
+export type MetadataComercialServicio = {
+  imagenes?: string[];
+  video_url?: string | null;
+  [key: string]: any;
+};
+
 export type ServicioEsencial = {
   id: string;
   zona_id: string;
@@ -136,6 +142,7 @@ export type ServicioEsencial = {
   orden_prioridad: number;
   activo: boolean;
   boton_whatsapp_activo?: boolean;
+  metadata_comercial?: MetadataComercialServicio | null;
   created_at?: string;
 };
 

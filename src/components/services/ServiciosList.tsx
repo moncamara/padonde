@@ -5,6 +5,7 @@ import { useTranslations, useLocale } from "next-intl";
 import type { CategoriaServicioEsencial, ServicioEsencial } from "@/lib/types";
 import { CarouselWrapper } from "@/components/ui/CarouselWrapper";
 import { getServicioEsencialTraducido } from "@/lib/translations/serviciosTraducciones";
+import { EventVideoPlayer } from "@/components/events/EventVideoPlayer";
 import {
   trackServicioEsencialWhatsAppClick,
   trackServicioEsencialMapsClick,
@@ -32,6 +33,8 @@ export function ServiciosList({ servicios, zonaNombre }: ServiciosListProps) {
   const t = useTranslations("essentialServices");
   const locale = useLocale();
   const [categoriaActiva, setCategoriaActiva] = useState<string>("todas");
+  const [videoActivoId, setVideoActivoId] = useState<string | null>(null);
+  const [fotoSeleccionada, setFotoSeleccionada] = useState<Record<string, string>>({});
 
   const serviciosActivos = servicios.filter((s) => s.activo);
 
@@ -107,6 +110,20 @@ export function ServiciosList({ servicios, zonaNombre }: ServiciosListProps) {
               t("defaultWhatsAppMessage", { zona: zonaNombre });
             const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(defaultMsg)}`;
 
+            const mainPhoto =
+              fotoSeleccionada[servicio.id] ||
+              servicio.imagen_lugar_url ||
+              servicio.metadata_comercial?.imagenes?.[0] ||
+              null;
+            const todasFotos = Array.from(
+              new Set([
+                ...(servicio.imagen_lugar_url ? [servicio.imagen_lugar_url] : []),
+                ...(servicio.metadata_comercial?.imagenes || []),
+              ])
+            ).filter(Boolean);
+            const videoUrl = servicio.metadata_comercial?.video_url || null;
+            const tieneMedia = Boolean(mainPhoto || videoUrl);
+
             return (
               <article
                 key={servicio.id}
@@ -141,6 +158,100 @@ export function ServiciosList({ servicios, zonaNombre }: ServiciosListProps) {
                     </div>
                   )}
                 </div>
+
+                {/* Bloque Multimedia (Foto y/o Reel) */}
+                {tieneMedia && (
+                  <div className="space-y-2">
+                    {videoActivoId === servicio.id && videoUrl ? (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between px-1">
+                          <span className="text-[11px] font-semibold text-terra flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-terra animate-pulse" />
+                            🎬 Reel de {servicio.nombre_comercial}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setVideoActivoId(null)}
+                            className="text-stone hover:text-forest text-xs font-semibold px-2.5 py-1 rounded-full bg-stone-light/40 hover:bg-stone-light cursor-pointer transition-colors"
+                          >
+                            ✕ {t("closeVideo")}
+                          </button>
+                        </div>
+                        <EventVideoPlayer
+                          videoUrl={videoUrl}
+                          posterUrl={mainPhoto}
+                          title={servicio.nombre_comercial}
+                        />
+                      </div>
+                    ) : (
+                      <div className="relative aspect-[16/10] sm:aspect-[16/9] w-full rounded-2xl overflow-hidden bg-stone-100 group border border-stone-light/60">
+                        {mainPhoto ? (
+                          <img
+                            src={mainPhoto}
+                            alt={servicio.nombre_comercial}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-forest/80 to-stone/80 flex items-center justify-center text-4xl">
+                            🌿
+                          </div>
+                        )}
+
+                        {/* Botón flotante para reproducir Reel si tiene video */}
+                        {videoUrl && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/25 group-hover:bg-black/35 transition-colors">
+                            <button
+                              type="button"
+                              onClick={() => setVideoActivoId(servicio.id)}
+                              className="px-4 py-2 rounded-full bg-forest/90 hover:bg-forest text-cream text-xs font-semibold flex items-center gap-2 shadow-lg backdrop-blur-sm cursor-pointer active:scale-95 transition-all"
+                            >
+                              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                              <span>🎬 {t("watchReel")}</span>
+                            </button>
+                          </div>
+                        )}
+
+                        {/* Contador de fotos si hay más de una */}
+                        {todasFotos.length > 1 && (
+                          <div className="absolute bottom-2.5 right-2.5 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-sm text-white text-[10px] font-sans font-medium pointer-events-none">
+                            📷 {todasFotos.length}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Tiras de miniaturas si hay múltiples fotos y no está reproduciendo el video */}
+                    {videoActivoId !== servicio.id && todasFotos.length > 1 && (
+                      <div className="flex items-center gap-2 overflow-x-auto py-1 no-scrollbar">
+                        {todasFotos.map((foto, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() =>
+                              setFotoSeleccionada((prev) => ({
+                                ...prev,
+                                [servicio.id]: foto,
+                              }))
+                            }
+                            className={`relative w-14 h-11 rounded-xl overflow-hidden border shrink-0 transition-all cursor-pointer ${
+                              mainPhoto === foto
+                                ? "border-forest ring-2 ring-forest/30"
+                                : "border-stone-light/70 opacity-70 hover:opacity-100"
+                            }`}
+                          >
+                            <img
+                              src={foto}
+                              alt=""
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Subtítulo descriptivo */}
                 <p className="font-sans text-xs sm:text-sm text-stone leading-relaxed">
