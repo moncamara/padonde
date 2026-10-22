@@ -161,5 +161,9 @@
     "qrTitle": "Escanear Código QR",
     "qrSubtitle": "Apunta la cámara de otro celular aquí para abrir al instante",
     "close": "Cerrar"
+  },
+  "offline": {
+    "offlineNotice": "Modo sin conexión · Mostrando contenido guardado",
+    "backOnline": "De nuevo en línea · Cartelera actualizada"
   }
 }

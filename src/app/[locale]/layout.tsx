@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
 import GoogleAnalytics from "@/components/analytics/GoogleAnalytics";
 import { ServiceWorkerRegister } from "@/components/layout/ServiceWorkerRegister";
+import { OfflineBanner } from "@/components/layout/OfflineBanner";
 import "../globals.css";
 
 const playfair = Playfair_Display({
@@ -125,6 +126,7 @@ export default async function LocaleLayout({
         <GoogleAnalytics />
         <NextIntlClientProvider messages={messages}>
           <ServiceWorkerRegister />
+          <OfflineBanner />
           {children}
         </NextIntlClientProvider>
       </body>

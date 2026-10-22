@@ -161,5 +161,9 @@
     "qrTitle": "QR-Code scannen",
     "qrSubtitle": "Mit der Handykamera hier scannen, um sofort zu öffnen",
     "close": "Schließen"
+  },
+  "offline": {
+    "offlineNotice": "Offline-Modus · Gespeicherte Inhalte werden angezeigt",
+    "backOnline": "Wieder online · Kalender aktualisiert"
   }
 }

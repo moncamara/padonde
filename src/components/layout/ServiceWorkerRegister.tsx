@@ -4,24 +4,21 @@ import { useEffect } from "react";
 
 export function ServiceWorkerRegister() {
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      // 1. Desregistrar inmediatamente cualquier Service Worker activo
-      if ("serviceWorker" in navigator) {
-        navigator.serviceWorker.getRegistrations().then((registrations) => {
-          for (const reg of registrations) {
-            reg.unregister();
-          }
-        });
-      }
+    if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
 
-      // 2. Limpiar cualquier caché acumulada en el dispositivo
-      if ("caches" in window) {
-        caches.keys().then((names) => {
-          for (const name of names) {
-            caches.delete(name);
-          }
-        });
-      }
+    const isLocalhost =
+      window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1";
+
+    if (process.env.NODE_ENV === "production" || isLocalhost) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker
+          .register("/sw.js", { scope: "/" })
+          .then((reg) => {
+            reg.update().catch(() => {});
+          })
+          .catch(() => {});
+      });
     }
   }, []);
 

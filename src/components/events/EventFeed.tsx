@@ -115,6 +115,28 @@ export function EventFeed({ eventos, zona }: EventFeedProps) {
     };
   }, []);
 
+  // Pre-calentamiento progresivo y de baja prioridad para disponibilidad 100% offline en la montaña
+  useEffect(() => {
+    if (typeof window === "undefined" || !("caches" in window) || !navigator.onLine) return;
+
+    const warmUp = () => {
+      const toWarm = eventos.slice(0, 15);
+      toWarm.forEach((evento, i) => {
+        setTimeout(() => {
+          if (navigator.onLine) {
+            fetch(`/${zona}/${evento.id}`, { priority: "low" as any }).catch(() => {});
+          }
+        }, 1200 + i * 200);
+      });
+    };
+
+    if ("requestIdleCallback" in window) {
+      (window as any).requestIdleCallback(warmUp);
+    } else {
+      setTimeout(warmUp, 1800);
+    }
+  }, [eventos, zona]);
+
   const nowRef = useRef(new Date());
 
   const eventosFiltrados = useMemo(() => {

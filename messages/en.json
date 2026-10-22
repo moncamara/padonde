@@ -161,5 +161,9 @@
     "qrTitle": "Scan QR Code",
     "qrSubtitle": "Point any phone camera here to open instantly",
     "close": "Close"
+  },
+  "offline": {
+    "offlineNotice": "Offline mode · Showing saved content",
+    "backOnline": "Back online · Board updated"
   }
 }

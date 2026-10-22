@@ -160,5 +160,9 @@
     "qrTitle": "Scanner le QR Code",
     "qrSubtitle": "Pointez l'appareil photo d'un téléphone ici pour ouvrir directement",
     "close": "Fermer"
+  },
+  "offline": {
+    "offlineNotice": "Mode hors ligne · Affichage du contenu enregistré",
+    "backOnline": "De nouveau en ligne · Agenda actualisé"
   }
 }
