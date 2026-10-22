@@ -8,7 +8,6 @@ import { formatHora, formatPrecio, mensajeWhatsApp, truncar, getEtiquetaHorario 
 import { getEventoTraducido } from "@/lib/translations/eventosTraducciones";
 import type { EventoConNegocio } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
-import { ShareButton } from "@/components/events/ShareButton";
 import { trackWhatsAppClick } from "@/lib/analytics";
 
 interface EventCardProps {
@@ -149,15 +148,8 @@ export function EventCard({ evento: rawEvento, zona, priority = false }: EventCa
             )}
           </div>
 
-          {/* Acciones: Compartir rápido + Botón directo de reserva por WhatsApp */}
-          <div className="flex items-center gap-1.5 pointer-events-auto z-20">
-            <ShareButton
-              title={evento.titulo}
-              text={`${evento.titulo} en ${evento.negocio.nombre} — PaDónde 🌿`}
-              url={`https://www.padonde.lat/${locale}/${zona}/${evento.id}`}
-              variant="icon"
-            />
-
+          {/* Acción directa de reserva por WhatsApp */}
+          <div className="flex items-center pointer-events-auto z-20">
             <a
               href={waLink}
               target="_blank"
