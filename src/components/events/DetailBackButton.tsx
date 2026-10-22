@@ -15,10 +15,20 @@ export function DetailBackButton({
 
   const handleBack = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (typeof window !== "undefined" && window.history.length > 1) {
-      router.back();
+    const navigateBack = () => {
+      if (typeof window !== "undefined" && window.history.length > 1) {
+        router.back();
+      } else {
+        router.push(fallbackUrl);
+      }
+    };
+
+    if (typeof document !== "undefined" && "startViewTransition" in document) {
+      (document as any).startViewTransition(() => {
+        navigateBack();
+      });
     } else {
-      router.push(fallbackUrl);
+      navigateBack();
     }
   };
 

@@ -149,7 +149,7 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
   };
 
   return (
-    <main className="min-h-screen bg-cream">
+    <main className="min-h-screen bg-cream page-enter">
       {/* Datos estructurados JSON-LD para Google Search */}
       <script
         type="application/ld+json"

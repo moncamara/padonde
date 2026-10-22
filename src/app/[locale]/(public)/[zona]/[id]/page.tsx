@@ -170,7 +170,7 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
   };
 
   return (
-    <div className="min-h-screen bg-cream pb-32">
+    <div className="min-h-screen bg-cream pb-32 page-enter">
       {/* Datos estructurados JSON-LD para Google Search Events */}
       <script
         type="application/ld+json"
