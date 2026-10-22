@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/Button";
 
 interface ModalKitProspeccionProps {
@@ -15,6 +16,33 @@ export function ModalKitProspeccion({ zonaInicial = "minca" }: ModalKitProspecci
   const [categoria, setCategoria] = useState<CategoriaMensaje>("hospedajes");
   const [copiado, setCopiado] = useState(false);
   const [telefono, setTelefono] = useState("");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Bloquear scroll de la página de fondo cuando el modal esté abierto
+  useEffect(() => {
+    if (abierto) {
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = prevOverflow;
+      };
+    }
+  }, [abierto]);
+
+  // Cerrar al presionar la tecla Escape
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setAbierto(false);
+    };
+    if (abierto) {
+      window.addEventListener("keydown", handleKeyDown);
+    }
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [abierto]);
 
   const nombreZona = zona === "mendihuaca" ? "Mendihuaca" : "Minca";
   const urlCartelera = `https://www.padonde.lat/es/${zona}`;
@@ -113,13 +141,13 @@ Si te interesa hacer parte de la comunidad o crees que a tu negocio le sirve est
         <span>Kit de Prospección WhatsApp</span>
       </Button>
 
-      {/* Modal */}
-      {abierto && (
+      {/* Modal montado directamente en document.body para quedar encima de todo */}
+      {mounted && abierto && createPortal(
         <div
           role="dialog"
           aria-modal="true"
           onClick={() => setAbierto(false)}
-          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-150"
+          className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-200"
         >
           <div
             onClick={(e) => e.stopPropagation()}
@@ -303,7 +331,8 @@ Si te interesa hacer parte de la comunidad o crees que a tu negocio le sirve est
               </a>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
