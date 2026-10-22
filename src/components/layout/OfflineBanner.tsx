@@ -9,53 +9,60 @@ import { useTranslations } from "next-intl";
  */
 export function OfflineBanner() {
   const t = useTranslations("offline");
-  const [isOffline, setIsOffline] = useState(false);
-  const [showBackOnline, setShowBackOnline] = useState(false);
+  const [visibleNotice, setVisibleNotice] = useState<"offline" | "online" | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
+    let timer: NodeJS.Timeout | null = null;
+
+    const showToast = (type: "offline" | "online") => {
+      if (timer) clearTimeout(timer);
+      setVisibleNotice(type);
+      timer = setTimeout(() => {
+        setVisibleNotice(null);
+      }, 4000);
+    };
+
+    // Si abre la aplicación estando sin señal
     if (!navigator.onLine) {
-      setIsOffline(true);
+      showToast("offline");
     }
 
     const handleOffline = () => {
-      setIsOffline(true);
-      setShowBackOnline(false);
+      showToast("offline");
     };
 
     const handleOnline = () => {
-      setIsOffline(false);
-      setShowBackOnline(true);
-      const timer = setTimeout(() => {
-        setShowBackOnline(false);
-      }, 3500);
-      return () => clearTimeout(timer);
+      showToast("online");
     };
 
     window.addEventListener("offline", handleOffline);
     window.addEventListener("online", handleOnline);
 
     return () => {
+      if (timer) clearTimeout(timer);
       window.removeEventListener("offline", handleOffline);
       window.removeEventListener("online", handleOnline);
     };
   }, []);
 
-  if (!isOffline && !showBackOnline) return null;
+  if (!visibleNotice) return null;
+
+  const isOffline = visibleNotice === "offline";
 
   return (
     <div
       role="status"
       aria-live="polite"
-      className="fixed top-3 left-1/2 -translate-x-1/2 z-50 max-w-sm w-[92%] pointer-events-none transition-all duration-300 animate-in fade-in slide-in-from-top-2"
+      className="fixed top-16 sm:top-18 left-1/2 -translate-x-1/2 z-50 max-w-sm w-[90%] pointer-events-none transition-all duration-300 animate-in fade-in slide-in-from-top-3"
     >
       <div
         className={[
-          "px-4 py-2 rounded-full font-sans text-xs font-semibold shadow-md flex items-center justify-center gap-2 text-center backdrop-blur-md transition-all",
+          "px-4 py-2.5 rounded-full font-sans text-xs font-semibold shadow-lg flex items-center justify-center gap-2 text-center backdrop-blur-md transition-all",
           isOffline
-            ? "bg-forest/95 text-cream border border-cream/20 shadow-forest/20"
-            : "bg-emerald-700/95 text-white border border-emerald-400/30 shadow-emerald-900/20",
+            ? "bg-forest/95 text-cream border border-cream/20 shadow-forest/25"
+            : "bg-emerald-700/95 text-white border border-emerald-400/30 shadow-emerald-900/25",
         ].join(" ")}
       >
         <span className="text-sm shrink-0">{isOffline ? "📶" : "✨"}</span>
