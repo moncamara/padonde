@@ -80,7 +80,7 @@
     "reset": "Ver planes de hoy"
   },
   "header": {
-    "subtitle": "Qué hacer hoy en"
+    "subtitle": "¿Qué hacer hoy en {zona}?"
   },
   "footer": {
     "cta": "¿Tienes un negocio en {zona}?",

@@ -173,7 +173,7 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
               </h1>
             </AdminSecretTrigger>
             <p className="font-sans text-xs text-stone mt-0.5">
-              {tHeader("subtitle")} {zona.nombre}
+              {tHeader("subtitle", { zona: zona.nombre })}
             </p>
           </div>
 

@@ -80,7 +80,7 @@
     "reset": "See today's events"
   },
   "header": {
-    "subtitle": "Where to go today in"
+    "subtitle": "What to do today in {zona}?"
   },
   "footer": {
     "cta": "Do you own a business in {zona}?",

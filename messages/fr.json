@@ -79,7 +79,7 @@
     "reset": "Voir les plans d'aujourd'hui"
   },
   "header": {
-    "subtitle": "Où aller aujourd'hui à"
+    "subtitle": "Que faire aujourd'hui à {zona} ?"
   },
   "footer": {
     "cta": "Vous avez un commerce à {zona} ?",

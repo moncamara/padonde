@@ -80,7 +80,7 @@
     "reset": "Aktivitäten für heute ansehen"
   },
   "header": {
-    "subtitle": "Was kann man heute tun in"
+    "subtitle": "Was tun heute in {zona}?"
   },
   "footer": {
     "cta": "Hast du ein Unternehmen in {zona}?",
