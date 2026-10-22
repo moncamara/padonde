@@ -107,6 +107,11 @@
     "chromeIosStep1Sub": "arriba o abajo en Chrome.",
     "chromeIosStep2": "2. Selecciona",
     "chromeIosStep2Sub": "Añadir a pantalla de inicio",
+    "androidStep1": "1. Toca el menú de tres puntos (⋮)",
+    "androidStep1Sub": "en la esquina superior del navegador.",
+    "androidStep2": "2. Selecciona",
+    "androidStep2Sub": "Instalar aplicación o Agregar a pantalla principal",
+    "androidInAppNotice": "Si estás en WhatsApp o Instagram, toca ⋮ y selecciona 'Abrir en Chrome / navegador'.",
     "understood": "¡Entendido!"
   },
   "stayCalculator": {

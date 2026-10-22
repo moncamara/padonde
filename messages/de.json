@@ -107,6 +107,11 @@
     "chromeIosStep1Sub": "in Chrome.",
     "chromeIosStep2": "2. Wähle",
     "chromeIosStep2Sub": "Zum Startbildschirm hinzufügen",
+    "androidStep1": "1. Tippe auf das Drei-Punkte-Menü (⋮)",
+    "androidStep1Sub": "in der oberen Ecke deines Browsers.",
+    "androidStep2": "2. Wähle",
+    "androidStep2Sub": "App installieren oder Zum Startbildschirm hinzufügen",
+    "androidInAppNotice": "Wenn du dich in WhatsApp oder Instagram befindest, tippe auf ⋮ und wähle 'In Chrome / Browser öffnen'.",
     "understood": "Verstanden!"
   },
   "stayCalculator": {

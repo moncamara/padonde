@@ -107,6 +107,11 @@
     "chromeIosStep1Sub": "in Chrome.",
     "chromeIosStep2": "2. Select",
     "chromeIosStep2Sub": "Add to Home Screen",
+    "androidStep1": "1. Tap the three dots menu (⋮)",
+    "androidStep1Sub": "at the top corner of your browser.",
+    "androidStep2": "2. Select",
+    "androidStep2Sub": "Install app or Add to Home screen",
+    "androidInAppNotice": "If you are inside WhatsApp or Instagram, tap ⋮ and choose 'Open in Chrome / Browser'.",
     "understood": "Got it!"
   },
   "stayCalculator": {

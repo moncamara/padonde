@@ -215,6 +215,23 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
             {tFooter("ctaLink")}
           </a>
         </p>
+
+        {/* Acceso manual permanente a la instalación de la app */}
+        <div className="mt-3">
+          <button
+            type="button"
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                localStorage.removeItem("padonde_pwa_dismissed");
+                window.dispatchEvent(new CustomEvent("padonde_open_install_prompt"));
+              }
+            }}
+            className="text-xs text-stone hover:text-forest underline underline-offset-2 transition-colors cursor-pointer font-sans inline-flex items-center gap-1.5 opacity-80 hover:opacity-100"
+          >
+            <span>📲</span>
+            <span>Instalar PaDónde / Crear acceso directo</span>
+          </button>
+        </div>
       </footer>
 
       {/* Acceso directo PWA discreto (sólo en móviles) */}
