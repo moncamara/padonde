@@ -30,8 +30,8 @@
    Base global
 ───────────────────────────────────────────── */
 html {
-  /* Suaviza el scroll en navegación interna */
-  scroll-behavior: smooth;
+  /* Scroll inmediato para permitir restauración precisa en navegación móvil */
+  scroll-behavior: auto;
 }
 
 body {

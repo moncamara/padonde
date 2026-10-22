@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { EventCard } from "@/components/events/EventCard";
 import { EventFilters } from "@/components/events/EventFilters";
@@ -17,13 +17,103 @@ interface EventFeedProps {
 }
 
 /**
- * Feed de eventos con filtrado client-side y soporte de traducción.
+ * Feed de eventos con filtrado client-side, persistencia y restauración de scroll.
  */
 export function EventFeed({ eventos, zona }: EventFeedProps) {
   const tFeed = useTranslations("feed");
 
-  const [filtroTiempo, setFiltroTiempo] = useState<FiltroTiempo>("hoy");
-  const [filtroCategoria, setFiltroCategoria] = useState<CategoriaEvento | null>(null);
+  const [filtroTiempo, setFiltroTiempoState] = useState<FiltroTiempo>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = sessionStorage.getItem("padonde_filtro_tiempo");
+        if (saved && (saved === "hoy" || saved === "fin_de_semana" || saved === "proximos")) {
+          return saved as FiltroTiempo;
+        }
+      } catch {}
+    }
+    return "hoy";
+  });
+
+  const [filtroCategoria, setFiltroCategoriaState] = useState<CategoriaEvento | null>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = sessionStorage.getItem("padonde_filtro_categoria");
+        if (saved) return saved as CategoriaEvento;
+      } catch {}
+    }
+    return null;
+  });
+
+  const setFiltroTiempo = (t: FiltroTiempo) => {
+    setFiltroTiempoState(t);
+    if (typeof window !== "undefined") {
+      try {
+        sessionStorage.setItem("padonde_filtro_tiempo", t);
+      } catch {}
+    }
+  };
+
+  const setFiltroCategoria = (c: CategoriaEvento | null) => {
+    setFiltroCategoriaState(c);
+    if (typeof window !== "undefined") {
+      try {
+        if (c) sessionStorage.setItem("padonde_filtro_categoria", c);
+        else sessionStorage.removeItem("padonde_filtro_categoria");
+      } catch {}
+    }
+  };
+
+  // Restauración de scroll precisa al volver atrás desde un detalle
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    let cleanupTimer: NodeJS.Timeout | null = null;
+
+    try {
+      const lastCardId = sessionStorage.getItem("padonde_last_card");
+      const savedPos = sessionStorage.getItem("padonde_scroll_pos");
+
+      if (!lastCardId && !savedPos) return;
+
+      const performScroll = () => {
+        if (lastCardId) {
+          const el = document.getElementById(lastCardId);
+          if (el) {
+            el.scrollIntoView({ block: "center", behavior: "instant" });
+            return;
+          }
+        }
+        if (savedPos) {
+          const top = parseInt(savedPos, 10);
+          if (!isNaN(top)) {
+            window.scrollTo({ top, behavior: "instant" });
+          }
+        }
+      };
+
+      // 1. Inmediato en el render
+      performScroll();
+
+      // 2. En el siguiente frame de animación
+      requestAnimationFrame(performScroll);
+
+      // 3. Pequeño timeout (60ms) para neutralizar reseteos del router de Next.js
+      setTimeout(performScroll, 60);
+
+      // 4. Limpieza final tras estabilización (300ms)
+      cleanupTimer = setTimeout(() => {
+        performScroll();
+        try {
+          sessionStorage.removeItem("padonde_last_card");
+          sessionStorage.removeItem("padonde_scroll_pos");
+        } catch {}
+      }, 300);
+    } catch {}
+
+    return () => {
+      if (cleanupTimer) clearTimeout(cleanupTimer);
+    };
+  }, []);
 
   const nowRef = useRef(new Date());
 

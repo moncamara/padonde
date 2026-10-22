@@ -21,6 +21,7 @@ import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 import { WhatsAppBookingButton } from "@/components/events/WhatsAppBookingButton";
 import { StayCalculator } from "@/components/events/StayCalculator";
 import { GoogleRatingBadge } from "@/components/events/GoogleRatingBadge";
+import { DetailBackButton } from "@/components/events/DetailBackButton";
 import type { ZonaSlug } from "@/lib/types";
 import type { Metadata } from "next";
 
@@ -179,13 +180,10 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
       {/* 1. Header flotante sobre la foto con botón atrás, selector de idioma y compartir */}
       <nav className="fixed top-0 left-0 right-0 z-40 px-4 py-3 bg-gradient-to-b from-black/60 to-transparent">
         <div className="max-w-lg mx-auto flex items-center justify-between gap-2">
-          <Link
-            href={`/${zonaSlug}`}
-            className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-cream/90 backdrop-blur-md text-forest hover:bg-cream transition-all duration-150 shadow-sm active:scale-95 shrink-0"
-            aria-label={tDetail("back")}
-          >
-            <span className="text-lg">←</span>
-          </Link>
+          <DetailBackButton
+            fallbackUrl={`/${locale}/${zonaSlug}`}
+            ariaLabel={tDetail("back")}
+          />
 
           <div className="flex items-center gap-2">
             <LanguageSwitcher className="bg-cream/90 backdrop-blur-md shadow-xs" />

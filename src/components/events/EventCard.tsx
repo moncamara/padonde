@@ -48,10 +48,23 @@ export function EventCard({ evento: rawEvento, zona, priority = false }: EventCa
   const waLink = whatsappLink(evento.negocio.whatsapp, mensajeDirecto);
 
   return (
-    <article className="group relative isolate w-full rounded-3xl overflow-hidden bg-white border border-stone-light/80 shadow-xs hover:shadow-md hover:border-stone/60 transition-all duration-300 flex flex-col">
+    <article
+      id={`card-evento-${evento.id}`}
+      className="group relative isolate w-full rounded-3xl overflow-hidden bg-white border border-stone-light/80 shadow-xs hover:shadow-md hover:border-stone/60 transition-all duration-300 flex flex-col"
+    >
       {/* 1. Enlace global clickeable que cubre toda la tarjeta */}
       <Link
         href={`/${zona}/${evento.id}`}
+        onClick={() => {
+          if (typeof window !== "undefined") {
+            try {
+              sessionStorage.setItem("padonde_scroll_pos", window.scrollY.toString());
+              sessionStorage.setItem("padonde_last_card", `card-evento-${evento.id}`);
+            } catch {
+              // Silencioso
+            }
+          }
+        }}
         className="absolute inset-0 z-10 focus:outline-none focus:ring-2 focus:ring-terra focus:ring-offset-2 rounded-3xl"
         aria-label={`${evento.titulo} - ${evento.negocio.nombre}`}
       >

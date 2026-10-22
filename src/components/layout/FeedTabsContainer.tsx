@@ -23,17 +23,32 @@ export function FeedTabsContainer({
 }: FeedTabsContainerProps) {
   const t = useTranslations("essentialServices");
   const searchParams = useSearchParams();
-  const [tabActiva, setTabActiva] = useState<"eventos" | "servicios">("eventos");
+  const [tabActiva, setTabActiva] = useState<"eventos" | "servicios">(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = sessionStorage.getItem("padonde_tab_activa");
+        if (saved === "eventos" || saved === "servicios") return saved;
+      } catch {}
+    }
+    return "eventos";
+  });
 
   useEffect(() => {
-    if (searchParams.get("tab") === "servicios") {
-      setTabActiva("servicios");
+    const urlTab = searchParams.get("tab");
+    if (urlTab === "servicios" || urlTab === "eventos") {
+      setTabActiva(urlTab);
+      try {
+        sessionStorage.setItem("padonde_tab_activa", urlTab);
+      } catch {}
     }
   }, [searchParams]);
 
   const handleSwitchTab = (nuevaTab: "eventos" | "servicios") => {
     if (nuevaTab !== tabActiva) {
       setTabActiva(nuevaTab);
+      try {
+        sessionStorage.setItem("padonde_tab_activa", nuevaTab);
+      } catch {}
       trackTabChange(nuevaTab, zonaNombre);
     }
   };

@@ -119,7 +119,6 @@ export default async function LocaleLayout({
   return (
     <html
       lang={locale}
-      data-scroll-behavior="smooth"
       className={`${playfair.variable} ${inter.variable} h-full`}
     >
       <body className="min-h-full flex flex-col antialiased">
