@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "@/i18n/routing";
-import { guardarHospedajeAction } from "../actions";
+import { guardarHospedajeAction, eliminarEventoAdminAction } from "../actions";
 import { uploadEventImage } from "@/lib/supabase/storage";
 import type { BadgeHabitacion } from "@/lib/types";
 
@@ -10,6 +10,7 @@ interface ModalEditarHospedajeProps {
   hospedaje?: any | null;
   zonas: Array<{ id: string; nombre: string; slug: string }>;
   onClose: () => void;
+  onDeleted?: (id: string) => void;
 }
 
 const BADGES_DISPONIBLES: BadgeHabitacion[] = [
@@ -28,49 +29,93 @@ export function ModalEditarHospedaje({
   hospedaje,
   zonas,
   onClose,
+  onDeleted,
 }: ModalEditarHospedajeProps) {
   const router = useRouter();
   const isEdicion = Boolean(hospedaje?.id);
 
-  // Estados Datos Generales
-  const [nombreNegocio, setNombreNegocio] = useState(hospedaje?.negocio?.nombre || "");
-  const [whatsapp, setWhatsapp] = useState(hospedaje?.negocio?.whatsapp || "");
-  const [instagram, setInstagram] = useState(hospedaje?.negocio?.instagram || "");
+  // Estados Datos Generales (Soporta registros existentes de BD o borradores del Asistente)
+  const [nombreNegocio, setNombreNegocio] = useState(
+    hospedaje?.negocio?.nombre || hospedaje?.nombreNegocio || ""
+  );
+  const [whatsapp, setWhatsapp] = useState(
+    hospedaje?.negocio?.whatsapp || hospedaje?.whatsapp || ""
+  );
+  const [instagram, setInstagram] = useState(
+    hospedaje?.negocio?.instagram || hospedaje?.instagram || ""
+  );
   const [titulo, setTitulo] = useState(hospedaje?.titulo || "");
   const [descripcion, setDescripcion] = useState(hospedaje?.descripcion || "");
-  const [zonaSlug, setZonaSlug] = useState(hospedaje?.zonas?.slug || zonas[0]?.slug || "minca");
-  const [imagenUrl, setImagenUrl] = useState(hospedaje?.imagen_url || "");
+  const [zonaSlug, setZonaSlug] = useState(
+    hospedaje?.zonas?.slug || hospedaje?.zonaSlug || zonas[0]?.slug || "minca"
+  );
+  const [imagenUrl, setImagenUrl] = useState(hospedaje?.imagen_url || hospedaje?.imagenUrl || "");
   const [destacado, setDestacado] = useState(Boolean(hospedaje?.destacado));
 
   // Estados Google Rating
   const [ratingGoogle, setRatingGoogle] = useState(
-    hospedaje?.metadata_hospedaje?.google_reputacion?.rating?.toString() || ""
+    hospedaje?.metadata_hospedaje?.google_reputacion?.rating?.toString() ||
+      hospedaje?.ratingGoogle ||
+      ""
   );
   const [reviewsGoogle, setReviewsGoogle] = useState(
-    hospedaje?.metadata_hospedaje?.google_reputacion?.total_reviews?.toString() || ""
+    hospedaje?.metadata_hospedaje?.google_reputacion?.total_reviews?.toString() ||
+      hospedaje?.reviewsGoogle ||
+      ""
   );
   const [mapsUrl, setMapsUrl] = useState(
-    hospedaje?.metadata_hospedaje?.google_reputacion?.maps_url || ""
+    hospedaje?.metadata_hospedaje?.google_reputacion?.maps_url ||
+      hospedaje?.mapsUrl ||
+      ""
   );
 
   // Estados Habitaciones
   const [habitaciones, setHabitaciones] = useState<any[]>(
-    hospedaje?.metadata_hospedaje?.habitaciones || [
-      {
-        id: "hab-1",
-        titulo: "Habitación Privada",
-        descripcion: "",
-        precio_noche_cop: 120000,
-        capacidad_max: 2,
-        fotos: [],
-        badges: [{ icono: "🚿", texto: "Baño privado" }, { icono: "🍳", texto: "Desayuno incluido" }],
-      },
-    ]
+    hospedaje?.metadata_hospedaje?.habitaciones ||
+      hospedaje?.habitaciones || [
+        {
+          id: "hab-1",
+          titulo: "Habitación Privada",
+          descripcion: "",
+          precio_noche_cop: 120000,
+          capacidad_max: 2,
+          fotos: [],
+          badges: [
+            { icono: "🚿", texto: "Baño privado" },
+            { icono: "🍳", texto: "Desayuno incluido" },
+          ],
+        },
+      ]
   );
 
   const [isSubiendoFoto, setIsSubiendoFoto] = useState(false);
   const [isGuardando, setIsGuardando] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Estados de eliminación segura con 2 pasos
+  const [confirmarEliminar, setConfirmarEliminar] = useState(false);
+  const [isEliminando, setIsEliminando] = useState(false);
+  const [errorEliminar, setErrorEliminar] = useState<string | null>(null);
+
+  async function handleEliminar() {
+    if (!hospedaje?.id) return;
+    setIsEliminando(true);
+    setErrorEliminar(null);
+    try {
+      const res = await eliminarEventoAdminAction(hospedaje.id);
+      if (!res.success) {
+        setErrorEliminar(res.error || "No se pudo eliminar el hospedaje.");
+        setIsEliminando(false);
+        return;
+      }
+      onDeleted?.(hospedaje.id);
+      router.refresh();
+      onClose();
+    } catch (err: any) {
+      setErrorEliminar(err?.message || "Error al eliminar el hospedaje.");
+      setIsEliminando(false);
+    }
+  }
 
   // Manejo de Habitaciones dinámicas
   const agregarHabitacion = () => {
@@ -582,28 +627,73 @@ export function ModalEditarHospedaje({
           </div>
 
           {/* Botones de Acción */}
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-stone-light/60">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={isGuardando}
-              className="px-4 py-2.5 rounded-xl border border-stone-light font-sans text-xs text-stone hover:text-forest transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={isGuardando || isSubiendoFoto}
-              className="px-6 py-2.5 rounded-xl bg-forest text-cream font-sans text-xs font-semibold hover:bg-forest-dark active:scale-95 transition-all shadow-md disabled:opacity-50"
-            >
-              {isGuardando
-                ? "Guardando..."
-                : isSubiendoFoto
-                ? "Subiendo fotos..."
-                : isEdicion
-                ? "Guardar Cambios"
-                : "Publicar Hospedaje en Vivo"}
-            </button>
+          <div className="flex items-center justify-between gap-3 pt-3 border-t border-stone-light/60 flex-wrap">
+            {/* Lado Izquierdo: Eliminar seguro (Solo visible al editar un hospedaje existente) */}
+            {isEdicion ? (
+              <div>
+                {confirmarEliminar ? (
+                  <div className="flex items-center gap-2 bg-red-50 p-2 rounded-2xl border border-red-200">
+                    <span className="text-xs text-red-800 font-medium">¿Eliminar permanentemente?</span>
+                    <button
+                      type="button"
+                      disabled={isEliminando}
+                      onClick={handleEliminar}
+                      className="px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-xl transition-all cursor-pointer disabled:opacity-50"
+                    >
+                      {isEliminando ? "Eliminando..." : "Sí, eliminar"}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isEliminando}
+                      onClick={() => setConfirmarEliminar(false)}
+                      className="px-2.5 py-1 bg-white border border-stone-light text-stone hover:text-forest text-xs rounded-xl transition-colors cursor-pointer"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setConfirmarEliminar(true)}
+                    className="text-xs text-red-600 hover:text-red-700 hover:underline flex items-center gap-1.5 font-medium font-sans cursor-pointer py-1"
+                    title="Eliminar este hospedaje permanentemente de la base de datos"
+                  >
+                    <span>🗑️</span>
+                    <span>Eliminar hospedaje</span>
+                  </button>
+                )}
+                {errorEliminar && (
+                  <p className="text-[11px] text-red-600 mt-1">⚠️ {errorEliminar}</p>
+                )}
+              </div>
+            ) : (
+              <div />
+            )}
+
+            {/* Lado Derecho: Cancelar y Guardar */}
+            <div className="flex items-center gap-2 ml-auto">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={isGuardando || isEliminando}
+                className="px-4 py-2.5 rounded-xl border border-stone-light font-sans text-xs text-stone hover:text-forest transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={isGuardando || isSubiendoFoto || isEliminando}
+                className="px-6 py-2.5 rounded-xl bg-forest text-cream font-sans text-xs font-semibold hover:bg-forest-dark active:scale-95 transition-all shadow-md disabled:opacity-50 cursor-pointer"
+              >
+                {isGuardando
+                  ? "Guardando..."
+                  : isSubiendoFoto
+                  ? "Subiendo fotos..."
+                  : isEdicion
+                  ? "Guardar Cambios"
+                  : "Publicar Hospedaje en Vivo"}
+              </button>
+            </div>
           </div>
         </form>
       </div>

@@ -192,6 +192,7 @@ export async function toggleEventoActivoAction(eventoId: string, nuevoEstado: bo
     }
 
     revalidatePath(`/[locale]/admin`, "page");
+    revalidatePath(`/[locale]/admin/hospedajes`, "page");
     revalidatePath(`/[locale]/minca`, "page");
     revalidatePath(`/[locale]/mendihuaca`, "page");
     return { success: true };
@@ -802,6 +803,7 @@ export async function eliminarEventoAdminAction(eventoId: string) {
     }
 
     revalidatePath(`/[locale]/admin`, "page");
+    revalidatePath(`/[locale]/admin/hospedajes`, "page");
     revalidatePath(`/[locale]/minca`, "page");
     revalidatePath(`/[locale]/mendihuaca`, "page");
 

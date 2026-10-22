@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useTransition } from "react";
 import Image from "next/image";
-import { Link } from "@/i18n/routing";
+import { Link, useRouter } from "@/i18n/routing";
 import { ModalEditarHospedaje } from "./ModalEditarHospedaje";
+import { ModalAsistenteIngesta } from "./ModalAsistenteIngesta";
 import { ModalNotificarAliado, type EventoNotificarData } from "../ModalNotificarAliado";
+import { toggleEventoActivoAction } from "../actions";
 
 interface AdminHospedajesListProps {
   hospedajes: any[];
@@ -17,7 +19,16 @@ export function AdminHospedajesList({
   zonas,
   locale,
 }: AdminHospedajesListProps) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [listaHospedajes, setListaHospedajes] = useState<any[]>(hospedajes);
+
+  useEffect(() => {
+    setListaHospedajes(hospedajes);
+  }, [hospedajes]);
+
   const [modalAbierto, setModalAbierto] = useState(false);
+  const [asistenteAbierto, setAsistenteAbierto] = useState(false);
   const [hospedajeEnEdicion, setHospedajeEnEdicion] = useState<any | null>(null);
   const [hospedajeANotificar, setHospedajeANotificar] = useState<EventoNotificarData | null>(null);
 
@@ -29,6 +40,34 @@ export function AdminHospedajesList({
   const abrirEditar = (hosp: any) => {
     setHospedajeEnEdicion(hosp);
     setModalAbierto(true);
+  };
+
+  const handleParsed = (borrador: any) => {
+    setAsistenteAbierto(false);
+    setHospedajeEnEdicion(borrador);
+    setModalAbierto(true);
+  };
+
+  const handleToggleActivo = (id: string, estadoActual: boolean) => {
+    startTransition(async () => {
+      setListaHospedajes((prev) =>
+        prev.map((h) => (h.id === id ? { ...h, activo: !estadoActual } : h))
+      );
+      const res = await toggleEventoActivoAction(id, !estadoActual);
+      if (!res.success) {
+        alert(res.error || "No se pudo cambiar el estado del hospedaje.");
+        setListaHospedajes((prev) =>
+          prev.map((h) => (h.id === id ? { ...h, activo: estadoActual } : h))
+        );
+      } else {
+        router.refresh();
+      }
+    });
+  };
+
+  const handleDeleted = (idEliminado: string) => {
+    setListaHospedajes((prev) => prev.filter((h) => h.id !== idEliminado));
+    setModalAbierto(false);
   };
 
   return (
@@ -44,17 +83,28 @@ export function AdminHospedajesList({
           </p>
         </div>
 
-        <button
-          onClick={abrirNuevo}
-          className="px-4 py-2.5 bg-forest text-cream font-sans text-xs font-semibold rounded-2xl hover:bg-forest-dark active:scale-95 transition-all shadow-sm flex items-center justify-center gap-1.5 self-start sm:self-auto"
-        >
-          <span>➕</span>
-          <span>Nuevo Hospedaje</span>
-        </button>
+        <div className="flex items-center gap-2 flex-wrap self-start sm:self-auto">
+          <button
+            onClick={() => setAsistenteAbierto(true)}
+            className="px-4 py-2.5 bg-terra text-white font-sans text-xs font-semibold rounded-2xl hover:bg-terra-dark active:scale-95 transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
+            title="Pegar texto de Booking, WhatsApp o Instagram para estructurar automáticamente la ficha"
+          >
+            <span>✨</span>
+            <span>Asistente Rápido</span>
+          </button>
+
+          <button
+            onClick={abrirNuevo}
+            className="px-4 py-2.5 bg-forest text-cream font-sans text-xs font-semibold rounded-2xl hover:bg-forest-dark active:scale-95 transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
+          >
+            <span>➕</span>
+            <span>Nuevo Hospedaje</span>
+          </button>
+        </div>
       </div>
 
       {/* Lista de Hospedajes */}
-      {hospedajes.length === 0 ? (
+      {listaHospedajes.length === 0 ? (
         <div className="text-center py-12 px-4 bg-white/60 rounded-3xl border border-dashed border-stone-light space-y-3">
           <span className="text-4xl">🏡</span>
           <h3 className="font-serif text-lg text-forest font-semibold">
@@ -73,7 +123,7 @@ export function AdminHospedajesList({
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {hospedajes.map((hosp) => {
+          {listaHospedajes.map((hosp) => {
             const zonaNombre = hosp.zonas?.nombre || "Minca";
             const zonaSlug = hosp.zonas?.slug || "minca";
             const numHabitaciones = hosp.metadata_hospedaje?.habitaciones?.length || 0;
@@ -116,15 +166,20 @@ export function AdminHospedajesList({
                       </div>
                     </div>
 
-                    <span
-                      className={`text-[10px] font-sans font-medium px-2 py-0.5 rounded-full ${
+                    <button
+                      type="button"
+                      disabled={isPending}
+                      onClick={() => handleToggleActivo(hosp.id, hosp.activo)}
+                      className={`text-[10px] font-sans font-medium px-2.5 py-1 rounded-full transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-2xs ${
                         hosp.activo
-                          ? "bg-green-100 text-green-700"
-                          : "bg-stone-light/60 text-stone"
+                          ? "bg-green-100 text-green-800 hover:bg-green-200"
+                          : "bg-stone-100 text-stone-600 hover:bg-stone-200"
                       }`}
+                      title={hosp.activo ? "Visible para turistas en la web. Clic para pausar" : "Pausado (oculto de la web). Clic para reactivar"}
                     >
-                      {hosp.activo ? "En vivo" : "Pausado"}
-                    </span>
+                      <span className={`w-1.5 h-1.5 rounded-full ${hosp.activo ? "bg-green-600 animate-pulse" : "bg-stone"}`} />
+                      <span>{hosp.activo ? "En vivo" : "Pausado"}</span>
+                    </button>
                   </div>
 
                   {/* Resumen de habitaciones y Google rating */}
@@ -206,6 +261,16 @@ export function AdminHospedajesList({
           hospedaje={hospedajeEnEdicion}
           zonas={zonas}
           onClose={() => setModalAbierto(false)}
+          onDeleted={handleDeleted}
+        />
+      )}
+
+      {/* Modal Asistente de Ingesta Rápida */}
+      {asistenteAbierto && (
+        <ModalAsistenteIngesta
+          zonas={zonas}
+          onClose={() => setAsistenteAbierto(false)}
+          onParsed={handleParsed}
         />
       )}
 
