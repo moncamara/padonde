@@ -15,7 +15,8 @@ export function DetailBackButton({
 
   const handleBack = (e: React.MouseEvent) => {
     e.preventDefault();
-    const navigateBack = () => {
+
+    const navigate = () => {
       if (typeof window !== "undefined" && window.history.length > 1) {
         router.back();
       } else {
@@ -23,13 +24,17 @@ export function DetailBackButton({
       }
     };
 
-    if (typeof document !== "undefined" && "startViewTransition" in document) {
-      (document as any).startViewTransition(() => {
-        navigateBack();
-      });
-    } else {
-      navigateBack();
+    if (typeof document !== "undefined") {
+      const wrapper = document.getElementById("detail-page-wrapper");
+      if (wrapper) {
+        wrapper.classList.remove("animate-slide-in-right");
+        wrapper.classList.add("animate-slide-out-right");
+        setTimeout(navigate, 230);
+        return;
+      }
     }
+
+    navigate();
   };
 
   return (

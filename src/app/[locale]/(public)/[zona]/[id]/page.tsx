@@ -22,6 +22,7 @@ import { WhatsAppBookingButton } from "@/components/events/WhatsAppBookingButton
 import { StayCalculator } from "@/components/events/StayCalculator";
 import { GoogleRatingBadge } from "@/components/events/GoogleRatingBadge";
 import { DetailBackButton } from "@/components/events/DetailBackButton";
+import { DetailSlideWrapper } from "@/components/events/DetailSlideWrapper";
 import type { ZonaSlug } from "@/lib/types";
 import type { Metadata } from "next";
 
@@ -170,7 +171,7 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
   };
 
   return (
-    <div className="min-h-screen bg-cream pb-32 page-enter">
+    <DetailSlideWrapper>
       {/* Datos estructurados JSON-LD para Google Search Events */}
       <script
         type="application/ld+json"
@@ -414,6 +415,6 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
           />
         </div>
       </aside>
-    </div>
+    </DetailSlideWrapper>
   );
 }
