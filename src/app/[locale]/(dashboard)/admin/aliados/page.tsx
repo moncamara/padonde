@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "@/i18n/routing";
 import { AdminNav } from "../AdminNav";
 import { AdminAliadosList, type AliadoItem } from "./AdminAliadosList";
+import { ModalKitProspeccion } from "./ModalKitProspeccion";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -145,20 +146,25 @@ export default async function AdminAliadosPage({
       <AdminNav userEmail={user?.email} />
 
       <main className="max-w-4xl mx-auto px-3.5 sm:px-6 py-4 sm:py-8 space-y-4 sm:space-y-6">
-        {/* Banner principal */}
-        <div className="bg-white/70 backdrop-blur-sm p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-stone-light/80 shadow-xs">
-          <div className="flex items-center gap-2">
-            <h1 className="font-serif text-xl sm:text-2xl text-forest font-bold">
-              Aliados Comerciales y Planes B2B
-            </h1>
-            <span className="text-[11px] bg-forest/10 text-forest px-2.5 py-0.5 rounded-full font-medium">
-              Paso 2: Monetización
-            </span>
+        {/* Banner principal con Kit de Prospección */}
+        <div className="bg-white/70 backdrop-blur-sm p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-stone-light/80 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="font-serif text-xl sm:text-2xl text-forest font-bold">
+                Aliados Comerciales y Planes B2B
+              </h1>
+              <span className="text-[11px] bg-forest/10 text-forest px-2.5 py-0.5 rounded-full font-medium">
+                Paso 2: Monetización
+              </span>
+            </div>
+            <p className="font-sans text-xs text-stone mt-1">
+              Gestiona acuerdos con hostales, restaurantes, guías y aliados turísticos en cada destino.
+              Controla renovaciones y genera mensajes de cobro por WhatsApp en 1 clic.
+            </p>
           </div>
-          <p className="font-sans text-xs text-stone mt-1">
-            Gestiona acuerdos con hostales, restaurantes, guías y aliados turísticos en cada destino.
-            Controla renovaciones y genera mensajes de cobro por WhatsApp en 1 clic.
-          </p>
+          <div className="shrink-0">
+            <ModalKitProspeccion />
+          </div>
         </div>
 
         {/* 5 KPIs de Monetización B2B y Conversión */}
