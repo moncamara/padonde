@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useMemo } from "react";
 import { Link } from "@/i18n/routing";
-import { CATEGORIAS, getCategoria } from "@/constants";
+import { CATEGORIAS_EVENTOS, getCategoria } from "@/constants";
 import { uploadEventImage, uploadEventVideo, extractVideoThumbnail } from "@/lib/supabase/storage";
 import { adminPublishEventAction } from "../actions";
 import { Button } from "@/components/ui/Button";
@@ -109,7 +109,11 @@ export function AdminPublishForm({
     setWhatsapp(aliado.whatsapp);
     setInstagram(aliado.instagram || "");
     if (aliado.categoria) {
-      setCategory(aliado.categoria as CategoriaEvento);
+      if (aliado.categoria === "hospedaje") {
+        setCategory("comida");
+      } else {
+        setCategory(aliado.categoria as CategoriaEvento);
+      }
     }
     if (aliado.zonaSlug) {
       setZonaSlug(aliado.zonaSlug);
@@ -127,7 +131,9 @@ export function AdminPublishForm({
   }
   const [eventTitle, setEventTitle] = useState("");
   const [category, setCategory] = useState<CategoriaEvento>(
-    (initialNegocio?.categoria as CategoriaEvento) || "comida"
+    initialNegocio?.categoria && initialNegocio.categoria !== "hospedaje"
+      ? (initialNegocio.categoria as CategoriaEvento)
+      : "comida"
   );
   const [dateTime, setDateTime] = useState("");
   const [price, setPrice] = useState<string>("0");
@@ -566,11 +572,20 @@ export function AdminPublishForm({
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-forest mb-2 font-sans">
-            Categoría *
-          </label>
-          <div className="grid grid-cols-4 gap-2">
-            {CATEGORIAS.map((cat) => (
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-xs font-medium text-forest font-sans">
+              Categoría *
+            </label>
+            <Link
+              href="/admin/hospedajes"
+              className="text-[11px] text-stone hover:text-terra font-sans transition-colors"
+              title="Para publicar cabañas, habitaciones o eco-lodges"
+            >
+              ¿Es un hospedaje? Publicar en Hospedajes ↗
+            </Link>
+          </div>
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+            {CATEGORIAS_EVENTOS.map((cat) => (
               <button
                 type="button"
                 key={cat.id}

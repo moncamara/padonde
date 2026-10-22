@@ -200,36 +200,49 @@ export function ModalEventosAliado({
                         </button>
                       )}
 
-                      {/* Botón Editar Evento */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEventoParaEditar({
-                            id: ev.id,
-                            titulo: ev.titulo,
-                            tipo: ev.tipo,
-                            precio: ev.precio,
-                            precio_moneda: ev.precio_moneda,
-                            fecha_inicio: ev.fecha_inicio,
-                            fecha_fin: ev.fecha_fin,
-                            destacado: ev.destacado,
-                            activo: ev.activo,
-                            descripcion: ev.descripcion,
-                            imagen_url: ev.imagen_url,
-                            negocio_id: aliado.id,
-                            negocio: {
-                              id: aliado.id,
-                              nombre: aliado.nombre,
-                              whatsapp: aliado.whatsapp,
-                            },
-                          });
-                        }}
-                        className="px-2.5 py-1 rounded-xl text-xs font-semibold text-forest bg-white border border-stone-light hover:bg-stone-50 transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
-                        title="Editar fecha, horarios o contenido de este evento"
-                      >
-                        <span>✏️</span>
-                        <span>Editar</span>
-                      </button>
+                      {/* Botón Editar Evento o Hospedaje */}
+                      {ev.tipo === "hospedaje" ? (
+                        <Link
+                          href="/admin/hospedajes"
+                          className="px-2.5 py-1 rounded-xl text-xs font-semibold text-forest bg-white border border-stone-light hover:bg-stone-50 transition-colors flex items-center gap-1 shadow-2xs"
+                          title="Gestionar en el módulo especializado de Hospedajes"
+                        >
+                          <span>🏡</span>
+                          <span>Editar Hospedaje</span>
+                        </Link>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEventoParaEditar({
+                              id: ev.id,
+                              titulo: ev.titulo,
+                              tipo: ev.tipo,
+                              precio: ev.precio,
+                              precio_moneda: ev.precio_moneda,
+                              fecha_inicio: ev.fecha_inicio,
+                              fecha_fin: ev.fecha_fin,
+                              destacado: ev.destacado,
+                              activo: ev.activo,
+                              descripcion: ev.descripcion,
+                              imagen_url: ev.imagen_url,
+                              video_url: (ev as any).video_url,
+                              metadata_hospedaje: (ev as any).metadata_hospedaje,
+                              negocio_id: aliado.id,
+                              negocio: {
+                                id: aliado.id,
+                                nombre: aliado.nombre,
+                                whatsapp: aliado.whatsapp,
+                              },
+                            });
+                          }}
+                          className="px-2.5 py-1 rounded-xl text-xs font-semibold text-forest bg-white border border-stone-light hover:bg-stone-50 transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
+                          title="Editar fecha, horarios o contenido de este evento"
+                        >
+                          <span>✏️</span>
+                          <span>Editar</span>
+                        </button>
+                      )}
 
                       {/* Enlace directo para ver en la web */}
                       <a

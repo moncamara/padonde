@@ -53,6 +53,9 @@ export default async function AdminAliadosPage({
         activo,
         destacado,
         imagen_url,
+        video_url,
+        metadata_hospedaje,
+        zona_id,
         descripcion
       )
     `)

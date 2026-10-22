@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Link } from "@/i18n/routing";
 import Image from "next/image";
-import { CATEGORIAS } from "@/constants";
+import { CATEGORIAS_EVENTOS } from "@/constants";
 import {
   isoADatetimeLocalColombia,
   parseLocalColombiaAISO,
@@ -91,6 +91,7 @@ export function ModalEditarEvento({
   const [videoUrl, setVideoUrl] = useState(evento.video_url || "");
   const [archivoVideo, setArchivoVideo] = useState<File | null>(null);
   const [videoNombre, setVideoNombre] = useState<string | null>(null);
+  const [mostrarUrlDirecta, setMostrarUrlDirecta] = useState(Boolean(evento.video_url));
 
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -322,30 +323,53 @@ export function ModalEditarEvento({
 
           {/* 3. Categoría */}
           <div>
-            <label className="block text-xs font-semibold text-forest mb-1.5 font-sans">
-              Categoría
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-              {CATEGORIAS.map((cat) => {
-                const selected = tipo === cat.id;
-                return (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => setTipo(cat.id)}
-                    className={[
-                      "px-2.5 py-2 rounded-xl text-xs font-sans font-medium flex items-center justify-center gap-1.5 border transition-all",
-                      selected
-                        ? "bg-forest text-cream border-forest shadow-xs font-semibold"
-                        : "bg-white text-stone border-stone-light hover:border-forest/40 hover:text-forest",
-                    ].join(" ")}
-                  >
-                    <span>{cat.emoji}</span>
-                    <span className="truncate">{cat.label}</span>
-                  </button>
-                );
-              })}
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-semibold text-forest font-sans">
+                Categoría
+              </label>
+              <Link
+                href="/admin/hospedajes"
+                className="text-[11px] text-stone hover:text-terra font-sans transition-colors"
+                title="Para gestionar cabañas o eco-lodges"
+              >
+                ¿Hospedaje? Ir a Hospedajes ↗
+              </Link>
             </div>
+            {tipo === "hospedaje" ? (
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl flex items-center justify-between text-xs font-sans">
+                <span className="text-amber-800">
+                  🏡 Este registro es un <strong>Hospedaje</strong>.
+                </span>
+                <Link
+                  href="/admin/hospedajes"
+                  className="font-semibold text-forest hover:text-terra underline"
+                >
+                  Ir al módulo de Hospedajes →
+                </Link>
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
+                {CATEGORIAS_EVENTOS.map((cat) => {
+                  const selected = tipo === cat.id;
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => setTipo(cat.id)}
+                      className={[
+                        "px-2.5 py-2 rounded-xl text-xs font-sans font-medium flex items-center justify-center gap-1.5 border transition-all cursor-pointer",
+                        selected
+                          ? "bg-forest text-cream border-forest shadow-xs font-semibold"
+                          : "bg-white text-stone border-stone-light hover:border-forest/40 hover:text-forest",
+                      ].join(" ")}
+                    >
+                      <span>{cat.emoji}</span>
+                      <span className="truncate">{cat.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* 4. Fecha y Hora + Precio */}
@@ -567,17 +591,17 @@ export function ModalEditarEvento({
           </div>
 
           {/* 8. Video / Reel Vertical (Opcional) */}
-          <div className="space-y-2 p-3.5 rounded-2xl bg-stone-50 border border-stone-light/70">
-            <label className="block text-xs font-semibold text-forest font-sans flex items-center justify-between">
-              <span className="flex items-center gap-1.5">
+          <div className="space-y-2.5 p-3.5 rounded-2xl bg-stone-50 border border-stone-light/70">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-forest font-sans flex items-center gap-1.5">
                 <span>🎬</span> Video / Reel vertical (Opcional)
-              </span>
+              </label>
               {videoUrl && !archivoVideo && (
                 <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-medium">
                   ✓ Video activo
                 </span>
               )}
-            </label>
+            </div>
 
             <input
               type="file"
@@ -598,21 +622,65 @@ export function ModalEditarEvento({
                   rel="noopener noreferrer"
                   className="text-terra hover:underline truncate max-w-[220px]"
                 >
-                  Ver video actual
+                  Ver video actual ↗
                 </a>
                 <button
                   type="button"
                   onClick={() => setVideoUrl("")}
-                  className="text-red-600 hover:text-red-700 font-medium text-[11px]"
+                  className="text-red-600 hover:text-red-700 font-medium text-[11px] cursor-pointer"
                 >
                   Quitar video
                 </button>
               </div>
-            ) : (
-              <p className="text-[10px] text-stone font-sans">
-                MP4 de WhatsApp o Instagram Reels. Cero lentitud en la carga inicial.
-              </p>
-            )}
+            ) : null}
+
+            <div className="pt-1 border-t border-stone-light/50">
+              {!mostrarUrlDirecta && !videoUrl ? (
+                <button
+                  type="button"
+                  onClick={() => setMostrarUrlDirecta(true)}
+                  className="text-[11px] text-stone hover:text-forest underline cursor-pointer"
+                >
+                  O pegar URL directa de video / reel (.mp4)
+                </button>
+              ) : (
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] text-stone font-medium">URL directa de video (MP4):</span>
+                    <button
+                      type="button"
+                      onClick={() => setMostrarUrlDirecta(!mostrarUrlDirecta)}
+                      className="text-[10px] text-stone hover:text-forest cursor-pointer"
+                    >
+                      {mostrarUrlDirecta ? "Ocultar" : "Mostrar"}
+                    </button>
+                  </div>
+                  {mostrarUrlDirecta && (
+                    <>
+                      <input
+                        type="url"
+                        value={videoUrl}
+                        onChange={(e) => setVideoUrl(e.target.value)}
+                        placeholder="https://.../video.mp4"
+                        className="w-full px-3 py-1.5 text-xs rounded-xl border border-stone-light/80 bg-white font-sans text-forest focus:outline-terra"
+                      />
+                      {evento.id === "6817d5de-d00a-4514-b505-fa2c10608749" && !videoUrl && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setVideoUrl("https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/videos/1792684308424-m681hcn.mp4");
+                            setMostrarUrlDirecta(true);
+                          }}
+                          className="text-[11px] text-terra hover:underline font-medium block mt-1 cursor-pointer"
+                        >
+                          🌿 Restaurar video original de Jungle Joe
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* 9. Reputación de Google Maps (Opcional) */}

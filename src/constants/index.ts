@@ -71,6 +71,11 @@ export const getCategoria = (id: CategoriaEvento) =>
     ? { id: "rumba" as CategoriaEvento, label: "Rumba", labelEn: "Party & Nightlife", emoji: "🪩" }
     : null);
 
+/** Categorías exclusivas para creación y edición de eventos/planes (excluye hospedajes, los cuales tienen su propio módulo en /admin/hospedajes) */
+export const CATEGORIAS_EVENTOS: CategoriaConfig[] = CATEGORIAS.filter(
+  (c) => c.id !== "hospedaje"
+);
+
 // ─── Comisiones ───────────────────────────────────────────────────────────────
 
 /** Porcentaje que retiene la plataforma sobre ventas de boletería (0–1) */
