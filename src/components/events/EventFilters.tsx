@@ -3,7 +3,6 @@
 import { useState, useMemo } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { CATEGORIAS } from "@/constants";
-import { CarouselWrapper } from "@/components/ui/CarouselWrapper";
 import {
   getOpcionesTiempoColombia,
   TIMEZONE_COLOMBIA,
@@ -74,12 +73,8 @@ export function EventFilters({
 
   return (
     <div className="space-y-4">
-      {/* 1. SELECTOR DE TIEMPO DESLIZABLE */}
-      <CarouselWrapper
-        containerClassName="flex gap-2 overflow-x-auto pb-1 scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0"
-        ariaLabel="fechas"
-        step={160}
-      >
+      {/* 1. SELECTOR DE TIEMPO DESLIZABLE (Sin flechas, scroll táctil fluido) */}
+      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
         {opcionesTiempo.map(({ id, label }) => (
           <button
             key={id}
@@ -94,14 +89,10 @@ export function EventFilters({
             {label}
           </button>
         ))}
-      </CarouselWrapper>
+      </div>
 
-      {/* 2. FILTROS DE CATEGORÍA CON FLECHAS SEMITRANSPARENTES */}
-      <CarouselWrapper
-        containerClassName="flex gap-2.5 overflow-x-auto pb-1 scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0"
-        ariaLabel="categorías de eventos"
-        step={240}
-      >
+      {/* 2. FILTROS DE CATEGORÍA (Sin flechas, scroll táctil fluido) */}
+      <div className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
         {/* Botón para ver "Todos los planes de este día" */}
         <button
           onClick={() => handleCategoria(null)}
@@ -137,7 +128,7 @@ export function EventFilters({
             </button>
           );
         })}
-      </CarouselWrapper>
+      </div>
     </div>
   );
 }

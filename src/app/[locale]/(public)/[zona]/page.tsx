@@ -191,11 +191,8 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
         </div>
       </header>
 
-      {/* Espaciador para evitar solapamiento bajo el header fijo */}
-      <div className="h-16 sm:h-18" aria-hidden="true" />
-
-      {/* Feed principal y Servicios Esenciales */}
-      <div className="max-w-lg mx-auto px-4 py-6">
+      {/* Feed principal y Servicios Esenciales con padding-top generoso para el header fijo */}
+      <div className="max-w-lg mx-auto px-4 pt-24 sm:pt-28 pb-6">
         <FeedTabsContainer
           eventos={eventos}
           servicios={servicios}
