@@ -12,6 +12,7 @@ import {
   getMinutosDelDiaColombia,
   esHoy,
   getEtiquetaHorario,
+  extraerRecurrencia,
 } from "@/lib/utils";
 import { ToggleActivoButton } from "./ToggleActivoButton";
 import { ToggleDestacadoButton } from "./ToggleDestacadoButton";
@@ -104,7 +105,15 @@ export function AdminEventList({
     for (const ev of eventosFiltrados) {
       const ymdInicio = getFechaYMDDesdeISO(ev.fecha_inicio);
       const ymdFin = ev.fecha_fin ? getFechaYMDDesdeISO(ev.fecha_fin) : null;
-      const yaPaso = ev.tipo === "hospedaje" ? false : ymdFin ? ymdFin < hoyYMD : ymdInicio < hoyYMD;
+      const rec = extraerRecurrencia(ev.descripcion);
+      const yaPaso =
+        ev.tipo === "hospedaje"
+          ? false
+          : rec.esRecurrente
+          ? (ymdFin ? ymdFin < hoyYMD : false)
+          : ymdFin
+          ? ymdFin < hoyYMD
+          : ymdInicio < hoyYMD;
 
       if (!ev.activo && !yaPaso) {
         // Pausado manualmente pero con fecha actual/futura
@@ -113,7 +122,7 @@ export function AdminEventList({
         // La fecha ya concluyó en Colombia
         pas.push(ev);
       } else {
-        // Activo y fecha >= hoy
+        // Activo y vigente
         v.push(ev);
       }
     }

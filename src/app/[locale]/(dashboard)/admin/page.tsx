@@ -5,7 +5,12 @@ import { Link } from "@/i18n/routing";
 import { Button } from "@/components/ui/Button";
 import { AdminEventList, type EventoAdminItem } from "./AdminEventList";
 import { AdminNav } from "./AdminNav";
-import { getFechaYMDColombia, getFechaYMDDesdeISO, eventoCoincideConFiltroTiempo } from "@/lib/utils";
+import {
+  getFechaYMDColombia,
+  getFechaYMDDesdeISO,
+  eventoCoincideConFiltroTiempo,
+  extraerRecurrencia,
+} from "@/lib/utils";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -118,6 +123,11 @@ export default async function AdminDashboardPage({
   const eventosVigentes = eventos.filter((e) => {
     if (!e.activo) return false;
     if (e.tipo === "hospedaje") return true;
+    const rec = extraerRecurrencia(e.descripcion);
+    if (rec.esRecurrente) {
+      const ymdFin = e.fecha_fin ? getFechaYMDDesdeISO(e.fecha_fin) : null;
+      return ymdFin ? ymdFin >= hoyYMD : true;
+    }
     const ymdInicio = getFechaYMDDesdeISO(e.fecha_inicio);
     const ymdFin = e.fecha_fin ? getFechaYMDDesdeISO(e.fecha_fin) : null;
     return ymdFin ? ymdFin >= hoyYMD : ymdInicio >= hoyYMD;
