@@ -1531,10 +1531,10 @@ export async function generarCopyEventoGeminiAction(
     return { success: false, error: "GEMINI_API_KEY no configurada en el servidor." };
   }
 
-  const prompt = `Eres el editor cultural de "PaDónde", la plataforma de eventos y experiencias de Minca y la Sierra Nevada de Santa Marta (Colombia).
+  const prompt = `Eres el editor cultural y copywriter de "PaDónde", la plataforma de eventos y experiencias de Minca y la Sierra Nevada de Santa Marta (Colombia).
 Tu público objetivo son mochileros, nómadas digitales y viajeros nacionales e internacionales.
 
-Transforma este mensaje informal de WhatsApp en una ficha editorial irresistible para la cartelera de eventos:
+Transforma este mensaje informal de WhatsApp en una ficha editorial irresistible y vibrante para la cartelera de eventos:
 "${input.textoBruto.replace(/"/g, '\\"')}"
 
 Comercio / Aliado: ${input.businessName || "No especificado"}
@@ -1542,11 +1542,12 @@ Zona: ${input.zonaSlug === "mendihuaca" ? "Mendihuaca (Playa, Surf, Río)" : "Mi
 
 Instrucciones de Redacción:
 1. No uses frases cliché como "un espacio perfecto para conectar con otros viajeros" o "servicio de barra y cocina".
-2. Transmite la atmósfera real de la Sierra: ambiente bohemio, relajado, risas, tragos de autor, música en español e inglés, sin pena.
-3. Responde ÚNICAMENTE en formato JSON válido (sin backticks de markdown, solo las llaves {}) con esta estructura:
+2. Transmite la atmósfera real de la Sierra: ambiente bohemio, relajado, risas, tragos de autor, música en español e inglés, sin pena ni acartonamiento.
+3. INCLUYE EMOJIS LLAMATIVOS Y EXPRESIVOS: Usa de 3 a 5 emojis acordes (ej. 🎤, 🍹, ✨, 🌿, 🎶, 🌙, 📍, 🍻, 🔥) distribuidos con gracia y dinamismo entre los párrafos y oraciones para que la lectura móvil sea divertida, visual y moderna.
+4. Responde ÚNICAMENTE en formato JSON válido (sin backticks de markdown, solo las llaves {}) con esta estructura:
 {
-  "titulo": "Título atractivo, fresco, de 3 a 6 palabras",
-  "descripcion": "2 párrafos breves, narrativos y envolventes que seduzcan al viajero",
+  "titulo": "Título atractivo con 1 emoji representativo (ej. 🎤 Noche de Karaoke & Tragos de Autor)",
+  "descripcion": "2 párrafos breves, narrativos, envolventes y con emojis bien integrados que seduzcan al viajero",
   "categoria": "rumba" | "comida" | "bienestar" | "tours" | "arte" | "artesanias",
   "precio": 0
 }`;
@@ -1625,11 +1626,12 @@ Zona: ${input.zonaSlug === "mendihuaca" ? "Mendihuaca (Playa, Surf camps, Cabañ
 Instrucciones:
 1. Prohibido usar clichés corporativos o acartonados ("un espacio ideal para desconectar").
 2. Escribe una descripción cautivadora de 2 párrafos cortos que transmita la magia sensorial del lugar (brisa, sonidos de aves o mar, arquitectura, comodidades clave, vistas).
-3. Devuelve ÚNICAMENTE un JSON válido (sin backticks) con esta estructura:
+3. INCLUYE EMOJIS: Usa de 3 a 5 emojis cálidos y expresivos (ej. 🌿, 🌊, 🌅, 🦜, ✨, ☕, 🛖, 🛌, 🌴) integrados con armonía en la descripción y al inicio de cada punto destacado.
+4. Devuelve ÚNICAMENTE un JSON válido (sin backticks) con esta estructura:
 {
-  "titulo": "Título atractivo estilo PaDónde (ej. Hotel Minca La Casona — Tradición Colonial & Refugio de Colibríes)",
-  "descripcion": "Descripción envolvente de 2 párrafos",
-  "destacados": ["Piscina al aire libre entre jardines", "Avistamiento diario de colibríes", "Restaurante con sazón local", "Cerca a senderos ancestrales"]
+  "titulo": "Título atractivo con emoji estilo PaDónde (ej. 🛖 Hotel Minca La Casona — Refugio Colonial de Colibríes 🌿)",
+  "descripcion": "Descripción envolvente de 2 párrafos con emojis bien intercalados",
+  "destacados": ["🌿 Piscina al aire libre entre jardines", "🦜 Avistamiento diario de colibríes", "🥘 Restaurante con sazón local", "🚶 Senderos ecológicos cercanos"]
 }`;
 
   try {

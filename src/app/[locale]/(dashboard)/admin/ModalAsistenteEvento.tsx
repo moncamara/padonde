@@ -59,6 +59,7 @@ export function ModalAsistenteEvento({
   // Estados del Paso 2 (Ficha extraída y editable)
   const [evento, setEvento] = useState<EventoExtraido | null>(null);
   const [isPublicando, setIsPublicando] = useState(false);
+  const [publicadoExito, setPublicadoExito] = useState(false);
   const [isAnalizando, setIsAnalizando] = useState(false);
   const [isRegenerandoAI, setIsRegenerandoAI] = useState(false);
   const [generadoConGemini, setGeneradoConGemini] = useState(false);
@@ -119,18 +120,20 @@ export function ModalAsistenteEvento({
     try {
       const extraido = procesarTextoBrutoEvento(textoBruto, aliados, zonaSlug);
 
-      // Si el motor detectó un aliado existente, seleccionarlo de inmediato
+      // Si el motor detectó un aliado existente en la BD, seleccionarlo de inmediato
       if (extraido.aliadoId) {
         setModoAliado("existente");
         setSelectedAliadoId(extraido.aliadoId);
         setBusquedaAliado("");
       } else {
-        setModoAliado("existente");
+        // Si no está registrado aún en la base de datos, lo dejamos listo como NUEVO ALIADO
+        // con el nombre detectado para que esté 100% listo para publicar sin bloquear al usuario
+        setModoAliado("nuevo");
         setSelectedAliadoId("");
-        setBusquedaAliado(extraido.businessName);
+        setNuevoNombre(extraido.businessName || "");
+        setBusquedaAliado("");
       }
 
-      setNuevoNombre(extraido.businessName);
       setNuevoWhatsapp(extraido.whatsapp);
       setNuevoInstagram(extraido.instagram);
 
@@ -199,12 +202,24 @@ export function ModalAsistenteEvento({
   const handlePublicarDirecto = async () => {
     if (!evento) return;
 
+    let finalAliadoId = modoAliado === "existente" ? selectedAliadoId : undefined;
+    let finalBusinessName =
+      modoAliado === "existente"
+        ? (aliadoSeleccionado?.nombre || evento.businessName)
+        : nuevoNombre.trim();
+
+    // Auto-recuperación si quedó en modo existente sin elegir aliado del desplegable
     if (modoAliado === "existente" && !selectedAliadoId) {
-      setError("Por favor selecciona un Aliado de la lista o activa la opción '➕ Crear Nuevo Aliado'.");
-      return;
+      if (evento.businessName?.trim() || nuevoNombre?.trim()) {
+        finalBusinessName = nuevoNombre?.trim() || evento.businessName?.trim() || "Comercio Local";
+        finalAliadoId = undefined; // Se registrará automáticamente como nuevo aliado
+      } else {
+        setError("Por favor selecciona un Aliado registrado de la lista o escribe el nombre del negocio.");
+        return;
+      }
     }
 
-    if (modoAliado === "nuevo" && !nuevoNombre.trim()) {
+    if (modoAliado === "nuevo" && !finalBusinessName) {
       setError("Por favor escribe el nombre del nuevo comercio / aliado.");
       return;
     }
@@ -218,19 +233,14 @@ export function ModalAsistenteEvento({
       return;
     }
 
-    const finalAliadoId = modoAliado === "existente" ? selectedAliadoId : undefined;
-    const finalBusinessName =
-      modoAliado === "existente"
-        ? (aliadoSeleccionado?.nombre || evento.businessName)
-        : nuevoNombre.trim();
     const finalWhatsapp =
       modoAliado === "existente"
         ? (aliadoSeleccionado?.whatsapp || evento.whatsapp || "573000000000")
-        : (nuevoWhatsapp.trim() || "573000000000");
+        : (nuevoWhatsapp.trim() || evento.whatsapp || "573000000000");
     const finalInstagram =
       modoAliado === "existente"
         ? (aliadoSeleccionado?.instagram || evento.instagram || undefined)
-        : (nuevoInstagram.trim() || undefined);
+        : (nuevoInstagram.trim() || evento.instagram || undefined);
     const finalZonaSlug =
       modoAliado === "existente"
         ? (aliadoSeleccionado?.zonaSlug || evento.zonaSlug || zonaSlug)
@@ -267,10 +277,13 @@ export function ModalAsistenteEvento({
         return;
       }
 
-      // Éxito: refrescar router, notificar y cerrar modal
-      router.refresh();
-      if (onPublished) onPublished();
-      onClose();
+      // Éxito: mostrar confirmación visual antes de cerrar
+      setPublicadoExito(true);
+      setTimeout(() => {
+        router.refresh();
+        if (onPublished) onPublished();
+        onClose();
+      }, 1000);
     } catch (err: any) {
       setError(err?.message || "Error al publicar.");
       setIsPublicando(false);
@@ -866,15 +879,32 @@ export function ModalAsistenteEvento({
                 </div>
               )}
 
+              {/* Mensaje de Error Visible justo arriba del botón */}
+              {error && (
+                <div className="p-3 rounded-2xl bg-terra/10 border border-terra/30 text-terra text-xs font-semibold flex items-center gap-2">
+                  <span>⚠️</span>
+                  <span>{error}</span>
+                </div>
+              )}
+
               {/* Botones de Acción */}
               <div className="space-y-2 pt-2 border-t border-stone-light/60">
                 <button
                   type="button"
-                  disabled={isPublicando}
+                  disabled={isPublicando || publicadoExito}
                   onClick={handlePublicarDirecto}
-                  className="w-full py-3.5 rounded-2xl bg-emerald-700 hover:bg-emerald-800 disabled:bg-stone text-white font-sans text-sm font-bold shadow-md transition-all active:scale-98 cursor-pointer flex items-center justify-center gap-2"
+                  className={`w-full py-3.5 rounded-2xl font-sans text-sm font-bold shadow-md transition-all active:scale-98 cursor-pointer flex items-center justify-center gap-2 ${
+                    publicadoExito
+                      ? "bg-emerald-600 text-white"
+                      : "bg-emerald-700 hover:bg-emerald-800 disabled:bg-stone text-white"
+                  }`}
                 >
-                  {isPublicando ? (
+                  {publicadoExito ? (
+                    <>
+                      <span>✅</span>
+                      <span>¡Evento Publicado con Éxito! Guardando...</span>
+                    </>
+                  ) : isPublicando ? (
                     <>
                       <span className="animate-spin text-lg">⏳</span>
                       <span>Publicando en PaDónde...</span>
