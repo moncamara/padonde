@@ -95,9 +95,9 @@ export const CONFIG_TERRITORIAL: Record<string, TerritorialUXConfig> = {
     ordenCategorias: ["rumba", "comida", "bienestar", "tours", "arte", "hospedaje", "artesanias"],
     criterioOrdenFeed: "agenda_primero",
   },
-  // Mendihuaca: Destino de playa, surf camps y descanso frente al mar donde el hospedaje es la necesidad #1
+  // Mendihuaca: Destino de playa, surf camps y descanso frente al mar donde el hospedaje y tours son primordiales
   mendihuaca: {
-    ordenCategorias: ["hospedaje", "bienestar", "tours", "comida", "rumba", "arte", "artesanias"],
+    ordenCategorias: ["hospedaje", "tours", "rumba", "comida", "bienestar", "arte", "artesanias"],
     criterioOrdenFeed: "hospedaje_primero",
   },
   // Palomino (Fase futura): Playa, río y hospedajes
