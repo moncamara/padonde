@@ -453,6 +453,31 @@ export function ModalEditarHospedaje({
                   )}
                 </div>
               </div>
+
+              {/* Opción Destacado */}
+              <div className="pt-3 border-t border-stone-light/60">
+                <label className="flex items-center gap-3 p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200/80 cursor-pointer hover:bg-amber-100/60 transition-colors select-none">
+                  <input
+                    type="checkbox"
+                    checked={destacado}
+                    onChange={(e) => setDestacado(e.target.checked)}
+                    className="w-4 h-4 text-terra rounded border-stone-light focus:ring-terra cursor-pointer accent-terra"
+                  />
+                  <div className="text-left flex-1">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-xs font-bold text-forest block">
+                        ⭐ Fijar como Hospedaje Destacado
+                      </span>
+                      <span className="bg-terra/10 text-terra text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                        Máxima Visibilidad
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-stone block mt-0.5">
+                      Ubica este hospedaje en las primeras posiciones de la cartelera con el distintivo público "⭐ Destacado".
+                    </span>
+                  </div>
+                </label>
+              </div>
             </div>
           </div>
 

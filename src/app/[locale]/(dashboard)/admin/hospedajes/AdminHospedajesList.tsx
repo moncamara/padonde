@@ -7,6 +7,7 @@ import { ModalEditarHospedaje } from "./ModalEditarHospedaje";
 import { ModalAsistenteIngesta } from "./ModalAsistenteIngesta";
 import { ModalNotificarAliado, type EventoNotificarData } from "../ModalNotificarAliado";
 import { toggleEventoActivoAction } from "../actions";
+import { ToggleDestacadoButton } from "../ToggleDestacadoButton";
 
 interface AdminHospedajesListProps {
   hospedajes: any[];
@@ -154,9 +155,16 @@ export function AdminHospedajesList({
                         )}
                       </div>
                       <div>
-                        <span className="inline-block text-[10px] font-sans font-medium text-terra bg-terra/10 px-2 py-0.5 rounded-full mb-0.5">
-                          📍 {zonaNombre}
-                        </span>
+                        <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
+                          <span className="inline-block text-[10px] font-sans font-medium text-terra bg-terra/10 px-2 py-0.5 rounded-full">
+                            📍 {zonaNombre}
+                          </span>
+                          {hosp.destacado && (
+                            <span className="inline-block text-[10px] font-sans font-bold text-terra bg-terra/10 border border-terra/20 px-2 py-0.5 rounded-full shadow-2xs">
+                              ⭐ Destacado
+                            </span>
+                          )}
+                        </div>
                         <h3 className="font-serif text-base font-bold text-forest leading-snug">
                           {hosp.titulo}
                         </h3>
@@ -166,20 +174,26 @@ export function AdminHospedajesList({
                       </div>
                     </div>
 
-                    <button
-                      type="button"
-                      disabled={isPending}
-                      onClick={() => handleToggleActivo(hosp.id, hosp.activo)}
-                      className={`text-[10px] font-sans font-medium px-2.5 py-1 rounded-full transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-2xs ${
-                        hosp.activo
-                          ? "bg-green-100 text-green-800 hover:bg-green-200"
-                          : "bg-stone-100 text-stone-600 hover:bg-stone-200"
-                      }`}
-                      title={hosp.activo ? "Visible para turistas en la web. Clic para pausar" : "Pausado (oculto de la web). Clic para reactivar"}
-                    >
-                      <span className={`w-1.5 h-1.5 rounded-full ${hosp.activo ? "bg-green-600 animate-pulse" : "bg-stone"}`} />
-                      <span>{hosp.activo ? "En vivo" : "Pausado"}</span>
-                    </button>
+                    <div className="flex items-center gap-1.5 flex-shrink-0 flex-wrap justify-end">
+                      <ToggleDestacadoButton
+                        eventoId={hosp.id}
+                        destacadoInicial={Boolean(hosp.destacado)}
+                      />
+                      <button
+                        type="button"
+                        disabled={isPending}
+                        onClick={() => handleToggleActivo(hosp.id, hosp.activo)}
+                        className={`text-[10px] font-sans font-medium px-2.5 py-1 rounded-full transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-2xs ${
+                          hosp.activo
+                            ? "bg-green-100 text-green-800 hover:bg-green-200"
+                            : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+                        }`}
+                        title={hosp.activo ? "Visible para turistas en la web. Clic para pausar" : "Pausado (oculto de la web). Clic para reactivar"}
+                      >
+                        <span className={`w-1.5 h-1.5 rounded-full ${hosp.activo ? "bg-green-600 animate-pulse" : "bg-stone"}`} />
+                        <span>{hosp.activo ? "En vivo" : "Pausado"}</span>
+                      </button>
+                    </div>
                   </div>
 
                   {/* Resumen de habitaciones y Google rating */}

@@ -279,6 +279,7 @@ export async function toggleEventoDestacadoAction(eventoId: string, nuevoEstado:
     }
 
     revalidatePath(`/[locale]/admin`, "page");
+    revalidatePath(`/[locale]/admin/hospedajes`, "page");
     revalidatePath(`/[locale]/minca`, "page");
     revalidatePath(`/[locale]/mendihuaca`, "page");
     return { success: true };
