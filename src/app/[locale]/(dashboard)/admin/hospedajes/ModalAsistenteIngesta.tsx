@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { procesarTextoBrutoHospedaje, type HospedajeExtraido } from "@/lib/hospedajeParser";
+import { generarCopyHospedajeGeminiAction } from "../actions";
 
 interface ModalAsistenteIngestaProps {
   zonas: Array<{ id: string; nombre: string; slug: string }>;
@@ -41,7 +42,7 @@ export function ModalAsistenteIngesta({
     setError(null);
   };
 
-  const handleProcesar = () => {
+  const handleProcesar = async () => {
     if (!textoBruto.trim()) {
       setError("Por favor pega algún texto, descripción o datos del hospedaje.");
       return;
@@ -52,6 +53,25 @@ export function ModalAsistenteIngesta({
 
     try {
       const borrador = procesarTextoBrutoHospedaje(textoBruto, zonaSlug, nombre);
+
+      // Enriquecer con Gemini AI para lograr copy sensorial y mágico
+      const aiRes = await generarCopyHospedajeGeminiAction({
+        textoBruto,
+        nombreNegocio: borrador.nombreNegocio,
+        zonaSlug,
+      });
+
+      if (aiRes.success) {
+        if (aiRes.titulo) borrador.titulo = aiRes.titulo;
+        if (aiRes.descripcion) {
+          let descConDestacados = aiRes.descripcion;
+          if (aiRes.destacados && aiRes.destacados.length > 0) {
+            descConDestacados += "\n\n🌿 Destacados del lugar:\n" + aiRes.destacados.map((d) => `• ${d}`).join("\n");
+          }
+          borrador.descripcion = descConDestacados;
+        }
+      }
+
       onParsed(borrador);
     } catch (err: any) {
       setError(err?.message || "Ocurrió un error al procesar el texto.");
@@ -172,8 +192,17 @@ export function ModalAsistenteIngesta({
             onClick={handleProcesar}
             className="px-5 py-2.5 rounded-xl bg-forest text-cream font-sans text-xs font-semibold hover:bg-forest-dark active:scale-95 transition-all shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
           >
-            <span>⚡</span>
-            <span>{isProcesando ? "Estructurando..." : "Estructurar Ficha y Revisar"}</span>
+            {isProcesando ? (
+              <>
+                <span className="animate-spin text-sm">⏳</span>
+                <span>Redactando con Gemini AI...</span>
+              </>
+            ) : (
+              <>
+                <span>✨</span>
+                <span>Estructurar y Redactar con Gemini AI</span>
+              </>
+            )}
           </button>
         </div>
       </div>

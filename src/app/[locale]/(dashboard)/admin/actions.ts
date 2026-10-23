@@ -1587,3 +1587,84 @@ Instrucciones de Redacción:
   }
 }
 
+export interface GenerarCopyHospedajeInput {
+  textoBruto: string;
+  nombreNegocio?: string;
+  zonaSlug?: string;
+}
+
+export interface GenerarCopyHospedajeResult {
+  success: boolean;
+  titulo?: string;
+  descripcion?: string;
+  destacados?: string[];
+  error?: string;
+}
+
+/**
+ * Server Action que invoca la API oficial de Google Gemini (gemini-3.5-flash-lite)
+ * para redactar descripciones sensoriales, cálidas y envolventes de hospedajes.
+ */
+export async function generarCopyHospedajeGeminiAction(
+  input: GenerarCopyHospedajeInput
+): Promise<GenerarCopyHospedajeResult> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    return { success: false, error: "GEMINI_API_KEY no configurada en el servidor." };
+  }
+
+  const prompt = `Eres el editor turístico experto de "PaDónde", la plataforma de hospedajes de la Sierra Nevada de Santa Marta (Minca y Mendihuaca, Colombia).
+Tu público objetivo son mochileros, nómadas digitales y viajeros que buscan hospedajes con alma, contacto con la naturaleza y descanso real.
+
+A partir del siguiente texto bruto de Booking/WhatsApp/Instagram:
+"${input.textoBruto.replace(/"/g, '\\"')}"
+
+Nombre sugerido: ${input.nombreNegocio || "No especificado"}
+Zona: ${input.zonaSlug === "mendihuaca" ? "Mendihuaca (Playa, Surf camps, Cabañas frente al mar)" : "Minca (Montaña, Selva nublada, Colibríes, Cafetales)"}
+
+Instrucciones:
+1. Prohibido usar clichés corporativos o acartonados ("un espacio ideal para desconectar").
+2. Escribe una descripción cautivadora de 2 párrafos cortos que transmita la magia sensorial del lugar (brisa, sonidos de aves o mar, arquitectura, comodidades clave, vistas).
+3. Devuelve ÚNICAMENTE un JSON válido (sin backticks) con esta estructura:
+{
+  "titulo": "Título atractivo estilo PaDónde (ej. Hotel Minca La Casona — Tradición Colonial & Refugio de Colibríes)",
+  "descripcion": "Descripción envolvente de 2 párrafos",
+  "destacados": ["Piscina al aire libre entre jardines", "Avistamiento diario de colibríes", "Restaurante con sazón local", "Cerca a senderos ancestrales"]
+}`;
+
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+      }
+    );
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => null);
+      return { success: false, error: errData?.error?.message || "Error al conectar con Gemini." };
+    }
+
+    const data = await res.json();
+    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!rawText) {
+      return { success: false, error: "Respuesta vacía de Gemini." };
+    }
+
+    const cleanedText = rawText.replace(/```json/gi, "").replace(/```/g, "").trim();
+    const parsed = JSON.parse(cleanedText);
+
+    return {
+      success: true,
+      titulo: parsed.titulo,
+      descripcion: parsed.descripcion,
+      destacados: Array.isArray(parsed.destacados) ? parsed.destacados : [],
+    };
+  } catch (err: any) {
+    return { success: false, error: err?.message || "Error al procesar con Gemini." };
+  }
+}
+
+

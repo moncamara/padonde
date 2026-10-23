@@ -6,6 +6,7 @@ import {
   guardarHospedajeAction,
   eliminarEventoAdminAction,
   importarImagenDesdeUrlAction,
+  generarCopyHospedajeGeminiAction,
 } from "../actions";
 import { uploadEventImage } from "@/lib/supabase/storage";
 import type { BadgeHabitacion } from "@/lib/types";
@@ -94,7 +95,36 @@ export function ModalEditarHospedaje({
 
   const [isSubiendoFoto, setIsSubiendoFoto] = useState(false);
   const [isGuardando, setIsGuardando] = useState(false);
+  const [isRegenerandoAI, setIsRegenerandoAI] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Regenerar copy de hospedaje con Gemini AI
+  const handleRegenerarCopyGemini = async () => {
+    setIsRegenerandoAI(true);
+    try {
+      const res = await generarCopyHospedajeGeminiAction({
+        textoBruto: `${nombreNegocio}. ${descripcion}`,
+        nombreNegocio,
+        zonaSlug,
+      });
+      if (res.success) {
+        if (res.titulo) setTitulo(res.titulo);
+        if (res.descripcion) {
+          let descConDestacados = res.descripcion;
+          if (res.destacados && res.destacados.length > 0) {
+            descConDestacados += "\n\n🌿 Destacados del lugar:\n" + res.destacados.map((d) => `• ${d}`).join("\n");
+          }
+          setDescripcion(descConDestacados);
+        }
+      } else {
+        alert(res.error || "No se pudo regenerar con Gemini.");
+      }
+    } catch {
+      alert("Error al conectar con Gemini AI.");
+    } finally {
+      setIsRegenerandoAI(false);
+    }
+  };
 
   // Estados de eliminación segura con 2 pasos
   const [confirmarEliminar, setConfirmarEliminar] = useState(false);
@@ -422,12 +452,24 @@ export function ModalEditarHospedaje({
               </div>
 
               <div>
-                <label className="block text-stone font-medium mb-1">
-                  Descripción del Hospedaje *
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-stone font-medium">
+                    Descripción del Hospedaje *
+                  </label>
+                  <button
+                    type="button"
+                    disabled={isRegenerandoAI}
+                    onClick={handleRegenerarCopyGemini}
+                    className="text-[11px] font-bold text-purple-700 hover:text-purple-900 bg-purple-50 hover:bg-purple-100 border border-purple-200 px-2.5 py-1 rounded-xl transition-all flex items-center gap-1 cursor-pointer active:scale-95 disabled:opacity-50"
+                    title="Pedir a Gemini que redacte una descripción sensorial y envolvente"
+                  >
+                    <span>{isRegenerandoAI ? "⏳" : "🪄"}</span>
+                    <span>{isRegenerandoAI ? "Redactando..." : "Regenerar con Gemini AI"}</span>
+                  </button>
+                </div>
                 <textarea
                   required
-                  rows={3}
+                  rows={4}
                   value={descripcion}
                   onChange={(e) => setDescripcion(e.target.value)}
                   placeholder="Describe la experiencia, vista, clima y atractivos del lugar..."
