@@ -1080,7 +1080,10 @@ export async function guardarHospedajeAction(input: GuardarHospedajeInput) {
 
     // 2. Buscar o crear negocio (aliado de hospedaje)
     let negocioId = "";
-    const cleanPhone = input.whatsapp.replace(/\D/g, "");
+    let cleanPhone = input.whatsapp.replace(/\D/g, "");
+    if (cleanPhone.length === 10 && cleanPhone.startsWith("3")) {
+      cleanPhone = `57${cleanPhone}`;
+    }
 
     const { data: existingNegocio } = await supabase
       .from("negocios")
@@ -1120,11 +1123,14 @@ export async function guardarHospedajeAction(input: GuardarHospedajeInput) {
     }
 
     // 3. Calcular precio mínimo referencial para el registro
-    const precios = input.metadataHospedaje.habitaciones.map((h) => h.precio_noche_cop);
+    const habitacionesList = Array.isArray(input.metadataHospedaje?.habitaciones)
+      ? input.metadataHospedaje.habitaciones
+      : [];
+    const precios = habitacionesList.map((h) => Number(h.precio_noche_cop) || 0);
     const precioBase = precios.length > 0 ? Math.min(...precios) : 0;
 
     // 4. Insertar o Actualizar el evento tipo 'hospedaje'
-    const datosHospedaje = {
+    const datosHospedaje: Record<string, any> = {
       negocio_id: negocioId,
       zona_id: zona.id,
       titulo: input.titulo.trim(),
@@ -1132,7 +1138,6 @@ export async function guardarHospedajeAction(input: GuardarHospedajeInput) {
       tipo: "hospedaje" as CategoriaEvento,
       precio: precioBase,
       precio_moneda: "COP" as const,
-      fecha_inicio: new Date().toISOString(),
       fecha_fin: null,
       imagen_url: input.imagenUrl || null,
       destacado: Boolean(input.destacado),
@@ -1140,6 +1145,10 @@ export async function guardarHospedajeAction(input: GuardarHospedajeInput) {
       activo: true,
       metadata_hospedaje: input.metadataHospedaje,
     };
+
+    if (!input.id) {
+      datosHospedaje.fecha_inicio = new Date().toISOString();
+    }
 
     if (input.id) {
       // Actualización

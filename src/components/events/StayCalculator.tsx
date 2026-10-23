@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { generarEnlaceWhatsAppHospedaje } from "@/lib/whatsappHospedaje";
 import { trackWhatsAppClick } from "@/lib/analytics";
+import { getFechaYMDColombia } from "@/lib/utils";
 import { RoomCard } from "./RoomCard";
 import type { HabitacionHospedaje } from "@/lib/types";
 
@@ -40,16 +41,17 @@ export function StayCalculator({
   negocioId,
   labels,
 }: StayCalculatorProps) {
-  // 1. Habitación seleccionada (por defecto la primera)
+  // 1. Habitación seleccionada con blindaje null-safe
+  const listaHabitaciones = Array.isArray(habitaciones) ? habitaciones : [];
   const [habitacionSeleccionada, setHabitacionSeleccionada] = useState<HabitacionHospedaje | null>(
-    habitaciones && habitaciones.length > 0 ? habitaciones[0] : null
+    listaHabitaciones.length > 0 ? listaHabitaciones[0] : null
   );
 
-  // 2. Fechas por defecto: hoy y mañana en formato YYYY-MM-DD
-  const hoyStr = new Date().toISOString().split("T")[0];
-  const mananaDate = new Date();
+  // 2. Fechas por defecto calculadas estrictamente en la zona horaria de Colombia (UTC-5)
+  const hoyStr = getFechaYMDColombia(new Date());
+  const mananaDate = new Date(`${hoyStr}T12:00:00-05:00`);
   mananaDate.setDate(mananaDate.getDate() + 1);
-  const mananaStr = mananaDate.toISOString().split("T")[0];
+  const mananaStr = getFechaYMDColombia(mananaDate);
 
   const [checkIn, setCheckIn] = useState<string>(hoyStr);
   const [checkOut, setCheckOut] = useState<string>(mananaStr);
@@ -58,15 +60,15 @@ export function StayCalculator({
   const [huespedes, setHuespedes] = useState<number>(1);
 
   // 4. Cálculo reactivo de noches con validación estricta (mínimo 1)
-  const fechaIn = new Date(checkIn + "T12:00:00-05:00");
-  const fechaOut = new Date(checkOut + "T12:00:00-05:00");
+  const fechaIn = new Date((checkIn || hoyStr) + "T12:00:00-05:00");
+  const fechaOut = new Date((checkOut || mananaStr) + "T12:00:00-05:00");
   const diffTime = fechaOut.getTime() - fechaIn.getTime();
   const diffDias = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   const noches = !isNaN(diffDias) && diffDias > 0 ? diffDias : 1;
 
   // 5. Cálculo del precio total estimado
-  const precioNoche = habitacionSeleccionada ? habitacionSeleccionada.precio_noche_cop : 0;
-  const precioTotal = precioNoche * noches;
+  const precioNoche = habitacionSeleccionada ? (habitacionSeleccionada.precio_noche_cop ?? 0) : 0;
+  const precioTotal = Math.max(0, precioNoche * noches);
 
   // 6. Enlace dinámico de WhatsApp
   const waUrl = habitacionSeleccionada
@@ -74,35 +76,37 @@ export function StayCalculator({
         telefono: whatsapp,
         hostalNombre,
         habitacionTitulo: habitacionSeleccionada.titulo,
-        checkIn,
-        checkOut,
+        checkIn: checkIn || hoyStr,
+        checkOut: checkOut || mananaStr,
         noches,
         huespedes,
         precioTotalCOP: precioTotal,
         idioma: locale,
       })
-    : `https://wa.me/${whatsapp.replace(/\D/g, "")}`;
+    : `https://wa.me/${(whatsapp || "").replace(/\D/g, "")}`;
 
   const handleCheckInChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
+    if (!val) return;
     setCheckIn(val);
     const dIn = new Date(val + "T12:00:00-05:00");
     const dOut = new Date(checkOut + "T12:00:00-05:00");
-    if (dOut <= dIn) {
+    if (isNaN(dIn.getTime()) || isNaN(dOut.getTime()) || dOut <= dIn) {
       const nextDay = new Date(dIn);
       nextDay.setDate(nextDay.getDate() + 1);
-      setCheckOut(nextDay.toISOString().split("T")[0]);
+      setCheckOut(getFechaYMDColombia(nextDay));
     }
   };
 
   const handleCheckOutChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
+    if (!val) return;
     const dIn = new Date(checkIn + "T12:00:00-05:00");
     const dOut = new Date(val + "T12:00:00-05:00");
-    if (dOut <= dIn) {
+    if (isNaN(dOut.getTime()) || isNaN(dIn.getTime()) || dOut <= dIn) {
       const nextDay = new Date(dIn);
       nextDay.setDate(nextDay.getDate() + 1);
-      setCheckOut(nextDay.toISOString().split("T")[0]);
+      setCheckOut(getFechaYMDColombia(nextDay));
     } else {
       setCheckOut(val);
     }
@@ -124,17 +128,23 @@ export function StayCalculator({
         </div>
 
         <div className="space-y-3">
-          {habitaciones.map((hab) => (
-            <RoomCard
-              key={hab.id}
-              habitacion={hab}
-              isSeleccionada={habitacionSeleccionada?.id === hab.id}
-              onSelect={(h) => setHabitacionSeleccionada(h)}
-              tSelect={labels.selectRoom}
-              tSelected={labels.selectedRoom}
-              tPerNight={labels.perNight}
-            />
-          ))}
+          {listaHabitaciones.length > 0 ? (
+            listaHabitaciones.map((hab) => (
+              <RoomCard
+                key={hab.id}
+                habitacion={hab}
+                isSeleccionada={habitacionSeleccionada?.id === hab.id}
+                onSelect={(h) => setHabitacionSeleccionada(h)}
+                tSelect={labels.selectRoom}
+                tSelected={labels.selectedRoom}
+                tPerNight={labels.perNight}
+              />
+            ))
+          ) : (
+            <div className="p-4 rounded-2xl bg-cream/70 border border-stone-light/70 text-center text-xs text-stone font-sans">
+              🏡 Consulta directamente por WhatsApp las habitaciones y tarifas disponibles para este hospedaje.
+            </div>
+          )}
         </div>
       </div>
 

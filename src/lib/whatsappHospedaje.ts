@@ -25,7 +25,17 @@ export function generarEnlaceWhatsAppHospedaje({
   precioTotalCOP,
   idioma = "es",
 }: GenerarEnlaceHospedajeParams): string {
-  const cleanPhone = telefono.replace(/\D/g, "");
+  let cleanPhone = (telefono || "").replace(/\D/g, "");
+  // Si es un celular colombiano de 10 dígitos que inicia por 3 (ej: 3151234567), anteponer 57
+  if (cleanPhone.length === 10 && cleanPhone.startsWith("3")) {
+    cleanPhone = `57${cleanPhone}`;
+  }
+  if (cleanPhone.startsWith("5757")) {
+    cleanPhone = cleanPhone.slice(2);
+  }
+  if (!cleanPhone) {
+    cleanPhone = "573000000000";
+  }
 
   // Mensaje en Español (por defecto) o adaptado
   let lineas: string[] = [];

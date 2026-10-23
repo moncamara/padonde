@@ -141,7 +141,7 @@ export function RoomCard({
           </div>
           <div className="text-right whitespace-nowrap">
             <span className="font-sans text-xs font-bold text-terra">
-              ${precio_noche_cop.toLocaleString("es-CO")}
+              ${(precio_noche_cop ?? 0).toLocaleString("es-CO")}
             </span>
             <span className="block text-[10px] text-stone font-normal leading-none mt-0.5">
               {tPerNight}
@@ -149,18 +149,23 @@ export function RoomCard({
           </div>
         </div>
 
-        {/* Badges / Micro-datos escaneables */}
-        {badges && badges.length > 0 && (
+        {/* Badges / Micro-datos escaneables con blindaje null-safe */}
+        {Array.isArray(badges) && badges.length > 0 && (
           <div className="flex flex-wrap gap-1 pt-1">
-            {badges.map((b, i) => (
-              <span
-                key={i}
-                className="inline-flex items-center gap-1 bg-cream/90 text-forest-dark border border-stone-light/60 text-[10px] font-sans px-2 py-0.5 rounded-md"
-              >
-                <span>{b.icono}</span>
-                <span>{b.texto}</span>
-              </span>
-            ))}
+            {badges.map((b, i) => {
+              const icono = typeof b === "object" && b?.icono ? b.icono : "✨";
+              const texto = typeof b === "object" && b?.texto ? b.texto : String(b || "");
+              if (!texto) return null;
+              return (
+                <span
+                  key={i}
+                  className="inline-flex items-center gap-1 bg-cream/90 text-forest-dark border border-stone-light/60 text-[10px] font-sans px-2 py-0.5 rounded-md"
+                >
+                  <span>{icono}</span>
+                  <span>{texto}</span>
+                </span>
+              );
+            })}
           </div>
         )}
 
