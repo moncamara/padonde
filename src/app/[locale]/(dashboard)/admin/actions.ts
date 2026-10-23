@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { parseLocalColombiaAISO } from "@/lib/utils";
 import { traducirEventoCompleto } from "@/lib/translations/translator";
 import type { CategoriaEvento, PlanNegocio, CategoriaServicioEsencial, ServicioEsencial } from "@/lib/types";
+import sharp from "sharp";
 
 export interface AdminPublishInput {
   negocioId?: string;
@@ -1706,6 +1707,208 @@ Instrucciones:
     };
   } catch (err: any) {
     return { success: false, error: err?.message || "Error al procesar con Gemini." };
+  }
+}
+
+// ─── Clasificación Inteligente de Fotos con Gemini Vision ─────────────────────
+
+export interface ClasificarFotosHospedajeInput {
+  fotos: string[]; // Lista de URLs de imágenes o data URIs
+  nombreHospedaje: string;
+  habitaciones: Array<{
+    id: string;
+    titulo: string;
+    descripcion?: string;
+  }>;
+  descripcionContexto?: string;
+}
+
+export interface AsignacionFotoResultado {
+  url: string;
+  destino: "portada" | "area_comun" | string; // ID de habitación o 'portada' / 'area_comun'
+  categoriaDetalle?: string;
+  razonVisual: string;
+  ordenVisual?: number;
+}
+
+export interface ClasificarFotosHospedajeResult {
+  success: boolean;
+  portadaSugerida?: string;
+  areasComunes?: Array<{ url: string; tipo: string; descripcion: string }>;
+  asignaciones?: AsignacionFotoResultado[];
+  error?: string;
+}
+
+export async function clasificarFotosHospedajeAction(
+  input: ClasificarFotosHospedajeInput
+): Promise<ClasificarFotosHospedajeResult> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    return { success: false, error: "GEMINI_API_KEY no configurada en el servidor." };
+  }
+
+  const urlsValidas = (input.fotos || [])
+    .map((u) => u.trim())
+    .filter((u) => u.startsWith("http://") || u.startsWith("https://") || u.startsWith("data:image/"));
+
+  if (urlsValidas.length === 0) {
+    return { success: false, error: "No se proporcionaron URLs o imágenes válidas." };
+  }
+
+  // Limitar a máximo 20 fotos por lote para asegurar respuesta en < 8s
+  const loteFotos = urlsValidas.slice(0, 20);
+
+  try {
+    // 1. Convertir imágenes a miniaturas base64 (512px) en memoria
+    const miniaturas: Array<{ url: string; b64: string; index: number }> = [];
+
+    await Promise.all(
+      loteFotos.map(async (url, idx) => {
+        try {
+          let buffer: Buffer | null = null;
+          if (url.startsWith("data:image/")) {
+            const base64Data = url.split(",")[1];
+            buffer = Buffer.from(base64Data, "base64");
+          } else {
+            const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
+            if (res.ok) {
+              const arrayBuf = await res.arrayBuffer();
+              buffer = Buffer.from(arrayBuf);
+            }
+          }
+
+          if (buffer) {
+            const thumbBuf = await sharp(buffer)
+              .rotate()
+              .resize(512, 512, { fit: "inside", withoutEnlargement: true })
+              .jpeg({ quality: 65 })
+              .toBuffer();
+            miniaturas.push({
+              url,
+              b64: thumbBuf.toString("base64"),
+              index: idx + 1,
+            });
+          }
+        } catch (e) {
+          console.warn(`[clasificarFotos] No se pudo miniaturizar foto ${idx + 1}:`, e);
+        }
+      })
+    );
+
+    if (miniaturas.length === 0) {
+      return { success: false, error: "No se pudo descargar ni procesar ninguna de las fotos proporcionadas." };
+    }
+
+    // Ordenar miniaturas por su índice original
+    miniaturas.sort((a, b) => a.index - b.index);
+
+    // 2. Construir Prompt para Gemini Vision
+    const listaHabsTexto = input.habitaciones
+      .map((h, i) => `${i + 1}. [ID: "${h.id}"] Nombre: "${h.titulo}"${h.descripcion ? ` - Detalles: ${h.descripcion}` : ""}`)
+      .join("\n");
+
+    const promptTexto = `Eres el editor visual y director de arte de "PaDónde", plataforma de turismo y hospedajes en la Sierra Nevada de Santa Marta (Colombia).
+Tu tarea es clasificar determinísticamente un lote de ${miniaturas.length} fotografías para el hospedaje "${input.nombreHospedaje}".
+
+Habitaciones registradas en el hospedaje:
+${listaHabsTexto}
+
+${input.descripcionContexto ? `Contexto adicional del lugar:\n"${input.descripcionContexto}"\n` : ""}
+
+Instrucciones:
+1. Para cada foto numerada:
+   - Determina si es "portada" (la mejor foto representativa general del hotel, ej: fachada icónica o vista espectacular).
+   - O si es "area_comun" (piscina, restaurante, sendero, colibrí, jardín, recepción).
+   - O si es "habitacion", emparejándola con el ID exacto de la habitación a la que pertenece según sus características visibles (cama, baño de habitación, balcón).
+2. Proporciona una justificación visual muy breve (máx 10 palabras) de por qué se asignó allí.
+3. Devuelve ÚNICAMENTE un JSON válido con esta estructura:
+{
+  "portada_sugerida_index": 1,
+  "fotos": [
+    {
+      "index": 1,
+      "destino": "portada" | "area_comun" | "<id_de_la_habitacion>",
+      "tipo_area": "piscina" | "restaurante" | "fachada" | "jardin" | "otro",
+      "razon_visual": "Cama doble rústica con vista a la selva",
+      "orden_en_habitacion": 1
+    }
+  ]
+}`;
+
+    const parts: any[] = [{ text: promptTexto }];
+    for (const m of miniaturas) {
+      parts.push({ text: `\n[FOTO ${m.index}]` });
+      parts.push({
+        inline_data: {
+          mime_type: "image/jpeg",
+          data: m.b64,
+        },
+      });
+    }
+
+    // 3. Invocar Gemini Vision API
+    const resGemini = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts }],
+          generationConfig: {
+            response_mime_type: "application/json",
+          },
+        }),
+      }
+    );
+
+    if (!resGemini.ok) {
+      const errData = await resGemini.json().catch(() => null);
+      return { success: false, error: errData?.error?.message || "Error al conectar con Gemini Vision." };
+    }
+
+    const dataGemini = await resGemini.json();
+    const rawJson = dataGemini?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!rawJson) {
+      return { success: false, error: "Respuesta vacía de Gemini Vision." };
+    }
+
+    const parsed = JSON.parse(rawJson);
+    const fotosClasificadas = parsed.fotos || [];
+
+    // 4. Mapear resultados con las URLs originales
+    const asignaciones: AsignacionFotoResultado[] = [];
+    const miniaturaMap = new Map(miniaturas.map((m) => [m.index, m.url]));
+
+    for (const f of fotosClasificadas) {
+      const urlOriginal = miniaturaMap.get(f.index);
+      if (urlOriginal) {
+        asignaciones.push({
+          url: urlOriginal,
+          destino: f.destino || "area_comun",
+          categoriaDetalle: f.tipo_area || "otro",
+          razonVisual: f.razon_visual || "Identificada por Gemini Vision",
+          ordenVisual: f.orden_en_habitacion || 1,
+        });
+      }
+    }
+
+    // Portada sugerida
+    let portadaSugerida: string | undefined;
+    if (parsed.portada_sugerida_index && miniaturaMap.has(parsed.portada_sugerida_index)) {
+      portadaSugerida = miniaturaMap.get(parsed.portada_sugerida_index);
+    } else {
+      const portadaItem = asignaciones.find((a) => a.destino === "portada");
+      if (portadaItem) portadaSugerida = portadaItem.url;
+    }
+
+    return {
+      success: true,
+      portadaSugerida,
+      asignaciones,
+    };
+  } catch (err: any) {
+    console.error("Excepción en clasificarFotosHospedajeAction:", err);
+    return { success: false, error: err?.message || "Error al clasificar fotos con Gemini." };
   }
 }
 

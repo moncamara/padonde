@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "optimizar-fotos": "node scripts/optimizar-fotos.mjs",
-    "procesar-hospedajes": "node scripts/procesar-fotos-hospedaje.mjs"
+    "procesar-hospedajes": "node scripts/procesar-fotos-hospedaje.mjs",
+    "clasificar-fotos": "node scripts/clasificar-fotos-vision.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

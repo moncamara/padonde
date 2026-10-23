@@ -10,6 +10,7 @@ import {
 } from "../actions";
 import { uploadEventImage } from "@/lib/supabase/storage";
 import type { BadgeHabitacion } from "@/lib/types";
+import { ModalClasificadorFotosIA } from "./ModalClasificadorFotosIA";
 
 interface ModalEditarHospedajeProps {
   hospedaje?: any | null;
@@ -124,6 +125,32 @@ export function ModalEditarHospedaje({
     } finally {
       setIsRegenerandoAI(false);
     }
+  };
+
+  // Modal de Clasificación Mágica de Fotos con IA
+  const [mostrarClasificadorFotos, setMostrarClasificadorFotos] = useState(false);
+
+  const handleAplicarFotosClasificadas = (data: {
+    portadaUrl?: string;
+    asignacionesPorHabitacion: Record<string, string[]>;
+  }) => {
+    if (data.portadaUrl) {
+      setImagenUrl(data.portadaUrl);
+    }
+    setHabitaciones((prev) => {
+      return prev.map((hab) => {
+        const nuevasFotos = data.asignacionesPorHabitacion[hab.id];
+        if (nuevasFotos && nuevasFotos.length > 0) {
+          const fotosActuales = hab.fotos || [];
+          const agregadas = nuevasFotos.filter((f) => !fotosActuales.includes(f));
+          return {
+            ...hab,
+            fotos: [...fotosActuales, ...agregadas],
+          };
+        }
+        return hab;
+      });
+    });
   };
 
   // Estados de eliminación segura con 2 pasos
@@ -579,7 +606,7 @@ export function ModalEditarHospedaje({
 
           {/* SECCIÓN 3: HABITACIONES Y TARIFAS */}
           <div className="space-y-4 bg-white/70 p-4 sm:p-5 rounded-2xl border border-stone-light/60 font-sans text-xs">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <div>
                 <h3 className="font-serif text-sm font-bold text-forest flex items-center gap-1.5">
                   <span>🛏️</span> 3. Habitaciones y Tarifas
@@ -589,13 +616,24 @@ export function ModalEditarHospedaje({
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={agregarHabitacion}
-                className="px-3 py-1.5 bg-forest/10 hover:bg-forest text-forest hover:text-cream rounded-xl font-medium transition-colors"
-              >
-                + Agregar Habitación
-              </button>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setMostrarClasificadorFotos(true)}
+                  className="px-3 py-1.5 bg-terra/10 hover:bg-terra text-terra hover:text-white rounded-xl font-medium transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                  title="Organizar fotos de Booking o archivos con Inteligencia Artificial"
+                >
+                  <span>✨</span>
+                  <span>Clasificar Fotos con IA</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={agregarHabitacion}
+                  className="px-3 py-1.5 bg-forest/10 hover:bg-forest text-forest hover:text-cream rounded-xl font-medium transition-colors cursor-pointer"
+                >
+                  + Agregar Habitación
+                </button>
+              </div>
             </div>
 
             <div className="space-y-4">
@@ -787,6 +825,20 @@ export function ModalEditarHospedaje({
             </div>
           </div>
         </form>
+
+        {mostrarClasificadorFotos && (
+          <ModalClasificadorFotosIA
+            nombreHospedaje={nombreNegocio || titulo}
+            habitaciones={habitaciones.map((h, i) => ({
+              id: h.id || `hab-${i}`,
+              titulo: h.titulo || `Habitación ${i + 1}`,
+              descripcion: h.descripcion,
+            }))}
+            descripcionContexto={descripcion}
+            onClose={() => setMostrarClasificadorFotos(false)}
+            onAplicar={handleAplicarFotosClasificadas}
+          />
+        )}
       </div>
     </div>
   );
