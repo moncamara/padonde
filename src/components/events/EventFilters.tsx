@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useTranslations, useLocale } from "next-intl";
-import { CATEGORIAS } from "@/constants";
+import { getCategoriasParaZona } from "@/constants";
 import {
   getOpcionesTiempoColombia,
   TIMEZONE_COLOMBIA,
@@ -12,6 +12,7 @@ import type { CategoriaEvento, FiltroTiempo } from "@/lib/types";
 interface EventFiltersProps {
   tiempoActivo: FiltroTiempo;
   categoriaActiva: CategoriaEvento | null;
+  zonaSlug?: string;
   onTiempoChange: (filtro: FiltroTiempo) => void;
   onCategoriaChange: (categoria: CategoriaEvento | null) => void;
 }
@@ -19,11 +20,12 @@ interface EventFiltersProps {
 /**
  * Filtros del feed público:
  * 1. Tiempo: Selector de 7 días (Hoy, Mañana, y los 5 días siguientes en hora Colombia).
- * 2. Categorías: "Todos" + categorías deslizables con indicador visual de scroll.
+ * 2. Categorías: "Todos" + categorías ordenadas contextualmente por territorio con scroll táctil.
  */
 export function EventFilters({
   tiempoActivo,
   categoriaActiva,
+  zonaSlug,
   onTiempoChange,
   onCategoriaChange,
 }: EventFiltersProps) {
@@ -62,6 +64,12 @@ export function EventFilters({
       return op;
     });
   }, [tFilters, locale]);
+
+  // Categorías ordenadas contextualmente según la región activa
+  const categoriasDisponibles = useMemo(
+    () => getCategoriasParaZona(zonaSlug),
+    [zonaSlug]
+  );
 
   function handleTiempo(filtro: FiltroTiempo) {
     onTiempoChange(filtro);
@@ -107,8 +115,8 @@ export function EventFilters({
           <span className="font-medium tracking-tight">{tCat("all")}</span>
         </button>
 
-        {/* Categorías específicas */}
-        {CATEGORIAS.map(({ id, emoji }) => {
+        {/* Categorías específicas según el orden territorial */}
+        {categoriasDisponibles.map(({ id, emoji }) => {
           const isSelected = categoriaActiva === id;
           return (
             <button

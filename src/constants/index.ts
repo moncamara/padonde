@@ -76,6 +76,68 @@ export const CATEGORIAS_EVENTOS: CategoriaConfig[] = CATEGORIAS.filter(
   (c) => c.id !== "hospedaje"
 );
 
+// ─── Inteligencia Territorial (UX Contextual por Región) ──────────────────────
+
+export type CriterioOrdenFeed = "agenda_primero" | "hospedaje_primero";
+
+export type TerritorialUXConfig = {
+  ordenCategorias: CategoriaEvento[];
+  criterioOrdenFeed: CriterioOrdenFeed;
+};
+
+/**
+ * Configuración de UX por región: adapta el orden del menú de categorías y
+ * la prioridad del feed general según la intención de búsqueda principal de cada destino.
+ */
+export const CONFIG_TERRITORIAL: Record<string, TerritorialUXConfig> = {
+  // Minca: El motor principal es la agenda diaria de planes, eventos y gastronomía en la montaña
+  minca: {
+    ordenCategorias: ["rumba", "comida", "bienestar", "tours", "arte", "hospedaje", "artesanias"],
+    criterioOrdenFeed: "agenda_primero",
+  },
+  // Mendihuaca: Destino de playa, surf camps y descanso frente al mar donde el hospedaje es la necesidad #1
+  mendihuaca: {
+    ordenCategorias: ["hospedaje", "bienestar", "tours", "comida", "rumba", "arte", "artesanias"],
+    criterioOrdenFeed: "hospedaje_primero",
+  },
+  // Palomino (Fase futura): Playa, río y hospedajes
+  palomino: {
+    ordenCategorias: ["hospedaje", "rumba", "comida", "tours", "bienestar", "arte", "artesanias"],
+    criterioOrdenFeed: "hospedaje_primero",
+  },
+  // Parque Tairona (Fase futura): Ecoturismo y tours
+  tairona: {
+    ordenCategorias: ["tours", "hospedaje", "comida", "bienestar", "arte", "rumba", "artesanias"],
+    criterioOrdenFeed: "hospedaje_primero",
+  },
+};
+
+/**
+ * Obtiene la configuración de UX para una región con fallback seguro a Minca.
+ */
+export function getTerritorialConfig(zonaSlug?: string): TerritorialUXConfig {
+  if (zonaSlug && CONFIG_TERRITORIAL[zonaSlug]) {
+    return CONFIG_TERRITORIAL[zonaSlug];
+  }
+  return CONFIG_TERRITORIAL.minca;
+}
+
+/**
+ * Devuelve el array de categorías ordenado contextualmente según la región activa.
+ */
+export function getCategoriasParaZona(zonaSlug?: string): CategoriaConfig[] {
+  const config = getTerritorialConfig(zonaSlug);
+  const ordenMap = new Map<string, number>(
+    config.ordenCategorias.map((catId, index) => [catId, index])
+  );
+
+  return [...CATEGORIAS].sort((a, b) => {
+    const ordenA = ordenMap.has(a.id) ? ordenMap.get(a.id)! : 999;
+    const ordenB = ordenMap.has(b.id) ? ordenMap.get(b.id)! : 999;
+    return ordenA - ordenB;
+  });
+}
+
 // ─── Comisiones ───────────────────────────────────────────────────────────────
 
 /** Porcentaje que retiene la plataforma sobre ventas de boletería (0–1) */

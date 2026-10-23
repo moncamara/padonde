@@ -5,6 +5,7 @@ import { useTranslations, useLocale } from "next-intl";
 import { EventCard } from "@/components/events/EventCard";
 import { EventFilters } from "@/components/events/EventFilters";
 import type { CategoriaEvento, EventoConNegocio, FiltroTiempo } from "@/lib/types";
+import { getTerritorialConfig } from "@/constants";
 import {
   eventoCoincideConFiltroTiempo,
   getFechaYMDDesdeISO,
@@ -171,6 +172,8 @@ export function EventFeed({ eventos, zona }: EventFeedProps) {
       return pasaFecha && pasaCategoria;
     });
 
+    const configTerritorial = getTerritorialConfig(zona);
+
     return [...filtrados].sort((a, b) => {
       // 1. Si es filtro "proximos" (agenda futura), el orden principal es cronológico por día
       if (filtroTiempo === "proximos") {
@@ -181,11 +184,17 @@ export function EventFeed({ eventos, zona }: EventFeedProps) {
         }
       }
 
-      // 2. Prioridad de categoría: eventos y actividades van primero; hospedajes van al final del día
+      // 2. Prioridad de categoría según configuración territorial:
+      // En Minca: eventos y actividades van primero; hospedajes van al final del día.
+      // En Mendihuaca: hospedajes van primero (prioridad #1 de búsqueda); eventos van después.
       const esHospedajeA = a.tipo === "hospedaje";
       const esHospedajeB = b.tipo === "hospedaje";
       if (esHospedajeA !== esHospedajeB) {
-        return esHospedajeA ? 1 : -1;
+        if (configTerritorial.criterioOrdenFeed === "hospedaje_primero") {
+          return esHospedajeA ? -1 : 1;
+        } else {
+          return esHospedajeA ? 1 : -1;
+        }
       }
 
       // 3. Destacados primero (dentro del mismo grupo)
@@ -203,13 +212,14 @@ export function EventFeed({ eventos, zona }: EventFeedProps) {
       // 5. Desempate determinista por título
       return a.titulo.localeCompare(b.titulo);
     });
-  }, [eventos, filtroTiempo, filtroCategoria]);
+  }, [eventos, filtroTiempo, filtroCategoria, zona]);
 
   return (
     <div className="space-y-6">
       <EventFilters
         tiempoActivo={filtroTiempo}
         categoriaActiva={filtroCategoria}
+        zonaSlug={zona}
         onTiempoChange={setFiltroTiempo}
         onCategoriaChange={setFiltroCategoria}
       />
