@@ -398,6 +398,10 @@ export function eventoCoincideConFiltroTiempo(
     const hoyYMD = getFechaYMDColombia(now);
     const ymdInicio = getFechaYMDDesdeISO(fechaInicioIso);
     const ymdFin = fechaFinIso ? getFechaYMDDesdeISO(fechaFinIso) : null;
+    const rec = extraerRecurrencia(descripcion);
+    if (rec.esRecurrente) {
+      return ymdFin ? ymdFin >= hoyYMD : true;
+    }
     return ymdFin ? ymdFin >= hoyYMD : ymdInicio >= hoyYMD;
   }
 
@@ -416,9 +420,10 @@ export function eventoCoincideConFiltroTiempo(
 
   // Caso 1: Evento recurrente (días específicos de la semana)
   if (rec.esRecurrente) {
-    if (ymdTarget < ymdInicio) return false;
+    // Si tiene fecha límite de vigencia y ya venció, no mostrar
     if (ymdFin && ymdTarget > ymdFin) return false;
 
+    // Coincide si el día de la semana coincide con los días programados
     const diaSemana = getDayOfWeekColombia(ymdTarget);
     return rec.dias.includes(diaSemana);
   }

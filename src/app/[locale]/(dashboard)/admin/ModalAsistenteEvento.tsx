@@ -11,6 +11,7 @@ import {
 import { CATEGORIAS_EVENTOS, getCategoria } from "@/constants";
 import { adminPublishEventAction, generarCopyEventoGeminiAction } from "./actions";
 import { uploadEventImage } from "@/lib/supabase/storage";
+import { inyectarRecurrencia, formatearDiasRecurrencia } from "@/lib/utils";
 import type { CategoriaEvento } from "@/lib/types";
 
 interface ModalAsistenteEventoProps {
@@ -63,6 +64,8 @@ export function ModalAsistenteEvento({
   const [isAnalizando, setIsAnalizando] = useState(false);
   const [isRegenerandoAI, setIsRegenerandoAI] = useState(false);
   const [generadoConGemini, setGeneradoConGemini] = useState(false);
+  const [esRecurrente, setEsRecurrente] = useState(false);
+  const [diasRecurrentes, setDiasRecurrentes] = useState<number[]>([4]);
 
   // Estados de control de Aliado (Evitar duplicados)
   const [modoAliado, setModoAliado] = useState<"existente" | "nuevo">("existente");
@@ -132,6 +135,14 @@ export function ModalAsistenteEvento({
         setSelectedAliadoId("");
         setNuevoNombre(extraido.businessName || "");
         setBusquedaAliado("");
+      }
+
+      if (extraido.esRecurrente && extraido.diasRecurrentes && extraido.diasRecurrentes.length > 0) {
+        setEsRecurrente(true);
+        setDiasRecurrentes(extraido.diasRecurrentes);
+      } else {
+        setEsRecurrente(false);
+        setDiasRecurrentes([4]);
       }
 
       setNuevoWhatsapp(extraido.whatsapp);
@@ -256,6 +267,10 @@ export function ModalAsistenteEvento({
         if (uploaded) finalImg = uploaded;
       }
 
+      const descripcionFinal = esRecurrente
+        ? inyectarRecurrencia(evento.descripcion, diasRecurrentes)
+        : evento.descripcion;
+
       const res = await adminPublishEventAction({
         negocioId: finalAliadoId,
         businessName: finalBusinessName,
@@ -265,7 +280,7 @@ export function ModalAsistenteEvento({
         category: evento.categoria,
         dateTime: evento.dateTime,
         price: Number(evento.precio) || 0,
-        description: evento.descripcion,
+        description: descripcionFinal,
         imageUrl: finalImg || undefined,
         isFeatured: evento.destacado,
         zonaSlug: finalZonaSlug,
@@ -821,6 +836,74 @@ export function ModalAsistenteEvento({
                     </span>
                   </div>
                 </div>
+              </div>
+
+              {/* Frecuencia / Recurrencia */}
+              <div className="p-3 rounded-2xl bg-amber-50/70 border border-amber-200/90 space-y-2">
+                <label className="flex items-center justify-between cursor-pointer">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">🔄</span>
+                    <div>
+                      <p className="text-xs font-bold text-amber-950">
+                        ¿Es una experiencia periódica o recurrente?
+                      </p>
+                      <p className="text-[10px] text-amber-800">
+                        Aparecerá en la cartelera todos los días seleccionados
+                      </p>
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={esRecurrente}
+                    onChange={(e) => setEsRecurrente(e.target.checked)}
+                    className="w-4 h-4 text-forest rounded border-amber-300 focus:ring-forest cursor-pointer"
+                  />
+                </label>
+
+                {esRecurrente && (
+                  <div className="pt-2 border-t border-amber-200/80 space-y-2 animate-in fade-in">
+                    <div className="grid grid-cols-7 gap-1">
+                      {[
+                        { d: 1, label: "L" },
+                        { d: 2, label: "M" },
+                        { d: 3, label: "M" },
+                        { d: 4, label: "J" },
+                        { d: 5, label: "V" },
+                        { d: 6, label: "S" },
+                        { d: 0, label: "D" },
+                      ].map((item) => {
+                        const activo = diasRecurrentes.includes(item.d);
+                        return (
+                          <button
+                            key={item.d}
+                            type="button"
+                            onClick={() => {
+                              if (activo) {
+                                if (diasRecurrentes.length > 1) {
+                                  setDiasRecurrentes(diasRecurrentes.filter((x) => x !== item.d));
+                                } else {
+                                  setDiasRecurrentes([1, 2, 3, 4, 5, 6, 0]);
+                                }
+                              } else {
+                                setDiasRecurrentes([...diasRecurrentes, item.d]);
+                              }
+                            }}
+                            className={`py-1.5 rounded-lg text-xs font-semibold transition-all border text-center cursor-pointer ${
+                              activo
+                                ? "bg-forest text-white border-forest shadow-2xs"
+                                : "bg-white text-stone border-amber-200 hover:text-forest"
+                            }`}
+                          >
+                            {item.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p className="text-[11px] text-amber-900 font-medium">
+                      Programación: <strong>{formatearDiasRecurrencia(diasRecurrentes)}</strong>
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Descripción Seductora para Turistas con botón de regeneración */}

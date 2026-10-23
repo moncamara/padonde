@@ -12,6 +12,8 @@ import {
   limpiarDescripcionRecurrencia,
   inyectarRecurrencia,
   formatearDiasRecurrencia,
+  getDayOfWeekColombia,
+  getFechaYMDDesdeISO,
 } from "@/lib/utils";
 import { uploadEventImage, uploadEventVideo } from "@/lib/supabase/storage";
 import { editarEventoAdminAction, eliminarEventoAdminAction } from "./actions";
@@ -64,13 +66,17 @@ export function ModalEditarEvento({
 
   // Recurrencia y días de la semana
   const recInicial = extraerRecurrencia(evento.descripcion);
+  const diaBaseEvento = evento.fecha_inicio
+    ? getDayOfWeekColombia(getFechaYMDDesdeISO(evento.fecha_inicio))
+    : 4;
   const [esRecurrente, setEsRecurrente] = useState(recInicial.esRecurrente);
   const [diasSeleccionados, setDiasSeleccionados] = useState<number[]>(
-    recInicial.dias.length > 0 ? recInicial.dias : [1, 2, 3, 4, 5, 6, 0]
+    recInicial.dias.length > 0 ? recInicial.dias : [diaBaseEvento]
   );
   const [fechaFin, setFechaFin] = useState(
     isoADatetimeLocalColombia(evento.fecha_fin)
   );
+  const [guardadoExito, setGuardadoExito] = useState(false);
 
   // Descripción limpia (sin tags internos de recurrencia)
   const [descripcion, setDescripcion] = useState(
@@ -161,7 +167,7 @@ export function ModalEditarEvento({
         tipo,
         precio: parseFloat(precio) || 0,
         dateTime,
-        fechaFin: esRecurrente || fechaFin ? fechaFin : null,
+        fechaFin: fechaFin ? fechaFin : null,
         imageUrl: finalImg || undefined,
         videoUrl: finalVideo || null,
         destacado,
@@ -176,41 +182,45 @@ export function ModalEditarEvento({
         return;
       }
 
+      setGuardadoExito(true);
+
       const negocioSeleccionado = negocios.find((n) => n.id === negocioId);
 
-      onSaved({
-        id: evento.id,
-        titulo: titulo.trim(),
-        descripcion: descripcionFinal || null,
-        tipo,
-        precio: parseFloat(precio) || 0,
-        fecha_inicio: parseLocalColombiaAISO(dateTime),
-        fecha_fin: esRecurrente || fechaFin ? fechaFin : null,
-        destacado,
-        activo,
-        imagen_url: finalImg,
-        video_url: finalVideo || null,
-        negocio_id: negocioId || evento.negocio_id,
-        metadata_hospedaje: googleReputacion
-          ? {
-              ...(evento.metadata_hospedaje || {}),
-              google_reputacion: googleReputacion,
-            }
-          : {
-              ...(evento.metadata_hospedaje || {}),
-              google_reputacion: undefined,
-            },
-        negocio: negocioSeleccionado
-          ? {
-              id: negocioSeleccionado.id,
-              nombre: negocioSeleccionado.nombre,
-              whatsapp: evento.negocio?.whatsapp || "",
-            }
-          : evento.negocio,
-      });
+      setTimeout(() => {
+        onSaved({
+          id: evento.id,
+          titulo: titulo.trim(),
+          descripcion: descripcionFinal || null,
+          tipo,
+          precio: parseFloat(precio) || 0,
+          fecha_inicio: parseLocalColombiaAISO(dateTime),
+          fecha_fin: fechaFin ? parseLocalColombiaAISO(fechaFin) : null,
+          destacado,
+          activo,
+          imagen_url: finalImg,
+          video_url: finalVideo || null,
+          negocio_id: negocioId || evento.negocio_id,
+          metadata_hospedaje: googleReputacion
+            ? {
+                ...(evento.metadata_hospedaje || {}),
+                google_reputacion: googleReputacion,
+              }
+            : {
+                ...(evento.metadata_hospedaje || {}),
+                google_reputacion: undefined,
+              },
+          negocio: negocioSeleccionado
+            ? {
+                id: negocioSeleccionado.id,
+                nombre: negocioSeleccionado.nombre,
+                whatsapp: evento.negocio?.whatsapp || "",
+              }
+            : evento.negocio,
+        });
 
-      router.refresh();
-      onClose();
+        router.refresh();
+        onClose();
+      }, 700);
     } catch (err: any) {
       setError(err?.message || "Error inesperado al guardar.");
     } finally {
@@ -426,8 +436,14 @@ export function ModalEditarEvento({
               <input
                 type="checkbox"
                 checked={esRecurrente}
-                onChange={(e) => setEsRecurrente(e.target.checked)}
-                className="w-4 h-4 text-forest rounded border-stone-light focus:ring-forest shrink-0 ml-2"
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setEsRecurrente(checked);
+                  if (checked && recInicial.dias.length === 0) {
+                    setDiasSeleccionados([diaBaseEvento]);
+                  }
+                }}
+                className="w-4 h-4 text-forest rounded border-stone-light focus:ring-forest shrink-0 ml-2 cursor-pointer"
               />
             </label>
 
@@ -438,36 +454,43 @@ export function ModalEditarEvento({
                   <span className="text-[10px] text-stone font-medium mr-1">Atajos:</span>
                   <button
                     type="button"
+                    onClick={() => setDiasSeleccionados([diaBaseEvento])}
+                    className="text-[10px] px-2.5 py-1 rounded-lg bg-amber-100/90 border border-amber-300 text-amber-950 font-semibold hover:bg-amber-200/90 transition-colors cursor-pointer"
+                  >
+                    Solo este día ({["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"][diaBaseEvento]})
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => setDiasSeleccionados([1, 2, 3, 4, 5, 6, 0])}
-                    className="text-[10px] px-2.5 py-1 rounded-lg bg-white border border-amber-300 text-forest hover:bg-amber-100/60 font-medium transition-colors"
+                    className="text-[10px] px-2.5 py-1 rounded-lg bg-white border border-amber-300 text-forest hover:bg-amber-100/60 font-medium transition-colors cursor-pointer"
                   >
                     Todos los días
                   </button>
                   <button
                     type="button"
                     onClick={() => setDiasSeleccionados([1, 2, 3, 4, 5])}
-                    className="text-[10px] px-2.5 py-1 rounded-lg bg-white border border-amber-300 text-forest hover:bg-amber-100/60 font-medium transition-colors"
+                    className="text-[10px] px-2.5 py-1 rounded-lg bg-white border border-amber-300 text-forest hover:bg-amber-100/60 font-medium transition-colors cursor-pointer"
                   >
                     Lun a Vie
                   </button>
                   <button
                     type="button"
                     onClick={() => setDiasSeleccionados([1, 2, 3, 4, 5, 6])}
-                    className="text-[10px] px-2.5 py-1 rounded-lg bg-white border border-amber-300 text-forest hover:bg-amber-100/60 font-medium transition-colors"
+                    className="text-[10px] px-2.5 py-1 rounded-lg bg-white border border-amber-300 text-forest hover:bg-amber-100/60 font-medium transition-colors cursor-pointer"
                   >
                     Lun a Sáb
                   </button>
                   <button
                     type="button"
                     onClick={() => setDiasSeleccionados([5, 6, 0])}
-                    className="text-[10px] px-2.5 py-1 rounded-lg bg-white border border-amber-300 text-forest hover:bg-amber-100/60 font-medium transition-colors"
+                    className="text-[10px] px-2.5 py-1 rounded-lg bg-white border border-amber-300 text-forest hover:bg-amber-100/60 font-medium transition-colors cursor-pointer"
                   >
                     Vie, Sáb y Dom
                   </button>
                   <button
                     type="button"
                     onClick={() => setDiasSeleccionados([6, 0])}
-                    className="text-[10px] px-2.5 py-1 rounded-lg bg-white border border-amber-300 text-forest hover:bg-amber-100/60 font-medium transition-colors"
+                    className="text-[10px] px-2.5 py-1 rounded-lg bg-white border border-amber-300 text-forest hover:bg-amber-100/60 font-medium transition-colors cursor-pointer"
                   >
                     Fines de semana
                   </button>
@@ -829,10 +852,16 @@ export function ModalEditarEvento({
               <Button
                 type="submit"
                 size="md"
-                disabled={loading || deleting}
-                className="shadow-sm"
+                disabled={loading || deleting || guardadoExito}
+                className={`shadow-sm transition-all ${
+                  guardadoExito ? "bg-emerald-600 hover:bg-emerald-700 text-white" : ""
+                }`}
               >
-                {loading ? "Guardando cambios..." : "Guardar Cambios"}
+                {guardadoExito
+                  ? "✅ ¡Guardado con éxito!"
+                  : loading
+                  ? "Guardando cambios..."
+                  : "Guardar Cambios"}
               </Button>
             </div>
           </div>

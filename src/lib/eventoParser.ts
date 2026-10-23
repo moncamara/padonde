@@ -27,6 +27,8 @@ export interface EventoExtraido {
   destacado: boolean;
   textoOriginal: string;
   notasAsistente: string[];
+  esRecurrente?: boolean;
+  diasRecurrentes?: number[];
 }
 
 /**
@@ -118,11 +120,14 @@ function calcularFechaHora(
 
     if (matchDia) {
       let diasDiferencia = matchDia.index - diaActualIndex;
-      if (diasDiferencia <= 0) {
-        diasDiferencia += 7; // Próximo día de la semana si ya pasó hoy
+      if (diasDiferencia < 0) {
+        diasDiferencia += 7; // Próximo día de la semana si ya pasó esta semana
       }
       targetDate.setDate(ahoraCol.getDate() + diasDiferencia);
-      fechaDetectadaNota = `Detectado: Próximo ${matchDia.dia}`;
+      fechaDetectadaNota =
+        diasDiferencia === 0
+          ? `Detectado: Hoy (${matchDia.dia})`
+          : `Detectado: Próximo ${matchDia.dia}`;
     } else {
       // Buscar fechas tipo "25 de octubre", "31 oct", "15/11"
       const matchFechaMes = norm.match(
@@ -420,6 +425,33 @@ export function procesarTextoBrutoEvento(
     .filter(Boolean)
     .join("\n\n");
 
+  // 4.5 Detectar si es recurrente / periódico ("todos los jueves", "cada día", etc.)
+  let esRecurrente = false;
+  let diasRecurrentes: number[] = [];
+
+  if (/\b(?:todos los dias|diario|diaria|cada dia)\b/.test(textoNorm)) {
+    esRecurrente = true;
+    diasRecurrentes = [1, 2, 3, 4, 5, 6, 0];
+  } else {
+    for (const [nombreDia, idx] of Object.entries(DIAS_SEMANA)) {
+      const regexRec = new RegExp(`\\b(?:todos los|cada|los)\\s+${nombreDia}s?\\b`, "i");
+      if (regexRec.test(textoNorm)) {
+        esRecurrente = true;
+        if (!diasRecurrentes.includes(idx)) diasRecurrentes.push(idx);
+      }
+    }
+  }
+
+  if (esRecurrente) {
+    notasAsistente.push(
+      `🔄 Frecuencia recurrente detectada (${
+        diasRecurrentes.length === 7
+          ? "Todos los días"
+          : diasRecurrentes.map((d) => ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"][d]).join(", ")
+      })`
+    );
+  }
+
   return {
     titulo,
     descripcion,
@@ -434,5 +466,7 @@ export function procesarTextoBrutoEvento(
     destacado: false,
     textoOriginal: texto,
     notasAsistente,
+    esRecurrente,
+    diasRecurrentes,
   };
 }
