@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
@@ -60,6 +60,31 @@ export function ModalAsistenteEvento({
   const [evento, setEvento] = useState<EventoExtraido | null>(null);
   const [isPublicando, setIsPublicando] = useState(false);
 
+  // Estados de control de Aliado (Evitar duplicados)
+  const [modoAliado, setModoAliado] = useState<"existente" | "nuevo">("existente");
+  const [selectedAliadoId, setSelectedAliadoId] = useState<string>("");
+  const [busquedaAliado, setBusquedaAliado] = useState("");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [nuevoNombre, setNuevoNombre] = useState("");
+  const [nuevoWhatsapp, setNuevoWhatsapp] = useState("");
+  const [nuevoInstagram, setNuevoInstagram] = useState("");
+
+  const aliadoSeleccionado = useMemo(() => {
+    if (!selectedAliadoId) return null;
+    return aliados.find((a) => a.id === selectedAliadoId) || null;
+  }, [aliados, selectedAliadoId]);
+
+  const aliadosFiltrados = useMemo(() => {
+    if (!aliados || aliados.length === 0) return [];
+    const q = busquedaAliado.toLowerCase().trim();
+    if (!q) return aliados;
+    return aliados.filter(
+      (a) =>
+        a.nombre.toLowerCase().includes(q) ||
+        (a.whatsapp && a.whatsapp.includes(q))
+    );
+  }, [aliados, busquedaAliado]);
+
   // Cargar ejemplo rápido
   const handleCargarEjemplo = (ejemplo: (typeof EJEMPLOS_PRUEBA)[0]) => {
     setTextoBruto(ejemplo.texto);
@@ -87,12 +112,23 @@ export function ModalAsistenteEvento({
 
     setError(null);
     try {
-      const extraido = procesarTextoBrutoEvento(
-        textoBruto,
-        aliados,
-        zonaSlug
-      );
+      const extraido = procesarTextoBrutoEvento(textoBruto, aliados, zonaSlug);
       setEvento(extraido);
+
+      // Si el motor detectó un aliado existente, seleccionarlo de inmediato
+      if (extraido.aliadoId) {
+        setModoAliado("existente");
+        setSelectedAliadoId(extraido.aliadoId);
+        setBusquedaAliado("");
+      } else {
+        setModoAliado("existente");
+        setSelectedAliadoId("");
+        setBusquedaAliado(extraido.businessName);
+      }
+
+      setNuevoNombre(extraido.businessName);
+      setNuevoWhatsapp(extraido.whatsapp);
+      setNuevoInstagram(extraido.instagram);
       setPaso(2);
     } catch (err: any) {
       setError(err?.message || "Ocurrió un error al analizar el texto.");
@@ -102,6 +138,17 @@ export function ModalAsistenteEvento({
   // Publicar directamente desde la modal en 1 clic
   const handlePublicarDirecto = async () => {
     if (!evento) return;
+
+    if (modoAliado === "existente" && !selectedAliadoId) {
+      setError("Por favor selecciona un Aliado de la lista o activa la opción '➕ Crear Nuevo Aliado'.");
+      return;
+    }
+
+    if (modoAliado === "nuevo" && !nuevoNombre.trim()) {
+      setError("Por favor escribe el nombre del nuevo comercio / aliado.");
+      return;
+    }
+
     if (!evento.titulo.trim()) {
       setError("El evento debe tener un título.");
       return;
@@ -110,6 +157,24 @@ export function ModalAsistenteEvento({
       setError("Debes indicar una fecha y hora válida.");
       return;
     }
+
+    const finalAliadoId = modoAliado === "existente" ? selectedAliadoId : undefined;
+    const finalBusinessName =
+      modoAliado === "existente"
+        ? (aliadoSeleccionado?.nombre || evento.businessName)
+        : nuevoNombre.trim();
+    const finalWhatsapp =
+      modoAliado === "existente"
+        ? (aliadoSeleccionado?.whatsapp || evento.whatsapp || "573000000000")
+        : (nuevoWhatsapp.trim() || "573000000000");
+    const finalInstagram =
+      modoAliado === "existente"
+        ? (aliadoSeleccionado?.instagram || evento.instagram || undefined)
+        : (nuevoInstagram.trim() || undefined);
+    const finalZonaSlug =
+      modoAliado === "existente"
+        ? (aliadoSeleccionado?.zonaSlug || evento.zonaSlug || zonaSlug)
+        : (evento.zonaSlug || zonaSlug);
 
     setIsPublicando(true);
     setError(null);
@@ -122,9 +187,10 @@ export function ModalAsistenteEvento({
       }
 
       const res = await adminPublishEventAction({
-        businessName: evento.businessName.trim(),
-        whatsapp: evento.whatsapp || "573000000000",
-        instagram: evento.instagram || undefined,
+        negocioId: finalAliadoId,
+        businessName: finalBusinessName,
+        whatsapp: finalWhatsapp,
+        instagram: finalInstagram,
         eventTitle: evento.titulo.trim(),
         category: evento.categoria,
         dateTime: evento.dateTime,
@@ -132,7 +198,7 @@ export function ModalAsistenteEvento({
         description: evento.descripcion,
         imageUrl: finalImg || undefined,
         isFeatured: evento.destacado,
-        zonaSlug: evento.zonaSlug || zonaSlug,
+        zonaSlug: finalZonaSlug,
       });
 
       if (!res.success) {
@@ -154,12 +220,39 @@ export function ModalAsistenteEvento({
   // Abrir en el formulario completo (/admin/nuevo)
   const handleAbrirFormularioCompleto = () => {
     if (!evento) return;
+
+    const finalAliadoId = modoAliado === "existente" ? (selectedAliadoId || null) : null;
+    const finalBusinessName =
+      modoAliado === "existente"
+        ? (aliadoSeleccionado?.nombre || evento.businessName)
+        : nuevoNombre.trim();
+    const finalWhatsapp =
+      modoAliado === "existente"
+        ? (aliadoSeleccionado?.whatsapp || evento.whatsapp)
+        : nuevoWhatsapp.trim();
+    const finalInstagram =
+      modoAliado === "existente"
+        ? (aliadoSeleccionado?.instagram || evento.instagram)
+        : nuevoInstagram.trim();
+    const finalZonaSlug =
+      modoAliado === "existente"
+        ? (aliadoSeleccionado?.zonaSlug || evento.zonaSlug || zonaSlug)
+        : (evento.zonaSlug || zonaSlug);
+
+    const payloadExtraido: EventoExtraido = {
+      ...evento,
+      aliadoId: finalAliadoId,
+      businessName: finalBusinessName,
+      whatsapp: finalWhatsapp,
+      instagram: finalInstagram,
+      zonaSlug: finalZonaSlug,
+    };
+
     if (onPrefillNuevo) {
-      onPrefillNuevo(evento, archivoFoto);
+      onPrefillNuevo(payloadExtraido, archivoFoto);
     } else {
-      // Guardar en sessionStorage para ser recuperado por /admin/nuevo
       try {
-        sessionStorage.setItem("padonde_asistente_prefill", JSON.stringify(evento));
+        sessionStorage.setItem("padonde_asistente_prefill", JSON.stringify(payloadExtraido));
       } catch {}
       router.push("/admin/nuevo");
     }
@@ -179,8 +272,8 @@ export function ModalAsistenteEvento({
               </h3>
               <p className="text-[11px] sm:text-xs text-stone font-sans mt-0.5">
                 {paso === 1
-                  ? "Convierte mensajes informales de WhatsApp o afiches en planes listos para publicar."
-                  : "Revisa la ficha extraída con copy para turistas y publica en 1 clic."}
+                  ? "Convierte mensajes de WhatsApp o afiches en planes listos para publicar."
+                  : "Selecciona el aliado, revisa los datos y publica sin crear duplicados."}
               </p>
             </div>
           </div>
@@ -274,7 +367,7 @@ export function ModalAsistenteEvento({
                         setArchivoFoto(null);
                         setPreviewFoto(null);
                       }}
-                      className="text-[11px] text-terra hover:underline"
+                      className="text-[11px] text-terra hover:underline cursor-pointer"
                     >
                       Quitar foto
                     </button>
@@ -318,7 +411,7 @@ export function ModalAsistenteEvento({
           )}
 
           {/* ─────────────────────────────────────────────────────────────
-              PASO 2: FICHA EXTRAÍDA (Revisión y 1-Click Publish)
+              PASO 2: FICHA EXTRAÍDA CON SELECTOR DE ALIADO
              ───────────────────────────────────────────────────────────── */}
           {paso === 2 && evento && (
             <div className="space-y-4">
@@ -340,30 +433,220 @@ export function ModalAsistenteEvento({
                 </div>
               </div>
 
-              {/* Aliado & Categoría */}
+              {/* SELECTOR CONTROLADO DE ALIADO: Evitar Duplicados */}
+              <div className="p-3.5 rounded-2xl bg-white border border-stone-light/80 space-y-3 shadow-2xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <label className="text-xs font-bold text-forest flex items-center gap-1.5">
+                    <span>📍</span> Aliado Comercial Responsable *
+                  </label>
+
+                  {/* Selector Existente vs Crear Nuevo */}
+                  <div className="inline-flex rounded-xl bg-stone-light/40 p-0.5 text-[11px] font-sans font-medium self-start sm:self-auto">
+                    <button
+                      type="button"
+                      onClick={() => setModoAliado("existente")}
+                      className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                        modoAliado === "existente"
+                          ? "bg-forest text-white font-semibold shadow-2xs"
+                          : "text-stone hover:text-forest"
+                      }`}
+                    >
+                      Elegir Existente ({aliados.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setModoAliado("nuevo");
+                        setSelectedAliadoId("");
+                      }}
+                      className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                        modoAliado === "nuevo"
+                          ? "bg-terra text-white font-semibold shadow-2xs"
+                          : "text-stone hover:text-forest"
+                      }`}
+                    >
+                      ➕ Crear Nuevo
+                    </button>
+                  </div>
+                </div>
+
+                {/* Vista cuando está en modo EXISTENTE */}
+                {modoAliado === "existente" && (
+                  <div className="space-y-2">
+                    {aliadoSeleccionado ? (
+                      <div className="p-3 bg-emerald-50/90 border border-emerald-300 rounded-2xl flex items-center justify-between gap-3 shadow-2xs">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className="w-9 h-9 rounded-xl bg-white flex items-center justify-center text-lg border border-emerald-200 shadow-xs shrink-0">
+                            {getCategoria(aliadoSeleccionado.categoria as any)?.emoji || "🏢"}
+                          </span>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="text-xs font-bold text-emerald-950 truncate">
+                                {aliadoSeleccionado.nombre}
+                              </p>
+                              <span className="text-[10px] font-semibold uppercase tracking-wider bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded-md shrink-0">
+                                {aliadoSeleccionado.zonaNombre || (aliadoSeleccionado.zonaSlug === "mendihuaca" ? "Mendihuaca" : "Minca")}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 text-[10px] text-emerald-800 mt-0.5">
+                              {aliadoSeleccionado.whatsapp && (
+                                <span>📞 +{aliadoSeleccionado.whatsapp}</span>
+                              )}
+                              {aliadoSeleccionado.instagram && (
+                                <span>📸 {aliadoSeleccionado.instagram}</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedAliadoId("");
+                            setIsDropdownOpen(true);
+                          }}
+                          className="text-xs font-bold text-emerald-800 hover:text-emerald-950 underline shrink-0 px-2.5 py-1.5 bg-white/80 rounded-xl border border-emerald-200 hover:bg-white transition-colors cursor-pointer"
+                        >
+                          Cambiar Aliado ▾
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="relative">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            placeholder="🔍 Buscar aliado registrado en PaDónde (ej. La Casona, Duni...)"
+                            value={busquedaAliado}
+                            onChange={(e) => {
+                              setBusquedaAliado(e.target.value);
+                              setIsDropdownOpen(true);
+                            }}
+                            onFocus={() => setIsDropdownOpen(true)}
+                            className="w-full px-3.5 py-2 text-xs rounded-xl border border-stone-light/80 bg-white text-forest font-medium focus:outline-terra"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setIsDropdownOpen((prev) => !prev)}
+                            className="px-3 py-2 text-xs rounded-xl border border-stone-light bg-stone-light/30 text-stone hover:text-forest shrink-0 cursor-pointer"
+                          >
+                            {isDropdownOpen ? "Cerrar" : "Ver todos"}
+                          </button>
+                        </div>
+
+                        {isDropdownOpen && (
+                          <div className="absolute top-full left-0 right-0 z-30 mt-1 max-h-52 overflow-y-auto bg-white border border-stone-light rounded-2xl shadow-xl p-1.5 space-y-1">
+                            {aliadosFiltrados.length === 0 ? (
+                              <div className="p-3 text-center text-xs text-stone space-y-2">
+                                <p>No se encontró ningún aliado registrado con ese nombre.</p>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setModoAliado("nuevo");
+                                    setNuevoNombre(busquedaAliado);
+                                    setIsDropdownOpen(false);
+                                  }}
+                                  className="text-xs font-bold text-terra hover:underline cursor-pointer"
+                                >
+                                  ➕ Registrar como nuevo aliado &quot;{busquedaAliado}&quot;
+                                </button>
+                              </div>
+                            ) : (
+                              aliadosFiltrados.map((a) => (
+                                <button
+                                  key={a.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedAliadoId(a.id);
+                                    if (a.zonaSlug) setZonaSlug(a.zonaSlug);
+                                    setIsDropdownOpen(false);
+                                  }}
+                                  className="w-full text-left p-2 hover:bg-forest/5 rounded-xl flex items-center justify-between text-xs transition-colors cursor-pointer"
+                                >
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <span>{getCategoria(a.categoria as any)?.emoji || "🏢"}</span>
+                                    <span className="font-semibold text-forest truncate">
+                                      {a.nombre}
+                                    </span>
+                                  </div>
+                                  <span className="text-[10px] bg-stone-light/50 px-2 py-0.5 rounded-full text-stone shrink-0">
+                                    {a.zonaNombre || (a.zonaSlug === "mendihuaca" ? "Mendihuaca" : "Minca")}
+                                  </span>
+                                </button>
+                              ))
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Vista cuando está en modo CREAR NUEVO */}
+                {modoAliado === "nuevo" && (
+                  <div className="p-3.5 bg-terra/5 border border-terra/20 rounded-2xl space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-terra uppercase tracking-wider flex items-center gap-1.5">
+                        <span>➕</span> Registrar Comercio Nuevo en PaDónde
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setModoAliado("existente")}
+                        className="text-[11px] text-stone hover:text-forest underline cursor-pointer"
+                      >
+                        ← Volver a lista existente
+                      </button>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-forest mb-1">
+                        Nombre Oficial del Negocio *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={nuevoNombre}
+                        onChange={(e) => setNuevoNombre(e.target.value)}
+                        placeholder="Ej. Hostal La Brisa"
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-stone-light bg-white text-forest font-semibold focus:outline-terra"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      <div>
+                        <label className="block text-[11px] font-semibold text-forest mb-1">
+                          WhatsApp de Contacto *
+                        </label>
+                        <input
+                          type="tel"
+                          required
+                          value={nuevoWhatsapp}
+                          onChange={(e) => setNuevoWhatsapp(e.target.value)}
+                          placeholder="573001234567"
+                          className="w-full px-3 py-2 text-xs rounded-xl border border-stone-light bg-white text-forest focus:outline-terra"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-semibold text-forest mb-1">
+                          Instagram (Opcional)
+                        </label>
+                        <input
+                          type="text"
+                          value={nuevoInstagram}
+                          onChange={(e) => setNuevoInstagram(e.target.value)}
+                          placeholder="@hostallabrisa"
+                          className="w-full px-3 py-2 text-xs rounded-xl border border-stone-light bg-white text-forest focus:outline-terra"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Categoría & Zona */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-forest mb-1">
-                    Comercio / Aliado Vinculado *
-                  </label>
-                  <input
-                    type="text"
-                    value={evento.businessName}
-                    onChange={(e) =>
-                      setEvento({ ...evento, businessName: e.target.value })
-                    }
-                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-stone-light/80 bg-white text-forest font-medium focus:outline-terra"
-                  />
-                  {evento.whatsapp && (
-                    <p className="text-[10px] text-stone mt-0.5">
-                      WhatsApp: +{evento.whatsapp}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-forest mb-1">
-                    Categoría *
+                    Categoría del Evento *
                   </label>
                   <select
                     value={evento.categoria}
@@ -382,12 +665,31 @@ export function ModalAsistenteEvento({
                     ))}
                   </select>
                 </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-forest mb-1">
+                    Zona de Destino *
+                  </label>
+                  <select
+                    value={evento.zonaSlug || zonaSlug}
+                    onChange={(e) =>
+                      setEvento({ ...evento, zonaSlug: e.target.value })
+                    }
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-stone-light/80 bg-white text-forest font-medium focus:outline-terra cursor-pointer"
+                  >
+                    {zonas.map((z) => (
+                      <option key={z.id} value={z.slug}>
+                        {z.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               {/* Título sugerido */}
               <div>
                 <label className="block text-xs font-semibold text-forest mb-1">
-                  Título Sugerido (Limpio para móvil) *
+                  Título del Evento (Limpio para móvil) *
                 </label>
                 <input
                   type="text"

@@ -7,6 +7,7 @@ import { traducirEventoCompleto } from "@/lib/translations/translator";
 import type { CategoriaEvento, PlanNegocio, CategoriaServicioEsencial, ServicioEsencial } from "@/lib/types";
 
 export interface AdminPublishInput {
+  negocioId?: string;
   businessName: string;
   whatsapp: string;
   instagram?: string;
@@ -65,23 +66,35 @@ export async function adminPublishEventAction(
 
     // 3. Buscar o crear negocio
     let negocioId: string;
-    const { data: negocioExistente } = await supabase
-      .from("negocios")
-      .select("id")
-      .eq("zona_id", zona.id)
-      .ilike("nombre", input.businessName.trim())
-      .maybeSingle();
-
-    if (negocioExistente) {
-      negocioId = negocioExistente.id;
-      await supabase
-        .from("negocios")
-        .update({
-          whatsapp: input.whatsapp.replace(/\D/g, ""),
-          instagram: input.instagram?.trim() || null,
-        })
-        .eq("id", negocioId);
+    if (input.negocioId) {
+      negocioId = input.negocioId;
+      if (input.whatsapp) {
+        await supabase
+          .from("negocios")
+          .update({
+            whatsapp: input.whatsapp.replace(/\D/g, ""),
+            instagram: input.instagram?.trim() || null,
+          })
+          .eq("id", negocioId);
+      }
     } else {
+      const { data: negocioExistente } = await supabase
+        .from("negocios")
+        .select("id")
+        .eq("zona_id", zona.id)
+        .ilike("nombre", input.businessName.trim())
+        .maybeSingle();
+
+      if (negocioExistente) {
+        negocioId = negocioExistente.id;
+        await supabase
+          .from("negocios")
+          .update({
+            whatsapp: input.whatsapp.replace(/\D/g, ""),
+            instagram: input.instagram?.trim() || null,
+          })
+          .eq("id", negocioId);
+      } else {
       const { data: nuevoNegocio, error: negError } = await supabase
         .from("negocios")
         .insert({
@@ -101,6 +114,7 @@ export async function adminPublishEventAction(
         return { success: false, error: "No se pudo registrar el negocio." };
       }
       negocioId = nuevoNegocio.id;
+      }
     }
 
     // 4. Generar traducciones automáticas (EN, DE, FR)
