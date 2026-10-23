@@ -68,7 +68,7 @@ export function ModalEditarEvento({
   const recInicial = extraerRecurrencia(evento.descripcion);
   const diaBaseEvento = evento.fecha_inicio
     ? getDayOfWeekColombia(getFechaYMDDesdeISO(evento.fecha_inicio))
-    : 4;
+    : new Date().getDay();
   const [esRecurrente, setEsRecurrente] = useState(recInicial.esRecurrente);
   const [diasSeleccionados, setDiasSeleccionados] = useState<number[]>(
     recInicial.dias.length > 0 ? recInicial.dias : [diaBaseEvento]

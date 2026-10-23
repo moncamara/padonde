@@ -65,7 +65,7 @@ export function ModalAsistenteEvento({
   const [isRegenerandoAI, setIsRegenerandoAI] = useState(false);
   const [generadoConGemini, setGeneradoConGemini] = useState(false);
   const [esRecurrente, setEsRecurrente] = useState(false);
-  const [diasRecurrentes, setDiasRecurrentes] = useState<number[]>([4]);
+  const [diasRecurrentes, setDiasRecurrentes] = useState<number[]>([]);
 
   // Estados de control de Aliado (Evitar duplicados)
   const [modoAliado, setModoAliado] = useState<"existente" | "nuevo">("existente");
@@ -137,18 +137,10 @@ export function ModalAsistenteEvento({
         setBusquedaAliado("");
       }
 
-      if (extraido.esRecurrente && extraido.diasRecurrentes && extraido.diasRecurrentes.length > 0) {
-        setEsRecurrente(true);
-        setDiasRecurrentes(extraido.diasRecurrentes);
-      } else {
-        setEsRecurrente(false);
-        setDiasRecurrentes([4]);
-      }
-
       setNuevoWhatsapp(extraido.whatsapp);
       setNuevoInstagram(extraido.instagram);
 
-      // Invocar a Gemini AI para redactar título y copy editorial con atmósfera real
+      // Invocar a Gemini AI para investigar el texto bruto y estructurar la ficha editorial
       const aiRes = await generarCopyEventoGeminiAction({
         textoBruto,
         businessName: extraido.businessName,
@@ -160,10 +152,42 @@ export function ModalAsistenteEvento({
         if (aiRes.descripcion) extraido.descripcion = aiRes.descripcion;
         if (aiRes.categoria) extraido.categoria = aiRes.categoria;
         if (aiRes.precio !== undefined) extraido.precio = aiRes.precio;
-        extraido.notasAsistente.unshift("✨ Redacción generada por Gemini AI (estilo bohemio & mochilero)");
+        if (aiRes.businessName && !extraido.aliadoId) {
+          extraido.businessName = aiRes.businessName;
+          setNuevoNombre(aiRes.businessName);
+        }
+        if (aiRes.whatsapp && (!extraido.whatsapp || extraido.whatsapp === "573000000000")) {
+          extraido.whatsapp = aiRes.whatsapp;
+          setNuevoWhatsapp(aiRes.whatsapp);
+        }
+        if (aiRes.instagram && !extraido.instagram) {
+          extraido.instagram = aiRes.instagram;
+          setNuevoInstagram(aiRes.instagram);
+        }
+        if (aiRes.esRecurrente !== undefined) {
+          extraido.esRecurrente = aiRes.esRecurrente;
+          if (aiRes.diasRecurrentes && aiRes.diasRecurrentes.length > 0) {
+            extraido.diasRecurrentes = aiRes.diasRecurrentes;
+          }
+        }
+        extraido.notasAsistente.unshift("✨ Ficha investigada y redactada por Gemini AI (estilo bohemio & mochilero)");
         setGeneradoConGemini(true);
       } else {
         console.warn("Gemini AI fallback:", aiRes.error);
+      }
+
+      // Calcular día base del evento para sugerir si se activa recurrencia (sin forzar jueves)
+      const diaBaseEvento = extraido.dateTime
+        ? new Date(extraido.dateTime + "-05:00").getDay()
+        : new Date().getDay();
+      const diaBaseValido = isNaN(diaBaseEvento) ? 5 : diaBaseEvento;
+
+      if (extraido.esRecurrente && extraido.diasRecurrentes && extraido.diasRecurrentes.length > 0) {
+        setEsRecurrente(true);
+        setDiasRecurrentes(extraido.diasRecurrentes);
+      } else {
+        setEsRecurrente(false);
+        setDiasRecurrentes([diaBaseValido]);
       }
 
       setEvento(extraido);
@@ -279,6 +303,7 @@ export function ModalAsistenteEvento({
         eventTitle: evento.titulo.trim(),
         category: evento.categoria,
         dateTime: evento.dateTime,
+        fechaFin: evento.fechaFin || null,
         price: Number(evento.precio) || 0,
         description: descripcionFinal,
         imageUrl: finalImg || undefined,
@@ -334,6 +359,9 @@ export function ModalAsistenteEvento({
       whatsapp: finalWhatsapp,
       instagram: finalInstagram,
       zonaSlug: finalZonaSlug,
+      esRecurrente,
+      diasRecurrentes,
+      fechaFin: evento.fechaFin || null,
     };
 
     if (onPrefillNuevo) {
@@ -799,8 +827,8 @@ export function ModalAsistenteEvento({
                 />
               </div>
 
-              {/* Fecha/Hora y Cover */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Fecha/Hora, Cierre y Cover */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-forest mb-1">
                     Fecha y Hora de Inicio *
@@ -811,6 +839,21 @@ export function ModalAsistenteEvento({
                     onChange={(e) =>
                       setEvento({ ...evento, dateTime: e.target.value })
                     }
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-stone-light/80 bg-white text-forest font-medium focus:outline-terra"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-forest mb-1">
+                    Cierre / Fin (Opcional)
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={evento.fechaFin || ""}
+                    onChange={(e) =>
+                      setEvento({ ...evento, fechaFin: e.target.value || null })
+                    }
+                    placeholder="Hora de cierre"
                     className="w-full px-3 py-2 text-xs rounded-xl border border-stone-light/80 bg-white text-forest font-medium focus:outline-terra"
                   />
                 </div>
@@ -839,7 +882,7 @@ export function ModalAsistenteEvento({
               </div>
 
               {/* Frecuencia / Recurrencia */}
-              <div className="p-3 rounded-2xl bg-amber-50/70 border border-amber-200/90 space-y-2">
+              <div className="p-3 rounded-2xl bg-amber-50/70 border border-amber-200/90 space-y-2.5">
                 <label className="flex items-center justify-between cursor-pointer">
                   <div className="flex items-center gap-2">
                     <span className="text-sm">🔄</span>
@@ -848,29 +891,64 @@ export function ModalAsistenteEvento({
                         ¿Es una experiencia periódica o recurrente?
                       </p>
                       <p className="text-[10px] text-amber-800">
-                        Aparecerá en la cartelera todos los días seleccionados
+                        Aparecerá en la cartelera los días que programes
                       </p>
                     </div>
                   </div>
                   <input
                     type="checkbox"
                     checked={esRecurrente}
-                    onChange={(e) => setEsRecurrente(e.target.checked)}
+                    onChange={(e) => {
+                      const nuevoEstado = e.target.checked;
+                      setEsRecurrente(nuevoEstado);
+                      if (nuevoEstado && diasRecurrentes.length === 0) {
+                        const d = evento.dateTime ? new Date(evento.dateTime + "-05:00").getDay() : new Date().getDay();
+                        setDiasRecurrentes([isNaN(d) ? 5 : d]);
+                      }
+                    }}
                     className="w-4 h-4 text-forest rounded border-amber-300 focus:ring-forest cursor-pointer"
                   />
                 </label>
 
                 {esRecurrente && (
                   <div className="pt-2 border-t border-amber-200/80 space-y-2 animate-in fade-in">
+                    {/* Botones de selección rápida */}
+                    <div className="flex flex-wrap items-center gap-1.5 pb-1">
+                      <button
+                        type="button"
+                        onClick={() => setDiasRecurrentes([1, 2, 3, 4, 5, 6, 0])}
+                        className="px-2.5 py-1 text-[10px] rounded-lg bg-white border border-amber-300 hover:bg-amber-100 text-amber-950 font-medium transition-all active:scale-95 cursor-pointer"
+                      >
+                        ⚡ Todos los días
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDiasRecurrentes([5, 6, 0])}
+                        className="px-2.5 py-1 text-[10px] rounded-lg bg-white border border-amber-300 hover:bg-amber-100 text-amber-950 font-medium transition-all active:scale-95 cursor-pointer"
+                      >
+                        🎉 Fines de semana (Vie-Dom)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const d = evento.dateTime ? new Date(evento.dateTime + "-05:00").getDay() : new Date().getDay();
+                          setDiasRecurrentes([isNaN(d) ? 5 : d]);
+                        }}
+                        className="px-2.5 py-1 text-[10px] rounded-lg bg-white border border-amber-300 hover:bg-amber-100 text-amber-950 font-medium transition-all active:scale-95 cursor-pointer"
+                      >
+                        📅 Solo el día del evento
+                      </button>
+                    </div>
+
                     <div className="grid grid-cols-7 gap-1">
                       {[
-                        { d: 1, label: "L" },
-                        { d: 2, label: "M" },
-                        { d: 3, label: "M" },
-                        { d: 4, label: "J" },
-                        { d: 5, label: "V" },
-                        { d: 6, label: "S" },
-                        { d: 0, label: "D" },
+                        { d: 1, label: "Lun" },
+                        { d: 2, label: "Mar" },
+                        { d: 3, label: "Mié" },
+                        { d: 4, label: "Jue" },
+                        { d: 5, label: "Vie" },
+                        { d: 6, label: "Sáb" },
+                        { d: 0, label: "Dom" },
                       ].map((item) => {
                         const activo = diasRecurrentes.includes(item.d);
                         return (
@@ -882,7 +960,8 @@ export function ModalAsistenteEvento({
                                 if (diasRecurrentes.length > 1) {
                                   setDiasRecurrentes(diasRecurrentes.filter((x) => x !== item.d));
                                 } else {
-                                  setDiasRecurrentes([1, 2, 3, 4, 5, 6, 0]);
+                                  const d = evento.dateTime ? new Date(evento.dateTime + "-05:00").getDay() : 5;
+                                  setDiasRecurrentes([isNaN(d) ? 5 : d]);
                                 }
                               } else {
                                 setDiasRecurrentes([...diasRecurrentes, item.d]);
@@ -890,7 +969,7 @@ export function ModalAsistenteEvento({
                             }}
                             className={`py-1.5 rounded-lg text-xs font-semibold transition-all border text-center cursor-pointer ${
                               activo
-                                ? "bg-forest text-white border-forest shadow-2xs"
+                                ? "bg-forest text-white border-forest shadow-2xs font-bold"
                                 : "bg-white text-stone border-amber-200 hover:text-forest"
                             }`}
                           >
@@ -899,8 +978,8 @@ export function ModalAsistenteEvento({
                         );
                       })}
                     </div>
-                    <p className="text-[11px] text-amber-900 font-medium">
-                      Programación: <strong>{formatearDiasRecurrencia(diasRecurrentes)}</strong>
+                    <p className="text-[11px] text-amber-900 font-medium pt-0.5">
+                      Programación visible: <strong>{formatearDiasRecurrencia(diasRecurrentes)}</strong>
                     </p>
                   </div>
                 )}

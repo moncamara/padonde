@@ -7,6 +7,13 @@ import { uploadEventImage, uploadEventVideo, extractVideoThumbnail } from "@/lib
 import { adminPublishEventAction } from "../actions";
 import { Button } from "@/components/ui/Button";
 import { ModalAsistenteEvento } from "../ModalAsistenteEvento";
+import {
+  inyectarRecurrencia,
+  limpiarDescripcionRecurrencia,
+  formatearDiasRecurrencia,
+  getDayOfWeekColombia,
+  getFechaYMDDesdeISO,
+} from "@/lib/utils";
 import type { EventoExtraido } from "@/lib/eventoParser";
 import type { CategoriaEvento } from "@/lib/types";
 
@@ -138,6 +145,10 @@ export function AdminPublishForm({
       : "comida"
   );
   const [dateTime, setDateTime] = useState("");
+  const [fechaFin, setFechaFin] = useState("");
+  const [tieneFechaFin, setTieneFechaFin] = useState(false);
+  const [esRecurrente, setEsRecurrente] = useState(false);
+  const [diasRecurrentes, setDiasRecurrentes] = useState<number[]>([]);
   const [price, setPrice] = useState<string>("0");
   const [description, setDescription] = useState("");
   const [isFeatured, setIsFeatured] = useState(false);
@@ -176,6 +187,16 @@ export function AdminPublishForm({
         if (p.titulo) setEventTitle(p.titulo);
         if (p.categoria) setCategory(p.categoria);
         if (p.dateTime) setDateTime(p.dateTime);
+        if (p.fechaFin) {
+          setFechaFin(p.fechaFin);
+          setTieneFechaFin(true);
+        }
+        if (p.esRecurrente) {
+          setEsRecurrente(true);
+          if (p.diasRecurrentes && p.diasRecurrentes.length > 0) {
+            setDiasRecurrentes(p.diasRecurrentes);
+          }
+        }
         if (p.precio !== undefined) {
           setPrice(p.precio.toString());
         }
@@ -193,6 +214,16 @@ export function AdminPublishForm({
     if (data.titulo) setEventTitle(data.titulo);
     if (data.categoria) setCategory(data.categoria);
     if (data.dateTime) setDateTime(data.dateTime);
+    if (data.fechaFin) {
+      setFechaFin(data.fechaFin);
+      setTieneFechaFin(true);
+    }
+    if (data.esRecurrente) {
+      setEsRecurrente(true);
+      if (data.diasRecurrentes && data.diasRecurrentes.length > 0) {
+        setDiasRecurrentes(data.diasRecurrentes);
+      }
+    }
     if (data.precio !== undefined) {
       setPrice(data.precio.toString());
     }
@@ -268,15 +299,25 @@ export function AdminPublishForm({
             }
           : undefined;
 
+      const diasFinales = diasRecurrentes.length > 0
+        ? diasRecurrentes
+        : [dateTime ? getDayOfWeekColombia(getFechaYMDDesdeISO(dateTime)) : 5];
+
+      const descripcionFinal = esRecurrente
+        ? inyectarRecurrencia(description, diasFinales)
+        : limpiarDescripcionRecurrencia(description);
+
       const result = await adminPublishEventAction({
+        negocioId: selectedAliadoId || undefined,
         businessName,
         whatsapp,
         instagram,
         eventTitle,
         category,
         dateTime: dateTime || new Date().toISOString(),
+        fechaFin: tieneFechaFin && fechaFin ? fechaFin : null,
         price: parseFloat(price) || 0,
-        description,
+        description: descripcionFinal,
         imageUrl: finalImageUrl,
         videoUrl: finalVideoUrl,
         isFeatured,
@@ -676,32 +717,225 @@ export function AdminPublishForm({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-medium text-forest mb-1.5 font-sans">
-              Fecha y Hora *
-            </label>
-            <input
-              type="datetime-local"
-              required
-              value={dateTime}
-              onChange={(e) => setDateTime(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-stone-light bg-cream text-forest text-sm font-sans focus:outline-none focus:border-forest transition-colors"
-            />
+        {/* BLOQUE DE HORARIO, DURACIÓN Y RECURRENCIA UNIFICADA */}
+        <div className="space-y-4 pt-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-forest mb-1.5 font-sans">
+                Fecha y Hora de Inicio *
+              </label>
+              <input
+                type="datetime-local"
+                required
+                value={dateTime}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setDateTime(val);
+                  // Si no hay días seleccionados en recurrencia, sugerir el día de la fecha elegida
+                  if (val) {
+                    const dia = getDayOfWeekColombia(getFechaYMDDesdeISO(val));
+                    if (diasRecurrentes.length === 0) {
+                      setDiasRecurrentes([dia]);
+                    }
+                  }
+                }}
+                className="w-full px-4 py-3 rounded-xl border border-stone-light bg-cream text-forest text-sm font-sans focus:outline-none focus:border-forest transition-colors"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-forest mb-1.5 font-sans">
+                Cover / Precio COP (0 = Consultar) *
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  min="0"
+                  step="500"
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-stone-light bg-cream text-forest text-sm font-sans focus:outline-none focus:border-forest transition-colors"
+                />
+                <span className="absolute right-3.5 top-3.5 text-xs text-stone pointer-events-none">
+                  {price === "0" || !price ? "Gratis / Libre" : "COP"}
+                </span>
+              </div>
+            </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-medium text-forest mb-1.5 font-sans">
-              Precio COP (0 = Consultar) *
+          {/* Duración / Hora de Cierre (Opcional) */}
+          <div className="p-3.5 rounded-2xl bg-cream/70 border border-stone-light/70 space-y-2.5">
+            <label className="flex items-center justify-between cursor-pointer">
+              <div className="flex items-center gap-2">
+                <span className="text-sm">⏱️</span>
+                <div>
+                  <p className="text-xs font-semibold text-forest">
+                    ¿Tiene hora de finalización o dura varios días?
+                  </p>
+                  <p className="text-[11px] text-stone">
+                    Recomendado para fiestas que van hasta la madrugada o festivales continuos
+                  </p>
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                checked={tieneFechaFin}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setTieneFechaFin(checked);
+                  if (!checked) setFechaFin("");
+                  else if (!fechaFin && dateTime) setFechaFin(dateTime);
+                }}
+                className="w-4 h-4 text-forest rounded border-stone-light focus:ring-forest cursor-pointer"
+              />
             </label>
-            <input
-              type="number"
-              min="0"
-              step="500"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-stone-light bg-cream text-forest text-sm font-sans focus:outline-none focus:border-forest transition-colors"
-            />
+
+            {tieneFechaFin && (
+              <div className="pt-2 border-t border-stone-light/60 animate-in fade-in">
+                <label className="block text-xs font-medium text-forest mb-1 font-sans">
+                  Fecha y Hora de Cierre / Finalización
+                </label>
+                <input
+                  type="datetime-local"
+                  value={fechaFin}
+                  min={dateTime || undefined}
+                  onChange={(e) => setFechaFin(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-stone-light bg-white text-forest text-xs sm:text-sm font-sans focus:outline-none focus:border-forest"
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Frecuencia / Recurrencia Semanal */}
+          <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200/90 space-y-3 shadow-2xs">
+            <label className="flex items-center justify-between cursor-pointer">
+              <div className="flex items-center gap-2.5">
+                <span className="text-base">🔄</span>
+                <div>
+                  <p className="text-xs sm:text-sm font-bold text-amber-950">
+                    ¿Es una experiencia periódica o recurrente?
+                  </p>
+                  <p className="text-[11px] text-amber-800">
+                    Aparecerá automáticamente en la cartelera los días que programes
+                  </p>
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                checked={esRecurrente}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setEsRecurrente(checked);
+                  if (checked && diasRecurrentes.length === 0) {
+                    const diaBase = dateTime
+                      ? getDayOfWeekColombia(getFechaYMDDesdeISO(dateTime))
+                      : 5;
+                    setDiasRecurrentes([diaBase]);
+                  }
+                }}
+                className="w-4 h-4 text-forest rounded border-amber-300 focus:ring-forest cursor-pointer"
+              />
+            </label>
+
+            {esRecurrente && (
+              <div className="pt-3 border-t border-amber-200/80 space-y-3 animate-in fade-in">
+                {/* Botones de selección rápida */}
+                <div>
+                  <span className="block text-[11px] font-semibold text-amber-950 mb-1.5">
+                    Preajustes rápidos:
+                  </span>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setDiasRecurrentes([1, 2, 3, 4, 5, 6, 0])}
+                      className="px-2.5 py-1 text-[11px] rounded-lg bg-white border border-amber-300 hover:bg-amber-100 text-amber-950 font-medium transition-all active:scale-95 cursor-pointer shadow-2xs"
+                    >
+                      ⚡ Todos los días
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDiasRecurrentes([5, 6, 0])}
+                      className="px-2.5 py-1 text-[11px] rounded-lg bg-white border border-amber-300 hover:bg-amber-100 text-amber-950 font-medium transition-all active:scale-95 cursor-pointer shadow-2xs"
+                    >
+                      🎉 Fines de semana (Vie-Dom)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDiasRecurrentes([4, 5, 6])}
+                      className="px-2.5 py-1 text-[11px] rounded-lg bg-white border border-amber-300 hover:bg-amber-100 text-amber-950 font-medium transition-all active:scale-95 cursor-pointer shadow-2xs"
+                    >
+                      🍸 Jue a Sáb
+                    </button>
+                    {dateTime && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const dia = getDayOfWeekColombia(getFechaYMDDesdeISO(dateTime));
+                          setDiasRecurrentes([dia]);
+                        }}
+                        className="px-2.5 py-1 text-[11px] rounded-lg bg-white border border-amber-300 hover:bg-amber-100 text-amber-950 font-medium transition-all active:scale-95 cursor-pointer shadow-2xs"
+                      >
+                        📅 Solo el día del evento
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Pastillas individuales de días */}
+                <div>
+                  <span className="block text-[11px] font-semibold text-amber-950 mb-1.5">
+                    O marca los días específicos:
+                  </span>
+                  <div className="grid grid-cols-7 gap-1.5">
+                    {[
+                      { d: 1, label: "Lun" },
+                      { d: 2, label: "Mar" },
+                      { d: 3, label: "Mié" },
+                      { d: 4, label: "Jue" },
+                      { d: 5, label: "Vie" },
+                      { d: 6, label: "Sáb" },
+                      { d: 0, label: "Dom" },
+                    ].map((item) => {
+                      const activo = diasRecurrentes.includes(item.d);
+                      return (
+                        <button
+                          key={item.d}
+                          type="button"
+                          onClick={() => {
+                            if (activo) {
+                              if (diasRecurrentes.length > 1) {
+                                setDiasRecurrentes(diasRecurrentes.filter((x) => x !== item.d));
+                              } else {
+                                const dia = dateTime ? getDayOfWeekColombia(getFechaYMDDesdeISO(dateTime)) : 5;
+                                setDiasRecurrentes([dia]);
+                              }
+                            } else {
+                              setDiasRecurrentes([...diasRecurrentes, item.d]);
+                            }
+                          }}
+                          className={`py-2 rounded-xl text-xs font-semibold transition-all border text-center cursor-pointer ${
+                            activo
+                              ? "bg-forest text-white border-forest shadow-xs font-bold ring-2 ring-forest/20"
+                              : "bg-white text-stone border-amber-200/90 hover:text-forest hover:border-forest/40"
+                          }`}
+                        >
+                          {item.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="p-2.5 bg-white/80 rounded-xl border border-amber-200/80 flex items-center justify-between text-xs text-amber-950">
+                  <span className="text-[11px] text-amber-800 font-medium">Programación visible:</span>
+                  <strong className="text-forest font-semibold">
+                    {diasRecurrentes.length > 0
+                      ? formatearDiasRecurrencia(diasRecurrentes)
+                      : "Selecciona al menos un día"}
+                  </strong>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

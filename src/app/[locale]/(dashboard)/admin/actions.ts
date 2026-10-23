@@ -14,6 +14,7 @@ export interface AdminPublishInput {
   eventTitle: string;
   category: CategoriaEvento;
   dateTime: string;
+  fechaFin?: string | null;
   price: number;
   description: string;
   imageUrl?: string;
@@ -135,6 +136,7 @@ export async function adminPublishEventAction(
       precio: input.price > 0 ? input.price : 0,
       precio_moneda: "COP",
       fecha_inicio: parseLocalColombiaAISO(input.dateTime),
+      fecha_fin: input.fechaFin ? parseLocalColombiaAISO(input.fechaFin) : null,
       imagen_url:
         input.imageUrl ||
         "https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&q=80",
@@ -1516,6 +1518,13 @@ export interface GenerarCopyGeminiResult {
   descripcion?: string;
   categoria?: CategoriaEvento;
   precio?: number;
+  businessName?: string;
+  whatsapp?: string;
+  instagram?: string;
+  horaInicio?: string;
+  horaFin?: string;
+  esRecurrente?: boolean;
+  diasRecurrentes?: number[];
   error?: string;
 }
 
@@ -1531,25 +1540,40 @@ export async function generarCopyEventoGeminiAction(
     return { success: false, error: "GEMINI_API_KEY no configurada en el servidor." };
   }
 
-  const prompt = `Eres el editor cultural y copywriter de "PaDónde", la plataforma de eventos y experiencias de Minca y la Sierra Nevada de Santa Marta (Colombia).
+  const prompt = `Eres el editor cultural, copywriter y analista de prospección comercial de "PaDónde", la plataforma de eventos y experiencias de Minca y la Sierra Nevada de Santa Marta (Colombia).
 Tu público objetivo son mochileros, nómadas digitales y viajeros nacionales e internacionales.
 
-Transforma este mensaje informal de WhatsApp en una ficha editorial irresistible y vibrante para la cartelera de eventos:
+Analiza este texto bruto (mensaje de WhatsApp, publicación de Instagram o afiche) y genera una ficha completa lista para publicar en la cartelera:
 "${input.textoBruto.replace(/"/g, '\\"')}"
 
-Comercio / Aliado: ${input.businessName || "No especificado"}
+Comercio / Aliado referencial: ${input.businessName || "No especificado"}
 Zona: ${input.zonaSlug === "mendihuaca" ? "Mendihuaca (Playa, Surf, Río)" : "Minca (Montaña, Selva, Café)"}
 
-Instrucciones de Redacción:
-1. No uses frases cliché como "un espacio perfecto para conectar con otros viajeros" o "servicio de barra y cocina".
-2. Transmite la atmósfera real de la Sierra: ambiente bohemio, relajado, risas, tragos de autor, música en español e inglés, sin pena ni acartonamiento.
-3. INCLUYE EMOJIS LLAMATIVOS Y EXPRESIVOS: Usa de 3 a 5 emojis acordes (ej. 🎤, 🍹, ✨, 🌿, 🎶, 🌙, 📍, 🍻, 🔥) distribuidos con gracia y dinamismo entre los párrafos y oraciones para que la lectura móvil sea divertida, visual y moderna.
-4. Responde ÚNICAMENTE en formato JSON válido (sin backticks de markdown, solo las llaves {}) con esta estructura:
+Instrucciones de Redacción y Extracción:
+1. Redacción cautivadora: No uses clichés genéricos. Transmite la atmósfera auténtica de la Sierra Nevada (ambiente bohemio, relajado, risas, tragos de autor, buena música, naturaleza).
+2. EMOJIS VIBRANTES: Incluye de 3 a 5 emojis acordes (ej. 🎤, 🍹, ✨, 🌿, 🎶, 🌙, 📍, 🍻, 🔥) distribuidos con gracia y dinamismo en los párrafos para que la lectura móvil sea divertida y moderna.
+3. DETECCIÓN DE RECURRENCIA Y FRECUENCIA (MUY IMPORTANTE):
+   - Si el texto dice "todos los jueves", "cada viernes", "los sábados", "fines de semana", "todos los días", "diario", marca "esRecurrente": true.
+   - En "diasRecurrentes", devuelve un array de enteros correspondientes: 0=Domingo, 1=Lunes, 2=Martes, 3=Miércoles, 4=Jueves, 5=Viernes, 6=Sábado.
+   - Si dice "todos los días", devuelve [0, 1, 2, 3, 4, 5, 6].
+   - Si dice "fines de semana", devuelve [5, 6, 0].
+   - Si es un evento de una sola fecha puntual, marca "esRecurrente": false y "diasRecurrentes": [].
+4. DETECCIÓN DE HORARIO:
+   - "horaInicio": formato "HH:mm" (ej: "20:00" para 8pm, "08:30" para mañana).
+   - "horaFin": si menciona hora de cierre o fin (ej: "hasta las 2am", "de 7 a 11pm"), formato "HH:mm".
+5. Responde ÚNICAMENTE en formato JSON válido (sin backticks de markdown, solo las llaves {}) con esta estructura:
 {
   "titulo": "Título atractivo con 1 emoji representativo (ej. 🎤 Noche de Karaoke & Tragos de Autor)",
   "descripcion": "2 párrafos breves, narrativos, envolventes y con emojis bien integrados que seduzcan al viajero",
   "categoria": "rumba" | "comida" | "bienestar" | "tours" | "arte" | "artesanias",
-  "precio": 0
+  "precio": 0,
+  "businessName": "Nombre del local/anfitrión si se detecta en el texto o null",
+  "whatsapp": "Número colombiano si se detecta (ej: 3151234567) o null",
+  "instagram": "@cuenta si se detecta o null",
+  "horaInicio": "20:00",
+  "horaFin": "02:00",
+  "esRecurrente": false,
+  "diasRecurrentes": [4]
 }`;
 
   try {
@@ -1582,6 +1606,13 @@ Instrucciones de Redacción:
       descripcion: parsed.descripcion,
       categoria: parsed.categoria,
       precio: typeof parsed.precio === "number" ? parsed.precio : 0,
+      businessName: parsed.businessName || undefined,
+      whatsapp: parsed.whatsapp || undefined,
+      instagram: parsed.instagram || undefined,
+      horaInicio: parsed.horaInicio || undefined,
+      horaFin: parsed.horaFin || undefined,
+      esRecurrente: typeof parsed.esRecurrente === "boolean" ? parsed.esRecurrente : undefined,
+      diasRecurrentes: Array.isArray(parsed.diasRecurrentes) ? parsed.diasRecurrentes : undefined,
     };
   } catch (err: any) {
     return { success: false, error: err?.message || "Error al procesar con Gemini." };

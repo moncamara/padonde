@@ -219,9 +219,37 @@ function calcularFechaHora(
 
   const dateTime = `${yyyy}-${mm}-${dd}T${hora}:${minutos}`;
 
+  // 3. Detectar hora de cierre / fin si existe (ej: "hasta las 2am", "de 8 a 11pm", "hasta medianoche")
+  let fechaFin: string | null = null;
+  const matchHasta = texto.match(/\bhasta\s+(?:las?\s+)?([01]?\d|2[0-3]|medianoche)(?::([0-5]\d))?\s*(am|pm|a\.m\.|p\.m\.)?\b/i);
+  if (matchHasta) {
+    let hFin = matchHasta[1].toLowerCase() === "medianoche" ? 0 : parseInt(matchHasta[1], 10);
+    const mFin = matchHasta[2] ? matchHasta[2].padStart(2, "0") : "00";
+    const meridianoFin = matchHasta[3]?.toLowerCase().replace(/\./g, "");
+
+    if (meridianoFin === "pm" && hFin < 12) hFin += 12;
+    if (meridianoFin === "am" && hFin === 12) hFin = 0;
+    if (!meridianoFin && hFin >= 1 && hFin <= 5) {
+      // 1 a 5 de la madrugada
+      hFin = hFin;
+    }
+
+    const hIniNum = parseInt(hora, 10);
+    const targetFinDate = new Date(targetDate);
+    // Si la hora de cierre es menor que la de inicio (ej: de 20:00 a 02:00), es al día siguiente
+    if (hFin < hIniNum) {
+      targetFinDate.setDate(targetFinDate.getDate() + 1);
+    }
+    const yFin = targetFinDate.getFullYear();
+    const mFinStr = (targetFinDate.getMonth() + 1).toString().padStart(2, "0");
+    const dFinStr = targetFinDate.getDate().toString().padStart(2, "0");
+    fechaFin = `${yFin}-${mFinStr}-${dFinStr}T${hFin.toString().padStart(2, "0")}:${mFin}`;
+  }
+
   return {
     dateTime,
-    nota: `${fechaDetectadaNota} a las ${hora}:${minutos} ${horaDetectada ? "(encontrado en texto)" : "(sugerido por categoría)"}`,
+    fechaFin,
+    nota: `${fechaDetectadaNota} a las ${hora}:${minutos} ${horaDetectada ? "(encontrado en texto)" : "(sugerido por categoría)"}${fechaFin ? ` (cierre detectado: ${fechaFin.split("T")[1]})` : ""}`,
   };
 }
 
@@ -425,13 +453,16 @@ export function procesarTextoBrutoEvento(
     .filter(Boolean)
     .join("\n\n");
 
-  // 4.5 Detectar si es recurrente / periódico ("todos los jueves", "cada día", etc.)
+  // 4.5 Detectar si es recurrente / periódico ("todos los jueves", "cada día", "fines de semana", etc.)
   let esRecurrente = false;
   let diasRecurrentes: number[] = [];
 
-  if (/\b(?:todos los dias|diario|diaria|cada dia)\b/.test(textoNorm)) {
+  if (/\b(?:todos los dias|diario|diaria|cada dia|every day|daily)\b/i.test(textoNorm)) {
     esRecurrente = true;
     diasRecurrentes = [1, 2, 3, 4, 5, 6, 0];
+  } else if (/\b(?:fines de semana|fin de semana|weekends?)\b/i.test(textoNorm)) {
+    esRecurrente = true;
+    diasRecurrentes = [5, 6, 0];
   } else {
     for (const [nombreDia, idx] of Object.entries(DIAS_SEMANA)) {
       const regexRec = new RegExp(`\\b(?:todos los|cada|los)\\s+${nombreDia}s?\\b`, "i");
@@ -440,6 +471,15 @@ export function procesarTextoBrutoEvento(
         if (!diasRecurrentes.includes(idx)) diasRecurrentes.push(idx);
       }
     }
+  }
+
+  // Determinar el día de la semana correspondiente a la fecha del evento para sugerir si se activa
+  const diaBaseCalculado = fechaCalculada.dateTime
+    ? new Date(fechaCalculada.dateTime + "-05:00").getDay()
+    : 5;
+  const diaBaseEvento = isNaN(diaBaseCalculado) ? 5 : diaBaseCalculado;
+  if (diasRecurrentes.length === 0) {
+    diasRecurrentes = [diaBaseEvento];
   }
 
   if (esRecurrente) {
@@ -458,6 +498,7 @@ export function procesarTextoBrutoEvento(
     categoria,
     precio,
     dateTime: fechaCalculada.dateTime,
+    fechaFin: fechaCalculada.fechaFin || null,
     aliadoId,
     businessName,
     whatsapp,
