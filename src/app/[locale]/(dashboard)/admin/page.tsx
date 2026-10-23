@@ -59,7 +59,7 @@ export default async function AdminDashboardPage({
 
   const { data: rawNegocios } = await supabase
     .from("negocios")
-    .select("id, nombre")
+    .select("id, nombre, whatsapp, instagram, categoria, zona_id")
     .order("nombre");
 
   const { count: totalNegocios } = await supabase
@@ -75,6 +75,16 @@ export default async function AdminDashboardPage({
   for (const z of rawZonas || []) {
     mapaZonas[z.id] = { nombre: z.nombre, slug: z.slug };
   }
+
+  const aliados = (rawNegocios || []).map((n: any) => ({
+    id: n.id,
+    nombre: n.nombre,
+    whatsapp: n.whatsapp || "",
+    instagram: n.instagram || "",
+    categoria: n.categoria || "comida",
+    zonaSlug: n.zona_id && mapaZonas[n.zona_id] ? mapaZonas[n.zona_id].slug : "minca",
+    zonaNombre: n.zona_id && mapaZonas[n.zona_id] ? mapaZonas[n.zona_id].nombre : "Minca",
+  }));
 
   // 2.1 Cargar conteos de clics de WhatsApp (con fail-safe para producción)
   const clicsPorEvento: Record<string, number> = {};
@@ -211,6 +221,8 @@ export default async function AdminDashboardPage({
             <AdminEventList
               eventos={eventos}
               negocios={rawNegocios || []}
+              aliados={aliados}
+              zonas={rawZonas || []}
               locale={locale}
             />
           </Suspense>

@@ -6,6 +6,8 @@ import { CATEGORIAS_EVENTOS, getCategoria } from "@/constants";
 import { uploadEventImage, uploadEventVideo, extractVideoThumbnail } from "@/lib/supabase/storage";
 import { adminPublishEventAction } from "../actions";
 import { Button } from "@/components/ui/Button";
+import { ModalAsistenteEvento } from "../ModalAsistenteEvento";
+import type { EventoExtraido } from "@/lib/eventoParser";
 import type { CategoriaEvento } from "@/lib/types";
 
 export interface AliadoResumen {
@@ -157,6 +159,50 @@ export function AdminPublishForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createdEventId, setCreatedEventId] = useState<string | null>(null);
+  const [asistenteModalOpen, setAsistenteModalOpen] = useState(false);
+
+  // Recuperar prefill de sessionStorage si viene desde el panel admin principal
+  useEffect(() => {
+    try {
+      const prefillRaw = sessionStorage.getItem("padonde_asistente_prefill");
+      if (prefillRaw) {
+        sessionStorage.removeItem("padonde_asistente_prefill");
+        const p: EventoExtraido = JSON.parse(prefillRaw);
+        if (p.businessName) setBusinessName(p.businessName);
+        if (p.whatsapp) setWhatsapp(p.whatsapp);
+        if (p.instagram) setInstagram(p.instagram);
+        if (p.aliadoId) setSelectedAliadoId(p.aliadoId);
+        if (p.zonaSlug) setZonaSlug(p.zonaSlug);
+        if (p.titulo) setEventTitle(p.titulo);
+        if (p.categoria) setCategory(p.categoria);
+        if (p.dateTime) setDateTime(p.dateTime);
+        if (p.precio !== undefined) {
+          setPrice(p.precio.toString());
+        }
+        if (p.descripcion) setDescription(p.descripcion);
+      }
+    } catch {}
+  }, []);
+
+  function handlePrefillFromAsistente(data: EventoExtraido, foto?: File | null) {
+    if (data.businessName) setBusinessName(data.businessName);
+    if (data.whatsapp) setWhatsapp(data.whatsapp);
+    if (data.instagram) setInstagram(data.instagram);
+    if (data.aliadoId) setSelectedAliadoId(data.aliadoId);
+    if (data.zonaSlug) setZonaSlug(data.zonaSlug);
+    if (data.titulo) setEventTitle(data.titulo);
+    if (data.categoria) setCategory(data.categoria);
+    if (data.dateTime) setDateTime(data.dateTime);
+    if (data.precio !== undefined) {
+      setPrice(data.precio.toString());
+    }
+    if (data.descripcion) setDescription(data.descripcion);
+    if (foto) {
+      setFile(foto);
+      setPreviewUrl(URL.createObjectURL(foto));
+    }
+    setAsistenteModalOpen(false);
+  }
 
   async function handleVideoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const selected = e.target.files?.[0];
@@ -290,6 +336,30 @@ export function AdminPublishForm({
           ⚠️ {error}
         </div>
       )}
+
+      {/* Banner Asistente de Ingesta Rápida */}
+      <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-forest/10 via-terra/10 to-forest/5 border border-forest/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+        <div className="flex items-center gap-3">
+          <span className="text-2xl sm:text-3xl">✨</span>
+          <div>
+            <h3 className="font-serif text-sm sm:text-base text-forest font-bold">
+              ¿Tienes un mensaje de WhatsApp o un afiche?
+            </h3>
+            <p className="text-xs text-stone font-sans mt-0.5">
+              Pégalo en el Asistente Inteligente para extraer los datos, redactar la descripción y llenar este formulario en 1 segundo.
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setAsistenteModalOpen(true)}
+          className="px-4 py-2.5 bg-terra hover:bg-terra-dark text-white font-sans text-xs font-bold rounded-2xl shadow-xs transition-all active:scale-95 shrink-0 flex items-center justify-center gap-1.5 cursor-pointer"
+        >
+          <span>✨</span>
+          <span>Abrir Asistente Rápido</span>
+        </button>
+      </div>
 
       {/* 1. NEGOCIO */}
       <section className="bg-white/70 backdrop-blur-sm rounded-3xl p-6 border border-stone-light/70 space-y-4">
@@ -855,6 +925,19 @@ export function AdminPublishForm({
       >
         {loading ? "Publicando en Supabase..." : "Publicar Evento en PaDónde"}
       </Button>
+
+      {/* Modal Asistente Inteligente */}
+      {asistenteModalOpen && (
+        <ModalAsistenteEvento
+          aliados={aliados}
+          zonas={[
+            { id: "1", nombre: "Minca", slug: "minca" },
+            { id: "2", nombre: "Mendihuaca", slug: "mendihuaca" },
+          ]}
+          onClose={() => setAsistenteModalOpen(false)}
+          onPrefillNuevo={handlePrefillFromAsistente}
+        />
+      )}
     </form>
   );
 }

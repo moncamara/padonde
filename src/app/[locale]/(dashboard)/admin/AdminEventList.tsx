@@ -17,6 +17,8 @@ import { ToggleActivoButton } from "./ToggleActivoButton";
 import { ToggleDestacadoButton } from "./ToggleDestacadoButton";
 import { ModalEditarEvento } from "./ModalEditarEvento";
 import { ModalNotificarAliado, type EventoNotificarData } from "./ModalNotificarAliado";
+import { ModalAsistenteEvento } from "./ModalAsistenteEvento";
+import type { AliadoSimple } from "@/lib/eventoParser";
 import { Button } from "@/components/ui/Button";
 import { getCategoria } from "@/constants";
 import type { CategoriaEvento } from "@/lib/types";
@@ -51,12 +53,23 @@ export interface EventoAdminItem {
 interface AdminEventListProps {
   eventos: EventoAdminItem[];
   negocios?: { id: string; nombre: string }[];
+  aliados?: AliadoSimple[];
+  zonas?: Array<{ id: string; nombre: string; slug: string }>;
   locale: string;
 }
 
 type TabType = "vigentes" | "pausados" | "pasados";
 
-export function AdminEventList({ eventos, negocios = [], locale }: AdminEventListProps) {
+export function AdminEventList({
+  eventos,
+  negocios = [],
+  aliados = [],
+  zonas = [
+    { id: "1", nombre: "Minca", slug: "minca" },
+    { id: "2", nombre: "Mendihuaca", slug: "mendihuaca" },
+  ],
+  locale,
+}: AdminEventListProps) {
   const searchParams = useSearchParams();
   const [listaEventos, setListaEventos] = useState<EventoAdminItem[]>(eventos);
   const [tabActiva, setTabActiva] = useState<TabType>("vigentes");
@@ -64,6 +77,7 @@ export function AdminEventList({ eventos, negocios = [], locale }: AdminEventLis
   const [busqueda, setBusqueda] = useState(searchParams.get("busqueda") || "");
   const [eventoAEditar, setEventoAEditar] = useState<EventoAdminItem | null>(null);
   const [eventoANotificar, setEventoANotificar] = useState<EventoNotificarData | null>(null);
+  const [asistenteAbierto, setAsistenteAbierto] = useState(false);
 
   useEffect(() => {
     const q = searchParams.get("busqueda");
@@ -194,6 +208,16 @@ export function AdminEventList({ eventos, negocios = [], locale }: AdminEventLis
             </button>
           ))}
         </div>
+
+        <button
+          type="button"
+          onClick={() => setAsistenteAbierto(true)}
+          className="px-3.5 py-1.5 bg-terra hover:bg-terra-dark text-white font-sans text-xs font-bold rounded-xl shadow-xs transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer shrink-0 self-start sm:self-auto"
+          title="Analizar mensaje de WhatsApp o afiche para publicar en 1 clic"
+        >
+          <span>✨</span>
+          <span>Asistente Rápido</span>
+        </button>
       </div>
 
       {/* Selector de Pestañas por Vigencia */}
@@ -539,6 +563,15 @@ export function AdminEventList({ eventos, negocios = [], locale }: AdminEventLis
         isOpen={Boolean(eventoANotificar)}
         onClose={() => setEventoANotificar(null)}
       />
+
+      {/* Modal Asistente Inteligente de Eventos */}
+      {asistenteAbierto && (
+        <ModalAsistenteEvento
+          aliados={aliados}
+          zonas={zonas}
+          onClose={() => setAsistenteAbierto(false)}
+        />
+      )}
     </section>
   );
 }
