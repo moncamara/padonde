@@ -1500,3 +1500,90 @@ export async function importarImagenDesdeUrlAction(
     return { success: false, error: err?.message || "Error al importar imagen." };
   }
 }
+
+// ─── Generación de Copy con Inteligencia Artificial Gemini ─────────────────────
+
+export interface GenerarCopyGeminiInput {
+  textoBruto: string;
+  businessName?: string;
+  zonaSlug?: string;
+  categoriaSugerida?: string;
+}
+
+export interface GenerarCopyGeminiResult {
+  success: boolean;
+  titulo?: string;
+  descripcion?: string;
+  categoria?: CategoriaEvento;
+  precio?: number;
+  error?: string;
+}
+
+/**
+ * Server Action que invoca la API oficial de Google Gemini (gemini-3.5-flash-lite)
+ * con el prompt editorial calibrado para mochileros y cultura de la Sierra Nevada.
+ */
+export async function generarCopyEventoGeminiAction(
+  input: GenerarCopyGeminiInput
+): Promise<GenerarCopyGeminiResult> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    return { success: false, error: "GEMINI_API_KEY no configurada en el servidor." };
+  }
+
+  const prompt = `Eres el editor cultural de "PaDónde", la plataforma de eventos y experiencias de Minca y la Sierra Nevada de Santa Marta (Colombia).
+Tu público objetivo son mochileros, nómadas digitales y viajeros nacionales e internacionales.
+
+Transforma este mensaje informal de WhatsApp en una ficha editorial irresistible para la cartelera de eventos:
+"${input.textoBruto.replace(/"/g, '\\"')}"
+
+Comercio / Aliado: ${input.businessName || "No especificado"}
+Zona: ${input.zonaSlug === "mendihuaca" ? "Mendihuaca (Playa, Surf, Río)" : "Minca (Montaña, Selva, Café)"}
+
+Instrucciones de Redacción:
+1. No uses frases cliché como "un espacio perfecto para conectar con otros viajeros" o "servicio de barra y cocina".
+2. Transmite la atmósfera real de la Sierra: ambiente bohemio, relajado, risas, tragos de autor, música en español e inglés, sin pena.
+3. Responde ÚNICAMENTE en formato JSON válido (sin backticks de markdown, solo las llaves {}) con esta estructura:
+{
+  "titulo": "Título atractivo, fresco, de 3 a 6 palabras",
+  "descripcion": "2 párrafos breves, narrativos y envolventes que seduzcan al viajero",
+  "categoria": "rumba" | "comida" | "bienestar" | "tours" | "arte" | "artesanias",
+  "precio": 0
+}`;
+
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+      }
+    );
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => null);
+      return { success: false, error: errData?.error?.message || "Error al conectar con Gemini." };
+    }
+
+    const data = await res.json();
+    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!rawText) {
+      return { success: false, error: "Respuesta vacía de Gemini." };
+    }
+
+    const cleanedText = rawText.replace(/```json/gi, "").replace(/```/g, "").trim();
+    const parsed = JSON.parse(cleanedText);
+
+    return {
+      success: true,
+      titulo: parsed.titulo,
+      descripcion: parsed.descripcion,
+      categoria: parsed.categoria,
+      precio: typeof parsed.precio === "number" ? parsed.precio : 0,
+    };
+  } catch (err: any) {
+    return { success: false, error: err?.message || "Error al procesar con Gemini." };
+  }
+}
+

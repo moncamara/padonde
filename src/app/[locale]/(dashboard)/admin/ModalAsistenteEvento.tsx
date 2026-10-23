@@ -9,7 +9,7 @@ import {
   type AliadoSimple,
 } from "@/lib/eventoParser";
 import { CATEGORIAS_EVENTOS, getCategoria } from "@/constants";
-import { adminPublishEventAction } from "./actions";
+import { adminPublishEventAction, generarCopyEventoGeminiAction } from "./actions";
 import { uploadEventImage } from "@/lib/supabase/storage";
 import type { CategoriaEvento } from "@/lib/types";
 
@@ -59,6 +59,9 @@ export function ModalAsistenteEvento({
   // Estados del Paso 2 (Ficha extraída y editable)
   const [evento, setEvento] = useState<EventoExtraido | null>(null);
   const [isPublicando, setIsPublicando] = useState(false);
+  const [isAnalizando, setIsAnalizando] = useState(false);
+  const [isRegenerandoAI, setIsRegenerandoAI] = useState(false);
+  const [generadoConGemini, setGeneradoConGemini] = useState(false);
 
   // Estados de control de Aliado (Evitar duplicados)
   const [modoAliado, setModoAliado] = useState<"existente" | "nuevo">("existente");
@@ -101,8 +104,8 @@ export function ModalAsistenteEvento({
     }
   };
 
-  // Procesar con el motor inteligente
-  const handleAnalizar = () => {
+  // Procesar con el motor inteligente y Gemini AI
+  const handleAnalizar = async () => {
     if (!textoBruto.trim()) {
       setError(
         "Por favor escribe o pega el mensaje de WhatsApp, enlace o texto del afiche."
@@ -110,10 +113,11 @@ export function ModalAsistenteEvento({
       return;
     }
 
+    setIsAnalizando(true);
     setError(null);
+
     try {
       const extraido = procesarTextoBrutoEvento(textoBruto, aliados, zonaSlug);
-      setEvento(extraido);
 
       // Si el motor detectó un aliado existente, seleccionarlo de inmediato
       if (extraido.aliadoId) {
@@ -129,9 +133,65 @@ export function ModalAsistenteEvento({
       setNuevoNombre(extraido.businessName);
       setNuevoWhatsapp(extraido.whatsapp);
       setNuevoInstagram(extraido.instagram);
+
+      // Invocar a Gemini AI para redactar título y copy editorial con atmósfera real
+      const aiRes = await generarCopyEventoGeminiAction({
+        textoBruto,
+        businessName: extraido.businessName,
+        zonaSlug,
+      });
+
+      if (aiRes.success) {
+        if (aiRes.titulo) extraido.titulo = aiRes.titulo;
+        if (aiRes.descripcion) extraido.descripcion = aiRes.descripcion;
+        if (aiRes.categoria) extraido.categoria = aiRes.categoria;
+        if (aiRes.precio !== undefined) extraido.precio = aiRes.precio;
+        extraido.notasAsistente.unshift("✨ Redacción generada por Gemini AI (estilo bohemio & mochilero)");
+        setGeneradoConGemini(true);
+      } else {
+        console.warn("Gemini AI fallback:", aiRes.error);
+      }
+
+      setEvento(extraido);
       setPaso(2);
     } catch (err: any) {
       setError(err?.message || "Ocurrió un error al analizar el texto.");
+    } finally {
+      setIsAnalizando(false);
+    }
+  };
+
+  // Regenerar solo el texto con Gemini AI a demanda
+  const handleRegenerarCopyGemini = async () => {
+    if (!evento) return;
+    setIsRegenerandoAI(true);
+    setError(null);
+
+    try {
+      const aiRes = await generarCopyEventoGeminiAction({
+        textoBruto: evento.textoOriginal || textoBruto,
+        businessName:
+          modoAliado === "existente"
+            ? (aliadoSeleccionado?.nombre || evento.businessName)
+            : nuevoNombre.trim(),
+        zonaSlug: evento.zonaSlug || zonaSlug,
+      });
+
+      if (aiRes.success) {
+        setEvento({
+          ...evento,
+          titulo: aiRes.titulo || evento.titulo,
+          descripcion: aiRes.descripcion || evento.descripcion,
+          categoria: aiRes.categoria || evento.categoria,
+        });
+        setGeneradoConGemini(true);
+      } else {
+        setError(aiRes.error || "No se pudo regenerar con Gemini.");
+      }
+    } catch (err: any) {
+      setError(err?.message || "Error al regenerar con IA.");
+    } finally {
+      setIsRegenerandoAI(false);
     }
   };
 
@@ -398,14 +458,24 @@ export function ModalAsistenteEvento({
                 </div>
               </div>
 
-              {/* Botón Analizar */}
+              {/* Botón Analizar con Gemini AI */}
               <button
                 type="button"
+                disabled={isAnalizando}
                 onClick={handleAnalizar}
-                className="w-full py-3.5 rounded-2xl bg-forest hover:bg-forest/90 text-white font-sans text-sm font-bold shadow-md transition-all active:scale-98 cursor-pointer flex items-center justify-center gap-2"
+                className="w-full py-3.5 rounded-2xl bg-forest hover:bg-forest/90 disabled:bg-stone text-white font-sans text-sm font-bold shadow-md transition-all active:scale-98 cursor-pointer flex items-center justify-center gap-2"
               >
-                <span>⚡</span>
-                <span>Analizar y Estructurar Evento</span>
+                {isAnalizando ? (
+                  <>
+                    <span className="animate-spin text-lg">⏳</span>
+                    <span>Redactando con Gemini AI...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>✨</span>
+                    <span>Analizar y Redactar con Gemini AI</span>
+                  </>
+                )}
               </button>
             </div>
           )}
@@ -740,16 +810,34 @@ export function ModalAsistenteEvento({
                 </div>
               </div>
 
-              {/* Descripción Seductora para Turistas */}
+              {/* Descripción Seductora para Turistas con botón de regeneración */}
               <div>
-                <label className="block text-xs font-semibold text-forest mb-1 flex items-center justify-between">
-                  <span>Descripción redactada para mochileros</span>
-                  <span className="text-[10px] text-stone">
-                    Con emojis y llamada a la acción
-                  </span>
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-1.5">
+                    <label className="text-xs font-semibold text-forest">
+                      Descripción para Mochileros y Viajeros
+                    </label>
+                    {generadoConGemini && (
+                      <span className="text-[10px] bg-purple-100 text-purple-800 font-semibold px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <span>✨</span> Gemini AI
+                      </span>
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    disabled={isRegenerandoAI}
+                    onClick={handleRegenerarCopyGemini}
+                    className="text-xs font-bold text-purple-700 hover:text-purple-900 bg-purple-50 hover:bg-purple-100 border border-purple-200 px-2.5 py-1 rounded-xl transition-all flex items-center gap-1 cursor-pointer active:scale-95 disabled:opacity-50"
+                    title="Pedir a Gemini una nueva versión creativa del texto"
+                  >
+                    <span>{isRegenerandoAI ? "⏳" : "🪄"}</span>
+                    <span>{isRegenerandoAI ? "Regenerando..." : "Regenerar con Gemini"}</span>
+                  </button>
+                </div>
+
                 <textarea
-                  rows={4}
+                  rows={5}
                   value={evento.descripcion}
                   onChange={(e) =>
                     setEvento({ ...evento, descripcion: e.target.value })
