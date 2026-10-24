@@ -4,7 +4,12 @@
     "today": "Today",
     "tomorrow": "Tomorrow",
     "weekend": "Weekend",
-    "upcoming": "Later this month"
+    "upcoming": "Later this month",
+    "searchPlaceholder": "Search place, event, food, yoga...",
+    "clearSearch": "Clear search",
+    "searchResultsCount": "{count} {count, plural, one {result} other {results}} for \"{query}\"",
+    "clear": "Clear",
+    "otherDaysResults": "No plans today for \"{query}\". Found on other dates:"
   },
   "categories": {
     "all": "All",
@@ -77,7 +82,9 @@
   "feed": {
     "empty": "No events found for this filter.",
     "emptyHint": "Try checking another day or category!",
-    "reset": "See today's events"
+    "reset": "See today's events",
+    "noSearchResults": "No plans found for \"{query}\"",
+    "noSearchResultsHint": "Try searching for another keyword like yoga, pizza, tour or the business name."
   },
   "header": {
     "subtitle": "What to do today in {zona}?"

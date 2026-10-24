@@ -186,3 +186,14 @@ export function trackTabChange(tab: "eventos" | "servicios", zonaNombre: string)
   });
 }
 
+/**
+ * Evento de Google Analytics: Búsqueda de planes o negocios por texto
+ */
+export function trackSearch(searchTerm: string, zonaNombre: string, resultsCount: number) {
+  trackEvent("search", {
+    search_term: searchTerm,
+    destination: zonaNombre,
+    results_count: resultsCount,
+  });
+}
+

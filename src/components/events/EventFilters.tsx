@@ -14,20 +14,25 @@ interface EventFiltersProps {
   categoriaActiva: CategoriaEvento | null;
   zonaSlug?: string;
   configTerritorial?: Record<string, TerritorialUXConfig>;
+  busqueda: string;
+  onBusquedaChange: (query: string) => void;
   onTiempoChange: (filtro: FiltroTiempo) => void;
   onCategoriaChange: (categoria: CategoriaEvento | null) => void;
 }
 
 /**
  * Filtros del feed público:
- * 1. Tiempo: Selector de 7 días (Hoy, Mañana, y los 5 días siguientes en hora Colombia).
- * 2. Categorías: "Todos" + categorías ordenadas contextualmente por territorio con scroll táctil.
+ * 1. Buscador rápido: Entrada minimalista estilo pill con borrado instantáneo.
+ * 2. Tiempo: Selector de 7 días (Hoy, Mañana, y los 5 días siguientes en hora Colombia).
+ * 3. Categorías: "Todos" + categorías ordenadas contextualmente por territorio con scroll táctil.
  */
 export function EventFilters({
   tiempoActivo,
   categoriaActiva,
   zonaSlug,
   configTerritorial,
+  busqueda,
+  onBusquedaChange,
   onTiempoChange,
   onCategoriaChange,
 }: EventFiltersProps) {
@@ -82,8 +87,37 @@ export function EventFilters({
   }
 
   return (
-    <div className="space-y-4">
-      {/* 1. SELECTOR DE TIEMPO DESLIZABLE (Sin flechas, scroll táctil fluido) */}
+    <div className="space-y-3.5">
+      {/* 1. BARRA DE BÚSQUEDA RÁPIDA (Opción A: Pill minimalista con borrado instantáneo) */}
+      <div className="relative">
+        <div className="relative flex items-center">
+          <span className="absolute left-3.5 text-stone/70 pointer-events-none text-sm select-none">
+            🔍
+          </span>
+          <input
+            id="input-buscador-feed"
+            type="text"
+            value={busqueda}
+            onChange={(e) => onBusquedaChange(e.target.value)}
+            placeholder={tFilters("searchPlaceholder")}
+            aria-label={tFilters("searchPlaceholder")}
+            className="w-full pl-9 pr-9 py-2.5 bg-white/70 hover:bg-white focus:bg-white text-stone-dark placeholder:text-stone/60 border border-stone-light/80 focus:border-forest/50 focus:ring-2 focus:ring-forest/15 rounded-2xl text-xs sm:text-sm font-sans transition-all outline-none shadow-2xs"
+          />
+          {busqueda && (
+            <button
+              type="button"
+              id="btn-limpiar-busqueda"
+              onClick={() => onBusquedaChange("")}
+              aria-label={tFilters("clearSearch")}
+              className="absolute right-2.5 p-1 text-stone hover:text-stone-dark rounded-full hover:bg-stone-light/60 transition-colors cursor-pointer"
+            >
+              <span className="text-xs font-bold leading-none select-none">✕</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* 2. SELECTOR DE TIEMPO DESLIZABLE (Sin flechas, scroll táctil fluido) */}
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
         {opcionesTiempo.map(({ id, label }) => (
           <button

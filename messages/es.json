@@ -4,7 +4,12 @@
     "today": "Hoy",
     "tomorrow": "Mañana",
     "weekend": "Fin de semana",
-    "upcoming": "Más adelante"
+    "upcoming": "Más adelante",
+    "searchPlaceholder": "Buscar por lugar, evento, comida, yoga...",
+    "clearSearch": "Borrar búsqueda",
+    "searchResultsCount": "{count} {count, plural, one {resultado} other {resultados}} para \"{query}\"",
+    "clear": "Limpiar",
+    "otherDaysResults": "Sin planes hoy para \"{query}\". Encontramos estos en otras fechas:"
   },
   "categories": {
     "all": "Todos",
@@ -77,7 +82,9 @@
   "feed": {
     "empty": "No hay planes para este filtro.",
     "emptyHint": "¡Prueba con otro día o categoría!",
-    "reset": "Ver planes de hoy"
+    "reset": "Ver planes de hoy",
+    "noSearchResults": "No encontramos planes para \"{query}\"",
+    "noSearchResultsHint": "Prueba con otra palabra clave como yoga, pizza, tour o el nombre del negocio."
   },
   "header": {
     "subtitle": "¿Qué hacer hoy en {zona}?"

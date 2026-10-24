@@ -3,7 +3,12 @@
     "today": "Aujourd'hui",
     "tomorrow": "Demain",
     "weekend": "Ce week-end",
-    "upcoming": "Plus tard"
+    "upcoming": "Plus tard",
+    "searchPlaceholder": "Rechercher lieu, événement, yoga, tour...",
+    "clearSearch": "Effacer la recherche",
+    "searchResultsCount": "{count} {count, plural, one {résultat} other {résultats}} pour « {query} »",
+    "clear": "Effacer",
+    "otherDaysResults": "Aucun plan aujourd'hui pour « {query} ». Trouvé à d'autres dates :"
   },
   "categories": {
     "all": "Tous",
@@ -76,7 +81,9 @@
   "feed": {
     "empty": "Aucun événement trouvé pour ce filtre.",
     "emptyHint": "Essayez un autre jour ou une autre catégorie !",
-    "reset": "Voir les plans d'aujourd'hui"
+    "reset": "Voir les plans d'aujourd'hui",
+    "noSearchResults": "Aucun plan trouvé pour « {query} »",
+    "noSearchResultsHint": "Essayez un autre mot-clé comme yoga, pizza, tour ou le nom du commerce."
   },
   "header": {
     "subtitle": "Que faire aujourd'hui à {zona} ?"

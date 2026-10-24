@@ -4,7 +4,12 @@
     "today": "Heute",
     "tomorrow": "Morgen",
     "weekend": "Wochenende",
-    "upcoming": "Später im Monat"
+    "upcoming": "Später im Monat",
+    "searchPlaceholder": "Suche Ort, Event, Essen, Yoga...",
+    "clearSearch": "Suche löschen",
+    "searchResultsCount": "{count} {count, plural, one {Ergebnis} other {Ergebnisse}} für „{query}“",
+    "clear": "Löschen",
+    "otherDaysResults": "Keine Pläne heute für „{query}“. Gefunden an anderen Tagen:"
   },
   "categories": {
     "all": "Alle",
@@ -77,7 +82,9 @@
   "feed": {
     "empty": "Keine Aktivitäten für diesen Filter gefunden.",
     "emptyHint": "Probiere einen anderen Tag oder eine andere Kategorie aus!",
-    "reset": "Aktivitäten für heute ansehen"
+    "reset": "Aktivitäten für heute ansehen",
+    "noSearchResults": "Keine Pläne gefunden für „{query}“",
+    "noSearchResultsHint": "Versuche ein anderes Stichwort wie Yoga, Pizza, Tour oder den Namen des Unternehmens."
   },
   "header": {
     "subtitle": "Was tun heute in {zona}?"
