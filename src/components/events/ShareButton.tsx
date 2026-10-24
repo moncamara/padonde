@@ -143,12 +143,12 @@ export function ShareButton({
         <button
           type="button"
           onClick={handleShare}
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/95 hover:bg-white border border-stone-light/90 text-forest text-xs font-sans font-medium transition-all duration-150 cursor-pointer shadow-2xs active:scale-95 ${className}`}
+          className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 h-8 rounded-full bg-white/95 hover:bg-white border border-stone-light/90 text-forest text-[11px] font-sans font-medium tracking-tight transition-all duration-150 cursor-pointer shadow-2xs active:scale-95 shrink-0 ${className}`}
           aria-label={t("button")}
           title={t("button")}
         >
           <ShareIcon className="w-3.5 h-3.5 text-forest shrink-0" />
-          <span className="inline font-medium">{t("button")}</span>
+          <span className="inline leading-none">{t("button")}</span>
         </button>
       )}
 

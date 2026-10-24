@@ -9,6 +9,7 @@ import { InstallAppButton } from "@/components/layout/InstallAppButton";
 import { QRScanTracker } from "@/components/layout/QRScanTracker";
 import { PullToRefreshTracker } from "@/components/layout/PullToRefreshTracker";
 import { ZonaPersistence } from "@/components/layout/ZonaPersistence";
+import { ProximoDestinoCard } from "@/components/events/ProximoDestinoCard";
 import {
   getEventosByZona,
   getServiciosEsencialesByZona,
@@ -185,24 +186,29 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
         </div>
       </SearchProvider>
 
-      {/* Footer — invitación a negocios con traducción y enlace a tu WhatsApp */}
-      <footer className="text-center py-8 px-4 pb-24">
-        <p className="font-sans text-sm text-stone-dark inline-flex items-center justify-center gap-1.5 flex-wrap">
-          <span className="text-base select-none">🌿</span>
-          <span className="font-medium">{tFooter("cta", { zona: zona.nombre })}</span>
-          <a
-            href={waComercialLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-bold text-terra hover:text-terra-dark underline underline-offset-4 decoration-terra/60 hover:decoration-terra transition-colors ml-0.5"
-          >
-            {tFooter("ctaLink")}
-          </a>
-        </p>
+      {/* Footer — Módulo fijo de tránsito entre destinos + invitación a negocios */}
+      <footer className="text-center py-6 px-4 pb-24 max-w-lg mx-auto">
+        {/* Módulo de Tránsito Fijo ("Próximo Destino" / Cross-Selling Minca <-> Mendihuaca) */}
+        <ProximoDestinoCard zonaActual={zonaSlug} />
 
-        {/* Acceso manual permanente a la instalación de la app */}
-        <div className="mt-3">
-          <InstallAppButton />
+        <div className="pt-4">
+          <p className="font-sans text-sm text-stone-dark inline-flex items-center justify-center gap-1.5 flex-wrap">
+            <span className="text-base select-none">🌿</span>
+            <span className="font-medium">{tFooter("cta", { zona: zona.nombre })}</span>
+            <a
+              href={waComercialLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-bold text-terra hover:text-terra-dark underline underline-offset-4 decoration-terra/60 hover:decoration-terra transition-colors ml-0.5"
+            >
+              {tFooter("ctaLink")}
+            </a>
+          </p>
+
+          {/* Acceso manual permanente a la instalación de la app */}
+          <div className="mt-3">
+            <InstallAppButton />
+          </div>
         </div>
       </footer>
 

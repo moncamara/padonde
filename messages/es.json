@@ -87,7 +87,11 @@
     "noSearchResultsHint": "Prueba con otra palabra clave como yoga, pizza, tour o el nombre del negocio."
   },
   "header": {
-    "subtitle": "¿Qué hacer hoy en {zona}?"
+    "subtitle": "¿Qué hacer hoy en {zona}?",
+    "changeDestination": "Cambiar de destino",
+    "destinationsTitle": "Destinos PaDónde",
+    "mincaTagline": "Montaña, café & cascadas",
+    "mendihuacaTagline": "Playas vírgenes, surf & río"
   },
   "footer": {
     "cta": "¿Tienes un negocio o evento en {zona}?",

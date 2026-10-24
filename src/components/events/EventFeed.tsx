@@ -5,7 +5,6 @@ import { useTranslations, useLocale } from "next-intl";
 import { EventCard } from "@/components/events/EventCard";
 import { EventFilters } from "@/components/events/EventFilters";
 import { CapsulaTerritorial } from "@/components/layout/CapsulaTerritorial";
-import { ProximoDestinoCard } from "@/components/events/ProximoDestinoCard";
 import type { CategoriaEvento, EventoConNegocio, FiltroTiempo } from "@/lib/types";
 import {
   getTerritorialConfig,
@@ -392,9 +391,6 @@ export function EventFeed({ eventos, zona, configTerritorial }: EventFeedProps) 
           ))
         )}
       </div>
-
-      {/* Módulo de Tránsito ("Próximo Destino" / Cross-Selling entre Minca y Mendihuaca) */}
-      <ProximoDestinoCard zonaActual={zona} />
     </div>
   );
 }

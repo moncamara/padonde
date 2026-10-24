@@ -87,7 +87,11 @@
     "noSearchResultsHint": "Versuche ein anderes Stichwort wie Yoga, Pizza, Tour oder den Namen des Unternehmens."
   },
   "header": {
-    "subtitle": "Was tun heute in {zona}?"
+    "subtitle": "Was tun heute in {zona}?",
+    "changeDestination": "Reiseziel wechseln",
+    "destinationsTitle": "PaDónde Reiseziele",
+    "mincaTagline": "Berge, Kaffee & Wasserfälle",
+    "mendihuacaTagline": "Unberührte Strände, Surfen & Fluss"
   },
   "footer": {
     "cta": "Hast du ein Unternehmen oder Event in {zona}?",

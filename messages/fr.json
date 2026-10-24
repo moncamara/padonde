@@ -86,7 +86,11 @@
     "noSearchResultsHint": "Essayez un autre mot-clé comme yoga, pizza, tour ou le nom du commerce."
   },
   "header": {
-    "subtitle": "Que faire aujourd'hui à {zona} ?"
+    "subtitle": "Que faire aujourd'hui à {zona} ?",
+    "changeDestination": "Changer de destination",
+    "destinationsTitle": "Destinations PaDónde",
+    "mincaTagline": "Montagne, café & cascades",
+    "mendihuacaTagline": "Plages sauvages, surf & rivière"
   },
   "footer": {
     "cta": "Vous avez un commerce ou un événement à {zona} ?",

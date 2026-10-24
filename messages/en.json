@@ -87,7 +87,11 @@
     "noSearchResultsHint": "Try searching for another keyword like yoga, pizza, tour or the business name."
   },
   "header": {
-    "subtitle": "What to do today in {zona}?"
+    "subtitle": "What to do today in {zona}?",
+    "changeDestination": "Change destination",
+    "destinationsTitle": "PaDónde Destinations",
+    "mincaTagline": "Mountain, coffee & waterfalls",
+    "mendihuacaTagline": "Pristine beaches, surf & river"
   },
   "footer": {
     "cta": "Do you have a business or event in {zona}?",

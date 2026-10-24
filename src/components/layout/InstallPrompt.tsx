@@ -59,12 +59,6 @@ export function InstallPrompt() {
       const isChrome = ua.includes("crios");
       setIsIos(true);
       setIsIosChrome(isChrome);
-      if (!fueDescartado) {
-        setIsVisible(true);
-        trackEvent("pwa_prompt_view", {
-          platform: isChrome ? "ios_chrome" : "ios_safari",
-        });
-      }
     } else {
       setIsAndroid(true);
 
@@ -72,27 +66,9 @@ export function InstallPrompt() {
       const handleBeforeInstall = (e: Event) => {
         e.preventDefault();
         setDeferredPrompt(e as BeforeInstallPromptEvent);
-        if (!fueDescartado) {
-          setIsVisible(true);
-        }
-        trackEvent("pwa_prompt_view", {
-          platform: "android_native",
-        });
       };
 
       window.addEventListener("beforeinstallprompt", handleBeforeInstall);
-
-      // Respaldo para Android: si beforeinstallprompt no se dispara (ej: WebViews de WhatsApp,
-      // Instagram, Firefox en Android o heurística retardada de Chrome), mostramos la barra tras 2s
-      let timer: NodeJS.Timeout | null = null;
-      if (!fueDescartado) {
-        timer = setTimeout(() => {
-          setIsVisible(true);
-          trackEvent("pwa_prompt_view", {
-            platform: inApp ? "android_inapp" : "android_fallback",
-          });
-        }, 2200);
-      }
 
       // Escuchar evento personalizado para abrir el prompt desde el footer o menú
       const handleCustomOpen = () => {
@@ -110,7 +86,6 @@ export function InstallPrompt() {
       return () => {
         window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
         window.removeEventListener("padonde_open_install_prompt", handleCustomOpen);
-        if (timer) clearTimeout(timer);
       };
     }
 
@@ -172,58 +147,10 @@ export function InstallPrompt() {
     setShowAndroidModal(true);
   };
 
-  if (!isVisible && !showIosModal && !showAndroidModal) return null;
+  if (!showIosModal && !showAndroidModal) return null;
 
   return (
     <>
-      {/* Barra flotante discreta en la parte inferior */}
-      {isVisible && (
-        <aside
-          aria-label="Acceso directo PaDónde"
-          className="fixed bottom-4 left-4 right-4 z-40 max-w-lg mx-auto bg-forest text-cream rounded-2xl shadow-xl border border-forest-light/40 backdrop-blur-md p-3.5 transition-all duration-300 animate-in fade-in slide-in-from-bottom-3"
-        >
-          <div className="flex items-center justify-between gap-3">
-            {/* Logo PaDónde e información clara */}
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-10 h-10 rounded-xl overflow-hidden bg-cream flex-shrink-0 border border-cream/20 shadow-inner">
-                <img
-                  src="/icon-192.png"
-                  alt="PaDónde"
-                  className="w-full h-full object-cover"
-                  width={40}
-                  height={40}
-                />
-              </div>
-              <div className="min-w-0">
-                <p className="font-serif text-sm font-semibold text-cream truncate leading-snug">
-                  {t("title")}
-                </p>
-                <p className="font-sans text-[11px] text-cream/70 truncate leading-none mt-0.5">
-                  {t("subtitle")}
-                </p>
-              </div>
-            </div>
-
-            {/* Acciones */}
-            <div className="flex items-center gap-1.5 flex-shrink-0">
-              <button
-                onClick={handleInstallClick}
-                className="px-3 py-1.5 bg-terra text-white text-xs font-sans font-medium rounded-xl hover:bg-terra-dark active:scale-95 transition-all shadow-sm cursor-pointer"
-              >
-                {t("button")}
-              </button>
-              <button
-                onClick={handleDismiss}
-                aria-label="Cerrar notificación"
-                className="p-1.5 text-cream/60 hover:text-cream rounded-lg text-xs transition-colors cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-          </div>
-        </aside>
-      )}
-
       {/* Modal explicativo guiado para iPhone (Safari y Chrome en iOS) */}
       {showIosModal && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
