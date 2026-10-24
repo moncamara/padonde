@@ -16,36 +16,22 @@ export function DetailBackButton({
   const handleBack = (e: React.MouseEvent) => {
     e.preventDefault();
 
-    const navigate = () => {
-      if (typeof window !== "undefined") {
-        try {
-          const langSwitched = sessionStorage.getItem("padonde_detail_lang_switched");
-          if (langSwitched === "true") {
-            sessionStorage.removeItem("padonde_detail_lang_switched");
-            router.push(fallbackUrl);
-            return;
-          }
-        } catch {}
-      }
-
-      if (typeof window !== "undefined" && window.history.length > 1) {
-        router.back();
-      } else {
-        router.push(fallbackUrl);
-      }
-    };
-
-    if (typeof document !== "undefined") {
-      const wrapper = document.getElementById("detail-page-wrapper");
-      if (wrapper) {
-        wrapper.classList.remove("animate-slide-in-right");
-        wrapper.classList.add("animate-slide-out-right");
-        setTimeout(navigate, 210);
-        return;
-      }
+    if (typeof window !== "undefined") {
+      try {
+        const langSwitched = sessionStorage.getItem("padonde_detail_lang_switched");
+        if (langSwitched === "true") {
+          sessionStorage.removeItem("padonde_detail_lang_switched");
+          router.push(fallbackUrl);
+          return;
+        }
+      } catch {}
     }
 
-    navigate();
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+    } else {
+      router.push(fallbackUrl);
+    }
   };
 
   return (

@@ -120,9 +120,9 @@ export default async function LocaleLayout({
   return (
     <html
       lang={locale}
-      className={`${playfair.variable} ${inter.variable} h-full`}
+      className={`${playfair.variable} ${inter.variable} h-full bg-cream`}
     >
-      <body className="min-h-full flex flex-col antialiased">
+      <body className="min-h-full flex flex-col antialiased bg-cream text-stone-dark">
         <GoogleAnalytics />
         <NextIntlClientProvider messages={messages}>
           <ServiceWorkerRegister />
