@@ -1,0 +1,50 @@
+{
+  "minca": {
+    "ordenCategorias": [
+      "rumba",
+      "comida",
+      "bienestar",
+      "tours",
+      "arte",
+      "hospedaje",
+      "artesanias"
+    ],
+    "criterioOrdenFeed": "agenda_primero"
+  },
+  "mendihuaca": {
+    "ordenCategorias": [
+      "hospedaje",
+      "tours",
+      "rumba",
+      "comida",
+      "bienestar",
+      "arte",
+      "artesanias"
+    ],
+    "criterioOrdenFeed": "hospedaje_primero"
+  },
+  "palomino": {
+    "ordenCategorias": [
+      "hospedaje",
+      "rumba",
+      "comida",
+      "tours",
+      "bienestar",
+      "arte",
+      "artesanias"
+    ],
+    "criterioOrdenFeed": "hospedaje_primero"
+  },
+  "tairona": {
+    "ordenCategorias": [
+      "tours",
+      "hospedaje",
+      "comida",
+      "bienestar",
+      "arte",
+      "rumba",
+      "artesanias"
+    ],
+    "criterioOrdenFeed": "hospedaje_primero"
+  }
+}

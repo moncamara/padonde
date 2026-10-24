@@ -27,6 +27,7 @@ export function AdminNav({ userEmail }: AdminNavProps) {
   const isPuntosQR = pathname.includes("/admin/puntos-qr");
   const isEsenciales = pathname.includes("/admin/esenciales");
   const isTarifas = pathname.includes("/admin/tarifas");
+  const isRegiones = pathname.includes("/admin/regiones");
 
   return (
     <header className="sticky top-0 z-20 bg-cream/95 backdrop-blur-md border-b border-stone-light/80 px-3 sm:px-6 py-2.5 sm:py-3 transition-all">
@@ -146,6 +147,19 @@ export function AdminNav({ userEmail }: AdminNavProps) {
           >
             <span>💡</span>
             <span>Esenciales</span>
+          </Link>
+
+          <Link
+            href="/admin/regiones"
+            className={[
+              "py-1.5 px-2.5 sm:px-3 rounded-xl font-sans text-[11px] sm:text-xs font-medium transition-all text-center flex items-center justify-center gap-1 shrink-0",
+              isRegiones
+                ? "bg-white text-forest shadow-xs font-semibold"
+                : "text-stone hover:text-forest",
+            ].join(" ")}
+          >
+            <span>🗺️</span>
+            <span>Regiones</span>
           </Link>
         </nav>
 

@@ -1912,4 +1912,43 @@ Instrucciones:
   }
 }
 
+// ─── Configuración Territorial de Categorías (Sin Base de Datos) ──────────────
+
+export interface GuardarConfigTerritorialInput {
+  config: Record<
+    string,
+    {
+      ordenCategorias: CategoriaEvento[];
+      criterioOrdenFeed: "agenda_primero" | "hospedaje_primero";
+    }
+  >;
+}
+
+export async function guardarConfigTerritorialAction(
+  input: GuardarConfigTerritorialInput
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const fs = await import("fs");
+    const path = await import("path");
+    const configPath = path.join(process.cwd(), "src", "constants", "config_territorial.json");
+
+    if (!input.config || typeof input.config !== "object") {
+      return { success: false, error: "Estructura de configuración inválida." };
+    }
+
+    fs.writeFileSync(configPath, JSON.stringify(input.config, null, 2), "utf8");
+
+    revalidatePath("/[locale]/[zona]", "page");
+    revalidatePath("/[locale]/admin/regiones", "page");
+
+    return { success: true };
+  } catch (err: any) {
+    console.error("Error al guardar config_territorial.json:", err);
+    return {
+      success: false,
+      error: err?.message || "No se pudo guardar la configuración territorial.",
+    };
+  }
+}
+
 

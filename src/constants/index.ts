@@ -78,6 +78,8 @@ export const CATEGORIAS_EVENTOS: CategoriaConfig[] = CATEGORIAS.filter(
 
 // ─── Inteligencia Territorial (UX Contextual por Región) ──────────────────────
 
+import configTerritorialData from "./config_territorial.json";
+
 export type CriterioOrdenFeed = "agenda_primero" | "hospedaje_primero";
 
 export type TerritorialUXConfig = {
@@ -86,31 +88,11 @@ export type TerritorialUXConfig = {
 };
 
 /**
- * Configuración de UX por región: adapta el orden del menú de categorías y
- * la prioridad del feed general según la intención de búsqueda principal de cada destino.
+ * Configuración de UX por región cargada directamente desde el archivo JSON:
+ * adapta el orden del menú de categorías y la prioridad del feed general sin tocar la BD.
  */
-export const CONFIG_TERRITORIAL: Record<string, TerritorialUXConfig> = {
-  // Minca: El motor principal es la agenda diaria de planes, eventos y gastronomía en la montaña
-  minca: {
-    ordenCategorias: ["rumba", "comida", "bienestar", "tours", "arte", "hospedaje", "artesanias"],
-    criterioOrdenFeed: "agenda_primero",
-  },
-  // Mendihuaca: Destino de playa, surf camps y descanso frente al mar donde el hospedaje y tours son primordiales
-  mendihuaca: {
-    ordenCategorias: ["hospedaje", "tours", "rumba", "comida", "bienestar", "arte", "artesanias"],
-    criterioOrdenFeed: "hospedaje_primero",
-  },
-  // Palomino (Fase futura): Playa, río y hospedajes
-  palomino: {
-    ordenCategorias: ["hospedaje", "rumba", "comida", "tours", "bienestar", "arte", "artesanias"],
-    criterioOrdenFeed: "hospedaje_primero",
-  },
-  // Parque Tairona (Fase futura): Ecoturismo y tours
-  tairona: {
-    ordenCategorias: ["tours", "hospedaje", "comida", "bienestar", "arte", "rumba", "artesanias"],
-    criterioOrdenFeed: "hospedaje_primero",
-  },
-};
+export const CONFIG_TERRITORIAL: Record<string, TerritorialUXConfig> =
+  configTerritorialData as Record<string, TerritorialUXConfig>;
 
 /**
  * Obtiene la configuración de UX para una región con fallback seguro a Minca.
