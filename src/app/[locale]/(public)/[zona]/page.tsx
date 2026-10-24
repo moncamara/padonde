@@ -8,6 +8,7 @@ import { InstallPrompt } from "@/components/layout/InstallPrompt";
 import { InstallAppButton } from "@/components/layout/InstallAppButton";
 import { QRScanTracker } from "@/components/layout/QRScanTracker";
 import { PullToRefreshTracker } from "@/components/layout/PullToRefreshTracker";
+import { ZonaPersistence } from "@/components/layout/ZonaPersistence";
 import {
   getEventosByZona,
   getServiciosEsencialesByZona,
@@ -162,11 +163,7 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
       />
 
       {/* Persistencia silenciosa de la última zona visitada para acceso directo PWA y retorno */}
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `try { document.cookie = "padonde_zona=${zonaSlug}; path=/; max-age=31536000; SameSite=Lax"; localStorage.setItem("padonde_zona", "${zonaSlug}"); } catch(e){}`,
-        }}
-      />
+      <ZonaPersistence zonaSlug={zonaSlug} />
 
       <SearchProvider>
         {/* Header fijo superior interactivo con selector de destino Minca/Mendihuaca, buscador colapsable, selector de idioma y compartir */}
@@ -176,8 +173,8 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
           locale={locale}
         />
 
-        {/* Feed principal y Servicios Esenciales con padding-top generoso para el header fijo */}
-        <div className="max-w-lg mx-auto px-4 pt-32 sm:pt-36 pb-6">
+        {/* Feed principal y Servicios Esenciales con padding-top cómodo para el header compacto */}
+        <div className="max-w-lg mx-auto px-4 pt-20 sm:pt-24 pb-6">
           <FeedTabsContainer
             eventos={eventos}
             servicios={servicios}
