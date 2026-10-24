@@ -15,10 +15,8 @@ export function CapsulaTerritorial({
   const [isOpen, setIsOpen] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const [isPlaying, setIsPlaying] = useState(true);
-  const [isRotated, setIsRotated] = useState(false);
   const [progress, setProgress] = useState(0);
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const playerContainerRef = useRef<HTMLDivElement | null>(null);
 
   const regionConfig = configTerritorial?.[zonaSlug];
   const capsula = regionConfig?.capsula;
@@ -35,7 +33,6 @@ export function CapsulaTerritorial({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setIsOpen(false);
-        setIsRotated(false);
       } else if (e.key === " ") {
         e.preventDefault();
         togglePlay();
@@ -54,7 +51,6 @@ export function CapsulaTerritorial({
       setIsPlaying(true);
     } else if (!isOpen && videoRef.current) {
       videoRef.current.pause();
-      setIsRotated(false);
     }
   }, [isOpen]);
 
@@ -82,160 +78,91 @@ export function CapsulaTerritorial({
     setIsMuted(!isMuted);
   };
 
-  const toggleRotate = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsRotated((prev) => !prev);
-  };
-
-  const toggleNativeFullscreen = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    try {
-      if (!document.fullscreenElement) {
-        if (playerContainerRef.current?.requestFullscreen) {
-          await playerContainerRef.current.requestFullscreen();
-        } else if ((playerContainerRef.current as any)?.webkitRequestFullscreen) {
-          await (playerContainerRef.current as any).webkitRequestFullscreen();
-        }
-      } else {
-        if (document.exitFullscreen) {
-          await document.exitFullscreen();
-        }
-      }
-    } catch {
-      // Si la API nativa de fullscreen está restringida, activamos la rotación visual 90°
-      setIsRotated((prev) => !prev);
-    }
-  };
-
   return (
     <>
-      {/* 1. DISPARADOR FLOTANTE MINIMALISTA: Solo 'En vivo' con destello activo (Sin círculos pesados detrás) */}
+      {/* 1. DISPARADOR FLOTANTE MINIMALISTA: Botón sutil con destello activo 'Visítanos' */}
       <div className="fixed bottom-6 right-4 sm:right-6 z-40">
         <button
           type="button"
           onClick={() => setIsOpen(true)}
           className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-forest text-cream border border-forest-light/40 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer text-xs font-sans group backdrop-blur-md"
-          title={capsula.etiqueta || "Ver cómo late este destino hoy"}
-          aria-label={capsula.etiqueta || "Ver video en vivo de la región"}
+          title={capsula.etiqueta || "Conoce la vibra de este destino"}
+          aria-label={capsula.etiqueta || "Ver video de la región"}
         >
-          {/* Destello / Pulso activo */}
+          {/* Destello / Pulso verde activo */}
           <span className="relative flex h-2.5 w-2.5 shrink-0">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-80"></span>
             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 shadow-xs"></span>
           </span>
 
-          {/* Texto dinámico (por defecto 'Visítanos') */}
+          {/* Texto dinámico (Visítanos) */}
           <span className="font-bold text-xs tracking-tight text-white">
             {capsula.etiqueta || "Visítanos"}
           </span>
 
           {/* Ícono Play sutil */}
-          <span className="text-[10px] text-cream/80 group-hover:text-terra transition-colors">
+          <span className="text-[10px] text-cream/80 group-hover:text-terra transition-colors font-mono">
             ▶
           </span>
         </button>
       </div>
 
-      {/* 2. VISOR MODAL EN PANTALLA COMPLETA CON ROTACIÓN (Poder Voltear) */}
+      {/* 2. VISOR MODAL CINEMÁTICO CENTRADO (Nitidez HD óptima, sin estirar ni rotar) */}
       {isOpen && (
         <div
-          ref={playerContainerRef}
-          className="fixed inset-0 z-50 bg-black flex flex-col justify-between overflow-hidden animate-fade-in select-none"
-          onClick={() => {
-            if (isRotated) setIsRotated(false);
-            else setIsOpen(false);
-          }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-md animate-fade-in select-none"
+          onClick={() => setIsOpen(false)}
         >
-          {/* Barra superior de progreso de la historia (15s) */}
-          <div className="absolute top-0 left-0 right-0 z-40 h-1 bg-white/20">
-            <div
-              className="h-full bg-terra transition-all duration-100 ease-linear"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-
-          {/* Cabecera de controles superiores */}
           <div
-            className="relative z-40 p-3 sm:p-4 flex items-center justify-between bg-gradient-to-b from-black/80 via-black/40 to-transparent"
+            className="relative w-full max-w-lg bg-forest-dark rounded-3xl overflow-hidden shadow-2xl border border-white/15 flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Título y badge */}
-            <div className="flex items-center gap-2">
-              <span className="relative flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-              </span>
-              <span className="text-xs sm:text-sm font-sans font-bold text-white drop-shadow-sm truncate max-w-[190px] sm:max-w-none">
-                {capsula.etiqueta || "Vibra en vivo"}
-              </span>
+            {/* Barra superior de progreso (15s) */}
+            <div className="absolute top-0 left-0 right-0 z-30 h-1 bg-white/20">
+              <div
+                className="h-full bg-terra transition-all duration-100 ease-linear"
+                style={{ width: `${progress}%` }}
+              />
             </div>
 
-            {/* Acciones: Voltear, Sonido, Cerrar */}
-            <div className="flex items-center gap-2">
-              {/* Botón Voltear / Girar 90° (Permite ver horizontal a pantalla completa sin quitar el bloqueo de rotación) */}
-              <button
-                type="button"
-                onClick={toggleRotate}
-                className={`px-2.5 py-1.5 rounded-full text-xs font-sans font-semibold flex items-center gap-1.5 border transition-all cursor-pointer backdrop-blur-md ${
-                  isRotated
-                    ? "bg-terra text-white border-terra shadow-md"
-                    : "bg-white/15 hover:bg-white/30 text-white border-white/20"
-                }`}
-                title="Girar video a pantalla completa panorámica"
-              >
-                <span>🔄</span>
-                <span className="text-[11px] hidden sm:inline">
-                  {isRotated ? "Enderezar" : "Voltear"}
+            {/* Cabecera del visor con etiqueta, sonido y cerrar */}
+            <div className="absolute top-3 left-3 right-3 z-30 flex items-center justify-between pointer-events-none">
+              <div className="flex items-center gap-2 bg-black/55 backdrop-blur-md px-3 py-1 rounded-full border border-white/20 pointer-events-auto">
+                <span className="relative flex h-2 w-2">
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
                 </span>
-              </button>
+                <span className="text-[11px] font-sans font-bold text-white">
+                  {capsula.etiqueta || "Visítanos"}
+                </span>
+              </div>
 
-              {/* Botón Sonido */}
-              <button
-                type="button"
-                onClick={toggleSound}
-                className="w-8 h-8 rounded-full bg-white/15 hover:bg-white/30 text-white flex items-center justify-center text-xs backdrop-blur-md transition-colors cursor-pointer border border-white/20"
-                title={isMuted ? "Activar sonido" : "Silenciar"}
-              >
-                {isMuted ? "🔇" : "🔊"}
-              </button>
+              <div className="flex items-center gap-1.5 pointer-events-auto">
+                {/* Botón de Sonido */}
+                <button
+                  type="button"
+                  onClick={toggleSound}
+                  className="w-8 h-8 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center text-xs backdrop-blur-md transition-colors cursor-pointer border border-white/20"
+                  title={isMuted ? "Activar sonido" : "Silenciar"}
+                >
+                  {isMuted ? "🔇" : "🔊"}
+                </button>
 
-              {/* Botón Cerrar */}
-              <button
-                type="button"
-                onClick={() => {
-                  setIsOpen(false);
-                  setIsRotated(false);
-                }}
-                className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/40 text-white flex items-center justify-center text-sm font-bold backdrop-blur-md transition-colors cursor-pointer border border-white/25"
-                title="Cerrar visor"
-              >
-                ✕
-              </button>
+                {/* Botón Cerrar */}
+                <button
+                  type="button"
+                  onClick={() => setIsOpen(false)}
+                  className="w-8 h-8 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center text-sm font-bold backdrop-blur-md transition-colors cursor-pointer border border-white/20"
+                  title="Cerrar video"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
-          </div>
 
-          {/* Área Central de Video (Con soporte de rotación 90° suave) */}
-          <div
-            className="flex-1 flex items-center justify-center relative overflow-hidden cursor-pointer"
-            onClick={togglePlay}
-          >
+            {/* Contenedor de Video (Aspecto 16:9 Natural y Centrado) */}
             <div
-              className={`transition-all duration-300 ease-out flex items-center justify-center ${
-                isRotated
-                  ? "w-screen h-screen flex items-center justify-center"
-                  : "w-full max-w-4xl max-h-[80vh] px-2 sm:px-4"
-              }`}
-              style={
-                isRotated
-                  ? {
-                      transform: "rotate(90deg)",
-                      width: "100vh",
-                      height: "100vw",
-                      maxWidth: "100vh",
-                      maxHeight: "100vw",
-                    }
-                  : undefined
-              }
+              className="relative aspect-video w-full bg-black flex items-center justify-center cursor-pointer overflow-hidden"
+              onClick={togglePlay}
             >
               <video
                 ref={videoRef}
@@ -246,44 +173,37 @@ export function CapsulaTerritorial({
                 muted={isMuted}
                 loop
                 onTimeUpdate={handleTimeUpdate}
-                className={`rounded-2xl shadow-2xl object-cover bg-black ${
-                  isRotated ? "w-full h-full rounded-none" : "w-full max-h-[72vh] aspect-video"
-                }`}
+                className="w-full h-full object-cover"
               />
 
-              {/* Indicador de Pausa grande al pulsar */}
+              {/* Indicador de Pausa al tocar el video */}
               {!isPlaying && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/35 backdrop-blur-xs pointer-events-none">
-                  <div className="w-16 h-16 rounded-full bg-forest/90 text-white flex items-center justify-center text-2xl shadow-xl pl-1">
+                  <div className="w-14 h-14 rounded-full bg-forest/90 text-white flex items-center justify-center text-xl shadow-xl pl-1">
                     ▶
                   </div>
                 </div>
               )}
             </div>
-          </div>
 
-          {/* Pie con Copy Inspirador y Guía (Oculto sutilmente cuando está volteado para dar 100% protagonismo al cine) */}
-          {!isRotated && (
-            <div
-              className="relative z-40 p-4 sm:p-6 bg-gradient-to-t from-black/95 via-black/70 to-transparent space-y-1 text-center sm:text-left max-w-2xl mx-auto w-full"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-center sm:justify-start gap-1.5 text-cream font-serif font-bold text-sm sm:text-base">
-                <span>📍</span>
-                <h3>{capsula.titulo || "Paraíso en la Sierra"}</h3>
+            {/* Pie con Copy Inspirador y Localización */}
+            <div className="p-4 sm:p-5 bg-forest text-cream space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="text-sm">📍</span>
+                <h3 className="font-serif text-base sm:text-lg font-bold text-white tracking-tight">
+                  {capsula.titulo || "Mendihuaca • Sierra Nevada & Caribe"}
+                </h3>
               </div>
               {capsula.descripcion && (
-                <p className="text-xs font-sans text-cream/80 leading-relaxed max-w-xl mx-auto sm:mx-0">
+                <p className="font-sans text-xs text-cream/80 leading-relaxed">
                   {capsula.descripcion}
                 </p>
               )}
-              <div className="pt-1 text-[10px] font-sans text-stone-light/60 flex items-center justify-center sm:justify-start gap-3">
-                <span>💡 Toca para pausar</span>
-                <span>•</span>
-                <span>Pulsa 🔄 Voltear para ver en pantalla completa</span>
+              <div className="pt-1.5 text-[10px] text-cream/50 flex items-center gap-2">
+                <span>💡 Toca el video para pausar o reanudar</span>
               </div>
             </div>
-          )}
+          </div>
         </div>
       )}
     </>
