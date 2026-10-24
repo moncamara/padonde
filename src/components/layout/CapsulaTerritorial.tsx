@@ -124,9 +124,9 @@ export function CapsulaTerritorial({
             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 shadow-xs"></span>
           </span>
 
-          {/* Texto 'En vivo' */}
+          {/* Texto dinámico (por defecto 'Visítanos') */}
           <span className="font-bold text-xs tracking-tight text-white">
-            En vivo
+            {capsula.etiqueta || "Visítanos"}
           </span>
 
           {/* Ícono Play sutil */}
