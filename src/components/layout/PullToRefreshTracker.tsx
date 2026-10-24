@@ -5,28 +5,30 @@ import { useRouter } from "@/i18n/routing";
 
 /**
  * Componente ultra ligero para PWA y móviles.
- * 1. Gesto nativo Pull-to-Refresh (deslizar hacia abajo cuando estás arriba).
- * 2. Auto-actualización silenciosa al regresar a la app si pasaron más de 60 segundos.
- * Cero dependencias externas y rendimiento a 60 FPS garantizado.
+ * 1. Gesto nativo Pull-to-Refresh: Indicador circular minimalista (arco con flecha) estilo navegador nativo.
+ * 2. Cero espabilón: Requiere arrastre vertical deliberado (> 18px) y no se dispara en swipes horizontales.
+ * 3. Auto-actualización silenciosa al regresar a la app si pasaron más de 60 segundos.
  */
 export function PullToRefreshTracker() {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
 
   const [pullDist, setPullDist] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  const startXRef = useRef(0);
   const startYRef = useRef(0);
   const isPullingRef = useRef(false);
   const lastRefreshRef = useRef<number>(Date.now());
 
   // Umbral en píxeles para activar la recarga
-  const PULL_THRESHOLD = 65;
+  const PULL_THRESHOLD = 55;
 
   // 1. Manejo del gesto táctil Pull-to-Refresh
   useEffect(() => {
     function handleTouchStart(e: TouchEvent) {
-      if (window.scrollY <= 1 && !isRefreshing) {
+      if (window.scrollY <= 1 && !isRefreshing && e.touches.length === 1) {
+        startXRef.current = e.touches[0].clientX;
         startYRef.current = e.touches[0].clientY;
         isPullingRef.current = true;
       } else {
@@ -35,14 +37,24 @@ export function PullToRefreshTracker() {
     }
 
     function handleTouchMove(e: TouchEvent) {
-      if (!isPullingRef.current || isRefreshing) return;
+      if (!isPullingRef.current || isRefreshing || e.touches.length !== 1) return;
 
+      const currentX = e.touches[0].clientX;
       const currentY = e.touches[0].clientY;
-      const diff = currentY - startYRef.current;
+      const diffX = Math.abs(currentX - startXRef.current);
+      const diffY = currentY - startYRef.current;
 
-      if (diff > 0 && window.scrollY <= 1) {
-        // Resistencia progresiva con amortiguación suave
-        const distance = Math.min(diff * 0.4, 90);
+      // Si el movimiento es horizontal (o swipe entre categorías), cancelar pull-to-refresh
+      if (diffX > diffY) {
+        isPullingRef.current = false;
+        setPullDist(0);
+        return;
+      }
+
+      // Zona muerta de 18px para evitar cualquier espabilón en toques o scrolls rápidos
+      if (diffY > 18 && window.scrollY <= 1) {
+        // Resistencia suave progresiva
+        const distance = Math.min((diffY - 18) * 0.45, 68);
         setPullDist(distance);
       } else {
         setPullDist(0);
@@ -52,6 +64,7 @@ export function PullToRefreshTracker() {
     function handleTouchEnd() {
       if (!isPullingRef.current || isRefreshing) {
         isPullingRef.current = false;
+        setPullDist(0);
         return;
       }
       isPullingRef.current = false;
@@ -77,7 +90,7 @@ export function PullToRefreshTracker() {
   // Función para refrescar datos de Next.js
   function triggerRefresh() {
     setIsRefreshing(true);
-    setPullDist(50); // Mantener un pill sutil mientras carga
+    setPullDist(45); // Mantener el círculo visible mientras el servidor responde
 
     startTransition(() => {
       router.refresh();
@@ -88,7 +101,7 @@ export function PullToRefreshTracker() {
     setTimeout(() => {
       setIsRefreshing(false);
       setPullDist(0);
-    }, 700);
+    }, 650);
   }
 
   // 2. Auto-recarga silenciosa al volver a enfocar la app (cuando el usuario regresa de WhatsApp u otra app)
@@ -96,7 +109,6 @@ export function PullToRefreshTracker() {
     function handleVisibilityChange() {
       if (document.visibilityState === "visible") {
         const now = Date.now();
-        // Si estuvo en segundo plano más de 60 segundos, sincronizar en silencio
         if (now - lastRefreshRef.current > 60000 && !isRefreshing) {
           lastRefreshRef.current = now;
           startTransition(() => {
@@ -115,36 +127,44 @@ export function PullToRefreshTracker() {
     };
   }, [isRefreshing]);
 
-  if (pullDist <= 0 && !isRefreshing) return null;
+  // Cero renderizado si no hay arrastre intencional ni recarga
+  if (pullDist < 12 && !isRefreshing) return null;
 
   const isTriggerReady = pullDist >= PULL_THRESHOLD;
+  const rotation = Math.min((pullDist / PULL_THRESHOLD) * 360, 360);
+  const opacity = Math.min(pullDist / 25, 1);
 
   return (
     <aside
       role="status"
-      aria-live="polite"
-      aria-label={isRefreshing ? "Actualizando cartelera" : isTriggerReady ? "Suelta para actualizar" : "Desliza para actualizar"}
+      aria-label={isRefreshing ? "Actualizando cartelera" : "Recargar"}
       style={{
-        transform: `translateY(${Math.max(pullDist - 12, 10)}px)`,
-        transition: isPullingRef.current ? "none" : "transform 0.25s ease-out, opacity 0.2s ease-out",
+        transform: `translate(-50%, ${Math.max(pullDist + 64, 70)}px) scale(${isTriggerReady ? 1.08 : 0.92})`,
+        opacity: isRefreshing ? 1 : opacity,
+        transition: isPullingRef.current
+          ? "none"
+          : "transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s ease-out, scale 0.2s ease-out",
       }}
-      className="fixed top-2 left-1/2 -translate-x-1/2 z-50 pointer-events-none flex items-center justify-center"
+      className="fixed top-0 left-1/2 z-50 pointer-events-none flex items-center justify-center"
     >
-      <div className="bg-forest/95 text-white backdrop-blur-md px-3.5 py-1.5 rounded-full shadow-lg border border-white/20 flex items-center gap-2 text-xs font-sans font-medium">
-        <span
-          className={`text-sm transition-transform duration-200 ${
-            isRefreshing ? "animate-spin" : isTriggerReady ? "rotate-180" : ""
-          }`}
+      <div className="w-10 h-10 rounded-full bg-white text-forest shadow-lg border border-stone-light/80 flex items-center justify-center">
+        <svg
+          className={`w-5 h-5 text-forest transition-transform ${isRefreshing ? "animate-spin" : ""}`}
+          style={{
+            transform: isRefreshing ? "none" : `rotate(${rotation}deg)`,
+            transition: isPullingRef.current ? "none" : "transform 0.18s ease-out",
+          }}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
         >
-          {isRefreshing ? "⏳" : "🌿"}
-        </span>
-        <span>
-          {isRefreshing
-            ? "Actualizando cartelera..."
-            : isTriggerReady
-            ? "Suelta para actualizar"
-            : "Desliza para actualizar"}
-        </span>
+          {/* Símbolo universal de actualización: arco circular con flecha */}
+          <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+          <polyline points="21 3 21 9 15 9" />
+        </svg>
       </div>
     </aside>
   );
