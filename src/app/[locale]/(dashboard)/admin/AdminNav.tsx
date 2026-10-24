@@ -31,9 +31,9 @@ export function AdminNav({ userEmail }: AdminNavProps) {
 
   return (
     <header className="sticky top-0 z-20 bg-cream/95 backdrop-blur-md border-b border-stone-light/80 px-3 sm:px-6 py-2.5 sm:py-3 transition-all">
-      <div className="max-w-5xl mx-auto flex flex-col gap-2.5 sm:gap-0 sm:flex-row sm:items-center sm:justify-between">
+      <div className="max-w-7xl mx-auto flex flex-col gap-2.5 lg:gap-3 lg:flex-row lg:items-center lg:justify-between">
         {/* Fila 1 en Mobile / Lado Izquierdo en Desktop: Logo y Acciones Rápidas */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between shrink-0">
           <Link href="/admin" className="flex items-center gap-2 group">
             <span className="text-xl group-hover:scale-110 transition-transform">🌿</span>
             <span className="font-serif text-lg sm:text-xl text-forest font-bold tracking-tight">
@@ -42,7 +42,7 @@ export function AdminNav({ userEmail }: AdminNavProps) {
           </Link>
 
           {/* Acciones de Cuenta en Mobile */}
-          <div className="flex items-center gap-1.5 sm:hidden text-xs font-sans">
+          <div className="flex items-center gap-1.5 lg:hidden text-xs font-sans">
             <Link
               href="/minca"
               className="text-stone hover:text-forest p-1 rounded-lg border border-stone-light/60 bg-white/70 text-[10px]"
@@ -69,8 +69,8 @@ export function AdminNav({ userEmail }: AdminNavProps) {
           </div>
         </div>
 
-        {/* Fila 2 en Mobile / Centro en Desktop: Pestañas de Navegación Segmentadas (Scrollable en mobile) */}
-        <nav className="flex items-center gap-1 bg-stone-light/40 p-1 rounded-2xl w-full sm:w-auto overflow-x-auto no-scrollbar">
+        {/* Fila 2 en Mobile / Centro en Desktop: Pestañas de Navegación Segmentadas */}
+        <nav className="flex items-center gap-1 bg-stone-light/40 p-1 rounded-2xl overflow-x-auto no-scrollbar shrink-0 max-w-full">
           <Link
             href="/admin"
             className={[
@@ -164,7 +164,7 @@ export function AdminNav({ userEmail }: AdminNavProps) {
         </nav>
 
         {/* Acciones de Cuenta en Desktop */}
-        <div className="hidden sm:flex items-center justify-end gap-3 text-xs font-sans">
+        <div className="hidden lg:flex items-center justify-end gap-3 text-xs font-sans shrink-0">
           <div className="flex items-center gap-2">
             <Link
               href="/minca"
