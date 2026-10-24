@@ -26,11 +26,27 @@ export default async function AdminRegionesPage({
     redirect({ href: "/admin/login", locale });
   }
 
+  // Cargar configuración activa desde Supabase con fallback al archivo local
+  let configTerritorial = CONFIG_TERRITORIAL;
+  try {
+    const { data: configDb } = await supabase
+      .from("configuraciones")
+      .select("valor")
+      .eq("clave", "config_territorial")
+      .maybeSingle();
+
+    if (configDb?.valor && typeof configDb.valor === "object") {
+      configTerritorial = configDb.valor as any;
+    }
+  } catch {
+    // Silencioso: fallback a CONFIG_TERRITORIAL
+  }
+
   return (
     <div className="min-h-screen bg-cream/60">
       <AdminNav userEmail={user?.email} />
       <main className="px-4 py-8">
-        <AdminRegionesView initialConfig={CONFIG_TERRITORIAL} />
+        <AdminRegionesView initialConfig={configTerritorial} />
       </main>
     </div>
   );

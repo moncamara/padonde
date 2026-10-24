@@ -1928,22 +1928,40 @@ export async function guardarConfigTerritorialAction(
   input: GuardarConfigTerritorialInput
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const fs = await import("fs");
-    const path = await import("path");
-    const configPath = path.join(process.cwd(), "src", "constants", "config_territorial.json");
-
     if (!input.config || typeof input.config !== "object") {
       return { success: false, error: "Estructura de configuración inválida." };
     }
 
-    fs.writeFileSync(configPath, JSON.stringify(input.config, null, 2), "utf8");
+    // 1. Guardar en Supabase (persistencia real en la nube sin error EROFS)
+    const supabase = await createClient();
+    const { error: dbError } = await supabase
+      .from("configuraciones")
+      .upsert({
+        clave: "config_territorial",
+        valor: input.config,
+        updated_at: new Date().toISOString(),
+      });
+
+    if (dbError) {
+      console.warn("Aviso al guardar en Supabase configuraciones:", dbError.message);
+    }
+
+    // 2. En local dev (si el filesystem no es read-only), guardamos también en disco
+    try {
+      const fs = await import("fs");
+      const path = await import("path");
+      const configPath = path.join(process.cwd(), "src", "constants", "config_territorial.json");
+      fs.writeFileSync(configPath, JSON.stringify(input.config, null, 2), "utf8");
+    } catch {
+      // En Vercel el sistema de archivos es read-only (/var/task); se ignora de forma segura
+    }
 
     revalidatePath("/[locale]/[zona]", "page");
     revalidatePath("/[locale]/admin/regiones", "page");
 
     return { success: true };
   } catch (err: any) {
-    console.error("Error al guardar config_territorial.json:", err);
+    console.error("Error al guardar configuración territorial:", err);
     return {
       success: false,
       error: err?.message || "No se pudo guardar la configuración territorial.",

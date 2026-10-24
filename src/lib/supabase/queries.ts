@@ -217,3 +217,25 @@ export async function getServiciosEsencialesByZona(
   }
 }
 
+/**
+ * Obtiene la configuración de UX territorial desde Supabase con fallback seguro a CONFIG_TERRITORIAL.
+ */
+export async function getConfigTerritorialAsync(): Promise<Record<string, any>> {
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase
+      .from("configuraciones")
+      .select("valor")
+      .eq("clave", "config_territorial")
+      .maybeSingle();
+
+    if (data?.valor && typeof data.valor === "object") {
+      return data.valor;
+    }
+  } catch {
+    // Silencioso
+  }
+  const { CONFIG_TERRITORIAL } = await import("@/constants");
+  return CONFIG_TERRITORIAL;
+}
+
