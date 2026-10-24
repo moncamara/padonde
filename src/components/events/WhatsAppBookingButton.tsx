@@ -13,6 +13,7 @@ interface WhatsAppBookingButtonProps {
   precio?: number | null;
   tipoCategoria?: string;
   seccionOrigen?: string;
+  zonaSlug?: string;
 }
 
 export function WhatsAppBookingButton({
@@ -25,6 +26,7 @@ export function WhatsAppBookingButton({
   precio,
   tipoCategoria = "evento",
   seccionOrigen = "detalle_evento",
+  zonaSlug,
 }: WhatsAppBookingButtonProps) {
   return (
     <a
@@ -37,6 +39,7 @@ export function WhatsAppBookingButton({
           aliado_nombre: negocioNombre || "Organizador",
           tipo_categoria: tipoCategoria,
           seccion_origen: seccionOrigen,
+          region_destino: zonaSlug,
           eventoId,
           eventoTitulo,
           negocioNombre,

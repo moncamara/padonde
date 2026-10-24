@@ -305,6 +305,9 @@ Disfruta de habitaciones privadas frente a la playa con balcÃ³n y hamacas, jardÃ
   if (zonaSlug === "mendihuaca") {
     return todos.filter((e) => e.zona_id === "zona-mendihuaca");
   }
-  return todos.filter((e) => e.zona_id === `zona-${zonaSlug}` || e.zona_id === "zona-minca");
+  if (zonaSlug === "minca") {
+    return todos.filter((e) => e.zona_id === "zona-minca");
+  }
+  return todos.filter((e) => e.zona_id === `zona-${zonaSlug}`);
 }
 

@@ -371,6 +371,7 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
                 locale={locale}
                 eventoId={evento.id}
                 negocioId={evento.negocio_id}
+                zonaSlug={zonaSlug}
                 labels={{
                   sectionTitle: tStay("sectionTitle"),
                   sectionSubtitle: tStay("sectionSubtitle"),
@@ -424,6 +425,7 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
             precio={rawEvento.precio}
             tipoCategoria={evento.tipo === "hospedaje" ? "hospedaje" : "evento"}
             seccionOrigen="detalle_evento"
+            zonaSlug={zonaSlug}
           />
         </div>
       </aside>

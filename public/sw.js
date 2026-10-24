@@ -4,7 +4,7 @@
  * Optimizada para conexiones móviles intermitentes 3G/4G en la Sierra Nevada (Minca).
  */
 
-const CACHE_VERSION = 'padonde-v5';
+const CACHE_VERSION = 'padonde-v6';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const PAGES_CACHE = `${CACHE_VERSION}-pages`;
 const IMAGES_CACHE = `${CACHE_VERSION}-images`;
@@ -16,9 +16,10 @@ self.addEventListener('message', (event) => {
   }
 });
 
-// Recursos estáticos mínimos indispensables precacheados durante la instalación
+// Recursos estáticos mínimos indispensables precacheados durante la instalación (Minca & Mendihuaca aislados)
 const PRECACHE_ASSETS = [
   '/es/minca',
+  '/es/mendihuaca',
   '/manifest.webmanifest',
   '/icon-192.png',
   '/icon-512.png',
@@ -36,9 +37,8 @@ self.addEventListener('install', (event) => {
         try {
           const res = await fetch(url, { redirect: 'follow' });
           if (res && res.status === 200) {
-            if (url.includes('/minca')) {
+            if (url.includes('/minca') || url.includes('/mendihuaca')) {
               await pagesCache.put(url, res.clone());
-              await pagesCache.put('/', res.clone());
             } else {
               await staticCache.put(url, res.clone());
             }
@@ -139,23 +139,41 @@ self.addEventListener('fetch', (event) => {
           if (networkResponse && networkResponse.status === 200) {
             const cache = await caches.open(PAGES_CACHE);
             cache.put(request, networkResponse.clone());
-            if (url.pathname === '/' || url.pathname.includes('/minca')) {
+            if (url.pathname.includes('/minca')) {
               cache.put('/es/minca', networkResponse.clone());
+            } else if (url.pathname.includes('/mendihuaca')) {
+              cache.put('/es/mendihuaca', networkResponse.clone());
             }
           }
           return networkResponse;
         } catch {
-          // MODO AVIÓN / SIN SEÑAL: Buscar en caché
+          // MODO AVIÓN / SIN SEÑAL: Buscar en caché de páginas
           const cachedMatch = await caches.match(request, { ignoreSearch: true });
           if (cachedMatch) return cachedMatch;
 
-          // Si el usuario abrió '/' o variantes sin conexión, entregar la cartelera de Minca guardada
-          if (url.pathname === '/' || url.pathname === '/es' || url.pathname.endsWith('/minca')) {
+          // Si el usuario intentó abrir Mendihuaca sin conexión
+          if (url.pathname.includes('/mendihuaca')) {
+            const mendiCached = await caches.match('/es/mendihuaca', { ignoreSearch: true });
+            if (mendiCached) return mendiCached;
+          }
+
+          // Si el usuario intentó abrir Minca sin conexión
+          if (url.pathname.includes('/minca')) {
             const mincaCached = await caches.match('/es/minca', { ignoreSearch: true });
             if (mincaCached) return mincaCached;
           }
 
-          // Redirección sutil, limpia e imperceptible a la navegación de donde venía (mismo color #F4F1EA)
+          // Si el usuario abrió '/' o variantes sin conexión, respetar la última región guardada
+          const cookieHeader = request.headers.get('cookie') || '';
+          if (cookieHeader.includes('padonde_zona=mendihuaca')) {
+            const mendiCached = await caches.match('/es/mendihuaca', { ignoreSearch: true });
+            if (mendiCached) return mendiCached;
+          }
+
+          const defaultCached = await caches.match('/es/minca', { ignoreSearch: true });
+          if (defaultCached) return defaultCached;
+
+          // Redirección sutil, limpia e imperceptible a la navegación previa o a Minca
           return new Response(
             `<!DOCTYPE html>
             <html lang="es">
@@ -166,7 +184,9 @@ self.addEventListener('fetch', (event) => {
                 if (window.history.length > 1) {
                   window.history.back();
                 } else {
-                  window.location.replace('/es/minca');
+                  var last = "minca";
+                  try { last = localStorage.getItem("padonde_zona") || "minca"; } catch(e){}
+                  window.location.replace('/es/' + last);
                 }
               </script>
             </head>

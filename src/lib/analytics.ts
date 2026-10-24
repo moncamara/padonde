@@ -38,6 +38,7 @@ export interface TrackWhatsAppClickParams {
   aliado_nombre?: string;
   tipo_categoria?: "hospedaje" | "evento" | "servicio_esencial" | string;
   seccion_origen?: "cotizador_hospedaje" | "tarjeta_feed" | "detalle_evento" | "servicios_esenciales" | "footer_comercial" | string;
+  region_destino?: "minca" | "mendihuaca" | string;
   eventoId?: string;
   eventoTitulo?: string;
   negocioNombre?: string;
@@ -55,6 +56,7 @@ export interface TrackWhatsAppClickParams {
  * Garantías:
  * - Valida la existencia segura de gtag (typeof window.gtag === 'function') para navegadores con bloqueadores.
  * - Despacha el nombre exacto de evento: 'click_whatsapp'.
+ * - Envía siempre 'region_destino': 'minca' o 'mendihuaca' para auditar rendimiento comercial aislado.
  * - Parámetros 100% blindados contra undefined / null.
  * - Cero latencia o bloqueo sobre window.open o navegación nativa.
  */
@@ -80,17 +82,40 @@ export function trackWhatsAppClick(data: TrackWhatsAppClickParams) {
   const itemName = (data.eventoTitulo || aliadoNombre).trim();
   const precio = typeof data.precio === "number" && !isNaN(data.precio) && data.precio >= 0 ? data.precio : 0;
 
+  // Resolución segura de la región de destino (prioridad: parámetro explícito > URL > cookie > localStorage)
+  let regionDestino = (data.region_destino || "").toLowerCase().trim();
+  if (!regionDestino && typeof window !== "undefined") {
+    const path = window.location.pathname.toLowerCase();
+    if (path.includes("/mendihuaca")) {
+      regionDestino = "mendihuaca";
+    } else if (path.includes("/minca")) {
+      regionDestino = "minca";
+    } else {
+      const match = document.cookie.match(/padonde_zona=([^;]+)/);
+      if (match && match[1]) {
+        regionDestino = match[1].toLowerCase().trim();
+      } else {
+        try {
+          const local = localStorage.getItem("padonde_zona");
+          if (local) regionDestino = local.toLowerCase().trim();
+        } catch {}
+      }
+    }
+  }
+  if (!regionDestino) regionDestino = "minca";
+
   const ga4Payload: Record<string, any> = {
     aliado_nombre: aliadoNombre,
     tipo_categoria: tipoCategoria,
     seccion_origen: seccionOrigen,
+    region_destino: regionDestino,
     item_id: itemId,
     item_name: itemName,
     business_name: aliadoNombre,
     value: precio,
     currency: "COP",
     event_category: "Conversion",
-    event_label: `${aliadoNombre} [${tipoCategoria}] - ${seccionOrigen}`,
+    event_label: `${aliadoNombre} [${tipoCategoria}] - ${regionDestino} (${seccionOrigen})`,
   };
 
   // 2. Despacho a Google Analytics 4 (GA4) con validación estricta de función
@@ -122,6 +147,7 @@ export function trackWhatsAppClick(data: TrackWhatsAppClickParams) {
       ubicacion: seccionOrigen,
       aliado_nombre: aliadoNombre,
       tipo_categoria: tipoCategoria,
+      region_destino: regionDestino,
       eventoTitulo: itemName,
       precio: precio,
       detalles: data.detalles,
@@ -153,10 +179,12 @@ export function trackServicioEsencialWhatsAppClick(data: {
   categoria: string;
   zonaNombre: string;
 }) {
+  const region = data.zonaNombre.toLowerCase().includes("mendihuaca") ? "mendihuaca" : "minca";
   trackWhatsAppClick({
     aliado_nombre: data.nombreComercial,
     tipo_categoria: "servicio_esencial",
     seccion_origen: "servicios_esenciales",
+    region_destino: region,
     eventoId: data.servicioId,
     eventoTitulo: `${data.nombreComercial} (${data.categoria})`,
   });
@@ -198,6 +226,30 @@ export function trackSearch(searchTerm: string, zonaNombre: string, resultsCount
     search_term: searchTerm,
     destination: zonaNombre,
     results_count: resultsCount,
+  });
+}
+
+/**
+ * Evento de Google Analytics: Alternar destino desde la cabecera (Minca <-> Mendihuaca)
+ */
+export function trackDestinationSwitch(fromZona: string, toZona: string) {
+  trackEvent("switch_destination_header", {
+    event_category: "Navigation",
+    event_label: `${fromZona} -> ${toZona}`,
+    from_zona: fromZona,
+    to_zona: toZona,
+  });
+}
+
+/**
+ * Evento de Google Analytics: Clic en módulo de tránsito cross-selling ("Próximo Destino")
+ */
+export function trackCrossSellingClick(origenZona: string, destinoZona: string) {
+  trackEvent("cross_selling_click", {
+    event_category: "Navigation",
+    event_label: `Cross-Selling: ${origenZona} -> ${destinoZona}`,
+    origen_zona: origenZona,
+    destino_zona: destinoZona,
   });
 }
 

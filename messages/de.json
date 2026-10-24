@@ -179,5 +179,15 @@
   "offline": {
     "offlineNotice": "Offline-Modus · Gespeicherte Inhalte werden angezeigt",
     "backOnline": "Wieder online · Kalender aktualisiert"
+  },
+  "crossSelling": {
+    "mincaToMendiBadge": "🌊 Nächstes Reiseziel • Küste & Strand",
+    "mincaToMendiTitle": "Geht es an die Küste? Entdecke Mendihuaca",
+    "mincaToMendiDesc": "Unberührte Strände, Surfen im Fluss und Meer, Cocktails bei Sonnenuntergang und Strandhütten.",
+    "mincaToMendiCta": "Mendihuaca entdecken 🌊 →",
+    "mendiToMincaBadge": "🌿 Nächstes Reiseziel • Sierra Nevada",
+    "mendiToMincaTitle": "Geht es in die Berge? Entdecke frische Pläne in Minca",
+    "mendiToMincaDesc": "Reine Gebirgswasserfälle, Kaffee- & Kakaotouren, kühles Bergklima und magische Sonnenuntergänge.",
+    "mendiToMincaCta": "Minca entdecken 🌿 →"
   }
 }

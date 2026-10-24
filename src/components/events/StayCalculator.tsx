@@ -14,6 +14,7 @@ interface StayCalculatorProps {
   locale: string;
   eventoId?: string;
   negocioId?: string;
+  zonaSlug?: string;
   labels: {
     sectionTitle: string;
     sectionSubtitle: string;
@@ -39,6 +40,7 @@ export function StayCalculator({
   locale,
   eventoId,
   negocioId,
+  zonaSlug,
   labels,
 }: StayCalculatorProps) {
   // 1. Habitación seleccionada con blindaje null-safe
@@ -255,6 +257,7 @@ export function StayCalculator({
               aliado_nombre: hostalNombre || "Hospedaje",
               tipo_categoria: "hospedaje",
               seccion_origen: "cotizador_hospedaje",
+              region_destino: zonaSlug,
               eventoId: eventoId || hostalNombre,
               eventoTitulo: habitacionSeleccionada
                 ? `${hostalNombre} — ${habitacionSeleccionada.titulo}`

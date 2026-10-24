@@ -31,7 +31,11 @@ export async function POST(request: NextRequest) {
       eventoTitulo,
       precio,
       detalles,
+      region_destino,
     } = body;
+
+    const resolvedRegion = (region_destino || request.cookies.get("padonde_zona")?.value || "minca").toLowerCase();
+    const regionLabel = resolvedRegion.includes("mendihuaca") ? "🌊 Mendihuaca" : "🌿 Minca";
 
     let negocioId = inputNegocioId;
     let resolvedAliado = aliado_nombre;
@@ -124,6 +128,8 @@ export async function POST(request: NextRequest) {
         }
         lines.push(`🔗 <b>Origen:</b> ${origenDesc}`);
       }
+
+      lines.push(`🗺️ <b>Destino:</b> ${regionLabel}`);
 
       // Disparar Telegram en segundo plano (fire-and-forget)
       void sendTelegramNotification(lines.join("\n")).catch((err) => {

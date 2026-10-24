@@ -1,10 +1,13 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/routing";
+import { useSearchParams } from "next/navigation";
 import { AdminSecretTrigger } from "@/components/layout/AdminSecretTrigger";
 import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 import { ShareButton } from "@/components/events/ShareButton";
 import { useZonaSearch } from "@/context/SearchContext";
+import { trackDestinationSwitch } from "@/lib/analytics";
 
 interface ZonaHeaderProps {
   zonaNombre: string;
@@ -16,19 +19,30 @@ export function ZonaHeader({ zonaNombre, zonaSlug, locale }: ZonaHeaderProps) {
   const tHeader = useTranslations("header");
   const tFilters = useTranslations("filters");
   const { busqueda, setBusqueda, isSearchOpen, toggleSearch, inputRef } = useZonaSearch();
+  const searchParams = useSearchParams();
+  const queryString = searchParams.toString() ? `?${searchParams.toString()}` : "";
+
+  const handleSelectZona = (targetSlug: string) => {
+    if (targetSlug === zonaSlug) return;
+    try {
+      localStorage.setItem("padonde_zona", targetSlug);
+      document.cookie = `padonde_zona=${targetSlug}; path=/; max-age=31536000; SameSite=Lax`;
+    } catch {}
+    trackDestinationSwitch(zonaSlug, targetSlug);
+  };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-40 bg-cream/95 backdrop-blur-md border-b border-stone-light/80 px-4 py-3 shadow-xs transition-all">
+    <header className="fixed top-0 left-0 right-0 z-40 bg-cream/95 backdrop-blur-md border-b border-stone-light/80 px-4 py-2.5 sm:py-3 shadow-xs transition-all">
       <div className="max-w-lg mx-auto">
         {/* Fila principal del Header */}
         <div className="flex items-center justify-between gap-3">
           <div className="space-y-0.5">
             <AdminSecretTrigger>
-              <h1 className="font-serif text-3xl text-forest tracking-tight leading-none">
+              <h1 className="font-serif text-2xl sm:text-3xl text-forest tracking-tight leading-none">
                 PaDónde
               </h1>
             </AdminSecretTrigger>
-            <p className="font-sans text-xs text-stone mt-0.5">
+            <p className="font-sans text-[11px] sm:text-xs text-stone mt-0.5">
               {tHeader("subtitle", { zona: zonaNombre })}
             </p>
           </div>
@@ -60,6 +74,43 @@ export function ZonaHeader({ zonaNombre, zonaSlug, locale }: ZonaHeaderProps) {
                 variant="header"
               />
             </div>
+          </div>
+        </div>
+
+        {/* Selector de Destino Minimalista y Ultra-Liviano (1-Clic Mobile-First) */}
+        <div className="flex items-center gap-1.5 mt-2.5 pt-2 border-t border-stone-light/50">
+          <div className="flex items-center p-0.5 bg-stone-light/50 rounded-2xl w-full shadow-2xs">
+            <Link
+              href={`/minca${queryString}`}
+              onClick={() => handleSelectZona("minca")}
+              className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-sans transition-all flex items-center justify-center gap-1.5 select-none ${
+                zonaSlug === "minca"
+                  ? "bg-forest text-cream font-bold shadow-xs scale-[1.01]"
+                  : "text-stone hover:text-forest font-medium"
+              }`}
+            >
+              <span className="text-sm">🌿</span>
+              <span>Minca</span>
+              {zonaSlug === "minca" && (
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse ml-0.5" />
+              )}
+            </Link>
+
+            <Link
+              href={`/mendihuaca${queryString}`}
+              onClick={() => handleSelectZona("mendihuaca")}
+              className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-sans transition-all flex items-center justify-center gap-1.5 select-none ${
+                zonaSlug === "mendihuaca"
+                  ? "bg-forest text-cream font-bold shadow-xs scale-[1.01]"
+                  : "text-stone hover:text-forest font-medium"
+              }`}
+            >
+              <span className="text-sm">🌊</span>
+              <span>Mendihuaca</span>
+              {zonaSlug === "mendihuaca" && (
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse ml-0.5" />
+              )}
+            </Link>
           </div>
         </div>
 

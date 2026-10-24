@@ -179,5 +179,15 @@
   "offline": {
     "offlineNotice": "Offline mode · Showing saved content",
     "backOnline": "Back online · Board updated"
+  },
+  "crossSelling": {
+    "mincaToMendiBadge": "🌊 Next Destination • Coast & Beach",
+    "mincaToMendiTitle": "Heading down to the coast? Explore things to do in Mendihuaca",
+    "mincaToMendiDesc": "Pristine beaches, river & sea surfing, sunset cocktails, and beachfront cabins.",
+    "mincaToMendiCta": "Explore Mendihuaca 🌊 →",
+    "mendiToMincaBadge": "🌿 Next Destination • Sierra Nevada",
+    "mendiToMincaTitle": "Heading up to the mountain? Discover fresh plans in Minca",
+    "mendiToMincaDesc": "Pure mountain waterfalls, coffee & cacao tours, cool weather and magical mountain sunsets.",
+    "mendiToMincaCta": "Explore Minca 🌿 →"
   }
 }

@@ -161,15 +161,15 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      {/* Persistencia silenciosa de la última zona visitada para el acceso directo PWA */}
+      {/* Persistencia silenciosa de la última zona visitada para acceso directo PWA y retorno */}
       <script
         dangerouslySetInnerHTML={{
-          __html: `document.cookie = "padonde_zona=${zonaSlug}; path=/; max-age=31536000; SameSite=Lax";`,
+          __html: `try { document.cookie = "padonde_zona=${zonaSlug}; path=/; max-age=31536000; SameSite=Lax"; localStorage.setItem("padonde_zona", "${zonaSlug}"); } catch(e){}`,
         }}
       />
 
       <SearchProvider>
-        {/* Header fijo superior interactivo con buscador colapsable, selector de idioma y compartir */}
+        {/* Header fijo superior interactivo con selector de destino Minca/Mendihuaca, buscador colapsable, selector de idioma y compartir */}
         <ZonaHeader
           zonaNombre={zona.nombre}
           zonaSlug={zonaSlug}
@@ -177,7 +177,7 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
         />
 
         {/* Feed principal y Servicios Esenciales con padding-top generoso para el header fijo */}
-        <div className="max-w-lg mx-auto px-4 pt-24 sm:pt-28 pb-6">
+        <div className="max-w-lg mx-auto px-4 pt-32 sm:pt-36 pb-6">
           <FeedTabsContainer
             eventos={eventos}
             servicios={servicios}

@@ -175,6 +175,7 @@ export function EventCard({ evento: rawEvento, zona, priority = false }: EventCa
                   aliado_nombre: rawEvento.negocio?.nombre || "Organizador",
                   tipo_categoria: rawEvento.tipo === "hospedaje" ? "hospedaje" : "evento",
                   seccion_origen: "tarjeta_feed",
+                  region_destino: zona,
                   eventoId: rawEvento.id,
                   eventoTitulo: rawEvento.titulo,
                   negocioNombre: rawEvento.negocio?.nombre,

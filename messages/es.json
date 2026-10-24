@@ -179,5 +179,15 @@
   "offline": {
     "offlineNotice": "Modo sin conexión · Mostrando contenido guardado",
     "backOnline": "De nuevo en línea · Cartelera actualizada"
+  },
+  "crossSelling": {
+    "mincaToMendiBadge": "🌊 Próximo Destino • Costa & Playa",
+    "mincaToMendiTitle": "¿Bajas a la costa? Explora qué hacer en Mendihuaca",
+    "mincaToMendiDesc": "Playas vírgenes, surf en el río y el mar, cócteles al atardecer y cabañas frente a las olas.",
+    "mincaToMendiCta": "Explorar Mendihuaca 🌊 →",
+    "mendiToMincaBadge": "🌿 Próximo Destino • Sierra Nevada",
+    "mendiToMincaTitle": "¿Subes a la montaña? Conoce los planes frescos de Minca",
+    "mendiToMincaDesc": "Cascadas de agua pura, tours de café y cacao, clima fresco y atardeceres mágicos en la Sierra.",
+    "mendiToMincaCta": "Explorar Minca 🌿 →"
   }
 }
