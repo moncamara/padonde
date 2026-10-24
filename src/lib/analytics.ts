@@ -95,7 +95,16 @@ export function trackWhatsAppClick(data: TrackWhatsAppClickParams) {
   // 2. Despacho a Google Analytics 4 (GA4) con validación estricta de función
   try {
     if (typeof window.gtag === "function") {
+      // Evento estándar unificado con todos los nuevos parámetros de contexto
       window.gtag("event", "click_whatsapp", ga4Payload);
+
+      // Alias retrocompatible para alimentar de inmediato los eventos clave que ya tienes activos en GA4:
+      if (tipoCategoria === "servicio_esencial") {
+        window.gtag("event", "click_esencial_whatsapp", ga4Payload);
+      } else {
+        window.gtag("event", "click_reserva_whatsapp", ga4Payload);
+      }
+
       if ((window as any).padonde_debug_analytics) {
         console.log("📊 [GA4 click_whatsapp despachado]", ga4Payload);
       }
