@@ -173,7 +173,7 @@ export function StayCalculator({
               min={hoyStr}
               value={checkIn}
               onChange={handleCheckInChange}
-              className="w-full bg-cream/70 border border-stone-light/80 rounded-xl px-2.5 py-2 text-xs font-sans text-forest focus:outline-none focus:border-forest transition-colors"
+              className="w-full bg-cream/70 border border-stone-light/80 rounded-xl px-2.5 py-2 text-base sm:text-xs font-sans text-forest focus:outline-none focus:border-forest transition-colors"
             />
           </div>
 
@@ -186,7 +186,7 @@ export function StayCalculator({
               min={checkIn}
               value={checkOut}
               onChange={handleCheckOutChange}
-              className="w-full bg-cream/70 border border-stone-light/80 rounded-xl px-2.5 py-2 text-xs font-sans text-forest focus:outline-none focus:border-forest transition-colors"
+              className="w-full bg-cream/70 border border-stone-light/80 rounded-xl px-2.5 py-2 text-base sm:text-xs font-sans text-forest focus:outline-none focus:border-forest transition-colors"
             />
           </div>
         </div>

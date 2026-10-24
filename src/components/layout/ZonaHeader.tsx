@@ -73,12 +73,21 @@ export function ZonaHeader({ zonaNombre, zonaSlug, locale }: ZonaHeaderProps) {
               <input
                 ref={inputRef}
                 id="input-buscador-feed"
-                type="text"
+                type="search"
+                enterKeyHint="search"
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck={false}
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    inputRef.current?.blur();
+                  }
+                }}
                 placeholder={tFilters("searchPlaceholder")}
                 aria-label={tFilters("searchPlaceholder")}
-                className="w-full pl-8 pr-8 py-2 bg-white text-stone-dark placeholder:text-stone/60 border border-stone-light/80 focus:border-forest/50 focus:ring-2 focus:ring-forest/15 rounded-xl text-xs sm:text-sm font-sans transition-all outline-none shadow-xs"
+                className="w-full pl-8 pr-8 py-2 bg-white text-stone-dark placeholder:text-stone/60 border border-stone-light/80 focus:border-forest/50 focus:ring-2 focus:ring-forest/15 rounded-xl text-base sm:text-sm font-sans transition-all outline-none shadow-xs [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden"
               />
               {busqueda ? (
                 <button

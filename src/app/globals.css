@@ -189,4 +189,22 @@ body {
   }
 }
 
+/* ─────────────────────────────────────────────
+   Prevenir auto-zoom de iOS Safari en inputs móviles
+   iOS Safari fuerza zoom de viewport si el font-size es menor a 16px al enfocar.
+───────────────────────────────────────────── */
+@media screen and (max-width: 640px) {
+  input[type="text"],
+  input[type="search"],
+  input[type="date"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="number"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
+
 
