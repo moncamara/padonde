@@ -12,7 +12,7 @@
     "criterioOrdenFeed": "agenda_primero",
     "capsula": {
       "activa": false,
-      "etiqueta": "🌿 Minca en vivo",
+      "etiqueta": "Visítanos",
       "titulo": "Minca • Capital Ecológica de la Sierra",
       "descripcion": "Ríos, cascadas y café en las montañas de Santa Marta.",
       "video_url": "",
@@ -54,7 +54,7 @@
     "criterioOrdenFeed": "hospedaje_primero",
     "capsula": {
       "activa": false,
-      "etiqueta": "🌴 Palomino en vivo",
+      "etiqueta": "Visítanos",
       "titulo": "Palomino • Río, Mar y Buena Vibra",
       "descripcion": "Atardeceres, música y vida costera.",
       "video_url": "",
@@ -75,7 +75,7 @@
     "criterioOrdenFeed": "hospedaje_primero",
     "capsula": {
       "activa": false,
-      "etiqueta": "🏞️ Tairona en vivo",
+      "etiqueta": "Visítanos",
       "titulo": "Tairona • Naturaleza Viva",
       "descripcion": "Selva, playas sagradas y senderos milenarios.",
       "video_url": "",

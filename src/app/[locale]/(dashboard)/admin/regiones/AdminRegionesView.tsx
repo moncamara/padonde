@@ -46,7 +46,7 @@ export function AdminRegionesView({ initialConfig }: AdminRegionesViewProps) {
 
   const capsulaActual: CapsulaTerritorialConfig = regionActual.capsula || {
     activa: false,
-    etiqueta: `🌊 ${REGIONES_INFO[regionActiva]?.nombre || "Destino"} en vivo`,
+    etiqueta: "Visítanos",
     titulo: `${REGIONES_INFO[regionActiva]?.nombre || "Destino"} • Sierra Nevada`,
     descripcion: "",
     video_url: "",
@@ -54,7 +54,7 @@ export function AdminRegionesView({ initialConfig }: AdminRegionesViewProps) {
     duracion_segundos: 15,
   };
 
-  // Actualizar configuración de la cápsula de video
+  // Actualizar configuración de la cápsula de video de la región activa de forma independiente
   const handleUpdateCapsula = (patch: Partial<CapsulaTerritorialConfig>) => {
     setConfig((prev) => ({
       ...prev,
@@ -63,7 +63,7 @@ export function AdminRegionesView({ initialConfig }: AdminRegionesViewProps) {
         capsula: {
           ...(prev[regionActiva]?.capsula || {
             activa: false,
-            etiqueta: `🌊 ${REGIONES_INFO[regionActiva]?.nombre || "Destino"} en vivo`,
+            etiqueta: "Visítanos",
             titulo: `${REGIONES_INFO[regionActiva]?.nombre || "Destino"} • Sierra Nevada`,
             descripcion: "",
             video_url: "",
@@ -195,6 +195,9 @@ export function AdminRegionesView({ initialConfig }: AdminRegionesViewProps) {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {Object.entries(REGIONES_INFO).map(([slug, info]) => {
           const isActiva = regionActiva === slug;
+          const capsulaRegion = config[slug]?.capsula;
+          const estaCapsulaActiva = Boolean(capsulaRegion?.activa);
+
           return (
             <button
               key={slug}
@@ -203,20 +206,55 @@ export function AdminRegionesView({ initialConfig }: AdminRegionesViewProps) {
                 setRegionActiva(slug);
                 setMensaje(null);
               }}
-              className={`p-4 sm:p-5 rounded-2xl border text-left transition-all cursor-pointer ${
+              className={`p-4 sm:p-5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
                 isActiva
                   ? "bg-forest text-white border-forest shadow-md ring-2 ring-forest/20 scale-[1.01]"
                   : "bg-white/80 hover:bg-white border-stone-light/80 text-stone hover:text-forest shadow-2xs hover:shadow-xs"
               }`}
             >
-              <div className="text-2xl mb-1.5">{info.icono}</div>
-              <div className="font-bold text-sm sm:text-base tracking-tight">{info.nombre}</div>
+              <div>
+                <div className="text-2xl mb-1.5">{info.icono}</div>
+                <div className="font-bold text-sm sm:text-base tracking-tight">{info.nombre}</div>
+                <div
+                  className={`text-[11px] sm:text-xs line-clamp-1 mt-1 ${
+                    isActiva ? "text-cream/80" : "text-stone"
+                  }`}
+                >
+                  {info.subtitulo}
+                </div>
+              </div>
+
+              {/* Indicador individual de cápsula por región */}
               <div
-                className={`text-[11px] sm:text-xs line-clamp-1 mt-1 ${
-                  isActiva ? "text-cream/80" : "text-stone"
+                className={`mt-3 pt-2.5 border-t flex items-center justify-between text-[11px] font-semibold ${
+                  isActiva ? "border-white/20 text-cream" : "border-stone-light/60 text-stone"
                 }`}
               >
-                {info.subtitulo}
+                <span className="flex items-center gap-1.5">
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      estaCapsulaActiva
+                        ? "bg-emerald-400 animate-pulse"
+                        : isActiva
+                        ? "bg-white/30"
+                        : "bg-stone-300"
+                    }`}
+                  />
+                  <span>{estaCapsulaActiva ? "Cápsula Activa" : "Cápsula Pausada"}</span>
+                </span>
+                <span
+                  className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${
+                    estaCapsulaActiva
+                      ? isActiva
+                        ? "bg-emerald-500/30 text-emerald-200"
+                        : "bg-emerald-50 text-emerald-700"
+                      : isActiva
+                      ? "bg-white/10 text-white/70"
+                      : "bg-stone-100 text-stone-500"
+                  }`}
+                >
+                  {estaCapsulaActiva ? "ON" : "OFF"}
+                </span>
               </div>
             </button>
           );
@@ -365,26 +403,26 @@ export function AdminRegionesView({ initialConfig }: AdminRegionesViewProps) {
 
           {/* 3. Cápsula de Vibra Territorial (Video Bajo Demanda) */}
           <div className="bg-white rounded-3xl p-5 sm:p-6 border border-stone-light/70 shadow-2xs space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 pb-3 border-b border-stone-light/60">
               <div>
                 <h3 className="font-serif text-lg text-forest font-bold flex items-center gap-2">
-                  <span>📹</span> 3. Cápsula de Vibra Territorial (&quot;Así late hoy&quot;)
+                  <span>📹</span> 3. Cápsula Territorial (&quot;Visítanos&quot;) de {REGIONES_INFO[regionActiva]?.nombre}
                 </h3>
-                <p className="text-xs text-stone mt-0.5">
-                  Video corto (10–15s) no invasivo que el turista puede abrir bajo demanda para ver la realidad del destino en vivo.
+                <p className="text-xs text-stone mt-1 max-w-xl">
+                  Cada región opera de forma <strong className="text-forest">100% independiente</strong>. Puedes activar Mendihuaca hoy y dejar Minca o Palomino pausadas. Los cambios que hagas aquí solo afectan a {REGIONES_INFO[regionActiva]?.nombre}.
                 </p>
               </div>
 
-              {/* Interruptor Activar / Pausar */}
-              <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
+              {/* Interruptor Activar / Pausar independiente */}
+              <div className="flex items-center gap-2.5 bg-cream/40 p-2 sm:p-2.5 rounded-2xl border border-stone-light/70 self-start sm:self-center shrink-0">
                 <span
-                  className={`text-[11px] font-sans font-semibold px-2.5 py-1 rounded-full border transition-colors ${
+                  className={`text-[11px] font-sans font-bold px-2.5 py-1 rounded-xl border transition-colors ${
                     capsulaActual.activa
-                      ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                      : "bg-stone-light/40 text-stone border-stone-light/80"
+                      ? "bg-emerald-600 text-white border-emerald-700 shadow-2xs"
+                      : "bg-stone-200 text-stone-600 border-stone-300"
                   }`}
                 >
-                  {capsulaActual.activa ? "🟢 Activa" : "⏸️ Pausada"}
+                  {capsulaActual.activa ? `🟢 Activa en ${REGIONES_INFO[regionActiva]?.nombre}` : `⏸️ Pausada`}
                 </span>
 
                 <button
@@ -392,14 +430,14 @@ export function AdminRegionesView({ initialConfig }: AdminRegionesViewProps) {
                   role="switch"
                   aria-checked={capsulaActual.activa}
                   onClick={() => handleUpdateCapsula({ activa: !capsulaActual.activa })}
-                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                  className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
                     capsulaActual.activa ? "bg-emerald-600" : "bg-stone-300"
                   }`}
-                  title={capsulaActual.activa ? "Desactivar cápsula" : "Activar cápsula"}
+                  title={capsulaActual.activa ? `Pausar cápsula en ${REGIONES_INFO[regionActiva]?.nombre}` : `Activar cápsula en ${REGIONES_INFO[regionActiva]?.nombre}`}
                 >
                   <span
                     aria-hidden="true"
-                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                    className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
                       capsulaActual.activa ? "translate-x-5" : "translate-x-0"
                     }`}
                   />
