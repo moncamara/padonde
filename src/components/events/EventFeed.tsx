@@ -4,6 +4,7 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { EventCard } from "@/components/events/EventCard";
 import { EventFilters } from "@/components/events/EventFilters";
+import { CapsulaTerritorial } from "@/components/layout/CapsulaTerritorial";
 import type { CategoriaEvento, EventoConNegocio, FiltroTiempo } from "@/lib/types";
 import {
   getTerritorialConfig,
@@ -292,6 +293,12 @@ export function EventFeed({ eventos, zona, configTerritorial }: EventFeedProps) 
 
   return (
     <div className="space-y-6">
+      {/* Cápsula de Vibra Territorial (bajo demanda, no invasiva) */}
+      <CapsulaTerritorial
+        zonaSlug={zona}
+        configTerritorial={configTerritorial}
+      />
+
       <EventFilters
         tiempoActivo={filtroTiempo}
         categoriaActiva={filtroCategoria}

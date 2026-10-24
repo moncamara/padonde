@@ -9,7 +9,16 @@
       "hospedaje",
       "artesanias"
     ],
-    "criterioOrdenFeed": "agenda_primero"
+    "criterioOrdenFeed": "agenda_primero",
+    "capsula": {
+      "activa": false,
+      "etiqueta": "🌿 Minca en vivo",
+      "titulo": "Minca • Capital Ecológica de la Sierra",
+      "descripcion": "Ríos, cascadas y café en las montañas de Santa Marta.",
+      "video_url": "",
+      "poster_url": "",
+      "duracion_segundos": 15
+    }
   },
   "mendihuaca": {
     "ordenCategorias": [
@@ -21,7 +30,16 @@
       "arte",
       "artesanias"
     ],
-    "criterioOrdenFeed": "hospedaje_primero"
+    "criterioOrdenFeed": "hospedaje_primero",
+    "capsula": {
+      "activa": true,
+      "etiqueta": "🌊 Mendihuaca en vivo",
+      "titulo": "Mendihuaca • Sierra Nevada & Caribe",
+      "descripcion": "Entre el río y el mar: así late hoy nuestro paraíso tropical.",
+      "video_url": "/videos/mendihuaca_vibra.mp4",
+      "poster_url": "/videos/mendihuaca_poster.jpg",
+      "duracion_segundos": 15
+    }
   },
   "palomino": {
     "ordenCategorias": [
@@ -33,7 +51,16 @@
       "arte",
       "artesanias"
     ],
-    "criterioOrdenFeed": "hospedaje_primero"
+    "criterioOrdenFeed": "hospedaje_primero",
+    "capsula": {
+      "activa": false,
+      "etiqueta": "🌴 Palomino en vivo",
+      "titulo": "Palomino • Río, Mar y Buena Vibra",
+      "descripcion": "Atardeceres, música y vida costera.",
+      "video_url": "",
+      "poster_url": "",
+      "duracion_segundos": 15
+    }
   },
   "tairona": {
     "ordenCategorias": [
@@ -45,6 +72,15 @@
       "rumba",
       "artesanias"
     ],
-    "criterioOrdenFeed": "hospedaje_primero"
+    "criterioOrdenFeed": "hospedaje_primero",
+    "capsula": {
+      "activa": false,
+      "etiqueta": "🏞️ Tairona en vivo",
+      "titulo": "Tairona • Naturaleza Viva",
+      "descripcion": "Selva, playas sagradas y senderos milenarios.",
+      "video_url": "",
+      "poster_url": "",
+      "duracion_segundos": 15
+    }
   }
 }

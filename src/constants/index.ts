@@ -82,9 +82,20 @@ import configTerritorialData from "./config_territorial.json";
 
 export type CriterioOrdenFeed = "agenda_primero" | "hospedaje_primero";
 
+export type CapsulaTerritorialConfig = {
+  activa: boolean;
+  etiqueta?: string;
+  titulo?: string;
+  descripcion?: string;
+  video_url: string;
+  poster_url?: string;
+  duracion_segundos?: number;
+};
+
 export type TerritorialUXConfig = {
   ordenCategorias: CategoriaEvento[];
   criterioOrdenFeed: CriterioOrdenFeed;
+  capsula?: CapsulaTerritorialConfig;
 };
 
 /**

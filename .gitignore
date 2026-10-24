@@ -47,4 +47,6 @@ eventos_iniciales/
 eventos/
 fotos_pendientes/*
 !fotos_pendientes/.gitkeep
+banner-videos/
+
 
