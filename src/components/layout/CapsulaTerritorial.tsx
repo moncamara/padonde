@@ -109,45 +109,30 @@ export function CapsulaTerritorial({
 
   return (
     <>
-      {/* 1. DISPARADOR: CIRCULITO FLOTANTE ESTILO STORY / REEL (Cero invasivo, en la esquina inferior) */}
-      <div className="fixed bottom-6 right-4 sm:right-6 z-40 flex flex-col items-center">
+      {/* 1. DISPARADOR FLOTANTE MINIMALISTA: Solo 'En vivo' con destello activo (Sin círculos pesados detrás) */}
+      <div className="fixed bottom-6 right-4 sm:right-6 z-40">
         <button
           type="button"
           onClick={() => setIsOpen(true)}
-          className="relative w-15 h-15 sm:w-16 sm:h-16 rounded-full p-0.5 bg-gradient-to-tr from-terra via-amber-500 to-forest shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer flex items-center justify-center group"
-          title={capsula.etiqueta || "Ver video de la región"}
-          aria-label={capsula.etiqueta || "Ver cómo late este destino hoy"}
+          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-forest text-cream border border-forest-light/40 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer text-xs font-sans group backdrop-blur-md"
+          title={capsula.etiqueta || "Ver cómo late este destino hoy"}
+          aria-label={capsula.etiqueta || "Ver video en vivo de la región"}
         >
-          {/* Anillo de pulso animado */}
-          <span className="absolute -inset-1 rounded-full bg-terra/25 animate-ping opacity-75 pointer-events-none"></span>
+          {/* Destello / Pulso activo */}
+          <span className="relative flex h-2.5 w-2.5 shrink-0">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-80"></span>
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 shadow-xs"></span>
+          </span>
 
-          {/* Miniatura circular */}
-          <div className="w-full h-full rounded-full overflow-hidden border-2 border-white relative bg-forest">
-            {capsula.poster_url ? (
-              <img
-                src={capsula.poster_url}
-                alt={capsula.titulo || "Vibra del destino"}
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-white text-lg">
-                🌊
-              </div>
-            )}
+          {/* Texto 'En vivo' */}
+          <span className="font-bold text-xs tracking-tight text-white">
+            En vivo
+          </span>
 
-            {/* Ícono Play central */}
-            <div className="absolute inset-0 bg-black/25 flex items-center justify-center">
-              <span className="w-5 h-5 rounded-full bg-white/95 text-forest text-[10px] flex items-center justify-center pl-0.5 shadow-xs font-bold">
-                ▶
-              </span>
-            </div>
-          </div>
-
-          {/* Badge inferior "En vivo" */}
-          <div className="absolute -bottom-1.5 bg-forest text-cream text-[9px] font-sans font-bold px-2 py-0.5 rounded-full border border-white/80 shadow-xs flex items-center gap-1 shrink-0">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span>En vivo</span>
-          </div>
+          {/* Ícono Play sutil */}
+          <span className="text-[10px] text-cream/80 group-hover:text-terra transition-colors">
+            ▶
+          </span>
         </button>
       </div>
 
