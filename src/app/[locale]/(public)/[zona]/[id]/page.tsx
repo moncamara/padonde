@@ -422,6 +422,8 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
             negocioNombre={rawEvento.negocio.nombre}
             negocioId={rawEvento.negocio_id}
             precio={rawEvento.precio}
+            tipoCategoria={evento.tipo === "hospedaje" ? "hospedaje" : "evento"}
+            seccionOrigen="detalle_evento"
           />
         </div>
       </aside>

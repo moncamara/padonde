@@ -11,6 +11,8 @@ interface WhatsAppBookingButtonProps {
   negocioNombre: string;
   negocioId?: string;
   precio?: number | null;
+  tipoCategoria?: string;
+  seccionOrigen?: string;
 }
 
 export function WhatsAppBookingButton({
@@ -21,6 +23,8 @@ export function WhatsAppBookingButton({
   negocioNombre,
   negocioId,
   precio,
+  tipoCategoria = "evento",
+  seccionOrigen = "detalle_evento",
 }: WhatsAppBookingButtonProps) {
   return (
     <a
@@ -30,6 +34,9 @@ export function WhatsAppBookingButton({
       className="flex-1 max-w-[240px]"
       onClick={() => {
         trackWhatsAppClick({
+          aliado_nombre: negocioNombre || "Organizador",
+          tipo_categoria: tipoCategoria,
+          seccion_origen: seccionOrigen,
           eventoId,
           eventoTitulo,
           negocioNombre,

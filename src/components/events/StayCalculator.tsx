@@ -252,13 +252,15 @@ export function StayCalculator({
           rel="noopener noreferrer"
           onClick={() => {
             trackWhatsAppClick({
+              aliado_nombre: hostalNombre || "Hospedaje",
+              tipo_categoria: "hospedaje",
+              seccion_origen: "cotizador_hospedaje",
               eventoId: eventoId || hostalNombre,
               eventoTitulo: habitacionSeleccionada
                 ? `${hostalNombre} — ${habitacionSeleccionada.titulo}`
                 : `${hostalNombre} — Cotización`,
               negocioNombre: hostalNombre,
               negocioId,
-              ubicacion: "detalle",
               precio: precioTotal,
             });
           }}

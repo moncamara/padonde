@@ -172,9 +172,12 @@ export function EventCard({ evento: rawEvento, zona, priority = false }: EventCa
               onClick={(e) => {
                 e.stopPropagation();
                 trackWhatsAppClick({
+                  aliado_nombre: rawEvento.negocio?.nombre || "Organizador",
+                  tipo_categoria: rawEvento.tipo === "hospedaje" ? "hospedaje" : "evento",
+                  seccion_origen: "tarjeta_feed",
                   eventoId: rawEvento.id,
                   eventoTitulo: rawEvento.titulo,
-                  negocioNombre: rawEvento.negocio.nombre,
+                  negocioNombre: rawEvento.negocio?.nombre,
                   negocioId: rawEvento.negocio_id,
                   ubicacion: "tarjeta",
                   precio: rawEvento.precio,
