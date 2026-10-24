@@ -17,6 +17,12 @@ export function LanguageSwitcher({ className = "" }: { className?: string }) {
 
   function switchLocale(nextLocale: string) {
     if (nextLocale === currentLocale) return;
+    if (typeof window !== "undefined") {
+      try {
+        sessionStorage.setItem("padonde_locale_switching", "true");
+        sessionStorage.setItem("padonde_detail_lang_switched", "true");
+      } catch {}
+    }
     router.replace(pathname, { locale: nextLocale });
   }
 

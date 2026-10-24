@@ -17,6 +17,17 @@ export function DetailBackButton({
     e.preventDefault();
 
     const navigate = () => {
+      if (typeof window !== "undefined") {
+        try {
+          const langSwitched = sessionStorage.getItem("padonde_detail_lang_switched");
+          if (langSwitched === "true") {
+            sessionStorage.removeItem("padonde_detail_lang_switched");
+            router.push(fallbackUrl);
+            return;
+          }
+        } catch {}
+      }
+
       if (typeof window !== "undefined" && window.history.length > 1) {
         router.back();
       } else {
