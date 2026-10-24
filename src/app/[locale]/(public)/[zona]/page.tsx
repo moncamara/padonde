@@ -2,13 +2,12 @@ import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/routing";
 import { FeedTabsContainer } from "@/components/layout/FeedTabsContainer";
-import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
-import { ShareButton } from "@/components/events/ShareButton";
+import { ZonaHeader } from "@/components/layout/ZonaHeader";
+import { SearchProvider } from "@/context/SearchContext";
 import { InstallPrompt } from "@/components/layout/InstallPrompt";
 import { InstallAppButton } from "@/components/layout/InstallAppButton";
 import { QRScanTracker } from "@/components/layout/QRScanTracker";
 import { PullToRefreshTracker } from "@/components/layout/PullToRefreshTracker";
-import { AdminSecretTrigger } from "@/components/layout/AdminSecretTrigger";
 import {
   getEventosByZona,
   getServiciosEsencialesByZona,
@@ -169,44 +168,25 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
         }}
       />
 
-      {/* Header fijo superior con blur y selector de idioma */}
-      <header className="fixed top-0 left-0 right-0 z-40 bg-cream/95 backdrop-blur-md border-b border-stone-light/80 px-4 py-3 shadow-xs">
-        <div className="max-w-lg mx-auto flex items-center justify-between gap-3">
-          <div className="space-y-0.5">
-            <AdminSecretTrigger>
-              <h1 className="font-serif text-3xl text-forest tracking-tight leading-none">
-                PaDónde
-              </h1>
-            </AdminSecretTrigger>
-            <p className="font-sans text-xs text-stone mt-0.5">
-              {tHeader("subtitle", { zona: zona.nombre })}
-            </p>
-          </div>
-
-          {/* Columna derecha: Idiomas arriba, Compartir abajo pegado a la derecha */}
-          <div className="flex flex-col items-end gap-1.5 shrink-0">
-            <LanguageSwitcher />
-            <ShareButton
-              title={`PaDónde 🌿 Cartelera de ${zona.nombre}`}
-              text={`Descubre planes, eventos, rumba, hospedajes en ${zona.nombre} - PaDónde`}
-              url={`https://www.padonde.lat/${locale}/${zonaSlug}`}
-              zonaNombre={zona.nombre}
-              variant="header"
-            />
-          </div>
-        </div>
-      </header>
-
-      {/* Feed principal y Servicios Esenciales con padding-top generoso para el header fijo */}
-      <div className="max-w-lg mx-auto px-4 pt-24 sm:pt-28 pb-6">
-        <FeedTabsContainer
-          eventos={eventos}
-          servicios={servicios}
-          zona={zonaSlug}
+      <SearchProvider>
+        {/* Header fijo superior interactivo con buscador colapsable, selector de idioma y compartir */}
+        <ZonaHeader
           zonaNombre={zona.nombre}
-          configTerritorial={configTerritorial}
+          zonaSlug={zonaSlug}
+          locale={locale}
         />
-      </div>
+
+        {/* Feed principal y Servicios Esenciales con padding-top generoso para el header fijo */}
+        <div className="max-w-lg mx-auto px-4 pt-24 sm:pt-28 pb-6">
+          <FeedTabsContainer
+            eventos={eventos}
+            servicios={servicios}
+            zona={zonaSlug}
+            zonaNombre={zona.nombre}
+            configTerritorial={configTerritorial}
+          />
+        </div>
+      </SearchProvider>
 
       {/* Footer — invitación a negocios con traducción y enlace a tu WhatsApp */}
       <footer className="text-center py-8 px-4 pb-24">

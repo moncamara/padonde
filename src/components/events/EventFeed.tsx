@@ -17,6 +17,7 @@ import {
   getMinutosDelDiaColombia,
 } from "@/lib/utils";
 import { trackSearch } from "@/lib/analytics";
+import { useZonaSearch } from "@/context/SearchContext";
 
 interface EventFeedProps {
   eventos: EventoConNegocio[];
@@ -81,16 +82,6 @@ export function EventFeed({ eventos, zona, configTerritorial }: EventFeedProps) 
     return null;
   });
 
-  const [busqueda, setBusquedaState] = useState<string>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const saved = sessionStorage.getItem("padonde_busqueda");
-        if (saved) return saved;
-      } catch {}
-    }
-    return "";
-  });
-
   const setFiltroTiempo = (t: FiltroTiempo) => {
     setFiltroTiempoState(t);
     if (typeof window !== "undefined") {
@@ -110,15 +101,7 @@ export function EventFeed({ eventos, zona, configTerritorial }: EventFeedProps) 
     }
   };
 
-  const setBusqueda = (q: string) => {
-    setBusquedaState(q);
-    if (typeof window !== "undefined") {
-      try {
-        if (q) sessionStorage.setItem("padonde_busqueda", q);
-        else sessionStorage.removeItem("padonde_busqueda");
-      } catch {}
-    }
-  };
+  const { busqueda, setBusqueda } = useZonaSearch();
 
   // Restauración de scroll precisa al volver atrás desde un detalle
   useEffect(() => {
@@ -314,8 +297,6 @@ export function EventFeed({ eventos, zona, configTerritorial }: EventFeedProps) 
         categoriaActiva={filtroCategoria}
         zonaSlug={zona}
         configTerritorial={configTerritorial}
-        busqueda={busqueda}
-        onBusquedaChange={setBusqueda}
         onTiempoChange={setFiltroTiempo}
         onCategoriaChange={setFiltroCategoria}
       />
