@@ -5,6 +5,7 @@ import { Link } from "@/i18n/routing";
 import { Button } from "@/components/ui/Button";
 import { AdminEventList, type EventoAdminItem } from "./AdminEventList";
 import { AdminNav } from "./AdminNav";
+import { TelegramNotificationsToggle } from "./TelegramNotificationsToggle";
 import {
   getFechaYMDColombia,
   getFechaYMDDesdeISO,
@@ -33,6 +34,15 @@ export default async function AdminDashboardPage({
   if (!user) {
     redirect({ href: "/admin/login", locale });
   }
+
+  // 1.1 Cargar configuración de notificaciones a Telegram
+  const { data: configTelegram } = await supabase
+    .from("configuraciones")
+    .select("valor")
+    .eq("clave", "notificaciones_telegram")
+    .maybeSingle();
+
+  const telegramActivas = configTelegram?.valor?.activas ?? true;
 
   // 2. Cargar eventos y negocios desde Supabase
   const { data: rawEventos } = await supabase
@@ -166,6 +176,9 @@ export default async function AdminDashboardPage({
             </Button>
           </Link>
         </div>
+
+        {/* Notificaciones de Telegram para el Super Admin */}
+        <TelegramNotificationsToggle initialActivas={telegramActivas} />
 
         {/* 5 Métricas Clave de Salud Operativa y Conversión */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3">

@@ -44,6 +44,7 @@ export interface TrackWhatsAppClickParams {
   negocioId?: string;
   ubicacion?: "tarjeta" | "detalle" | string;
   precio?: number | null;
+  detalles?: Record<string, any>;
   bypassAdminCheck?: boolean;
 }
 
@@ -113,7 +114,7 @@ export function trackWhatsAppClick(data: TrackWhatsAppClickParams) {
     console.warn("Métricas WhatsApp (gtag dispatch fallback):", gtagErr);
   }
 
-  // 3. Registro interno en segundo plano para el Panel Admin (no bloqueante vía Beacon o fetch keepalive)
+  // 3. Registro interno en segundo plano para el Panel Admin y alertas (no bloqueante vía Beacon o fetch keepalive)
   try {
     const payload = JSON.stringify({
       eventoId: data.eventoId,
@@ -121,6 +122,9 @@ export function trackWhatsAppClick(data: TrackWhatsAppClickParams) {
       ubicacion: seccionOrigen,
       aliado_nombre: aliadoNombre,
       tipo_categoria: tipoCategoria,
+      eventoTitulo: itemName,
+      precio: precio,
+      detalles: data.detalles,
     });
 
     if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {

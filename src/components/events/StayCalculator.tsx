@@ -262,6 +262,14 @@ export function StayCalculator({
               negocioNombre: hostalNombre,
               negocioId,
               precio: precioTotal,
+              detalles: {
+                habitacion: habitacionSeleccionada?.titulo || "Habitación",
+                noches,
+                huespedes,
+                precioTotal,
+                checkIn,
+                checkOut,
+              },
             });
           }}
           className="w-full py-3.5 bg-forest text-cream text-xs sm:text-sm font-sans font-semibold rounded-2xl hover:bg-forest-dark active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-md"

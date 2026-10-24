@@ -1958,7 +1958,7 @@ export async function guardarConfigTerritorialAction(
 
     revalidatePath("/", "layout");
     revalidatePath("/[locale]/[zona]", "page");
-    revalidatePath("/[locale]/admin/regiones", "page");
+    revalidatePath("/[locale]/(dashboard)/admin/regiones", "page");
 
     return { success: true };
   } catch (err: any) {
@@ -1969,5 +1969,85 @@ export async function guardarConfigTerritorialAction(
     };
   }
 }
+
+/**
+ * Alterna el estado de activación de las notificaciones de Telegram para el Super Admin.
+ */
+export async function toggleNotificacionesTelegramAction(activas: boolean) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: "No autorizado. Inicia sesión como administrador." };
+    }
+
+    const { data: configActual } = await supabase
+      .from("configuraciones")
+      .select("valor")
+      .eq("clave", "notificaciones_telegram")
+      .maybeSingle();
+
+    const nuevoValor = {
+      ...(configActual?.valor && typeof configActual.valor === "object" ? configActual.valor : {}),
+      activas,
+      bot_token: configActual?.valor?.bot_token || process.env.TELEGRAM_BOT_TOKEN,
+      chat_id: configActual?.valor?.chat_id || process.env.TELEGRAM_CHAT_ID,
+    };
+
+    const { error: dbError } = await supabase
+      .from("configuraciones")
+      .upsert({
+        clave: "notificaciones_telegram",
+        valor: nuevoValor,
+        updated_at: new Date().toISOString(),
+      });
+
+    if (dbError) {
+      return { success: false, error: dbError.message };
+    }
+
+    revalidatePath("/[locale]/(dashboard)/admin", "page");
+    return { success: true, activas };
+  } catch (err: any) {
+    return { success: false, error: err?.message || "Error al actualizar notificaciones." };
+  }
+}
+
+/**
+ * Envía una notificación de prueba directa al chat de Telegram del Super Admin.
+ */
+export async function testNotificacionTelegramAction() {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: "No autorizado." };
+    }
+
+    const { sendTelegramNotification } = await import("@/lib/telegram");
+    const testMsg = [
+      `🔔 <b>¡Prueba de Notificación PaDónde!</b>`,
+      `✅ Tu bot de Telegram está 100% activo y conectado.`,
+      `⏰ <b>Hora:</b> ${new Date().toLocaleTimeString("es-CO", { timeZone: "America/Bogota" })}`,
+      `📲 Recibirás una alerta cada vez que un turista haga clic en Reservar o Cotizar disponibilidad.`,
+    ].join("\n");
+
+    const ok = await sendTelegramNotification(testMsg);
+    if (!ok) {
+      return { success: false, error: "No se pudo entregar el mensaje. Verifica que las notificaciones no estén pausadas." };
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || "Error al enviar prueba." };
+  }
+}
+
 
 
