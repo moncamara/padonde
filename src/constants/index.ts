@@ -97,18 +97,25 @@ export const CONFIG_TERRITORIAL: Record<string, TerritorialUXConfig> =
 /**
  * Obtiene la configuración de UX para una región con fallback seguro a Minca.
  */
-export function getTerritorialConfig(zonaSlug?: string): TerritorialUXConfig {
-  if (zonaSlug && CONFIG_TERRITORIAL[zonaSlug]) {
-    return CONFIG_TERRITORIAL[zonaSlug];
+export function getTerritorialConfig(
+  zonaSlug?: string,
+  customConfig?: Record<string, TerritorialUXConfig>
+): TerritorialUXConfig {
+  const fuente = customConfig || CONFIG_TERRITORIAL;
+  if (zonaSlug && fuente[zonaSlug]) {
+    return fuente[zonaSlug];
   }
-  return CONFIG_TERRITORIAL.minca;
+  return fuente?.minca || CONFIG_TERRITORIAL.minca;
 }
 
 /**
  * Devuelve el array de categorías ordenado contextualmente según la región activa.
  */
-export function getCategoriasParaZona(zonaSlug?: string): CategoriaConfig[] {
-  const config = getTerritorialConfig(zonaSlug);
+export function getCategoriasParaZona(
+  zonaSlug?: string,
+  customConfig?: Record<string, TerritorialUXConfig>
+): CategoriaConfig[] {
+  const config = getTerritorialConfig(zonaSlug, customConfig);
   const ordenMap = new Map<string, number>(
     config.ordenCategorias.map((catId, index) => [catId, index])
   );

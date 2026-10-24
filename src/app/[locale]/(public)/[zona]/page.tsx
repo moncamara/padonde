@@ -9,8 +9,12 @@ import { InstallAppButton } from "@/components/layout/InstallAppButton";
 import { QRScanTracker } from "@/components/layout/QRScanTracker";
 import { PullToRefreshTracker } from "@/components/layout/PullToRefreshTracker";
 import { AdminSecretTrigger } from "@/components/layout/AdminSecretTrigger";
+import {
+  getEventosByZona,
+  getServiciosEsencialesByZona,
+  getConfigTerritorialAsync,
+} from "@/lib/supabase/queries";
 import { getZona, whatsappLink, WHATSAPP_CONTACTO } from "@/constants";
-import { getEventosByZona, getServiciosEsencialesByZona } from "@/lib/supabase/queries";
 import { getEventoTraducidoAsync } from "@/lib/translations/eventosTraducciones";
 import type { ZonaSlug } from "@/lib/types";
 import type { Metadata } from "next";
@@ -100,10 +104,11 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
   const tFooter = await getTranslations("footer");
   const tWa = await getTranslations("whatsapp");
 
-  // Obtener eventos y servicios esenciales desde Supabase
-  const [eventosRaw, servicios] = await Promise.all([
+  // Obtener eventos, servicios esenciales y configuración territorial activa de la nube
+  const [eventosRaw, servicios, configTerritorial] = await Promise.all([
     getEventosByZona(zonaSlug),
     getServiciosEsencialesByZona(zonaSlug),
+    getConfigTerritorialAsync(),
   ]);
   let eventos = eventosRaw;
 
@@ -199,6 +204,7 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
           servicios={servicios}
           zona={zonaSlug}
           zonaNombre={zona.nombre}
+          configTerritorial={configTerritorial}
         />
       </div>
 

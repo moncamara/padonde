@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { EventFeed } from "@/components/events/EventFeed";
 import { ServiciosList } from "@/components/services/ServiciosList";
 import type { EventoConNegocio, ServicioEsencial } from "@/lib/types";
+import type { TerritorialUXConfig } from "@/constants";
 import { trackTabChange } from "@/lib/analytics";
 
 interface FeedTabsContainerProps {
@@ -13,6 +14,7 @@ interface FeedTabsContainerProps {
   servicios: ServicioEsencial[];
   zona: string;
   zonaNombre: string;
+  configTerritorial?: Record<string, TerritorialUXConfig>;
 }
 
 export function FeedTabsContainer({
@@ -20,6 +22,7 @@ export function FeedTabsContainer({
   servicios,
   zona,
   zonaNombre,
+  configTerritorial,
 }: FeedTabsContainerProps) {
   const t = useTranslations("essentialServices");
   const searchParams = useSearchParams();
@@ -86,7 +89,11 @@ export function FeedTabsContainer({
 
       {/* Contenido según la pestaña activa */}
       {tabActiva === "eventos" ? (
-        <EventFeed eventos={eventos} zona={zona} />
+        <EventFeed
+          eventos={eventos}
+          zona={zona}
+          configTerritorial={configTerritorial}
+        />
       ) : (
         <ServiciosList servicios={servicios} zonaNombre={zonaNombre} />
       )}

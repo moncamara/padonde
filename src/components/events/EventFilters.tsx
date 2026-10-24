@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useTranslations, useLocale } from "next-intl";
-import { getCategoriasParaZona } from "@/constants";
+import { getCategoriasParaZona, type TerritorialUXConfig } from "@/constants";
 import {
   getOpcionesTiempoColombia,
   TIMEZONE_COLOMBIA,
@@ -13,6 +13,7 @@ interface EventFiltersProps {
   tiempoActivo: FiltroTiempo;
   categoriaActiva: CategoriaEvento | null;
   zonaSlug?: string;
+  configTerritorial?: Record<string, TerritorialUXConfig>;
   onTiempoChange: (filtro: FiltroTiempo) => void;
   onCategoriaChange: (categoria: CategoriaEvento | null) => void;
 }
@@ -26,6 +27,7 @@ export function EventFilters({
   tiempoActivo,
   categoriaActiva,
   zonaSlug,
+  configTerritorial,
   onTiempoChange,
   onCategoriaChange,
 }: EventFiltersProps) {
@@ -67,8 +69,8 @@ export function EventFilters({
 
   // Categorías ordenadas contextualmente según la región activa
   const categoriasDisponibles = useMemo(
-    () => getCategoriasParaZona(zonaSlug),
-    [zonaSlug]
+    () => getCategoriasParaZona(zonaSlug, configTerritorial),
+    [zonaSlug, configTerritorial]
   );
 
   function handleTiempo(filtro: FiltroTiempo) {

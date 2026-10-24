@@ -1956,6 +1956,7 @@ export async function guardarConfigTerritorialAction(
       // En Vercel el sistema de archivos es read-only (/var/task); se ignora de forma segura
     }
 
+    revalidatePath("/", "layout");
     revalidatePath("/[locale]/[zona]", "page");
     revalidatePath("/[locale]/admin/regiones", "page");
 

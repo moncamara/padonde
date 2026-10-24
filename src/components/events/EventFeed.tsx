@@ -5,7 +5,11 @@ import { useTranslations, useLocale } from "next-intl";
 import { EventCard } from "@/components/events/EventCard";
 import { EventFilters } from "@/components/events/EventFilters";
 import type { CategoriaEvento, EventoConNegocio, FiltroTiempo } from "@/lib/types";
-import { getTerritorialConfig, getCategoriasParaZona } from "@/constants";
+import {
+  getTerritorialConfig,
+  getCategoriasParaZona,
+  type TerritorialUXConfig,
+} from "@/constants";
 import { useSwipeCategoryNav } from "@/hooks/useSwipeCategoryNav";
 import {
   eventoCoincideConFiltroTiempo,
@@ -16,12 +20,13 @@ import {
 interface EventFeedProps {
   eventos: EventoConNegocio[];
   zona: string;
+  configTerritorial?: Record<string, TerritorialUXConfig>;
 }
 
 /**
  * Feed de eventos con filtrado client-side, persistencia y restauración de scroll.
  */
-export function EventFeed({ eventos, zona }: EventFeedProps) {
+export function EventFeed({ eventos, zona, configTerritorial }: EventFeedProps) {
   const tFeed = useTranslations("feed");
   const locale = useLocale();
 
@@ -173,7 +178,7 @@ export function EventFeed({ eventos, zona }: EventFeedProps) {
       return pasaFecha && pasaCategoria;
     });
 
-    const configTerritorial = getTerritorialConfig(zona);
+    const territorialConfig = getTerritorialConfig(zona, configTerritorial);
 
     return [...filtrados].sort((a, b) => {
       // 1. Si es filtro "proximos" (agenda futura), el orden principal es cronológico por día
@@ -191,7 +196,7 @@ export function EventFeed({ eventos, zona }: EventFeedProps) {
       const esHospedajeA = a.tipo === "hospedaje";
       const esHospedajeB = b.tipo === "hospedaje";
       if (esHospedajeA !== esHospedajeB) {
-        if (configTerritorial.criterioOrdenFeed === "hospedaje_primero") {
+        if (territorialConfig.criterioOrdenFeed === "hospedaje_primero") {
           return esHospedajeA ? -1 : 1;
         } else {
           return esHospedajeA ? 1 : -1;
@@ -213,13 +218,13 @@ export function EventFeed({ eventos, zona }: EventFeedProps) {
       // 5. Desempate determinista por título
       return a.titulo.localeCompare(b.titulo);
     });
-  }, [eventos, filtroTiempo, filtroCategoria, zona]);
+  }, [eventos, filtroTiempo, filtroCategoria, zona, configTerritorial]);
 
   // Lista ordenada de categorías para navegación por swipe horizontal (incluyendo null = "Todos")
   const listaCategorias = useMemo(() => {
-    const catsZona = getCategoriasParaZona(zona);
+    const catsZona = getCategoriasParaZona(zona, configTerritorial);
     return [null, ...catsZona.map((c) => c.id)] as (CategoriaEvento | null)[];
-  }, [zona]);
+  }, [zona, configTerritorial]);
 
   // Hook desacoplado de gestos táctiles para cambio de categorías con swipe horizontal
   const { containerRef, animClass } = useSwipeCategoryNav({
@@ -234,6 +239,7 @@ export function EventFeed({ eventos, zona }: EventFeedProps) {
         tiempoActivo={filtroTiempo}
         categoriaActiva={filtroCategoria}
         zonaSlug={zona}
+        configTerritorial={configTerritorial}
         onTiempoChange={setFiltroTiempo}
         onCategoriaChange={setFiltroCategoria}
       />
