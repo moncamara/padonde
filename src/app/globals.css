@@ -135,12 +135,49 @@ body {
   }
 }
 
+/* ─────────────────────────────────────────────
+   Transiciones de Swipe Horizontal entre Categorías (60 FPS GPU)
+───────────────────────────────────────────── */
+@keyframes swipeSlideLeft {
+  0% {
+    opacity: 0.85;
+    transform: translate3d(24px, 0, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes swipeSlideRight {
+  0% {
+    opacity: 0.85;
+    transform: translate3d(-24px, 0, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.swipe-slide-left {
+  animation: swipeSlideLeft 180ms cubic-bezier(0.25, 1, 0.5, 1) both;
+  will-change: transform, opacity;
+}
+
+.swipe-slide-right {
+  animation: swipeSlideRight 180ms cubic-bezier(0.25, 1, 0.5, 1) both;
+  will-change: transform, opacity;
+}
+
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-old(root),
   ::view-transition-new(root),
   .page-enter,
   .animate-slide-in-right,
-  .animate-slide-out-right {
+  .animate-slide-out-right,
+  .swipe-slide-left,
+  .swipe-slide-right {
     animation: none !important;
   }
 }

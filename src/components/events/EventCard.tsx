@@ -54,6 +54,7 @@ export function EventCard({ evento: rawEvento, zona, priority = false }: EventCa
       {/* 1. Enlace global clickeable que cubre toda la tarjeta */}
       <Link
         href={`/${zona}/${evento.id}`}
+        draggable={false}
         onClick={() => {
           if (typeof window !== "undefined") {
             try {

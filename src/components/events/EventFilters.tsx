@@ -103,6 +103,7 @@ export function EventFilters({
       <div className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
         {/* Botón para ver "Todos los planes de este día" */}
         <button
+          id="btn-cat-all"
           onClick={() => handleCategoria(null)}
           className={[
             "flex-shrink-0 flex flex-col items-center justify-center gap-1 min-w-[70px] px-3.5 py-2.5 rounded-2xl text-xs font-sans transition-all duration-150 cursor-pointer shadow-xs",
@@ -121,6 +122,7 @@ export function EventFilters({
           return (
             <button
               key={id}
+              id={`btn-cat-${id}`}
               onClick={() => handleCategoria(isSelected ? null : id)}
               className={[
                 "flex-shrink-0 flex flex-col items-center justify-center gap-1 min-w-[72px] px-3.5 py-2.5 rounded-2xl text-xs font-sans transition-all duration-150 cursor-pointer shadow-xs",

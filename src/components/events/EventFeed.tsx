@@ -5,7 +5,8 @@ import { useTranslations, useLocale } from "next-intl";
 import { EventCard } from "@/components/events/EventCard";
 import { EventFilters } from "@/components/events/EventFilters";
 import type { CategoriaEvento, EventoConNegocio, FiltroTiempo } from "@/lib/types";
-import { getTerritorialConfig } from "@/constants";
+import { getTerritorialConfig, getCategoriasParaZona } from "@/constants";
+import { useSwipeCategoryNav } from "@/hooks/useSwipeCategoryNav";
 import {
   eventoCoincideConFiltroTiempo,
   getFechaYMDDesdeISO,
@@ -214,6 +215,19 @@ export function EventFeed({ eventos, zona }: EventFeedProps) {
     });
   }, [eventos, filtroTiempo, filtroCategoria, zona]);
 
+  // Lista ordenada de categorías para navegación por swipe horizontal (incluyendo null = "Todos")
+  const listaCategorias = useMemo(() => {
+    const catsZona = getCategoriasParaZona(zona);
+    return [null, ...catsZona.map((c) => c.id)] as (CategoriaEvento | null)[];
+  }, [zona]);
+
+  // Hook desacoplado de gestos táctiles para cambio de categorías con swipe horizontal
+  const { containerRef, animClass } = useSwipeCategoryNav({
+    categorias: listaCategorias,
+    categoriaActiva: filtroCategoria,
+    onCategoriaChange: setFiltroCategoria,
+  });
+
   return (
     <div className="space-y-6">
       <EventFilters
@@ -224,39 +238,40 @@ export function EventFeed({ eventos, zona }: EventFeedProps) {
         onCategoriaChange={setFiltroCategoria}
       />
 
-      {eventosFiltrados.length === 0 ? (
-        <div className="text-center py-14 px-4 rounded-3xl bg-white/40 border border-stone-light/60 text-stone">
-          <p className="text-4xl mb-3">🌿</p>
-          <p className="font-serif text-lg text-forest font-medium">{tFeed("empty")}</p>
-          <p className="font-sans text-xs text-stone mt-1 max-w-xs mx-auto">
-            {tFeed("emptyHint")}
-          </p>
+      {/* Contenedor del feed con navegación táctil swipe fluida */}
+      <div ref={containerRef} className={`space-y-4 touch-pan-y select-none ${animClass}`}>
+        {eventosFiltrados.length === 0 ? (
+          <div className="text-center py-14 px-4 rounded-3xl bg-white/40 border border-stone-light/60 text-stone">
+            <p className="text-4xl mb-3">🌿</p>
+            <p className="font-serif text-lg text-forest font-medium">{tFeed("empty")}</p>
+            <p className="font-sans text-xs text-stone mt-1 max-w-xs mx-auto">
+              {tFeed("emptyHint")}
+            </p>
 
-          {(filtroTiempo !== "hoy" || filtroCategoria !== null) && (
-            <button
-              onClick={() => {
-                setFiltroTiempo("hoy");
-                setFiltroCategoria(null);
-              }}
-              className="mt-5 inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-forest text-cream font-sans text-xs font-semibold shadow-xs hover:bg-forest/90 active:scale-95 transition-all cursor-pointer"
-            >
-              <span>✨</span>
-              <span>{tFeed("reset")}</span>
-            </button>
-          )}
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {eventosFiltrados.map((evento, index) => (
+            {(filtroTiempo !== "hoy" || filtroCategoria !== null) && (
+              <button
+                onClick={() => {
+                  setFiltroTiempo("hoy");
+                  setFiltroCategoria(null);
+                }}
+                className="mt-5 inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-forest text-cream font-sans text-xs font-semibold shadow-xs hover:bg-forest/90 active:scale-95 transition-all cursor-pointer"
+              >
+                <span>✨</span>
+                <span>{tFeed("reset")}</span>
+              </button>
+            )}
+          </div>
+        ) : (
+          eventosFiltrados.map((evento, index) => (
             <EventCard
               key={evento.id}
               evento={evento}
               zona={zona}
               priority={index === 0}
             />
-          ))}
-        </div>
-      )}
+          ))
+        )}
+      </div>
     </div>
   );
 }
