@@ -7,13 +7,13 @@
  * Convierte miniaturas de Booking.com o Airbnb a resolución HD y limpia parámetros.
  */
 export function optimizarUrlFotoHd(url: string): string {
-  let clean = (url || "").trim();
+  let clean = (url || "").trim().replace(/&amp;/g, "&");
   if (!clean) return "";
 
   // 1. Optimización Booking.com (CDN bstatic.com)
   if (clean.includes("bstatic.com")) {
-    // Convierte /max300/, /max500/, /square60/, /max400/, etc. a HD /max1024x768/
-    clean = clean.replace(/\/(max|square)\d+(x\d+)?\//i, "/max1024x768/");
+    // Convierte /max300/, /max500/, /square60/, /768x768/, etc. a HD /max1024x768/
+    clean = clean.replace(/\/(?:max|square|\d+x\d+)\d*\//i, "/max1024x768/");
     // Normaliza el host a cf.bstatic.com y conserva los parámetros ?k=... requeridos por CloudFront
     clean = clean.replace(/https:\/\/[^/]+bstatic\.com/i, "https://cf.bstatic.com");
   }

@@ -36,13 +36,22 @@ export function parsearLineaRapida(linea: string): {
   telefono: string;
   nombrePropietario: string;
   nombreNegocio: string;
+  instagram: string;
 } {
   let raw = linea.trim().replace(/^[-•*#\s]+/, "");
   if (!raw) {
-    return { telefono: "", nombrePropietario: "", nombreNegocio: "" };
+    return { telefono: "", nombrePropietario: "", nombreNegocio: "", instagram: "" };
   }
 
-  // 1. Extraer teléfono colombiano
+  // 1. Extraer Instagram con arroba si viene explícito
+  let instagram = "";
+  const matchArroba = raw.match(/@([a-zA-Z0-9._]+)/);
+  if (matchArroba) {
+    instagram = matchArroba[1];
+    raw = raw.replace(matchArroba[0], " ").trim();
+  }
+
+  // 2. Extraer teléfono colombiano
   let telefono = "";
   const matchTel = raw.match(/(?:\+?57\s?)?(3\d{2}[-.\s]?\d{3}[-.\s]?\d{4}|3\d{9})/);
   if (matchTel) {
@@ -52,7 +61,7 @@ export function parsearLineaRapida(linea: string): {
     raw = raw.replace(matchTel[0], " ").trim();
   }
 
-  // 2. Separar por guiones, barras, dos puntos o plecas
+  // 3. Separar por guiones, barras, dos puntos o plecas
   const partes = raw
     .split(/[-–—|:\/]/)
     .map((p) => p.trim().replace(/^[-•*#\s]+/, "").trim())
@@ -89,10 +98,29 @@ export function parsearLineaRapida(linea: string): {
     }
   }
 
+  // 4. Si aún no hay instagram, detectar si el nombre del negocio empieza con un handle (ej: "astramendihuaca Astra Mendihuaca Beach")
+  if (!instagram && nombreNegocio) {
+    const tokens = nombreNegocio.split(/\s+/);
+    if (tokens.length >= 2) {
+      const primerToken = tokens[0];
+      const resto = tokens.slice(1).join(" ");
+      // Si el primer token es una sola palabra en minúsculas/alfanumérico y su raíz coincide con el nombre real
+      if (
+        /^[a-z0-9_.]+$/i.test(primerToken) &&
+        (resto.toLowerCase().includes(primerToken.toLowerCase().slice(0, 5)) ||
+          /^[A-Z]/.test(resto))
+      ) {
+        instagram = primerToken.toLowerCase();
+        nombreNegocio = resto;
+      }
+    }
+  }
+
   return {
     telefono,
     nombrePropietario,
     nombreNegocio,
+    instagram,
   };
 }
 
@@ -112,11 +140,13 @@ export function procesarTextoBrutoHospedaje(
   // 1. Detectar si viene en formato de línea rápida (lead): ej: "- 3204475264 Alfonso Cardona - Monpet Beach"
   let nombrePropietario = "";
   let whatsappDetectado = "";
+  let instagramDetectado = "";
   if (lineas.length === 1 || (lineas.length > 0 && /[-•*#]?\s*(?:\+?57\s*)?3\d{9}/.test(lineas[0]))) {
     const quick = parsearLineaRapida(lineas[0]);
     if (quick.nombrePropietario) nombrePropietario = quick.nombrePropietario;
     if (quick.nombreNegocio && !nombreSugerido) nombreSugerido = quick.nombreNegocio;
     if (quick.telefono) whatsappDetectado = quick.telefono;
+    if (quick.instagram) instagramDetectado = quick.instagram;
   }
 
   // 1. Detectar Nombre del Negocio
@@ -152,6 +182,8 @@ export function procesarTextoBrutoHospedaje(
   const matchIg = textoCompleto.match(/(?:@|instagram\.com\/)([a-zA-Z0-9_.]+)/i);
   if (matchIg) {
     instagram = "@" + matchIg[1].replace(/^@/, "");
+  } else if (instagramDetectado) {
+    instagram = "@" + instagramDetectado.replace(/^@/, "");
   }
 
   // 4. Detectar Rating / Reseñas de Google o Booking

@@ -173,3 +173,95 @@ A solo 10 minutos de la entrada al Parque Nacional Natural Tayrona, ofrece un am
   },
 };
 
+export const DRAFT_PILOTO_ASTRA_MENDIHUACA = {
+  nombreNegocio: "Astra Mendihuaca Beach",
+  nombrePropietario: "Andrés Rodriguez",
+  whatsapp: "+57 315 319 8762",
+  instagram: "astramendihuaca",
+  titulo: "Astra Mendihuaca Beach — Cabaña de Madera Frente al Mar y Río 🌊🌿",
+  descripcion: `Ubicado en la mágica costa de Mendihuaca y Guachaca, muy cerca de la entrada al Parque Nacional Natural Tayrona, Astra Mendihuaca es un refugio eco-turístico construido en madera frente a la playa.
+
+Disfruta de la brisa marina desde sus balcones privados con hamaca, relájate en su terraza azotea panorámica observando atardeceres sobre el Caribe o desconecta junto a los manglares y la desembocadura del río Mendihuaca.
+
+🌿 Destacados del lugar:
+• Ubicación privilegiada frente al mar en Mendihuaca
+• Cabaña de madera con ambiente cálido, fresco y natural
+• Balcones privados con hamacas y vista al océano o al manglar
+• Azotea común para contemplar el amanecer y atardecer
+• Ideal para surfistas, parejas y amantes de la naturaleza`,
+  zonaSlug: "mendihuaca",
+  imagenUrl:
+    "https://cf.bstatic.com/xdata/images/hotel/max1024x768/576538872.jpg?k=01ab53103ee2eb91515a9294e53bc4121729743ad99e6d9b7a4484c2b7b19391&o=&hp=1",
+  destacado: false,
+  ratingGoogle: "4.7",
+  reviewsGoogle: "46",
+  mapsUrl: "https://maps.google.com/?q=Astra+Mendihuaca+Santa+Marta",
+  metadata_hospedaje: {
+    check_in_hora: "14:00",
+    check_out_hora: "11:00",
+    contacto_propietario: "Andrés Rodriguez",
+    google_reputacion: {
+      rating: 4.7,
+      total_reviews: 46,
+      maps_url: "https://maps.google.com/?q=Astra+Mendihuaca+Santa+Marta",
+    },
+    habitaciones: [
+      {
+        id: "hab-1",
+        titulo: "Cabaña Frente al Mar con Balcón y Hamaca",
+        descripcion:
+          "Habitación privada en madera con cama doble, baño privado, aire acondicionado y balcón privado con hamaca y vista frontal al mar Caribe.",
+        precio_noche_cop: 210000,
+        capacidad_max: 2,
+        badges: [
+          { icono: "🚿", texto: "Baño privado" },
+          { icono: "🌊", texto: "Frente al mar" },
+          { icono: "🌄", texto: "Balcón privado" },
+          { icono: "❄️", texto: "Aire acondicionado" },
+        ],
+        fotos: [
+          "https://cf.bstatic.com/xdata/images/hotel/max1024x768/576538872.jpg?k=01ab53103ee2eb91515a9294e53bc4121729743ad99e6d9b7a4484c2b7b19391&o=&hp=1",
+          "https://cf.bstatic.com/xdata/images/hotel/max1024x768/577227463.jpg?k=54908855ed6c1c21f18cddc963450558ad4a95c4ba14b13b77b6d960921eb92b&o=&hp=1",
+          "https://cf.bstatic.com/xdata/images/hotel/max1024x768/576538902.jpg?k=1e753537ccc69bada61ed4f914ec53efec51265db56b1321b4bdd1794477c7ea&o=&hp=1",
+        ],
+      },
+      {
+        id: "hab-2",
+        titulo: "Habitación con Vista al Manglar y Jardín Tropical",
+        descripcion:
+          "Espacio acogedor rodeado de exuberante vegetación y manglares. Cuenta con cama doble, baño privado, ventilación natural y terraza compartida.",
+        precio_noche_cop: 170000,
+        capacidad_max: 2,
+        badges: [
+          { icono: "🚿", texto: "Baño privado" },
+          { icono: "🌿", texto: "Vista a la naturaleza" },
+          { icono: "🌀", texto: "Ventilador" },
+        ],
+        fotos: [
+          "https://cf.bstatic.com/xdata/images/hotel/max1024x768/577227469.jpg?k=3e02aa23732609567c3bd68fa45bb357d1fbd77c5f90bb9efc9de289d83f3d93&o=&hp=1",
+          "https://cf.bstatic.com/xdata/images/hotel/max1024x768/577227455.jpg?k=04408c2019715d467568470fb8d4ac45936c37b6a143802f2ed57df168373036&o=&hp=1",
+          "https://cf.bstatic.com/xdata/images/hotel/max1024x768/576538913.jpg?k=fbe60dc4c25e4a1ef485e046da54126365e403fb7d2234df64b907e3ce4e9209&o=&hp=1",
+        ],
+      },
+      {
+        id: "hab-3",
+        titulo: "Cabaña Familiar Playera con Terraza",
+        descripcion:
+          "Amplia habitación para familias o grupos de hasta 4 personas, con cama doble y dos sencillas, baño privado y acceso directo a la playa de Mendihuaca.",
+        precio_noche_cop: 290000,
+        capacidad_max: 4,
+        badges: [
+          { icono: "🚿", texto: "Baño privado" },
+          { icono: "👥", texto: "Familiar" },
+          { icono: "🌊", texto: "Acceso a playa" },
+        ],
+        fotos: [
+          "https://cf.bstatic.com/xdata/images/hotel/max1024x768/577227466.jpg?k=2a291bebca37d16225854becec4371e00b5ba362a3ee62351846ad1f4d282b26&o=&hp=1",
+          "https://cf.bstatic.com/xdata/images/hotel/max1024x768/579776668.jpg?k=77bc3d8be16df392218736d60bd651ce82591678f54459021aa56df717aeac45&o=&hp=1",
+          "https://cf.bstatic.com/xdata/images/hotel/max1024x768/577227445.jpg?k=fe89872fbd280abd709d6450098d088b4a7ec4994c097138322b455a8f4db2f7&o=&hp=1",
+        ],
+      },
+    ],
+  },
+};
+
