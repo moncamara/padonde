@@ -23,13 +23,22 @@ export function optimizarUrlFotoHd(url: string): string {
     try {
       const parsed = new URL(clean);
       if (parsed.searchParams.has("im_w")) {
-        // Eleva a ancho de alta definición
         parsed.searchParams.set("im_w", "1200");
         clean = parsed.toString();
       }
-    } catch {
-      // Si no es parseable como URL completa, conservar como está
-    }
+    } catch {}
+  }
+
+  // 3. Optimización TripAdvisor (dynamic-media-cdn.tripadvisor.com)
+  if (clean.includes("tripadvisor.com")) {
+    clean = clean
+      .replace(/(\?|&)w=\d+/i, "$1w=1024")
+      .replace(/(\?|&)h=\d+/i, "$1h=768");
+  }
+
+  // 4. Optimización Google User Content / Places photos
+  if (clean.includes("googleusercontent.com")) {
+    clean = clean.replace(/=w\d+(-h\d+)?/i, "=w1200-h800");
   }
 
   return clean;

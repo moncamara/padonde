@@ -11,6 +11,7 @@ import {
   DRAFT_PILOTO_MOMPE_BEACH,
   DRAFT_PILOTO_LUMA_BY_ZAKUA,
 } from "@/lib/mock/pilotoMompeBeach";
+import { optimizarUrlFotoHd } from "@/lib/fotoUtils";
 
 export interface AdminPublishInput {
   negocioId?: string;
@@ -1781,13 +1782,22 @@ async function buscarFotosHospedajeWeb(
   nombreNegocio: string,
   zona: string
 ): Promise<{ fotoPortada: string; fotosHabitaciones: string[]; todas: string[] }> {
+  const sanitizeQuery = (str: string) =>
+    str
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-zA-Z0-9\s]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
   const fetchDDG = async (query: string): Promise<string[]> => {
     try {
+      const cleanQ = sanitizeQuery(query);
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 4000);
+      const timeoutId = setTimeout(() => controller.abort(), 4500);
 
       const r1 = await fetch(
-        `https://duckduckgo.com/?q=${encodeURIComponent(query)}&iax=images&ia=images`,
+        `https://duckduckgo.com/?q=${encodeURIComponent(cleanQ)}&iax=images&ia=images`,
         {
           headers: {
             "User-Agent":
@@ -1797,14 +1807,14 @@ async function buscarFotosHospedajeWeb(
         }
       );
       const html = await r1.text();
-      const vqdMatch = html.match(/vqd=([0-9-]+)/);
+      const vqdMatch = html.match(/vqd=["']?([0-9a-zA-Z_-]+)["']?/);
       if (!vqdMatch) {
         clearTimeout(timeoutId);
         return [];
       }
 
       const imgUrl = `https://duckduckgo.com/i.js?l=us-en&o=json&q=${encodeURIComponent(
-        query
+        cleanQ
       )}&vqd=${vqdMatch[1]}&f=,,,;&p=1`;
 
       const r2 = await fetch(imgUrl, {
@@ -1818,7 +1828,14 @@ async function buscarFotosHospedajeWeb(
       clearTimeout(timeoutId);
 
       if (!r2.ok) return [];
-      const data = await r2.json();
+      const text = await r2.text();
+      let data: any;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        return [];
+      }
+
       return (data.results || [])
         .map((r: any) => r.image)
         .filter(
@@ -1829,7 +1846,8 @@ async function buscarFotosHospedajeWeb(
             !u.endsWith(".svg") &&
             !u.includes("icon") &&
             !u.includes("logo")
-        );
+        )
+        .map(optimizarUrlFotoHd);
     } catch {
       return [];
     }
