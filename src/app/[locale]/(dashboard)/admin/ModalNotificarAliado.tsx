@@ -39,8 +39,22 @@ export function formatearTelefonoVisual(telefono?: string): string {
 }
 
 /**
+ * Calcula la fecha calendario exacta en 15 días a partir de hoy (ej: 9 de Noviembre)
+ */
+export function calcularFechaEn15Dias(): string {
+  const ahora = new Date();
+  ahora.setDate(ahora.getDate() + 15);
+  const dia = ahora.getDate();
+  const meses = [
+    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+  ];
+  return `${dia} de ${meses[ahora.getMonth()]}`;
+}
+
+/**
  * Mensaje especializado para Hostales, Eco-lodges y Alojamientos.
- * Enfoque: Gana-Gana transparente, cero comisiones vs Booking/Airbnb y reservas directas a su WhatsApp.
+ * Enfoque: Acuerdo de Activación Comercial con 15 días gratis, empuje al Trimestral y 0% comisiones.
  */
 export function generarMensajeHospedajeAliado(
   negocioNombre: string,
@@ -53,25 +67,28 @@ export function generarMensajeHospedajeAliado(
   const slug = zonaSlug || "minca";
   const destinoNombre = zonaNombre || (slug === "mendihuaca" ? "Mendihuaca" : "Minca");
   const urlPublicacion = `https://www.padonde.lat/es/${slug}/${eventoId}`;
-  const urlCartelera = `https://www.padonde.lat/es/${slug}`;
-  const wpVisual = formatearTelefonoVisual(whatsapp);
-  const textoWhatsapp = wpVisual ? ` (${wpVisual})` : "";
+  const fechaLimite = calcularFechaEn15Dias();
 
-  return `🌿 ¡Hola ${negocioNombre}! Un saludo muy especial desde PaDónde ${destinoNombre}.
+  return `🌿 *¡Hola ${negocioNombre}! Un saludo muy especial desde PaDónde ${destinoNombre}.*
 
-Para apoyar el turismo local y la visibilidad de los alojamientos de nuestra región, nos tomamos la iniciativa de crearles una vitrina de presentación de cortesía en la nueva plataforma turística digital de ${destinoNombre}: PaDónde 📲✨
+Ya tenemos tu ficha oficial activa y verificada en vivo dentro de la plataforma digital de ${destinoNombre}:
+👉 *Ver tu ficha aquí:* ${urlPublicacion}
 
-👉 Pueden ver cómo luce su espacio aquí:
-${urlPublicacion}
+Queremos darte la bienvenida con *15 días de cortesía total (prueba 100% gratuita)* a partir de hoy, para que compruebes cómo los turistas y viajeros internacionales que llegan a la zona encuentran tus cabañas, fotos y tarifas en tiempo real 📲✨
 
-Queremos pedirles un favor muy especial: ¿Podrían echarle un ojito y confirmarnos si todo está en orden?
-• Que los tipos de habitaciones y tarifas base coincidan con su oferta actual.
-• Que su WhatsApp registrado para recibir reservas sea el correcto${textoWhatsapp}.
-• Y sobre todo... ¡que les encanten las fotos y la presentación de su lugar!
+🌟 *Lo que ganas con PaDónde:*
+• *0% de comisiones por reserva:* El viajero te escribe directo a tu WhatsApp (te ahorras el 18% que descuentan Booking o Airbnb).
+• *Plataforma global en 4 idiomas:* Tu hospedaje se muestra automáticamente en Español, Inglés, Francés y Alemán (ES / EN / FR / DE).
+• *Presencia turística 24/7:* Indexado en la vitrina oficial de la región.
 
-Esta vitrina está activa y destacada como cortesía. Échenle una mirada a toda la plataforma en ${urlCartelera} y nos cuentan si desean actualizar fotos, precios o cualquier detalle.
+🗓️ *Reglas claras de activación:*
+• Tu periodo de cortesía va desde hoy hasta el *${fechaLimite}*.
+• A partir del *${fechaLimite}*, se liquidará el primer ciclo de visibilidad.
+• Nuestro plan estándar más rentable es el *Trimestral* por solo *$125.000 COP* *(equivale a menos de $42.000/mes)* frente al plan mensual suelto de $50.000 COP.
 
-¡Un abrazo y muchos éxitos con las reservas de esta temporada! 🏡🌿`;
+🎶 *Add-on de Eventos & Rumba:* Si organizas noches acústicas, yoga matutino o DJ sets, puedes fijar tu evento en el puesto #1 de la Cartelera de ${destinoNombre} por solo *$30.000 COP por semana completa*.
+
+Por favor entra a tu enlace, confirma que tus fotos y datos estén perfectos, y seguimos impulsando tus reservas directas. ¡Un gran abrazo y buenas olas! 🌊✨`;
 }
 
 /**

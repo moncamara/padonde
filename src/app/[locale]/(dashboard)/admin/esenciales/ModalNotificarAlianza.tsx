@@ -10,6 +10,87 @@ interface ModalNotificarAlianzaProps {
   zonaNombre?: string;
 }
 
+export function calcularFechaEn15Dias(): string {
+  const ahora = new Date();
+  ahora.setDate(ahora.getDate() + 15);
+  const dia = ahora.getDate();
+  const meses = [
+    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+  ];
+  return `${dia} de ${meses[ahora.getMonth()]}`;
+}
+
+/**
+ * Plantilla 1: Acuerdo Comercial Restaurantes, Cafés, Bares y Comercio
+ * Enfoque: 15 días gratis, liquidación trimestral, 4 idiomas y 0% comisiones.
+ */
+export function generarMensajeRestauranteComercial(
+  nombreComercial: string,
+  zonaSlug: string = "mendihuaca",
+  zonaNombre: string = "Mendihuaca",
+  servicioId?: string
+): string {
+  const slug = zonaSlug || "mendihuaca";
+  const destino = zonaNombre || (slug === "mendihuaca" ? "Mendihuaca" : "Minca");
+  const anchor = servicioId ? `#servicio-${servicioId}` : "";
+  const urlPublicacion = `https://www.padonde.lat/es/${slug}?tab=servicios${anchor}`;
+  const fechaLimite = calcularFechaEn15Dias();
+
+  return `🍹 *¡Hola, ${nombreComercial}! Te saludamos desde PaDónde ${destino}.*
+
+Tu punto gastronómico ya está publicado y destacado en la sección oficial de gastronomía y servicios de ${destino}:
+👉 *Míralo en vivo aquí:* ${urlPublicacion}
+
+Para que sientas el impacto directo en tus mesas y pedidos, tienes *15 días de cortesía completa sin ningún costo* desde hoy hasta el *${fechaLimite}* 📲✨
+
+🌟 *Ventajas clave para tu restaurante:*
+• *Llegada directa de extranjeros y turistas:* La plataforma traduce tu propuesta a 4 idiomas (ES, EN, FR, DE).
+• *Menú y contacto directo:* Enlace a tu WhatsApp para reservas de mesas, domicilios en playa o eventos privados.
+• *Cero intermediarios ni comisiones de entrega.*
+
+💳 *Condiciones de membresía:*
+• Disfrutas de visibilidad gratuita hasta el *${fechaLimite}*.
+• A partir del *${fechaLimite}*, para continuar en la temporada, el plan preferencial es el *Trimestral* por *$90.000 COP* *(solo $30.000/mes)* o *$125.000 COP* si incluye botón de WhatsApp directo ilimitado.
+
+🎸 *¿Tienes música en vivo o Sunset Sessions?* Puedes destacar cualquier evento especial en la cima de la Cartelera durante toda la semana por solo *$30.000 COP*.
+
+Revisa tu enlace y cuéntanos si quieres actualizar algún plato estrella o foto. ¡Muchos éxitos con la temporada! 🌿🍽️`;
+}
+
+/**
+ * Plantilla 2: Alianza Oficial de Transporte y Mototaxis
+ * Enfoque: Canal Oficial, 0% comisión, stickers y habladores QR oficiales.
+ */
+export function generarMensajeTransporteAlianza(
+  nombreComercial: string,
+  zonaSlug: string = "mendihuaca",
+  zonaNombre: string = "Mendihuaca",
+  servicioId?: string
+): string {
+  const slug = zonaSlug || "mendihuaca";
+  const destino = zonaNombre || (slug === "mendihuaca" ? "Mendihuaca" : "Minca");
+  const anchor = servicioId ? `#servicio-${servicioId}` : "";
+  const urlPublicacion = `https://www.padonde.lat/es/${slug}?tab=servicios${anchor}`;
+
+  return `🛵 *¡Buenas tardes, muchachos de ${nombreComercial}! Un saludo de parte del equipo de PaDónde ${destino}.*
+
+Ya dejamos su punto activo y verificado en la plataforma como el *Canal Oficial de Transporte y Mototaxis de ${destino}*:
+👉 *Revisen su ficha oficial aquí:* ${urlPublicacion}
+
+Aquí los turistas y visitantes que llegan a la entrada, al río o a los hostales consultan las tarifas de carreras y les escriben directo para pedir el servicio 📲✨
+
+🤝 *Bases de la Alianza Oficial:*
+1. *Cero comisiones y cero cobro:* No les cobramos mensualidad ni porcentaje por ninguna carrera. Todos los viajes que les salgan son 100% de ustedes.
+2. *Canal preferente:* Son la línea que la plataforma recomienda a extranjeros y locales para moverse seguro por ${destino}, Costeño, la entrada al Tayrona y el río.
+3. *El compromiso del gremio:* Llevar los stickers oficiales y habladores con el código QR de PaDónde en sus cascos y motos, para que los pasajeros escaneen la cartelera mientras viajan y sigamos moviendo el turismo del pueblo entre todos.
+
+Les tenemos listo el material de stickers para entregárselos. Revisen el enlace y quedamos firmes para coordinar la entrega. ¡A rodar con toda! 🏁🌴`;
+}
+
+/**
+ * Plantilla 3: Alianza Estándar Cortesía / Canje
+ */
 export function generarMensajeAlianzaEsencial(
   nombreComercial: string,
   tipoAcuerdo: string = "canje_afiche",
@@ -45,6 +126,8 @@ Queremos pedirles un favor muy especial: ¿Podrían abrir el enlace y confirmarn
 ¡Un abrazo y muchos éxitos con esta alianza para impulsar el turismo en la región! 🌿✨`;
 }
 
+export type TipoPlantillaAlianza = "comercial" | "transporte" | "estandar";
+
 export function ModalNotificarAlianza({
   servicio,
   isOpen,
@@ -52,26 +135,55 @@ export function ModalNotificarAlianza({
   zonaNombre = "Minca",
 }: ModalNotificarAlianzaProps) {
   const [telefono, setTelefono] = useState("");
+  const [tipoPlantilla, setTipoPlantilla] = useState<TipoPlantillaAlianza>("comercial");
   const [mensaje, setMensaje] = useState("");
   const [copiado, setCopiado] = useState(false);
+
+  const getTextoPlantilla = (tipo: TipoPlantillaAlianza) => {
+    if (!servicio) return "";
+    const zonaSlug =
+      servicio.zona_id === "zona-mendihuaca" ? "mendihuaca" : "minca";
+
+    if (tipo === "transporte") {
+      return generarMensajeTransporteAlianza(
+        servicio.nombre_comercial,
+        zonaSlug,
+        zonaNombre,
+        servicio.id
+      );
+    }
+    if (tipo === "comercial") {
+      return generarMensajeRestauranteComercial(
+        servicio.nombre_comercial,
+        zonaSlug,
+        zonaNombre,
+        servicio.id
+      );
+    }
+    return generarMensajeAlianzaEsencial(
+      servicio.nombre_comercial,
+      servicio.tipo_acuerdo,
+      zonaSlug,
+      zonaNombre,
+      servicio.id
+    );
+  };
 
   useEffect(() => {
     if (servicio) {
       setTelefono(servicio.whatsapp || "57");
-      const zonaSlug =
-        servicio.zona_id === "zona-mendihuaca" ? "mendihuaca" : "minca";
-      setMensaje(
-        generarMensajeAlianzaEsencial(
-          servicio.nombre_comercial,
-          servicio.tipo_acuerdo,
-          zonaSlug,
-          zonaNombre,
-          servicio.id
-        )
-      );
+      const tipoDefecto: TipoPlantillaAlianza =
+        servicio.categoria === "transporte" ? "transporte" : "comercial";
+      setTipoPlantilla(tipoDefecto);
+      setMensaje(getTextoPlantilla(tipoDefecto));
       setCopiado(false);
     }
   }, [servicio, zonaNombre]);
+
+  const handleCambiarPlantilla = (tipo: TipoPlantillaAlianza) => {
+    setTipoPlantilla(tipo);
+    setMensaje(getTextoPlantilla(tipo));
+  };
 
   if (!isOpen || !servicio) return null;
 
@@ -147,11 +259,53 @@ export function ModalNotificarAlianza({
             </code>
           </div>
 
+          {/* Selector de Enfoque Comercial / Plantilla */}
+          <div className="space-y-1.5">
+            <label className="font-semibold text-forest block">
+              Tipo de Acuerdo / Plantilla:
+            </label>
+            <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-stone-light/30 border border-stone-light/60">
+              <button
+                type="button"
+                onClick={() => handleCambiarPlantilla("comercial")}
+                className={`flex-1 py-1.5 px-2 rounded-xl text-[11px] font-semibold transition-all cursor-pointer text-center ${
+                  tipoPlantilla === "comercial"
+                    ? "bg-forest text-white shadow-2xs"
+                    : "text-stone hover:text-forest"
+                }`}
+              >
+                💼 Restaurantes / Comercio (Trimestre)
+              </button>
+              <button
+                type="button"
+                onClick={() => handleCambiarPlantilla("transporte")}
+                className={`flex-1 py-1.5 px-2 rounded-xl text-[11px] font-semibold transition-all cursor-pointer text-center ${
+                  tipoPlantilla === "transporte"
+                    ? "bg-forest text-white shadow-2xs"
+                    : "text-stone hover:text-forest"
+                }`}
+              >
+                🛵 Transporte (Stickers QR)
+              </button>
+              <button
+                type="button"
+                onClick={() => handleCambiarPlantilla("estandar")}
+                className={`flex-1 py-1.5 px-2 rounded-xl text-[11px] font-semibold transition-all cursor-pointer text-center ${
+                  tipoPlantilla === "estandar"
+                    ? "bg-forest text-white shadow-2xs"
+                    : "text-stone hover:text-forest"
+                }`}
+              >
+                🤝 Cortesía
+              </button>
+            </div>
+          </div>
+
           {/* Mensaje */}
           <div className="space-y-1">
             <div className="flex items-center justify-between">
               <label className="font-semibold text-forest">
-                Mensaje predefinido de bienvenida y confirmación:
+                Mensaje predefinido con enlace directo a WhatsApp:
               </label>
               <button
                 type="button"
