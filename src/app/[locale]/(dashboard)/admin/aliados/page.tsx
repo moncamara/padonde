@@ -93,7 +93,7 @@ export default async function AdminAliadosPage({
   ).length;
 
   // 3. Normalizar datos
-  const aliados: AliadoItem[] = (rawNegocios || []).map((n: any) => {
+  const todosLosAliados: AliadoItem[] = (rawNegocios || []).map((n: any) => {
     const evList = Array.isArray(n.eventos) ? n.eventos : [];
     const evIds = new Set(evList.map((e: any) => e.id));
     const clicsAliado = rawClics.filter(
@@ -126,9 +126,30 @@ export default async function AdminAliadosPage({
     };
   });
 
-  const negociosList = (rawNegocios || []).map((n: any) => ({
-    id: n.id,
-    nombre: n.nombre,
+  // 3.1 Detección inteligente de duplicados (Cero impacto en BD):
+  // Si existen registros con el mismo nombre y zona, se preserva el que tiene eventos/clics y se oculta el registro huérfano vacío
+  const mapaUnicos = new Map<string, AliadoItem>();
+  for (const a of todosLosAliados) {
+    const clave = `${a.zona_id}_${a.nombre.trim().toLowerCase()}`;
+    const existente = mapaUnicos.get(clave);
+    if (!existente) {
+      mapaUnicos.set(clave, a);
+    } else {
+      // Priorizar el que tiene más eventos o más clics
+      if (
+        a.totalEventos > existente.totalEventos ||
+        (a.totalClics || 0) > (existente.totalClics || 0)
+      ) {
+        mapaUnicos.set(clave, a);
+      }
+    }
+  }
+
+  const aliados = Array.from(mapaUnicos.values());
+
+  const negociosList = aliados.map((a) => ({
+    id: a.id,
+    nombre: a.nombre,
   }));
 
   // 4. Métricas de Monetización B2B
