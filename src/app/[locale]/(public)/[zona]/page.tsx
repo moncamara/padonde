@@ -174,8 +174,8 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
           locale={locale}
         />
 
-        {/* Feed principal y Servicios Esenciales con padding-top cómodo para el header compacto */}
-        <div className="max-w-lg mx-auto px-4 pt-20 sm:pt-24 pb-6">
+        {/* Feed principal y Servicios Esenciales con padding-top generoso para que el header fijo no monte las pestañas */}
+        <div className="max-w-lg mx-auto px-4 pt-24 sm:pt-28 pb-6">
           <FeedTabsContainer
             eventos={eventos}
             servicios={servicios}
