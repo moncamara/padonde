@@ -49,6 +49,7 @@ export function ZonaHeader({ zonaNombre, zonaSlug, locale }: ZonaHeaderProps) {
     try {
       localStorage.setItem("padonde_zona", targetSlug);
       document.cookie = `padonde_zona=${targetSlug}; path=/; max-age=31536000; SameSite=Lax`;
+      sessionStorage.removeItem("padonde_filtro_categoria");
     } catch {}
     trackDestinationSwitch(zonaSlug, targetSlug);
   };
@@ -66,11 +67,7 @@ export function ZonaHeader({ zonaNombre, zonaSlug, locale }: ZonaHeaderProps) {
               </h1>
             </AdminSecretTrigger>
             <p className="font-sans text-[11px] sm:text-xs text-stone mt-0.5 truncate">
-              {zonaSlug === "mendihuaca"
-                ? tHeader("subtitleMendihuaca")
-                : zonaSlug === "minca"
-                ? tHeader("subtitleMinca")
-                : tHeader("subtitle", { zona: zonaNombre })}
+              {tHeader("subtitle", { zona: zonaNombre })}
             </p>
           </div>
 

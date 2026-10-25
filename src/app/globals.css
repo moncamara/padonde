@@ -29,11 +29,17 @@
 
 /* ─────────────────────────────────────────────
    Identidad Dinámica por Región / Destino
-   Minca: Verde Bosque Sierra (#1a2e1a) [predeterminado]
+   Minca: Verde Bosque Sierra (#1a2e1a / #122112)
    Mendihuaca: Azul Océano Caribe Profundo (#0e3b54 / #082638)
    Permite alternar al instante la identidad visual sin alterar
    la estructura HTML ni clases de Tailwind en ningún componente.
 ───────────────────────────────────────────── */
+[data-zona="minca"],
+html[data-zona="minca"] {
+  --color-forest: #1a2e1a;
+  --color-forest-dark: #122112;
+}
+
 [data-zona="mendihuaca"],
 html[data-zona="mendihuaca"] {
   --color-forest: #0e3b54;

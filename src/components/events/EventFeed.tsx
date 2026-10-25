@@ -78,6 +78,14 @@ export function EventFeed({ eventos, zona, configTerritorial }: EventFeedProps) 
     } catch {}
   }, []);
 
+  // Al cambiar de destino (Mendihuaca <-> Minca), reiniciar la categoría a "Todos"
+  useEffect(() => {
+    setFiltroCategoriaState(null);
+    try {
+      sessionStorage.removeItem("padonde_filtro_categoria");
+    } catch {}
+  }, [zona]);
+
   const setFiltroTiempo = (t: FiltroTiempo) => {
     setFiltroTiempoState(t);
     if (typeof window !== "undefined") {
