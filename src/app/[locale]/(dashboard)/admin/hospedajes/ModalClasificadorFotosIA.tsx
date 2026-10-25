@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { clasificarFotosHospedajeAction, type AsignacionFotoResultado } from "../actions";
+import { extraerYOptimizarUrls } from "@/lib/fotoUtils";
 
 interface HabitacionContext {
   id: string;
@@ -13,6 +14,7 @@ interface ModalClasificadorFotosIAProps {
   nombreHospedaje: string;
   habitaciones: HabitacionContext[];
   descripcionContexto?: string;
+  initialUrls?: string[];
   onClose: () => void;
   onAplicar: (data: {
     portadaUrl?: string;
@@ -24,11 +26,14 @@ export function ModalClasificadorFotosIA({
   nombreHospedaje,
   habitaciones,
   descripcionContexto,
+  initialUrls,
   onClose,
   onAplicar,
 }: ModalClasificadorFotosIAProps) {
   // Entradas
-  const [urlsTexto, setUrlsTexto] = useState("");
+  const [urlsTexto, setUrlsTexto] = useState(
+    initialUrls && initialUrls.length > 0 ? initialUrls.join("\n") : ""
+  );
   const [fotosLocales, setFotosLocales] = useState<string[]>([]);
   const [isAnalizando, setIsAnalizando] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -56,11 +61,8 @@ export function ModalClasificadorFotosIA({
   };
 
   const handleAnalizar = async () => {
-    // Extraer URLs separadas por saltos de línea o comas
-    const urlsExtraidas = urlsTexto
-      .split(/[\n,]+/)
-      .map((u) => u.trim())
-      .filter((u) => u.startsWith("http://") || u.startsWith("https://"));
+    // Extraer URLs separadas por saltos de línea o comas, optimizadas a HD
+    const urlsExtraidas = extraerYOptimizarUrls(urlsTexto);
 
     const todasLasFotos = [...urlsExtraidas, ...fotosLocales];
 

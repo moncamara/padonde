@@ -14,11 +14,13 @@ export function generarMensajeAlianzaEsencial(
   nombreComercial: string,
   tipoAcuerdo: string = "canje_afiche",
   zonaSlug: string = "minca",
-  zonaNombre: string = "Minca"
+  zonaNombre: string = "Minca",
+  servicioId?: string
 ): string {
   const slug = zonaSlug || "minca";
   const destino = zonaNombre || (slug === "mendihuaca" ? "Mendihuaca" : "Minca");
-  const urlPublicacion = `https://www.padonde.lat/es/${slug}?tab=servicios`;
+  const anchor = servicioId ? `#servicio-${servicioId}` : "";
+  const urlPublicacion = `https://www.padonde.lat/es/${slug}?tab=servicios${anchor}`;
 
   const textoAcuerdo =
     tipoAcuerdo === "canje_afiche"
@@ -63,7 +65,8 @@ export function ModalNotificarAlianza({
           servicio.nombre_comercial,
           servicio.tipo_acuerdo,
           zonaSlug,
-          zonaNombre
+          zonaNombre,
+          servicio.id
         )
       );
       setCopiado(false);
@@ -140,7 +143,7 @@ export function ModalNotificarAlianza({
             <code className="text-xs text-forest font-mono break-all font-semibold">
               https://www.padonde.lat/es/
               {servicio.zona_id === "zona-mendihuaca" ? "mendihuaca" : "minca"}
-              ?tab=servicios
+              ?tab=servicios#servicio-{servicio.id}
             </code>
           </div>
 

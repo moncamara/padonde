@@ -12,6 +12,7 @@ export interface HabitacionExtraida {
 
 export interface HospedajeExtraido {
   nombreNegocio: string;
+  nombrePropietario?: string;
   whatsapp: string;
   instagram: string;
   zonaSlug: string;
@@ -26,6 +27,76 @@ export interface HospedajeExtraido {
 }
 
 /**
+ * Parsea una línea rápida en formato lead:
+ * Ej: "- 3204475264 Alfonso Cardona - Monpet Beach"
+ * Ej: "3204475264 Alfonso Cardona - The Mompe Beach"
+ * Ej: "Alfonso Cardona - 3204475264 - Monpet Beach"
+ */
+export function parsearLineaRapida(linea: string): {
+  telefono: string;
+  nombrePropietario: string;
+  nombreNegocio: string;
+} {
+  let raw = linea.trim().replace(/^[-•*#\s]+/, "");
+  if (!raw) {
+    return { telefono: "", nombrePropietario: "", nombreNegocio: "" };
+  }
+
+  // 1. Extraer teléfono colombiano
+  let telefono = "";
+  const matchTel = raw.match(/(?:\+?57\s?)?(3\d{2}[-.\s]?\d{3}[-.\s]?\d{4}|3\d{9})/);
+  if (matchTel) {
+    telefono = "57" + matchTel[1].replace(/\D/g, "");
+    if (telefono.startsWith("5757")) telefono = telefono.slice(2);
+    // Remover el teléfono del string
+    raw = raw.replace(matchTel[0], " ").trim();
+  }
+
+  // 2. Separar por guiones, barras, dos puntos o plecas
+  const partes = raw
+    .split(/[-–—|:\/]/)
+    .map((p) => p.trim().replace(/^[-•*#\s]+/, "").trim())
+    .filter(Boolean);
+
+  let nombrePropietario = "";
+  let nombreNegocio = "";
+
+  const regexPalabrasNegocio = /(?:hotel|hostal|cabaña|cabañas|lodge|beach|playa|mar|resort|posada|glamping|casa|finca|camp|suites|villas|refugio|palmar|rancheria|hospedaje)/i;
+
+  if (partes.length >= 2) {
+    // Si la parte 0 tiene palabras de negocio y la 1 no, invertimos
+    if (regexPalabrasNegocio.test(partes[0]) && !regexPalabrasNegocio.test(partes[1])) {
+      nombreNegocio = partes[0];
+      nombrePropietario = partes.slice(1).join(" - ");
+    } else {
+      nombrePropietario = partes[0];
+      nombreNegocio = partes.slice(1).join(" - ");
+    }
+  } else if (partes.length === 1) {
+    const textoUnico = partes[0];
+    if (regexPalabrasNegocio.test(textoUnico)) {
+      nombreNegocio = textoUnico;
+    } else {
+      // Si no tiene palabras de negocio, intentar adivinar por longitud o palabras
+      const palabras = textoUnico.split(/\s+/);
+      if (palabras.length >= 3) {
+        // Ej: "Alfonso Cardona Monpet Beach" -> 2 palabras propietario, resto negocio
+        nombrePropietario = palabras.slice(0, 2).join(" ");
+        nombreNegocio = palabras.slice(2).join(" ");
+      } else {
+        nombreNegocio = textoUnico;
+      }
+    }
+  }
+
+  return {
+    telefono,
+    nombrePropietario,
+    nombreNegocio,
+  };
+}
+
+/**
  * Motor de extracción heurística y estructuración de fichas de hospedaje.
  * Diseñado para procesar texto bruto de Booking, Instagram, WhatsApp o sitios web
  * y convertirlo en una estructura lista para el cotizador interactivo de PaDónde.
@@ -37,6 +108,16 @@ export function procesarTextoBrutoHospedaje(
 ): HospedajeExtraido {
   const lineas = texto.split("\n").map((l) => l.trim()).filter(Boolean);
   const textoCompleto = texto;
+
+  // 1. Detectar si viene en formato de línea rápida (lead): ej: "- 3204475264 Alfonso Cardona - Monpet Beach"
+  let nombrePropietario = "";
+  let whatsappDetectado = "";
+  if (lineas.length === 1 || (lineas.length > 0 && /[-•*#]?\s*(?:\+?57\s*)?3\d{9}/.test(lineas[0]))) {
+    const quick = parsearLineaRapida(lineas[0]);
+    if (quick.nombrePropietario) nombrePropietario = quick.nombrePropietario;
+    if (quick.nombreNegocio && !nombreSugerido) nombreSugerido = quick.nombreNegocio;
+    if (quick.telefono) whatsappDetectado = quick.telefono;
+  }
 
   // 1. Detectar Nombre del Negocio
   let nombreNegocio = nombreSugerido.trim();
@@ -57,11 +138,13 @@ export function procesarTextoBrutoHospedaje(
   nombreNegocio = nombreNegocio.replace(/^[#*•\-\s]+/, "").trim();
 
   // 2. Detectar WhatsApp / Teléfono
-  let whatsapp = "";
-  const matchWa = textoCompleto.match(/(?:\+?57\s?)?(3\d{2}[-.\s]?\d{3}[-.\s]?\d{4}|3\d{9})/);
-  if (matchWa) {
-    whatsapp = "57" + matchWa[1].replace(/\D/g, "");
-    if (whatsapp.startsWith("5757")) whatsapp = whatsapp.slice(2);
+  let whatsapp = whatsappDetectado;
+  if (!whatsapp) {
+    const matchWa = textoCompleto.match(/(?:\+?57\s?)?(3\d{2}[-.\s]?\d{3}[-.\s]?\d{4}|3\d{9})/);
+    if (matchWa) {
+      whatsapp = "57" + matchWa[1].replace(/\D/g, "");
+      if (whatsapp.startsWith("5757")) whatsapp = whatsapp.slice(2);
+    }
   }
 
   // 3. Detectar Instagram
@@ -231,6 +314,7 @@ export function procesarTextoBrutoHospedaje(
 
   return {
     nombreNegocio,
+    nombrePropietario: nombrePropietario || undefined,
     whatsapp,
     instagram,
     zonaSlug: zonaSugerida,
@@ -243,4 +327,84 @@ export function procesarTextoBrutoHospedaje(
     destacado: false,
     habitaciones,
   };
+}
+
+/**
+ * Detecta si un hospedaje entrante o en edición coincide con uno ya registrado
+ * para alertar sobre posibles duplicados por nombre o teléfono.
+ */
+export function buscarCoincidenciaHospedaje(
+  nuevo: { nombre?: string; telefono?: string },
+  listaExistente: any[],
+  ignorarId?: string
+): any | null {
+  if (!listaExistente || listaExistente.length === 0) return null;
+
+  const normalizar = (str?: string) =>
+    (str || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]/g, "")
+      .trim();
+
+  const stopWords = new Set([
+    "hotel", "hostal", "lodge", "cabana", "cabanas", "finca", "posada",
+    "playa", "beach", "resort", "glamping", "suites", "villas", "refugio",
+    "santa", "marta", "minca", "mendihuaca", "sierra", "nevada", "colombia"
+  ]);
+
+  const extraerPalabras = (str?: string) =>
+    (str || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .split(/[^a-z0-9]+/)
+      .filter((w) => w.length >= 4 && !stopWords.has(w));
+
+  const telNuevo = (nuevo.telefono || "").replace(/\D/g, "");
+  const telNuevoUltimos10 = telNuevo.length >= 7 ? telNuevo.slice(-10) : "";
+  const nomNuevoNorm = normalizar(nuevo.nombre);
+  const palabrasNuevas = extraerPalabras(nuevo.nombre);
+
+  for (const item of listaExistente) {
+    if (ignorarId && item.id === ignorarId) continue;
+
+    // 1. Coincidencia por teléfono exacto (últimos 10 dígitos)
+    const telExistente = (item.negocio?.whatsapp || "").replace(/\D/g, "");
+    if (telNuevoUltimos10 && telExistente.length >= 7) {
+      if (telExistente.endsWith(telNuevoUltimos10) || telNuevoUltimos10.endsWith(telExistente.slice(-10))) {
+        return item;
+      }
+    }
+
+    // 2. Coincidencia por nombre normalizado (si tiene longitud razonable)
+    const nomExistenteNegocio = normalizar(item.negocio?.nombre);
+    const nomExistenteTitulo = normalizar(item.titulo);
+
+    if (nomNuevoNorm.length >= 4) {
+      if (
+        nomExistenteNegocio === nomNuevoNorm ||
+        (nomExistenteNegocio.length >= 5 && nomExistenteNegocio.includes(nomNuevoNorm)) ||
+        (nomNuevoNorm.length >= 5 && nomNuevoNorm.includes(nomExistenteNegocio)) ||
+        nomExistenteTitulo.includes(nomNuevoNorm)
+      ) {
+        return item;
+      }
+    }
+
+    // 3. Coincidencia por palabras clave no genéricas (ej: "mompe", "zakua", "brisas")
+    if (palabrasNuevas.length > 0) {
+      const palabrasExistente = [
+        ...extraerPalabras(item.negocio?.nombre),
+        ...extraerPalabras(item.titulo),
+      ];
+      const hayPalabraComun = palabrasNuevas.some((p) => palabrasExistente.includes(p));
+      if (hayPalabraComun) {
+        return item;
+      }
+    }
+  }
+
+  return null;
 }

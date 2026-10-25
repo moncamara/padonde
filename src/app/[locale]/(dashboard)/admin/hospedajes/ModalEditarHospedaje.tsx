@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "@/i18n/routing";
 import {
   guardarHospedajeAction,
@@ -11,10 +11,17 @@ import {
 import { uploadEventImage } from "@/lib/supabase/storage";
 import type { BadgeHabitacion } from "@/lib/types";
 import { ModalClasificadorFotosIA } from "./ModalClasificadorFotosIA";
+import {
+  extraerYOptimizarUrls,
+  SCRIPT_EXTRACCION_BOOKING_AIRBNB,
+  BOOKMARKLET_URI,
+} from "@/lib/fotoUtils";
+import { buscarCoincidenciaHospedaje } from "@/lib/hospedajeParser";
 
 interface ModalEditarHospedajeProps {
   hospedaje?: any | null;
   zonas: Array<{ id: string; nombre: string; slug: string }>;
+  hospedajesExistentes?: any[];
   onClose: () => void;
   onDeleted?: (id: string) => void;
 }
@@ -34,11 +41,12 @@ const BADGES_DISPONIBLES: BadgeHabitacion[] = [
 export function ModalEditarHospedaje({
   hospedaje,
   zonas,
+  hospedajesExistentes = [],
   onClose,
   onDeleted,
 }: ModalEditarHospedajeProps) {
   const router = useRouter();
-  const isEdicion = Boolean(hospedaje?.id);
+  const isEdicion = Boolean(hospedaje?.id && !hospedaje?.id.startsWith("temp-"));
 
   // Estados Datos Generales (Soporta registros existentes de BD o borradores del Asistente)
   const [nombreNegocio, setNombreNegocio] = useState(
@@ -46,6 +54,11 @@ export function ModalEditarHospedaje({
   );
   const [whatsapp, setWhatsapp] = useState(
     hospedaje?.negocio?.whatsapp || hospedaje?.whatsapp || ""
+  );
+  const [nombrePropietario, setNombrePropietario] = useState(
+    hospedaje?.metadata_hospedaje?.contacto_propietario ||
+      hospedaje?.nombrePropietario ||
+      ""
   );
   const [instagram, setInstagram] = useState(
     hospedaje?.negocio?.instagram || hospedaje?.instagram || ""
@@ -94,10 +107,64 @@ export function ModalEditarHospedaje({
       ]
   );
 
+  // Sincronizar estados cuando cambie la prop hospedaje (ej: al cargar el borrador piloto)
+  useEffect(() => {
+    if (hospedaje) {
+      setNombreNegocio(hospedaje?.negocio?.nombre || hospedaje?.nombreNegocio || "");
+      setWhatsapp(hospedaje?.negocio?.whatsapp || hospedaje?.whatsapp || "");
+      setNombrePropietario(
+        hospedaje?.metadata_hospedaje?.contacto_propietario ||
+          hospedaje?.nombrePropietario ||
+          ""
+      );
+      setInstagram(hospedaje?.negocio?.instagram || hospedaje?.instagram || "");
+      setTitulo(hospedaje?.titulo || "");
+      setDescripcion(hospedaje?.descripcion || "");
+      setZonaSlug(hospedaje?.zonas?.slug || hospedaje?.zonaSlug || zonas[0]?.slug || "minca");
+      setImagenUrl(hospedaje?.imagen_url || hospedaje?.imagenUrl || "");
+      setDestacado(Boolean(hospedaje?.destacado));
+      setRatingGoogle(
+        hospedaje?.metadata_hospedaje?.google_reputacion?.rating?.toString() ||
+          hospedaje?.ratingGoogle ||
+          ""
+      );
+      setReviewsGoogle(
+        hospedaje?.metadata_hospedaje?.google_reputacion?.total_reviews?.toString() ||
+          hospedaje?.reviewsGoogle ||
+          ""
+      );
+      setMapsUrl(
+        hospedaje?.metadata_hospedaje?.google_reputacion?.maps_url ||
+          hospedaje?.mapsUrl ||
+          ""
+      );
+      if (hospedaje?.metadata_hospedaje?.habitaciones || hospedaje?.habitaciones) {
+        setHabitaciones(hospedaje?.metadata_hospedaje?.habitaciones || hospedaje?.habitaciones);
+      }
+    }
+    // Asegurar que el modal siempre abra desde arriba
+    if (modalScrollRef.current) modalScrollRef.current.scrollTop = 0;
+    if (outerScrollRef.current) outerScrollRef.current.scrollTop = 0;
+  }, [hospedaje, zonas]);
+
+  const modalScrollRef = useRef<HTMLDivElement>(null);
+  const outerScrollRef = useRef<HTMLDivElement>(null);
+
   const [isSubiendoFoto, setIsSubiendoFoto] = useState(false);
   const [isGuardando, setIsGuardando] = useState(false);
   const [isRegenerandoAI, setIsRegenerandoAI] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const coincidenciaDuplicado =
+    !isEdicion &&
+    hospedajesExistentes.length > 0 &&
+    (nombreNegocio.trim().length >= 3 || whatsapp.trim().length >= 7)
+      ? buscarCoincidenciaHospedaje(
+          { nombre: nombreNegocio, telefono: whatsapp },
+          hospedajesExistentes,
+          hospedaje?.id
+        )
+      : null;
 
   // Regenerar copy de hospedaje con Gemini AI
   const handleRegenerarCopyGemini = async () => {
@@ -125,6 +192,93 @@ export function ModalEditarHospedaje({
     } finally {
       setIsRegenerandoAI(false);
     }
+  };
+
+  // Estados Importador Rápido de Fotos (Booking, Airbnb o URLs Masivas)
+  const [urlsImportador, setUrlsImportador] = useState("");
+  const [fotosImportadas, setFotosImportadas] = useState<string[]>([]);
+  const [mostrarGuiaBookmarklet, setMostrarGuiaBookmarklet] = useState(false);
+  const [copiadoBookmarklet, setCopiadoBookmarklet] = useState(false);
+  const [habitacionDestinoId, setHabitacionDestinoId] = useState<string>("todas");
+  const [mensajeImportacion, setMensajeImportacion] = useState<string | null>(null);
+
+  // Manejador de pegado de URLs en el importador
+  const handlePegarUrlsImportador = (texto: string) => {
+    setUrlsImportador(texto);
+    const urlsExtraidas = extraerYOptimizarUrls(texto);
+    if (urlsExtraidas.length > 0) {
+      setFotosImportadas((prev) => {
+        const combinadas = [...prev, ...urlsExtraidas.filter((u) => !prev.includes(u))];
+        return combinadas;
+      });
+      setMensajeImportacion(`✨ ${urlsExtraidas.length} foto(s) detectadas y optimizadas a HD.`);
+      setTimeout(() => setMensajeImportacion(null), 3500);
+    }
+  };
+
+  const handleEliminarFotoImportada = (idx: number) => {
+    setFotosImportadas((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const handleLimpiarFotosImportadas = () => {
+    setFotosImportadas([]);
+    setUrlsImportador("");
+    setMensajeImportacion(null);
+  };
+
+  // Distribuir fotos importadas entre las habitaciones o portada
+  const handleDistribuirFotos = () => {
+    if (fotosImportadas.length === 0) return;
+
+    if (habitaciones.length === 0) {
+      alert("Por favor crea al menos una habitación antes de distribuir las fotos.");
+      return;
+    }
+
+    // Si aún no hay portada, fijamos la primera foto como portada por defecto
+    if (!imagenUrl && fotosImportadas[0]) {
+      setImagenUrl(fotosImportadas[0]);
+    }
+
+    if (habitacionDestinoId === "todas") {
+      // Distribuir equitativamente en round-robin entre todas las habitaciones
+      setHabitaciones((prev) => {
+        const copy = prev.map((h) => ({ ...h, fotos: [...(h.fotos || [])] }));
+        fotosImportadas.forEach((foto, i) => {
+          const indexHab = i % copy.length;
+          if (!copy[indexHab].fotos.includes(foto)) {
+            copy[indexHab].fotos.push(foto);
+          }
+        });
+        return copy;
+      });
+      setMensajeImportacion(
+        `✅ ${fotosImportadas.length} fotos distribuidas equitativamente entre las ${habitaciones.length} habitaciones.`
+      );
+    } else {
+      // Asignar todas a la habitación seleccionada
+      setHabitaciones((prev) => {
+        return prev.map((hab, idx) => {
+          const idActual = hab.id || `hab-${idx}`;
+          if (idActual === habitacionDestinoId) {
+            const fotosActuales = hab.fotos || [];
+            const nuevas = fotosImportadas.filter((f) => !fotosActuales.includes(f));
+            return {
+              ...hab,
+              fotos: [...fotosActuales, ...nuevas],
+            };
+          }
+          return hab;
+        });
+      });
+      const habEncontrada = habitaciones.find(
+        (h, i) => (h.id || `hab-${i}`) === habitacionDestinoId
+      );
+      const habNombre = habEncontrada?.titulo || "la habitación seleccionada";
+      setMensajeImportacion(`✅ ${fotosImportadas.length} fotos asignadas a "${habNombre}".`);
+    }
+
+    setTimeout(() => setMensajeImportacion(null), 4000);
   };
 
   // Modal de Clasificación Mágica de Fotos con IA
@@ -292,15 +446,13 @@ export function ModalEditarHospedaje({
 
   // Agregar foto mediante URL externa o ruta local (admite una o varias URLs separadas por coma o salto de línea)
   const agregarFotoPorUrl = (indexHab: number, urlOrUrls: string) => {
-    const urls = urlOrUrls
-      .split(/[\n,]+/)
-      .map((u) => u.trim())
-      .filter((u) => u.length > 0);
+    const urls = extraerYOptimizarUrls(urlOrUrls);
     if (urls.length === 0) return;
     setHabitaciones((prev) => {
       const copy = [...prev];
       const fotosActuales = copy[indexHab].fotos || [];
-      copy[indexHab].fotos = [...fotosActuales, ...urls];
+      const nuevas = urls.filter((u) => !fotosActuales.includes(u));
+      copy[indexHab].fotos = [...fotosActuales, ...nuevas];
       return copy;
     });
   };
@@ -329,6 +481,7 @@ export function ModalEditarHospedaje({
       const metadataHospedaje = {
         check_in_hora: hospedaje?.metadata_hospedaje?.check_in_hora || "14:00",
         check_out_hora: hospedaje?.metadata_hospedaje?.check_out_hora || "11:00",
+        contacto_propietario: nombrePropietario.trim() || undefined,
         google_reputacion:
           ratingGoogle && reviewsGoogle && mapsUrl
             ? {
@@ -345,7 +498,7 @@ export function ModalEditarHospedaje({
       };
 
       const res = await guardarHospedajeAction({
-        id: hospedaje?.id,
+        id: isEdicion ? hospedaje?.id : undefined,
         nombreNegocio,
         whatsapp,
         instagram,
@@ -372,8 +525,14 @@ export function ModalEditarHospedaje({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-3 sm:p-4 overflow-y-auto">
-      <div className="w-full max-w-2xl bg-cream text-forest rounded-3xl p-5 sm:p-7 shadow-2xl border border-stone-light/80 my-8 space-y-6 max-h-[90vh] overflow-y-auto">
+    <div
+      ref={outerScrollRef}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-3 sm:p-4 overflow-y-auto"
+    >
+      <div
+        ref={modalScrollRef}
+        className="w-full max-w-2xl bg-cream text-forest rounded-3xl p-5 sm:p-7 shadow-2xl border border-stone-light/80 my-8 space-y-6 max-h-[90vh] overflow-y-auto"
+      >
         {/* Encabezado Modal */}
         <div className="flex items-center justify-between border-b border-stone-light/60 pb-3">
           <div>
@@ -405,6 +564,22 @@ export function ModalEditarHospedaje({
               <span>📍</span> 1. Información General del Alojamiento
             </h3>
 
+            {coincidenciaDuplicado && (
+              <div className="p-3.5 bg-amber-50 border-2 border-amber-300 rounded-2xl flex items-start gap-2.5 text-xs text-amber-950 animate-in fade-in duration-200">
+                <span className="text-lg leading-none">⚠️</span>
+                <div className="flex-1 space-y-0.5">
+                  <span className="font-bold block text-amber-950">
+                    Posible coincidencia con hospedaje existente:
+                  </span>
+                  <p className="text-amber-900 leading-relaxed">
+                    Ya existe registrado <strong>"{coincidenciaDuplicado.negocio?.nombre || coincidenciaDuplicado.titulo}"</strong>
+                    {coincidenciaDuplicado.negocio?.whatsapp ? ` (tel: +${coincidenciaDuplicado.negocio.whatsapp})` : ""}
+                    {" "}en {coincidenciaDuplicado.zonas?.nombre || "el directorio"}. Asegúrate de no crear un registro repetido.
+                  </p>
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 font-sans text-xs">
               <div>
                 <label className="block text-stone font-medium mb-1">
@@ -415,21 +590,34 @@ export function ModalEditarHospedaje({
                   required
                   value={nombreNegocio}
                   onChange={(e) => setNombreNegocio(e.target.value)}
-                  placeholder="Ej: Hostal La Cumbre Minca"
+                  placeholder="Ej: The Mompe Beach Hostal"
                   className="w-full bg-cream/70 border border-stone-light rounded-xl px-3 py-2 text-forest focus:outline-none focus:border-forest"
                 />
               </div>
 
               <div>
                 <label className="block text-stone font-medium mb-1">
-                  WhatsApp para Reservas *
+                  Propietario / Contacto (opcional)
+                </label>
+                <input
+                  type="text"
+                  value={nombrePropietario}
+                  onChange={(e) => setNombrePropietario(e.target.value)}
+                  placeholder="Ej: Alfonso Cardona"
+                  className="w-full bg-cream/70 border border-stone-light rounded-xl px-3 py-2 text-forest focus:outline-none focus:border-forest"
+                />
+              </div>
+
+              <div>
+                <label className="block text-stone font-medium mb-1 flex items-center justify-between">
+                  <span>WhatsApp de Contacto / Reservas *</span>
                 </label>
                 <input
                   type="text"
                   required
                   value={whatsapp}
                   onChange={(e) => setWhatsapp(e.target.value)}
-                  placeholder="573001234567"
+                  placeholder="573204475264"
                   className="w-full bg-cream/70 border border-stone-light rounded-xl px-3 py-2 text-forest focus:outline-none focus:border-forest"
                 />
               </div>
@@ -508,17 +696,47 @@ export function ModalEditarHospedaje({
                 <label className="block text-stone font-medium mb-1">
                   Foto de Portada Principal
                 </label>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleUploadPortada}
-                    className="text-xs font-sans text-stone"
-                  />
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleUploadPortada}
+                      className="text-xs font-sans text-stone cursor-pointer"
+                    />
+                    {imagenUrl && (
+                      <span className="text-green-600 font-medium text-[11px] flex items-center gap-1">
+                        ✓ Foto lista
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] text-stone shrink-0">O pega URL:</span>
+                    <input
+                      type="url"
+                      value={imagenUrl}
+                      onChange={(e) => setImagenUrl(e.target.value)}
+                      placeholder="https://cf.bstatic.com/... o https://..."
+                      className="flex-1 bg-cream/70 border border-stone-light rounded-xl px-2.5 py-1 text-forest focus:outline-none focus:border-forest font-mono text-[11px]"
+                    />
+                  </div>
                   {imagenUrl && (
-                    <span className="text-green-600 font-medium text-[11px]">
-                      ✓ Foto cargada
-                    </span>
+                    <div className="relative w-28 aspect-16/9 rounded-xl overflow-hidden border border-stone-light shadow-2xs group mt-1">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={imagenUrl}
+                        alt="Vista previa portada"
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setImagenUrl("")}
+                        title="Quitar foto de portada"
+                        className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-600 text-white flex items-center justify-center text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700 cursor-pointer"
+                      >
+                        ✕
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
@@ -550,14 +768,260 @@ export function ModalEditarHospedaje({
             </div>
           </div>
 
-          {/* SECCIÓN 2: GOOGLE REVIEWS (OPCIONAL) */}
+          {/* SECCIÓN 2: IMPORTADOR RÁPIDO DE FOTOS (BOOKING, AIRBNB O URLs) */}
+          <div className="space-y-4 bg-gradient-to-br from-cream/90 via-white to-forest/5 p-4 sm:p-5 rounded-2xl border-2 border-forest/20 shadow-xs font-sans text-xs">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-base sm:text-lg">📸</span>
+                  <h3 className="font-serif text-sm sm:text-base font-bold text-forest">
+                    2. Ingesta Rápida de Fotos (Booking, Airbnb o URLs Masivas)
+                  </h3>
+                  <span className="bg-forest/10 text-forest text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                    Sin Descargas
+                  </span>
+                </div>
+                <p className="text-stone text-[11px] mt-0.5">
+                  Pega un bloque de enlaces extraídos de Booking o Airbnb para distribuirlos automáticamente en tus habitaciones o portada.
+                </p>
+              </div>
+
+              {/* Botón para desplegar la guía del Bookmarklet / Script */}
+              <button
+                type="button"
+                onClick={() => setMostrarGuiaBookmarklet((prev) => !prev)}
+                className="text-[11px] font-semibold text-terra hover:text-terra-dark bg-terra/10 hover:bg-terra/15 px-3 py-1.5 rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer"
+              >
+                <span>💡</span>
+                <span>{mostrarGuiaBookmarklet ? "Ocultar Marcador 1-Clic" : "¿Cómo copiar fotos de Booking?"}</span>
+              </button>
+            </div>
+
+            {/* Guía explicativa con el Bookmarklet listo para usar */}
+            {mostrarGuiaBookmarklet && (
+              <div className="p-3.5 sm:p-4 rounded-xl bg-forest/5 border border-forest/15 space-y-3 animate-in fade-in duration-200">
+                <div className="flex items-start gap-2.5">
+                  <span className="text-lg">⚡</span>
+                  <div className="space-y-1">
+                    <h4 className="font-bold text-forest text-xs">
+                      Marcador de 1-Clic para Booking & Airbnb (Sin descargar archivos)
+                    </h4>
+                    <p className="text-[11px] text-stone leading-relaxed">
+                      Puedes extraer 20, 40 o 60 fotos en resolución HD directamente desde la pestaña de Booking o Airbnb en tu navegador con un solo clic.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 pt-1 text-[11px]">
+                  <div className="p-2.5 rounded-lg bg-white border border-stone-light/60">
+                    <strong className="block text-forest mb-0.5">1. Guarda el Marcador:</strong>
+                    <span>Arrastra este botón a tu barra de favoritos de Chrome/Safari:</span>
+                    <div className="mt-2">
+                      <a
+                        href={BOOKMARKLET_URI}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          navigator.clipboard.writeText(SCRIPT_EXTRACCION_BOOKING_AIRBNB);
+                          setCopiadoBookmarklet(true);
+                          setTimeout(() => setCopiadoBookmarklet(false), 2500);
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-forest text-cream text-[11px] font-bold hover:bg-forest-dark transition-all cursor-grab active:cursor-grabbing shadow-xs"
+                        title="Arrastra a la barra de marcadores o haz clic para copiar el código"
+                      >
+                        <span>⭐</span>
+                        <span>Extraer Fotos HD (Arrastrar a Marcadores)</span>
+                      </a>
+                    </div>
+                  </div>
+
+                  <div className="p-2.5 rounded-lg bg-white border border-stone-light/60">
+                    <strong className="block text-forest mb-0.5">2. Abre Booking o Airbnb:</strong>
+                    <span>Abre la ficha del hotel, despliega la galería de fotos completa y haz clic en tu nuevo marcador.</span>
+                  </div>
+
+                  <div className="p-2.5 rounded-lg bg-white border border-stone-light/60">
+                    <strong className="block text-forest mb-0.5">3. Pega y Distribuye:</strong>
+                    <span>Presiona <kbd className="px-1 py-0.5 bg-stone-light/40 rounded text-[10px] font-mono">Ctrl + V</kbd> aquí abajo. Las fotos se elevan a resolución HD automáticamente.</span>
+                  </div>
+                </div>
+
+                {/* Botón alternativo para copiar código crudo si no usa la barra de marcadores */}
+                <div className="flex items-center justify-between pt-1 border-t border-forest/10 flex-wrap gap-2">
+                  <span className="text-[10px] text-stone">
+                    ¿Prefieres la consola de desarrollador? Copia el código JavaScript directamente:
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(SCRIPT_EXTRACCION_BOOKING_AIRBNB);
+                      setCopiadoBookmarklet(true);
+                      setTimeout(() => setCopiadoBookmarklet(false), 2500);
+                    }}
+                    className="text-[11px] font-semibold text-forest underline hover:text-terra cursor-pointer"
+                  >
+                    {copiadoBookmarklet ? "✅ ¡Código copiado al portapapeles!" : "📋 Copiar código JS para consola"}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Textarea para pegar URLs */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between flex-wrap gap-1">
+                <label className="font-semibold text-forest text-xs flex items-center gap-1.5">
+                  <span>🔗 Pegar URLs de fotos (Booking, Airbnb o enlaces web)</span>
+                </label>
+                <div className="flex items-center gap-2">
+                  {mensajeImportacion && (
+                    <span className="text-[11px] font-semibold text-emerald-700 animate-in fade-in">
+                      {mensajeImportacion}
+                    </span>
+                  )}
+                  {fotosImportadas.length > 0 && (
+                    <span className="text-[11px] font-bold text-forest bg-forest/10 px-2 py-0.5 rounded-full">
+                      📸 {fotosImportadas.length} foto(s) en bandeja
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="relative">
+                <textarea
+                  rows={3}
+                  value={urlsImportador}
+                  onChange={(e) => handlePegarUrlsImportador(e.target.value)}
+                  placeholder="Pega aquí una o varias URLs (ej: https://cf.bstatic.com/... o https://a0.muscache.com/...) separadas por saltos de línea..."
+                  className="w-full bg-white border border-stone-light rounded-xl p-2.5 text-[11px] font-mono text-forest placeholder:text-stone/60 focus:outline-none focus:border-forest resize-y"
+                />
+              </div>
+            </div>
+
+            {/* Previsualización visual de fotos importadas + Acciones de distribución */}
+            {fotosImportadas.length > 0 && (
+              <div className="space-y-3 pt-2 border-t border-stone-light/60">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <span className="font-semibold text-forest text-xs">
+                    Previsualización ({fotosImportadas.length} fotos detectadas en alta resolución):
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleLimpiarFotosImportadas}
+                      className="text-stone hover:text-red-600 text-[11px] underline cursor-pointer"
+                    >
+                      Limpiar bandeja
+                    </button>
+                  </div>
+                </div>
+
+                {/* Grid de miniaturas con selector / eliminación */}
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 max-h-56 overflow-y-auto p-1 bg-white/60 rounded-xl border border-stone-light/50">
+                  {fotosImportadas.map((url, idx) => (
+                    <div
+                      key={idx}
+                      className="relative group aspect-4/3 rounded-lg overflow-hidden border border-stone-light bg-stone-light/20"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={url}
+                        alt={`Foto importada ${idx + 1}`}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                      {/* Overlay de acciones rápidas */}
+                      <div className="absolute inset-0 bg-black/55 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-1">
+                        <div className="flex justify-between items-center">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setImagenUrl(url);
+                              setMensajeImportacion("⭐ Foto fijada como Portada Principal");
+                              setTimeout(() => setMensajeImportacion(null), 3000);
+                            }}
+                            title="Fijar como portada"
+                            className="bg-amber-400 text-forest text-[9px] font-bold px-1.5 py-0.5 rounded shadow-xs hover:bg-amber-300 cursor-pointer"
+                          >
+                            ⭐ Portada
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleEliminarFotoImportada(idx)}
+                            title="Eliminar de la lista"
+                            className="w-4 h-4 rounded-full bg-red-600 text-white flex items-center justify-center text-[10px] font-bold hover:bg-red-700 cursor-pointer"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                        <span className="text-[9px] text-white/90 truncate font-mono">
+                          #{idx + 1}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Barra de Distribución Inteligente */}
+                <div className="p-3 bg-forest/5 rounded-xl border border-forest/15 flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-semibold text-forest text-xs">
+                      👉 Distribuir estas fotos a:
+                    </span>
+                    <select
+                      value={habitacionDestinoId}
+                      onChange={(e) => setHabitacionDestinoId(e.target.value)}
+                      className="bg-white border border-stone-light rounded-xl px-2.5 py-1.5 text-xs text-forest focus:outline-none focus:border-forest"
+                    >
+                      <option value="todas">⚖️ Distribuir equitativamente entre todas</option>
+                      {habitaciones.map((h, i) => (
+                        <option key={h.id || i} value={h.id || `hab-${i}`}>
+                          🛏️ Hab #{i + 1}: {h.titulo || `Habitación ${i + 1}`}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={handleDistribuirFotos}
+                      className="px-3.5 py-1.5 bg-forest text-cream hover:bg-forest-dark rounded-xl font-medium text-xs transition-colors cursor-pointer shadow-xs active:scale-95"
+                    >
+                      Asignar Ahora
+                    </button>
+                  </div>
+
+                  {/* Botón directo para pasar a IA */}
+                  <button
+                    type="button"
+                    onClick={() => setMostrarClasificadorFotos(true)}
+                    className="px-3.5 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold text-xs transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
+                    title="Gemini Vision analiza las fotos y asigna automáticamente cada una a su habitación correspondiente"
+                  >
+                    <span>✨</span>
+                    <span>Clasificar con IA (Gemini Vision)</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* SECCIÓN 3: GOOGLE REVIEWS (OPCIONAL) */}
           <div className="space-y-3 bg-white/70 p-4 sm:p-5 rounded-2xl border border-stone-light/60 font-sans text-xs">
-            <h3 className="font-serif text-sm font-bold text-forest flex items-center gap-1.5">
-              <span>⭐</span> 2. Reputación de Google Maps (Opcional)
-            </h3>
-            <p className="text-stone text-[11px]">
-              Muestra las estrellas y número de opiniones en la ficha pública con enlace directo a Maps.
-            </p>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <h3 className="font-serif text-sm font-bold text-forest flex items-center gap-1.5">
+                  <span>⭐</span> 3. Reputación de Google Maps (Opcional)
+                </h3>
+                <p className="text-stone text-[11px] mt-0.5">
+                  Muestra las estrellas y número de opiniones en la ficha pública con enlace directo a Maps.
+                </p>
+              </div>
+              {ratingGoogle && (
+                <div className="flex items-center gap-1.5 px-3 py-1 bg-amber-50 border border-amber-200/80 rounded-xl text-amber-900 text-xs font-semibold shadow-2xs">
+                  <span className="text-amber-500 font-bold">★</span>
+                  <span>{ratingGoogle}</span>
+                  {reviewsGoogle && (
+                    <span className="text-stone font-normal">({reviewsGoogle} reseñas)</span>
+                  )}
+                </div>
+              )}
+            </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               <div>
@@ -589,27 +1053,57 @@ export function ModalEditarHospedaje({
                 />
               </div>
 
-              <div className="col-span-2 sm:col-span-1">
-                <label className="block text-stone font-medium mb-1">
-                  Enlace a Google Maps
-                </label>
-                <input
-                  type="url"
-                  value={mapsUrl}
-                  onChange={(e) => setMapsUrl(e.target.value)}
-                  placeholder="https://maps.app.goo.gl/..."
-                  className="w-full bg-cream/70 border border-stone-light rounded-xl px-3 py-2 text-forest focus:outline-none focus:border-forest"
-                />
+              <div className="col-span-2 sm:col-span-3 pt-1">
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-stone font-medium">
+                    Enlace a Google Maps
+                  </label>
+                  {mapsUrl && (
+                    <a
+                      href={mapsUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[11px] font-semibold text-terra hover:text-terra-dark flex items-center gap-1 underline transition-colors"
+                    >
+                      <span>↗️</span>
+                      <span>Probar enlace en Maps</span>
+                    </a>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="url"
+                    value={mapsUrl}
+                    onChange={(e) => setMapsUrl(e.target.value)}
+                    placeholder="https://maps.app.goo.gl/... o https://maps.google.com/?q=..."
+                    className="flex-1 bg-cream/70 border border-stone-light rounded-xl px-3 py-2 text-forest focus:outline-none focus:border-forest font-mono text-[11px]"
+                  />
+                  {mapsUrl && (
+                    <a
+                      href={mapsUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-2 bg-terra/10 hover:bg-terra text-terra hover:text-white rounded-xl font-medium text-xs transition-colors shrink-0 flex items-center gap-1 cursor-pointer shadow-2xs"
+                      title="Abrir ubicación en una pestaña nueva de Google Maps"
+                    >
+                      <span>📍</span>
+                      <span>Ver en Mapa</span>
+                    </a>
+                  )}
+                </div>
+                <p className="text-[10px] text-stone mt-1">
+                  Al hacer clic en la ficha pública, los turistas podrán navegar directamente a esta ubicación en Google Maps.
+                </p>
               </div>
             </div>
           </div>
 
-          {/* SECCIÓN 3: HABITACIONES Y TARIFAS */}
+          {/* SECCIÓN 4: HABITACIONES Y TARIFAS */}
           <div className="space-y-4 bg-white/70 p-4 sm:p-5 rounded-2xl border border-stone-light/60 font-sans text-xs">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div>
                 <h3 className="font-serif text-sm font-bold text-forest flex items-center gap-1.5">
-                  <span>🛏️</span> 3. Habitaciones y Tarifas
+                  <span>🛏️</span> 4. Habitaciones y Tarifas
                 </h3>
                 <p className="text-stone text-[11px] mt-0.5">
                   Estas opciones alimentan la calculadora interactiva de reservas
@@ -835,6 +1329,7 @@ export function ModalEditarHospedaje({
               descripcion: h.descripcion,
             }))}
             descripcionContexto={descripcion}
+            initialUrls={fotosImportadas.length > 0 ? fotosImportadas : undefined}
             onClose={() => setMostrarClasificadorFotos(false)}
             onAplicar={handleAplicarFotosClasificadas}
           />

@@ -6,6 +6,7 @@ import type { CategoriaServicioEsencial, ServicioEsencial } from "@/lib/types";
 import { CarouselWrapper } from "@/components/ui/CarouselWrapper";
 import { getServicioEsencialTraducido } from "@/lib/translations/serviciosTraducciones";
 import { EventVideoPlayer } from "@/components/events/EventVideoPlayer";
+import { ShareButton } from "@/components/events/ShareButton";
 import {
   trackServicioEsencialWhatsAppClick,
   trackServicioEsencialMapsClick,
@@ -14,6 +15,7 @@ import {
 interface ServiciosListProps {
   servicios: ServicioEsencial[];
   zonaNombre: string;
+  zonaSlug?: string;
 }
 
 const CATEGORIAS_CONFIG: Array<{
@@ -29,7 +31,7 @@ const CATEGORIAS_CONFIG: Array<{
   { id: "general", emoji: "ℹ️", labelKey: "categories.general" },
 ];
 
-export function ServiciosList({ servicios, zonaNombre }: ServiciosListProps) {
+export function ServiciosList({ servicios, zonaNombre, zonaSlug }: ServiciosListProps) {
   const t = useTranslations("essentialServices");
   const locale = useLocale();
   const [categoriaActiva, setCategoriaActiva] = useState<string>("todas");
@@ -124,10 +126,19 @@ export function ServiciosList({ servicios, zonaNombre }: ServiciosListProps) {
             const videoUrl = servicio.metadata_comercial?.video_url || null;
             const tieneMedia = Boolean(mainPhoto || videoUrl);
 
+            const origin =
+              typeof window !== "undefined"
+                ? window.location.origin
+                : "https://www.padonde.lat";
+            const cardUrl = `${origin}/${locale}/${zonaSlug || "minca"}?tab=servicios#servicio-${servicio.id}`;
+            const shareTitle = `${servicio.nombre_comercial} - PaDónde`;
+            const shareText = `${servicio.nombre_comercial} (${t(`categories.${servicio.categoria}`)}): ${servicio.subtitulo || ""} en ${zonaNombre}. Consúltalo en PaDónde:`;
+
             return (
               <article
                 key={servicio.id}
-                className="bg-white rounded-3xl border border-stone-light/80 p-5 sm:p-6 shadow-xs hover:border-forest/40 transition-all space-y-4"
+                id={`servicio-${servicio.id}`}
+                className="scroll-mt-24 bg-white rounded-3xl border border-stone-light/80 p-5 sm:p-6 shadow-xs hover:border-forest/40 transition-all space-y-4 target:ring-2 target:ring-terra target:border-terra/60"
               >
                 {/* Header de la tarjeta */}
                 <div className="flex items-start justify-between gap-3">
@@ -147,16 +158,27 @@ export function ServiciosList({ servicios, zonaNombre }: ServiciosListProps) {
                     </h3>
                   </div>
 
-                  {servicio.logo_url && (
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-stone-light/20 border border-stone-light/60 overflow-hidden shrink-0 flex items-center justify-center p-1">
-                      <img
-                        src={servicio.logo_url}
-                        alt={servicio.nombre_comercial}
-                        className="w-full h-full object-contain"
-                        loading="lazy"
-                      />
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <ShareButton
+                      title={shareTitle}
+                      text={shareText}
+                      url={cardUrl}
+                      zonaNombre={zonaNombre}
+                      variant="icon"
+                      className="!w-9 !h-9 bg-stone-light/30 hover:bg-stone-light/70 text-forest"
+                    />
+
+                    {servicio.logo_url && (
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-stone-light/20 border border-stone-light/60 overflow-hidden shrink-0 flex items-center justify-center p-1">
+                        <img
+                          src={servicio.logo_url}
+                          alt={servicio.nombre_comercial}
+                          className="w-full h-full object-contain"
+                          loading="lazy"
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Bloque Multimedia (Foto y/o Reel) */}
@@ -311,9 +333,9 @@ export function ServiciosList({ servicios, zonaNombre }: ServiciosListProps) {
                   )}
                 </div>
 
-                {/* Botón directo de WhatsApp (sólo si tienen plan/conversión activa) */}
-                {servicio.boton_whatsapp_activo !== false ? (
-                  <div className="pt-1">
+                {/* Botones de acción: WhatsApp y Compartir ficha */}
+                <div className="pt-1 flex items-center gap-2">
+                  {servicio.boton_whatsapp_activo !== false ? (
                     <a
                       href={waUrl}
                       target="_blank"
@@ -326,20 +348,27 @@ export function ServiciosList({ servicios, zonaNombre }: ServiciosListProps) {
                           zonaNombre,
                         });
                       }}
-                      className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-forest hover:bg-forest/90 text-cream font-sans text-xs sm:text-sm font-semibold tracking-wide shadow-xs active:scale-[0.98] transition-all"
+                      className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-forest hover:bg-forest/90 text-cream font-sans text-xs sm:text-sm font-semibold tracking-wide shadow-xs active:scale-[0.98] transition-all"
                     >
                       <span className="text-base">💬</span>
                       <span>{t("contactWhatsApp")}</span>
                     </a>
-                  </div>
-                ) : (
-                  <div className="pt-1">
-                    <div className="w-full py-2.5 px-4 rounded-2xl bg-stone-light/20 border border-stone-light/60 text-stone text-center font-sans text-xs flex items-center justify-center gap-2">
+                  ) : (
+                    <div className="flex-1 py-2.5 px-4 rounded-2xl bg-stone-light/20 border border-stone-light/60 text-stone text-center font-sans text-xs flex items-center justify-center gap-2">
                       <span>🏪</span>
                       <span>{t("inPersonOnly")}</span>
                     </div>
-                  </div>
-                )}
+                  )}
+
+                  <ShareButton
+                    title={shareTitle}
+                    text={shareText}
+                    url={cardUrl}
+                    zonaNombre={zonaNombre}
+                    variant="header"
+                    className="!h-11 sm:!h-12 !px-3.5 sm:!px-4 !rounded-2xl border-stone-light hover:border-forest/40 bg-white shadow-2xs text-xs font-semibold"
+                  />
+                </div>
               </article>
             );
           })}

@@ -30,10 +30,18 @@ export function FeedTabsContainer({
 
   useEffect(() => {
     const urlTab = searchParams.get("tab");
-    if (urlTab === "servicios" || urlTab === "eventos") {
-      setTabActiva(urlTab);
+    const hash = typeof window !== "undefined" ? window.location.hash : "";
+    const isServicioHash = hash.startsWith("#servicio-");
+
+    if (urlTab === "servicios" || isServicioHash) {
+      setTabActiva("servicios");
       try {
-        sessionStorage.setItem("padonde_tab_activa", urlTab);
+        sessionStorage.setItem("padonde_tab_activa", "servicios");
+      } catch {}
+    } else if (urlTab === "eventos") {
+      setTabActiva("eventos");
+      try {
+        sessionStorage.setItem("padonde_tab_activa", "eventos");
       } catch {}
     } else {
       try {
@@ -42,6 +50,16 @@ export function FeedTabsContainer({
           setTabActiva(saved);
         }
       } catch {}
+    }
+
+    if (isServicioHash) {
+      setTimeout(() => {
+        const elId = hash.slice(1);
+        const el = document.getElementById(elId);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 400);
     }
   }, [searchParams]);
 
@@ -94,7 +112,11 @@ export function FeedTabsContainer({
           configTerritorial={configTerritorial}
         />
       ) : (
-        <ServiciosList servicios={servicios} zonaNombre={zonaNombre} />
+        <ServiciosList
+          servicios={servicios}
+          zonaNombre={zonaNombre}
+          zonaSlug={zona}
+        />
       )}
     </div>
   );

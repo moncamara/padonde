@@ -38,7 +38,21 @@ export function AdminEsencialesList({
   const [modalAbierto, setModalAbierto] = useState(false);
   const [filtroCategoria, setFiltroCategoria] = useState<string>("todas");
   const [filtroZona, setFiltroZona] = useState<string>("todas");
+  const [enlaceCopiadoId, setEnlaceCopiadoId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  const handleCopiarEnlaceFicha = async (servicio: ServicioEsencial) => {
+    const zonaSlug =
+      servicio.zona_id === "zona-mendihuaca" ? "mendihuaca" : "minca";
+    const url = `https://www.padonde.lat/es/${zonaSlug}?tab=servicios#servicio-${servicio.id}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setEnlaceCopiadoId(servicio.id);
+      setTimeout(() => setEnlaceCopiadoId(null), 2000);
+    } catch {
+      prompt("Copia el enlace de esta ficha:", url);
+    }
+  };
 
   const handleToggleActivo = (servicio: ServicioEsencial) => {
     const nuevoEstado = !servicio.activo;
@@ -342,6 +356,18 @@ export function AdminEsencialesList({
                         <span className="text-[11px] font-medium">Maps</span>
                       </a>
                     )}
+
+                    <button
+                      type="button"
+                      onClick={() => handleCopiarEnlaceFicha(s)}
+                      className="p-1.5 rounded-lg bg-stone-light/40 hover:bg-stone-light text-forest text-xs flex items-center gap-1 font-sans cursor-pointer active:scale-95 transition-all"
+                      title="Copiar enlace directo a la ficha en PaDónde"
+                    >
+                      <span>{enlaceCopiadoId === s.id ? "✅" : "🔗"}</span>
+                      <span className="text-[11px] font-medium">
+                        {enlaceCopiadoId === s.id ? "Copiado" : "Link"}
+                      </span>
+                    </button>
                   </div>
 
                   <div className="flex items-center gap-1.5">

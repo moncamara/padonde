@@ -1,8 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { procesarTextoBrutoHospedaje, type HospedajeExtraido } from "@/lib/hospedajeParser";
-import { generarCopyHospedajeGeminiAction } from "../actions";
+import {
+  procesarTextoBrutoHospedaje,
+  parsearLineaRapida,
+  type HospedajeExtraido,
+} from "@/lib/hospedajeParser";
+import { generarCopyHospedajeGeminiAction, investigarHospedajeAction } from "../actions";
 
 interface ModalAsistenteIngestaProps {
   zonas: Array<{ id: string; nombre: string; slug: string }>;
@@ -10,36 +14,90 @@ interface ModalAsistenteIngestaProps {
   onParsed: (borrador: HospedajeExtraido) => void;
 }
 
-const EJEMPLO_LA_CASONA = `Hotel Minca La Casona
-Teléfono / WhatsApp: +57 315 519 3679
-Instagram: @hotelminca
-Ubicación: Centro de Minca, Sierra Nevada de Santa Marta
-Calificación Google: 4.6 (cientos de reseñas positivas)
-
-Hotel tradicional de estilo colonial con 50 años de historia. Cuenta con piscina al aire libre, restaurante propio de comida típica e internacional, parqueadero privado y jardines tropicales donde llegan decenas de colibríes todo el día. Cerca de senderos ecológicos y del sendero ancestral Tayrona.
-
-Habitaciones disponibles:
-1. Habitación Estándar Doble: Cama doble, baño privado con agua caliente, ventilador, wifi. Tarifa: $190.000 COP por noche para 2 personas.
-2. Habitación Superior King: Cama King Size, balcón privado con hamaca y vista a la montaña, baño privado, wifi. Tarifa: $260.000 COP por noche.
-3. Habitación Triple: Cama doble y cama sencilla, baño privado, ventilador, ideal para 3 personas. Tarifa: $310.000 COP por noche.
-4. Casa Colibrí Familiar: Cabaña completa para hasta 6 personas con cocina integral, sala, terraza y vista a los jardines. Tarifa: $450.000 COP por noche.`;
-
 export function ModalAsistenteIngesta({
   zonas,
   onClose,
   onParsed,
 }: ModalAsistenteIngestaProps) {
+  const [lineaRapida, setLineaRapida] = useState("");
   const [nombre, setNombre] = useState("");
   const [zonaSlug, setZonaSlug] = useState("minca");
   const [textoBruto, setTextoBruto] = useState("");
   const [isProcesando, setIsProcesando] = useState(false);
+  const [isInvestigandoRapido, setIsInvestigandoRapido] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleCargarEjemplo = () => {
-    setNombre("Hotel Minca La Casona");
-    setZonaSlug("minca");
-    setTextoBruto(EJEMPLO_LA_CASONA);
+  const handleProcesarLineaRapida = async () => {
+    const input = lineaRapida.trim();
+    if (!input || isInvestigandoRapido) {
+      setError("Por favor escribe o pega el teléfono, nombre de contacto y hospedaje.");
+      return;
+    }
+
+    setIsInvestigandoRapido(true);
     setError(null);
+    try {
+      const res = await investigarHospedajeAction({
+        linea: input,
+        zonaSlug,
+      });
+
+      if (res.success && res.borrador) {
+        onParsed(res.borrador);
+      } else {
+        // Fallback local seguro
+        const parsed = parsearLineaRapida(input);
+        const nuevoBorrador: HospedajeExtraido = {
+          nombreNegocio: parsed.nombreNegocio || "Nuevo Hospedaje",
+          nombrePropietario: parsed.nombrePropietario || "",
+          whatsapp: parsed.telefono || "",
+          instagram: "",
+          zonaSlug: zonaSlug || "minca",
+          titulo: `🏡 ${parsed.nombreNegocio || "Nuevo Hospedaje"} — Refugio Natural 🌿`,
+          descripcion: `Ubicado en la región caribe y la Sierra Nevada. Espacio ideal para desconectar y descansar en armonía con la naturaleza.`,
+          ratingGoogle: "",
+          reviewsGoogle: "",
+          mapsUrl: "",
+          imagenUrl: "",
+          destacado: false,
+          habitaciones: [
+            {
+              id: `hab-${Date.now()}`,
+              titulo: "Habitación Estándar",
+              descripcion: "Cama doble, baño privado y ventilador.",
+              precio_noche_cop: 120000,
+              capacidad_max: 2,
+              fotos: [],
+              badges: [
+                { icono: "🚿", texto: "Baño privado" },
+                { icono: "🍳", texto: "Desayuno incluido" },
+              ],
+            },
+          ],
+        };
+        onParsed(nuevoBorrador);
+      }
+    } catch (err: any) {
+      console.error("Error en asistente de ingesta rápida:", err);
+      const parsed = parsearLineaRapida(input);
+      onParsed({
+        nombreNegocio: parsed.nombreNegocio || "Nuevo Hospedaje",
+        nombrePropietario: parsed.nombrePropietario || "",
+        whatsapp: parsed.telefono || "",
+        instagram: "",
+        zonaSlug: zonaSlug || "minca",
+        titulo: `🏡 ${parsed.nombreNegocio || "Nuevo Hospedaje"} — Refugio Natural 🌿`,
+        descripcion: `Ubicado en el entorno de la Sierra Nevada y el Caribe colombiano.`,
+        ratingGoogle: "",
+        reviewsGoogle: "",
+        mapsUrl: "",
+        imagenUrl: "",
+        destacado: false,
+        habitaciones: [],
+      });
+    } finally {
+      setIsInvestigandoRapido(false);
+    }
   };
 
   const handleProcesar = async () => {
@@ -91,7 +149,7 @@ export function ModalAsistenteIngesta({
                 Asistente de Ingesta Rápida
               </h3>
               <p className="text-[11px] sm:text-xs text-stone font-sans mt-0.5">
-                Convierte texto bruto de Booking, Instagram o WhatsApp en una ficha lista para publicar.
+                Convierte texto bruto o una sola línea (teléfono - dueño - hotel) en una ficha lista para publicar.
               </p>
             </div>
           </div>
@@ -107,18 +165,67 @@ export function ModalAsistenteIngesta({
 
         {/* Contenido del Formulario */}
         <div className="p-5 sm:p-6 space-y-4 overflow-y-auto font-sans flex-1">
-          {/* Banner de Ayuda & Botón Ejemplo */}
-          <div className="p-3.5 rounded-2xl bg-forest/5 border border-forest/15 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
-            <div className="text-xs text-forest">
-              <span className="font-semibold">💡 Tip rápido:</span> Pega la descripción tal como la copiaste. El asistente extraerá teléfonos, habitaciones, precios y comodidades automáticamente.
+          {/* OPCIÓN 1: INGESTA EN 1 SOLA LÍNEA (LEAD RÁPIDO) */}
+          <div className="p-4 rounded-2xl bg-amber-500/10 border-2 border-amber-500/30 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-forest flex items-center gap-1.5">
+                <span>⚡</span> Ingesta Rápida (1 Sola Línea)
+              </label>
+              <span className="text-[10px] text-amber-800 font-bold bg-white px-2 py-0.5 rounded-full border border-amber-300">
+                Pega y Enter ↵
+              </span>
             </div>
-            <button
-              type="button"
-              onClick={handleCargarEjemplo}
-              className="text-xs font-semibold text-terra hover:underline shrink-0 bg-white px-2.5 py-1.5 rounded-xl border border-terra/30 hover:bg-terra/5 transition-colors cursor-pointer self-start sm:self-auto"
-            >
-              Probar con &quot;La Casona&quot; ⚡
-            </button>
+
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="text"
+                autoFocus
+                value={lineaRapida}
+                onChange={(e) => {
+                  setLineaRapida(e.target.value);
+                  setError(null);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleProcesarLineaRapida();
+                  }
+                }}
+                placeholder="Escribe o pega aquí: 3106436667 Candelaria - Brisas del Mar"
+                className="flex-1 px-3.5 py-2.5 text-xs rounded-xl border border-stone-light/90 bg-white text-forest focus:outline-terra font-sans shadow-inner placeholder:text-stone/60 font-medium"
+              />
+              <button
+                type="button"
+                disabled={isInvestigandoRapido}
+                onClick={handleProcesarLineaRapida}
+                className="px-4 py-2.5 bg-terra hover:bg-terra-dark text-white text-xs font-semibold rounded-xl active:scale-95 transition-all shadow-xs shrink-0 flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-60 disabled:cursor-wait"
+              >
+                {isInvestigandoRapido ? (
+                  <>
+                    <span className="animate-spin inline-block">⏳</span>
+                    <span>Investigando...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>🪄</span>
+                    <span>Crear Ficha Ahora</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            <p className="text-[11px] text-stone">
+              Detecta automáticamente: <strong>Teléfono</strong>, <strong>Propietario</strong> y <strong>Hospedaje</strong>.
+            </p>
+          </div>
+
+          {/* Divisor Visual */}
+          <div className="flex items-center gap-3 py-1">
+            <div className="h-px bg-stone-light/70 flex-1" />
+            <span className="text-[10px] font-bold text-stone/80 uppercase tracking-wider">
+              O Opción 2: Texto Extenso (Booking / WhatsApp)
+            </span>
+            <div className="h-px bg-stone-light/70 flex-1" />
           </div>
 
           {/* Nombre y Zona */}
@@ -131,7 +238,7 @@ export function ModalAsistenteIngesta({
                 type="text"
                 value={nombre}
                 onChange={(e) => setNombre(e.target.value)}
-                placeholder="Ej. Hotel Minca La Casona"
+                placeholder="Ej. Hostal La Selva"
                 className="w-full px-3.5 py-2 text-xs rounded-xl border border-stone-light/80 bg-white text-forest focus:outline-terra"
               />
             </div>
@@ -165,7 +272,7 @@ export function ModalAsistenteIngesta({
               rows={8}
               value={textoBruto}
               onChange={(e) => setTextoBruto(e.target.value)}
-              placeholder="Pega aquí el texto completo... Ej: 'Hotel Minca La Casona, WhatsApp 3155193679, piscina, colibríes, habitación doble $190.000 con baño privado...'"
+              placeholder="Pega aquí el texto copiado de Booking, Airbnb o WhatsApp (incluye descripción, servicios, habitaciones y tarifas)..."
               className="w-full p-3.5 text-xs rounded-2xl border border-stone-light/80 bg-white text-forest focus:outline-terra font-sans leading-relaxed resize-none"
             />
           </div>

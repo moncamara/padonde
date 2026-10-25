@@ -5,9 +5,11 @@ import Image from "next/image";
 import { Link, useRouter } from "@/i18n/routing";
 import { ModalEditarHospedaje } from "./ModalEditarHospedaje";
 import { ModalAsistenteIngesta } from "./ModalAsistenteIngesta";
+import { ModalAlertaDuplicado } from "./ModalAlertaDuplicado";
 import { ModalNotificarAliado, type EventoNotificarData } from "../ModalNotificarAliado";
-import { toggleEventoActivoAction } from "../actions";
+import { toggleEventoActivoAction, investigarHospedajeAction } from "../actions";
 import { ToggleDestacadoButton } from "../ToggleDestacadoButton";
+import { parsearLineaRapida, buscarCoincidenciaHospedaje } from "@/lib/hospedajeParser";
 
 interface AdminHospedajesListProps {
   hospedajes: any[];
@@ -30,12 +32,124 @@ export function AdminHospedajesList({
 
   const [modalAbierto, setModalAbierto] = useState(false);
   const [asistenteAbierto, setAsistenteAbierto] = useState(false);
+  const [lineaRapida, setLineaRapida] = useState("");
+  const [isInvestigando, setIsInvestigando] = useState(false);
   const [hospedajeEnEdicion, setHospedajeEnEdicion] = useState<any | null>(null);
   const [hospedajeANotificar, setHospedajeANotificar] = useState<EventoNotificarData | null>(null);
+
+  // Estado para alertar si se detecta un posible duplicado antes de crear
+  const [alertaDuplicado, setAlertaDuplicado] = useState<{
+    coincidencia: any;
+    nombreIngresado: string;
+    telefonoIngresado: string;
+    lineaPendiente: string;
+  } | null>(null);
 
   const abrirNuevo = () => {
     setHospedajeEnEdicion(null);
     setModalAbierto(true);
+  };
+
+  const ejecutarInvestigacion = async (input: string) => {
+    setIsInvestigando(true);
+    try {
+      const res = await investigarHospedajeAction({
+        linea: input,
+      });
+
+      if (res.success && res.borrador) {
+        setHospedajeEnEdicion(res.borrador);
+        setModalAbierto(true);
+        setLineaRapida("");
+      } else {
+        // Fallback local seguro
+        const parsed = parsearLineaRapida(input);
+        const nuevoBorrador = {
+          id: `temp-${Date.now()}`,
+          nombreNegocio: parsed.nombreNegocio || "Nuevo Hospedaje",
+          nombrePropietario: parsed.nombrePropietario || "",
+          whatsapp: parsed.telefono || "",
+          titulo: `🏡 ${parsed.nombreNegocio || "Nuevo Hospedaje"} — Refugio Natural 🌿`,
+          descripcion: `Ubicado en el entorno mágico de la Sierra Nevada y el Caribe colombiano. Espacio perfecto para descansar y reconectar con la naturaleza.`,
+          zonaSlug: "minca",
+          destacado: false,
+          negocio: {
+            nombre: parsed.nombreNegocio || "Nuevo Hospedaje",
+            whatsapp: parsed.telefono || "",
+          },
+          metadata_hospedaje: {
+            contacto_propietario: parsed.nombrePropietario || undefined,
+            habitaciones: [
+              {
+                id: `hab-${Date.now()}`,
+                titulo: "Habitación Estándar",
+                descripcion: "Cama doble, baño privado y ventilador.",
+                precio_noche_cop: 120000,
+                capacidad_max: 2,
+                fotos: [],
+                badges: [
+                  { icono: "🚿", texto: "Baño privado" },
+                  { icono: "🍳", texto: "Desayuno incluido" },
+                ],
+              },
+            ],
+          },
+        };
+        setHospedajeEnEdicion(nuevoBorrador);
+        setModalAbierto(true);
+        setLineaRapida("");
+      }
+    } catch (err) {
+      console.error("Error al investigar hospedaje:", err);
+      const parsed = parsearLineaRapida(input);
+      setHospedajeEnEdicion({
+        id: `temp-${Date.now()}`,
+        nombreNegocio: parsed.nombreNegocio || "Nuevo Hospedaje",
+        nombrePropietario: parsed.nombrePropietario || "",
+        whatsapp: parsed.telefono || "",
+        titulo: `🏡 ${parsed.nombreNegocio || "Nuevo Hospedaje"} — Refugio Natural 🌿`,
+        descripcion: `Ubicado en el entorno mágico de la Sierra Nevada y el Caribe colombiano.`,
+        zonaSlug: "minca",
+        destacado: false,
+        negocio: {
+          nombre: parsed.nombreNegocio || "Nuevo Hospedaje",
+          whatsapp: parsed.telefono || "",
+        },
+        metadata_hospedaje: {
+          contacto_propietario: parsed.nombrePropietario || undefined,
+          habitaciones: [],
+        },
+      });
+      setModalAbierto(true);
+      setLineaRapida("");
+    } finally {
+      setIsInvestigando(false);
+    }
+  };
+
+  const handleProcesarLineaRapida = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const input = lineaRapida.trim();
+    if (!input || isInvestigando) return;
+
+    // Detectar si el nombre o teléfono ya coincide con uno existente
+    const parsed = parsearLineaRapida(input);
+    const coincidencia = buscarCoincidenciaHospedaje(
+      { nombre: parsed.nombreNegocio, telefono: parsed.telefono },
+      listaHospedajes
+    );
+
+    if (coincidencia) {
+      setAlertaDuplicado({
+        coincidencia,
+        nombreIngresado: parsed.nombreNegocio || input,
+        telefonoIngresado: parsed.telefono,
+        lineaPendiente: input,
+      });
+      return;
+    }
+
+    await ejecutarInvestigacion(input);
   };
 
   const abrirEditar = (hosp: any) => {
@@ -84,14 +198,14 @@ export function AdminHospedajesList({
           </p>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap self-start sm:self-auto">
+        <div className="flex items-center gap-2.5 flex-wrap self-start sm:self-auto">
           <button
             onClick={() => setAsistenteAbierto(true)}
-            className="px-4 py-2.5 bg-terra text-white font-sans text-xs font-semibold rounded-2xl hover:bg-terra-dark active:scale-95 transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
-            title="Pegar texto de Booking, WhatsApp o Instagram para estructurar automáticamente la ficha"
+            className="px-4 py-2.5 bg-terra/10 hover:bg-terra/20 text-terra border border-terra/30 font-sans text-xs font-semibold rounded-2xl active:scale-95 transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
+            title="Pegar texto extenso de Booking, WhatsApp o Instagram para estructurar automáticamente"
           >
-            <span>✨</span>
-            <span>Asistente Rápido</span>
+            <span>📋</span>
+            <span>Pegar Texto Completo</span>
           </button>
 
           <button
@@ -99,10 +213,52 @@ export function AdminHospedajesList({
             className="px-4 py-2.5 bg-forest text-cream font-sans text-xs font-semibold rounded-2xl hover:bg-forest-dark active:scale-95 transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
           >
             <span>➕</span>
-            <span>Nuevo Hospedaje</span>
+            <span>Nuevo en Blanco</span>
           </button>
         </div>
       </div>
+
+      {/* Barra de Ingesta Rápida (1 Línea: Teléfono, Propietario y Nombre) */}
+      <form
+        onSubmit={handleProcesarLineaRapida}
+        className="bg-cream/90 backdrop-blur-sm border border-stone-light/90 p-3 sm:p-4 rounded-3xl shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 transition-all focus-within:border-terra focus-within:ring-2 focus-within:ring-terra/20"
+      >
+        <div className="flex items-center gap-2 shrink-0 px-1">
+          <span className="text-xl">⚡</span>
+          <div>
+            <span className="text-xs font-bold text-forest block">Ingesta Rápida (1 Línea)</span>
+            <span className="text-[10px] text-stone block">Pega teléfono, propietario y hospedaje</span>
+          </div>
+        </div>
+
+        <div className="flex-1 relative">
+          <input
+            type="text"
+            value={lineaRapida}
+            onChange={(e) => setLineaRapida(e.target.value)}
+            placeholder="Ej: 3106436667 Candelaria - Brisas del Mar"
+            className="w-full bg-white text-forest text-xs rounded-2xl border border-stone-light/80 px-3.5 py-2.5 placeholder:text-stone/60 focus:outline-none focus:border-terra shadow-inner font-sans"
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={isInvestigando}
+          className="bg-terra hover:bg-terra-dark text-white text-xs font-semibold px-4 py-2.5 rounded-2xl transition-all active:scale-95 shadow-sm flex items-center justify-center gap-1.5 shrink-0 cursor-pointer disabled:opacity-60 disabled:cursor-wait"
+        >
+          {isInvestigando ? (
+            <>
+              <span className="animate-spin inline-block">⏳</span>
+              <span>Investigando...</span>
+            </>
+          ) : (
+            <>
+              <span>🪄</span>
+              <span>Procesar y Abrir</span>
+            </>
+          )}
+        </button>
+      </form>
 
       {/* Lista de Hospedajes */}
       {listaHospedajes.length === 0 ? (
@@ -272,8 +428,13 @@ export function AdminHospedajesList({
       {/* Modal Formulario de Creación / Edición */}
       {modalAbierto && (
         <ModalEditarHospedaje
+          key={
+            hospedajeEnEdicion?.id ||
+            (hospedajeEnEdicion ? `draft-${hospedajeEnEdicion.nombreNegocio}` : "nuevo")
+          }
           hospedaje={hospedajeEnEdicion}
           zonas={zonas}
+          hospedajesExistentes={listaHospedajes}
           onClose={() => setModalAbierto(false)}
           onDeleted={handleDeleted}
         />
@@ -294,6 +455,28 @@ export function AdminHospedajesList({
         isOpen={Boolean(hospedajeANotificar)}
         onClose={() => setHospedajeANotificar(null)}
       />
+
+      {/* Modal de Alerta de Duplicado Detectado */}
+      {alertaDuplicado && (
+        <ModalAlertaDuplicado
+          coincidencia={alertaDuplicado.coincidencia}
+          nombreIngresado={alertaDuplicado.nombreIngresado}
+          telefonoIngresado={alertaDuplicado.telefonoIngresado}
+          onEditarExistente={() => {
+            const exp = alertaDuplicado.coincidencia;
+            setAlertaDuplicado(null);
+            setHospedajeEnEdicion(exp);
+            setModalAbierto(true);
+            setLineaRapida("");
+          }}
+          onContinuarCreando={() => {
+            const pendiente = alertaDuplicado.lineaPendiente;
+            setAlertaDuplicado(null);
+            ejecutarInvestigacion(pendiente);
+          }}
+          onCancelar={() => setAlertaDuplicado(null)}
+        />
+      )}
     </div>
   );
 }
