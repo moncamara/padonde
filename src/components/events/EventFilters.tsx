@@ -92,7 +92,7 @@ export function EventFilters({
             className={[
               "flex-shrink-0 px-4 py-2 rounded-full text-sm font-sans font-medium transition-all duration-150 cursor-pointer",
               tiempoActivo === id
-                ? "bg-terra text-white shadow-xs"
+                ? "bg-forest text-cream shadow-xs font-semibold"
                 : "border border-stone-light/80 bg-white/40 text-stone hover:border-forest hover:text-forest",
             ].join(" ")}
           >

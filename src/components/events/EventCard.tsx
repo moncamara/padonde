@@ -23,7 +23,13 @@ interface EventCardProps {
  */
 export function EventCard({ evento: rawEvento, zona, priority = false }: EventCardProps) {
   const locale = useLocale();
-  const evento = getEventoTraducido(rawEvento, locale);
+  const evento = rawEvento.traducciones?.[locale]?.titulo
+    ? {
+        ...rawEvento,
+        titulo: rawEvento.traducciones[locale].titulo,
+        descripcion: rawEvento.traducciones[locale].descripcion ?? rawEvento.descripcion,
+      }
+    : getEventoTraducido(rawEvento, locale);
 
   const tCard = useTranslations("eventCard");
   const tCat = useTranslations("categories");

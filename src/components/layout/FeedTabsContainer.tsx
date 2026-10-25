@@ -26,15 +26,7 @@ export function FeedTabsContainer({
 }: FeedTabsContainerProps) {
   const t = useTranslations("essentialServices");
   const searchParams = useSearchParams();
-  const [tabActiva, setTabActiva] = useState<"eventos" | "servicios">(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const saved = sessionStorage.getItem("padonde_tab_activa");
-        if (saved === "eventos" || saved === "servicios") return saved;
-      } catch {}
-    }
-    return "eventos";
-  });
+  const [tabActiva, setTabActiva] = useState<"eventos" | "servicios">("eventos");
 
   useEffect(() => {
     const urlTab = searchParams.get("tab");
@@ -42,6 +34,13 @@ export function FeedTabsContainer({
       setTabActiva(urlTab);
       try {
         sessionStorage.setItem("padonde_tab_activa", urlTab);
+      } catch {}
+    } else {
+      try {
+        const saved = sessionStorage.getItem("padonde_tab_activa");
+        if (saved === "eventos" || saved === "servicios") {
+          setTabActiva(saved);
+        }
       } catch {}
     }
   }, [searchParams]);

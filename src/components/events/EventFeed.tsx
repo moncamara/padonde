@@ -61,27 +61,22 @@ export function EventFeed({ eventos, zona, configTerritorial }: EventFeedProps) 
   const tFilters = useTranslations("filters");
   const locale = useLocale();
 
-  const [filtroTiempo, setFiltroTiempoState] = useState<FiltroTiempo>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const saved = sessionStorage.getItem("padonde_filtro_tiempo");
-        if (saved && (saved === "hoy" || saved === "fin_de_semana" || saved === "proximos")) {
-          return saved as FiltroTiempo;
-        }
-      } catch {}
-    }
-    return "hoy";
-  });
+  const [filtroTiempo, setFiltroTiempoState] = useState<FiltroTiempo>("hoy");
+  const [filtroCategoria, setFiltroCategoriaState] = useState<CategoriaEvento | null>(null);
 
-  const [filtroCategoria, setFiltroCategoriaState] = useState<CategoriaEvento | null>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const saved = sessionStorage.getItem("padonde_filtro_categoria");
-        if (saved) return saved as CategoriaEvento;
-      } catch {}
-    }
-    return null;
-  });
+  // Restaurar filtros previamente seleccionados solo tras la hidratación en el cliente
+  useEffect(() => {
+    try {
+      const savedTiempo = sessionStorage.getItem("padonde_filtro_tiempo");
+      if (savedTiempo && (savedTiempo === "hoy" || savedTiempo === "fin_de_semana" || savedTiempo === "proximos" || savedTiempo.startsWith("20"))) {
+        setFiltroTiempoState(savedTiempo as FiltroTiempo);
+      }
+      const savedCat = sessionStorage.getItem("padonde_filtro_categoria");
+      if (savedCat) {
+        setFiltroCategoriaState(savedCat as CategoriaEvento);
+      }
+    } catch {}
+  }, []);
 
   const setFiltroTiempo = (t: FiltroTiempo) => {
     setFiltroTiempoState(t);
