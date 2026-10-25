@@ -15,6 +15,9 @@ export function ZonaPersistence({ zonaSlug }: ZonaPersistenceProps) {
     try {
       localStorage.setItem("padonde_zona", zonaSlug);
       document.cookie = `padonde_zona=${zonaSlug}; path=/; max-age=31536000; SameSite=Lax`;
+      if (typeof document !== "undefined") {
+        document.documentElement.setAttribute("data-zona", zonaSlug);
+      }
     } catch {
       // Ignorar fallos de almacenamiento en modos restringidos
     }

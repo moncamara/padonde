@@ -172,7 +172,7 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
   };
 
   return (
-    <DetailSlideWrapper>
+    <DetailSlideWrapper zonaSlug={zonaSlug}>
       {/* Datos estructurados JSON-LD para Google Search Events */}
       <script
         type="application/ld+json"

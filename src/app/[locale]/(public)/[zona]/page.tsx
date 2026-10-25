@@ -156,7 +156,7 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
   };
 
   return (
-    <main className="min-h-screen bg-cream page-enter">
+    <main data-zona={zonaSlug} className="min-h-screen bg-cream page-enter">
       {/* Datos estructurados JSON-LD para Google Search */}
       <script
         type="application/ld+json"
@@ -193,7 +193,9 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
 
         <div className="pt-4">
           <p className="font-sans text-sm text-stone-dark inline-flex items-center justify-center gap-1.5 flex-wrap">
-            <span className="text-base select-none">🌿</span>
+            <span className="text-base select-none">
+              {zonaSlug === "mendihuaca" ? "🌊" : "🌿"}
+            </span>
             <span className="font-medium">{tFooter("cta", { zona: zona.nombre })}</span>
             <a
               href={waComercialLink}

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 interface DetailSlideWrapperProps {
   children: React.ReactNode;
+  zonaSlug?: string;
 }
 
 /**
@@ -11,7 +12,7 @@ interface DetailSlideWrapperProps {
  * Una vez completados los 280ms de entrada, libera el transform para que los elementos
  * fixed (barra superior y sticky CTA inferior) mantengan un comportamiento 100% nativo.
  */
-export function DetailSlideWrapper({ children }: DetailSlideWrapperProps) {
+export function DetailSlideWrapper({ children, zonaSlug }: DetailSlideWrapperProps) {
   const [isEntering, setIsEntering] = useState(() => {
     if (typeof window !== "undefined") {
       try {
@@ -38,6 +39,7 @@ export function DetailSlideWrapper({ children }: DetailSlideWrapperProps) {
   return (
     <div
       id="detail-page-wrapper"
+      data-zona={zonaSlug}
       className={[
         "min-h-screen bg-cream pb-32",
         isEntering ? "animate-slide-in-right" : "",

@@ -69,7 +69,7 @@ export function FeedTabsContainer({
               : "text-stone hover:text-forest",
           ].join(" ")}
         >
-          <span>🌿</span>
+          <span>{zona === "mendihuaca" ? "🌊" : "🌿"}</span>
           <span className="truncate">{t("tabCartelera")}</span>
         </button>
 

@@ -66,7 +66,11 @@ export function ZonaHeader({ zonaNombre, zonaSlug, locale }: ZonaHeaderProps) {
               </h1>
             </AdminSecretTrigger>
             <p className="font-sans text-[11px] sm:text-xs text-stone mt-0.5 truncate">
-              {tHeader("subtitle", { zona: zonaNombre })}
+              {zonaSlug === "mendihuaca"
+                ? tHeader("subtitleMendihuaca")
+                : zonaSlug === "minca"
+                ? tHeader("subtitleMinca")
+                : tHeader("subtitle", { zona: zonaNombre })}
             </p>
           </div>
 
@@ -90,7 +94,7 @@ export function ZonaHeader({ zonaNombre, zonaSlug, locale }: ZonaHeaderProps) {
               </button>
 
               <ShareButton
-                title={`PaDónde 🌿 Cartelera de ${zonaNombre}`}
+                title={`PaDónde ${zonaSlug === "mendihuaca" ? "🌊" : "🌿"} Cartelera de ${zonaNombre}`}
                 text={`Descubre planes, eventos, rumba, hospedajes en ${zonaNombre} - PaDónde`}
                 url={`https://www.padonde.lat/${locale}/${zonaSlug}`}
                 zonaNombre={zonaNombre}
@@ -199,6 +203,7 @@ export function ZonaHeader({ zonaNombre, zonaSlug, locale }: ZonaHeaderProps) {
             role="dialog"
             aria-modal="true"
             aria-label="Destinos PaDónde"
+            data-zona={zonaSlug}
             className={`fixed top-0 right-0 bottom-0 z-[101] w-80 max-w-[85vw] h-full bg-[#FAF7F2] text-stone-dark border-l border-stone-light/80 shadow-2xl flex flex-col justify-between p-6 overflow-y-auto transform transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform ${
               isMenuOpen ? "translate-x-0" : "translate-x-full"
             }`}
