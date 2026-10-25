@@ -846,25 +846,51 @@ export async function eliminarAliadoAdminAction(negocioId: string) {
       return { success: false, error: "Debes iniciar sesión para eliminar." };
     }
 
-    // 1. Eliminar primero eventos asociados (garantiza limpieza completa)
-    const { error: errorEventos } = await supabase
+    // 1. Verificar si el aliado tiene eventos asociados
+    const { data: eventosAsociados } = await supabase
       .from("eventos")
-      .delete()
+      .select("id")
       .eq("negocio_id", negocioId);
 
-    if (errorEventos) {
-      console.warn("Advertencia al eliminar eventos del negocio:", errorEventos);
+    const tieneEventos = eventosAsociados && eventosAsociados.length > 0;
+
+    // Si tiene eventos, eliminamos solo los eventos de este aliado específico
+    if (tieneEventos) {
+      const { error: errorEventos } = await supabase
+        .from("eventos")
+        .delete()
+        .eq("negocio_id", negocioId);
+
+      if (errorEventos) {
+        console.warn("Advertencia al eliminar eventos del negocio:", errorEventos);
+      }
     }
 
-    // 2. Eliminar el registro del negocio
-    const { error: errorNegocio } = await supabase
+    // 2. Eliminar el registro del negocio verificando que la fila haya sido removida
+    const { data: deletedRows, error: errorNegocio } = await supabase
       .from("negocios")
       .delete()
-      .eq("id", negocioId);
+      .eq("id", negocioId)
+      .select("id");
 
     if (errorNegocio) {
       console.error("Error al eliminar negocio:", errorNegocio);
       return { success: false, error: errorNegocio.message };
+    }
+
+    // Si la fila no se borró físicamente (por restricción RLS en Supabase):
+    if (!deletedRows || deletedRows.length === 0) {
+      // Como medida de seguridad inmediata para que no aparezca en pantalla, lo desactivamos:
+      await supabase
+        .from("negocios")
+        .update({ activo: false })
+        .eq("id", negocioId);
+
+      revalidatePath(`/[locale]/admin/aliados`, "page");
+      return {
+        success: false,
+        error: "Supabase protegió el registro por políticas de seguridad (RLS). Para eliminarlo permanentemente, ejecuta el script SQL provisto en el SQL Editor de Supabase.",
+      };
     }
 
     revalidatePath(`/[locale]/admin`, "page");
@@ -1079,25 +1105,43 @@ export async function guardarHospedajeAction(input: GuardarHospedajeInput) {
       return { success: false, error: "Zona no válida o inactiva." };
     }
 
-    // 2. Buscar o crear negocio (aliado de hospedaje)
+    // 2. Buscar o crear negocio (aliado de hospedaje) con prevención estricta de duplicados
     let negocioId = "";
     let cleanPhone = input.whatsapp.replace(/\D/g, "");
     if (cleanPhone.length === 10 && cleanPhone.startsWith("3")) {
       cleanPhone = `57${cleanPhone}`;
     }
+    const nombreLimpio = input.nombreNegocio.trim();
 
-    const { data: existingNegocio } = await supabase
-      .from("negocios")
-      .select("id")
-      .eq("whatsapp", cleanPhone)
-      .maybeSingle();
+    // 2.1 Buscar primero por teléfono exacto
+    let existingNegocio: { id: string } | null = null;
+    if (cleanPhone) {
+      const { data: porTel } = await supabase
+        .from("negocios")
+        .select("id")
+        .eq("whatsapp", cleanPhone)
+        .maybeSingle();
+      if (porTel) existingNegocio = porTel;
+    }
+
+    // 2.2 Si no coincidió por teléfono, buscar por nombre exacto dentro de la misma zona
+    if (!existingNegocio) {
+      const { data: porNombre } = await supabase
+        .from("negocios")
+        .select("id")
+        .eq("zona_id", zona.id)
+        .ilike("nombre", nombreLimpio)
+        .maybeSingle();
+      if (porNombre) existingNegocio = porNombre;
+    }
 
     if (existingNegocio) {
       negocioId = existingNegocio.id;
       await supabase
         .from("negocios")
         .update({
-          nombre: input.nombreNegocio.trim(),
+          nombre: nombreLimpio,
+          whatsapp: cleanPhone || undefined,
           instagram: input.instagram?.trim() || null,
           categoria: "hospedaje",
         })
@@ -1107,7 +1151,8 @@ export async function guardarHospedajeAction(input: GuardarHospedajeInput) {
         .from("negocios")
         .insert({
           zona_id: zona.id,
-          nombre: input.nombreNegocio.trim(),
+          user_id: user.id, // Vinculado al admin para permitir edición y borrado
+          nombre: nombreLimpio,
           whatsapp: cleanPhone,
           instagram: input.instagram?.trim() || null,
           categoria: "hospedaje",
