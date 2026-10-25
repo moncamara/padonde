@@ -84,9 +84,15 @@ Queremos darte la bienvenida con *15 días de cortesía total (prueba 100% gratu
 🗓️ *Reglas claras de activación:*
 • Tu periodo de cortesía va desde hoy hasta el *${fechaLimite}*.
 • A partir del *${fechaLimite}*, se liquidará el primer ciclo de visibilidad.
-• Nuestro plan estándar más rentable es el *Trimestral* por solo *$125.000 COP* *(equivale a menos de $42.000/mes)* frente al plan mensual suelto de $50.000 COP.
+• Nuestro plan estándar más rentable es el *Trimestral* y va asociado al número de habitaciones y/o espacios para rentar.
 
-🎶 *Add-on de Eventos & Rumba:* Si organizas noches acústicas, yoga matutino o DJ sets, puedes fijar tu evento en el puesto #1 de la Cartelera de ${destinoNombre} por solo *$30.000 COP por semana completa*.
+Los pagos son trimestrales de la siguiente forma:
+🏨 1-5 habs $125.000 
+🏨 6-10 hab $200.000
+🏨 11-20 hab $300.000
+🏨 +20 habs $400.000
+
+🎶 *Add-on de Eventos & Rumba:* Si organizas noches acústicas, yoga matutino o DJ sets, puedes fijar tu evento en la Cartelera de ${destinoNombre} por solo *$30.000 COP por semana completa*.
 
 Por favor entra a tu enlace, confirma que tus fotos y datos estén perfectos, y seguimos impulsando tus reservas directas. ¡Un gran abrazo y buenas olas! 🌊✨`;
 }
