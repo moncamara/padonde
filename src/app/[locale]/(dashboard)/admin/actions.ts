@@ -1803,65 +1803,49 @@ async function buscarFotosHospedajeWeb(
     })
     .trim();
 
-  const fetchDDG = async (query: string): Promise<string[]> => {
+  const esOnVacation = nombreLimpio.toLowerCase().includes("on vacation");
+
+  // Motor 1: Bing Images Async (Rápido, 1 solo GET, sin bloqueo de bot en Vercel)
+  const fetchBing = async (query: string): Promise<string[]> => {
     try {
       const cleanQ = sanitizeQuery(query);
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 6500);
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
 
-      const r1 = await fetch(
-        `https://duckduckgo.com/?q=${encodeURIComponent(cleanQ)}&iax=images&ia=images`,
-        {
-          headers: {
-            "User-Agent":
-              "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-            Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-            "Accept-Language": "es-CO,es;q=0.9,en;q=0.8",
-          },
-          signal: controller.signal,
-        }
-      );
-      const html = await r1.text();
-      const vqdMatch = html.match(/vqd=["']?([0-9a-zA-Z_-]+)["']?/);
-      if (!vqdMatch) {
-        clearTimeout(timeoutId);
-        return [];
-      }
-
-      const imgUrl = `https://duckduckgo.com/i.js?l=us-en&o=json&q=${encodeURIComponent(
-        cleanQ
-      )}&vqd=${vqdMatch[1]}&f=,,,;&p=1`;
-
-      const r2 = await fetch(imgUrl, {
+      const url = `https://www.bing.com/images/async?q=${encodeURIComponent(cleanQ)}&first=0&count=35&scenario=ImageBasicHover&datsrc=N_I&layout=RowBased&mmasync=1`;
+      const res = await fetch(url, {
         headers: {
           "User-Agent":
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-          Referer: "https://duckduckgo.com/",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+          Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          "Accept-Language": "es-CO,es;q=0.9,en;q=0.8",
         },
         signal: controller.signal,
       });
       clearTimeout(timeoutId);
 
-      if (!r2.ok) return [];
-      const text = await r2.text();
-      let data: any;
-      try {
-        data = JSON.parse(text);
-      } catch {
-        return [];
-      }
+      if (!res.ok) return [];
+      const html = await res.text();
+      const matches = Array.from(html.matchAll(/murl&quot;:&quot;(https:[^&"]+)&quot;/g)).map((m) => m[1]);
 
-      return (data.results || [])
-        .map((r: any) => r.image)
-        .filter(
-          (u: any) =>
-            typeof u === "string" &&
-            u.startsWith("http") &&
-            !u.includes("favicon") &&
-            !u.endsWith(".svg") &&
-            !u.includes("icon") &&
-            !u.includes("logo")
-        )
+      return matches
+        .filter((u) => {
+          const l = u.toLowerCase();
+          // Excluir On Vacation si el hotel buscado no es On Vacation
+          if (!esOnVacation && (l.includes("onvacation") || l.includes("on-vacation") || l.includes("mireservaonvacation"))) {
+            return false;
+          }
+          return (
+            !l.includes("logo") &&
+            !l.includes("icon") &&
+            !l.includes("avatar") &&
+            !l.includes("banner") &&
+            !l.endsWith(".svg") &&
+            !l.includes("facebook.com") &&
+            !l.includes("fbsbx.com") &&
+            !l.includes("googleusercontent.com/img/b/")
+          );
+        })
         .map(optimizarUrlFotoHd);
     } catch {
       return [];
@@ -1872,36 +1856,19 @@ async function buscarFotosHospedajeWeb(
 
   try {
     const [generalPhotos, roomPhotos] = await Promise.all([
-      fetchDDG(`${nombreLimpio} ${zonaNombre} hotel hostal`),
-      fetchDDG(`${nombreLimpio} ${zonaNombre} habitacion room`),
+      fetchBing(`"${nombreLimpio}" ${zonaNombre} hotel`),
+      fetchBing(`"${nombreLimpio}" habitacion room`),
     ]);
 
     let todas = Array.from(new Set([...generalPhotos, ...roomPhotos]));
 
-    // Si la búsqueda estricta no trajo suficientes fotos, reintentar con el nombre exacto
-    if (todas.length < 3) {
-      const fallbackExtra = await fetchDDG(`${nombreLimpio} Colombia hotel`);
-      todas = Array.from(new Set([...todas, ...fallbackExtra]));
-    }
-
-    // Pool de respaldo regional de alta definición para asegurar que nunca quede en 0 fotos
+    // Si la búsqueda estricta con comillas no trajo nada, intentar consulta más amplia
     if (todas.length === 0) {
-      if (zona === "mendihuaca") {
-        todas = [
-          "https://cf.bstatic.com/xdata/images/hotel/max1024x768/576538872.jpg?k=01ab53103ee2eb91515a9294e53bc4121729743ad99e6d9b7a4484c2b7b19391&o=&hp=1",
-          "https://cf.bstatic.com/xdata/images/hotel/max1024x768/577227463.jpg?k=54908855ed6c1c21f18cddc963450558ad4a95c4ba14b13b77b6d960921eb92b&o=&hp=1",
-          "https://q-xx.bstatic.com/xdata/images/hotel/max1024x768/577227469.jpg?k=3e02aa23732609567c3bd68fa45bb357d1fbd77c5f90bb9efc9de289d83f3d93&o=",
-          "https://q-xx.bstatic.com/xdata/images/hotel/max1024x768/577227466.jpg?k=2a291bebca37d16225854becec4371e00b5ba362a3ee62351846ad1f4d282b26&o=",
-        ];
-      } else {
-        todas = [
-          "https://cf.bstatic.com/xdata/images/hotel/max1024x768/384061855.jpg?k=2976ed1736926e10a371242ce81e626685b5b2904ee91990c39ab99d821164f7&o=",
-          "https://cf.bstatic.com/xdata/images/hotel/max1024x768/58410452.jpg?k=43a37d58b580aa6a6b0341e7aece2b20cfdf113c3c7cc9f4e08d73f43d889f62&o=",
-          "https://cf.bstatic.com/xdata/images/hotel/max1024x768/127516879.jpg?k=a7b5199bd74935f6f344d0f56531c1feeead4f484fbd314141eff3a427191df0&o=",
-        ];
-      }
+      const fotosLibres = await fetchBing(`${nombreLimpio} ${zonaNombre} hotel habitacion`);
+      todas = Array.from(new Set(fotosLibres));
     }
 
+    // NUNCA inyectar fotos falsas de fallback: Si no se encuentran fotos auténticas, se devuelve vacío
     const fotoPortada = generalPhotos[0] || roomPhotos[0] || todas[0] || "";
     const fotosHabitaciones = roomPhotos.length > 0 ? roomPhotos : todas.slice(1);
 
