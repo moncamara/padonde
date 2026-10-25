@@ -101,7 +101,8 @@ export function ModalAsistenteIngesta({
   };
 
   const handleProcesar = async () => {
-    if (!textoBruto.trim()) {
+    const input = textoBruto.trim();
+    if (!input) {
       setError("Por favor pega algún texto, descripción o datos del hospedaje.");
       return;
     }
@@ -110,27 +111,40 @@ export function ModalAsistenteIngesta({
     setError(null);
 
     try {
-      const borrador = procesarTextoBrutoHospedaje(textoBruto, zonaSlug, nombre);
-
-      // Enriquecer con Gemini AI para lograr copy sensorial y mágico
-      const aiRes = await generarCopyHospedajeGeminiAction({
-        textoBruto,
-        nombreNegocio: borrador.nombreNegocio,
+      // 1. Invocar el motor autónomo de investigación profunda con web search y fotos reales
+      const res = await investigarHospedajeAction({
+        linea: input,
+        textoBruto: input,
+        nombreNegocio: nombre.trim() || undefined,
         zonaSlug,
       });
 
-      if (aiRes.success) {
-        if (aiRes.titulo) borrador.titulo = aiRes.titulo;
-        if (aiRes.descripcion) {
-          let descConDestacados = aiRes.descripcion;
-          if (aiRes.destacados && aiRes.destacados.length > 0) {
-            descConDestacados += "\n\n🌿 Destacados del lugar:\n" + aiRes.destacados.map((d) => `• ${d}`).join("\n");
-          }
-          borrador.descripcion = descConDestacados;
-        }
-      }
+      if (res.success && res.borrador) {
+        onParsed(res.borrador);
+      } else {
+        // Fallback enriquecido localmente si falla la red externa
+        const borrador = procesarTextoBrutoHospedaje(input, zonaSlug, nombre);
+        const aiRes = await generarCopyHospedajeGeminiAction({
+          textoBruto: input,
+          nombreNegocio: borrador.nombreNegocio,
+          zonaSlug,
+        });
 
-      onParsed(borrador);
+        if (aiRes.success) {
+          if (aiRes.titulo) borrador.titulo = aiRes.titulo;
+          if (aiRes.descripcion) {
+            let descConDestacados = aiRes.descripcion;
+            if (aiRes.destacados && aiRes.destacados.length > 0) {
+              descConDestacados +=
+                "\n\n🌿 Destacados del lugar:\n" +
+                aiRes.destacados.map((d) => `• ${d}`).join("\n");
+            }
+            borrador.descripcion = descConDestacados;
+          }
+        }
+
+        onParsed(borrador);
+      }
     } catch (err: any) {
       setError(err?.message || "Ocurrió un error al procesar el texto.");
       setIsProcesando(false);

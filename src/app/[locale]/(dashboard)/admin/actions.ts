@@ -6,12 +6,12 @@ import { parseLocalColombiaAISO } from "@/lib/utils";
 import { traducirEventoCompleto } from "@/lib/translations/translator";
 import type { CategoriaEvento, PlanNegocio, CategoriaServicioEsencial, ServicioEsencial } from "@/lib/types";
 import sharp from "sharp";
-import { parsearLineaRapida } from "@/lib/hospedajeParser";
+import { parsearLineaRapida, procesarTextoBrutoHospedaje } from "@/lib/hospedajeParser";
 import {
   DRAFT_PILOTO_MOMPE_BEACH,
   DRAFT_PILOTO_LUMA_BY_ZAKUA,
 } from "@/lib/mock/pilotoMompeBeach";
-import { optimizarUrlFotoHd } from "@/lib/fotoUtils";
+import { optimizarUrlFotoHd, extraerYOptimizarUrls } from "@/lib/fotoUtils";
 
 export interface AdminPublishInput {
   negocioId?: string;
@@ -1764,7 +1764,9 @@ Instrucciones:
 }
 
 export interface InvestigarHospedajeInput {
-  linea: string;
+  linea?: string;
+  textoBruto?: string;
+  nombreNegocio?: string;
   zonaSlug?: string;
 }
 
@@ -1883,61 +1885,79 @@ export async function investigarHospedajeAction(
   input: InvestigarHospedajeInput
 ): Promise<InvestigarHospedajeResult> {
   try {
-    const rawInput = input.linea.trim();
+    const rawInput = (input.textoBruto || input.linea || "").trim();
     if (!rawInput) {
-      return { success: false, error: "Por favor ingresa una línea con datos del hospedaje." };
+      return { success: false, error: "Por favor ingresa datos o texto del hospedaje." };
     }
 
-    const parsed = parsearLineaRapida(rawInput);
     const inputLower = rawInput.toLowerCase();
+    let nombreNegocio = (input.nombreNegocio || "").trim();
+    let nombrePropietario = "";
+    let whatsapp = "";
+    const zonaFinal = input.zonaSlug || (inputLower.includes("mendihuaca") ? "mendihuaca" : "minca");
 
-    // 1. Piloto 1: Mompe Beach (Datos indexados y verificados al 100%)
+    // 1. Detección Inteligente según longitud del texto recibido
+    if (rawInput.split("\n").length <= 2) {
+      const parsed = parsearLineaRapida(rawInput);
+      if (!nombreNegocio && parsed.nombreNegocio) nombreNegocio = parsed.nombreNegocio;
+      if (parsed.nombrePropietario) nombrePropietario = parsed.nombrePropietario;
+      if (parsed.telefono) whatsapp = parsed.telefono;
+    } else {
+      const parsedExtenso = procesarTextoBrutoHospedaje(rawInput, zonaFinal, nombreNegocio);
+      if (!nombreNegocio && parsedExtenso.nombreNegocio) nombreNegocio = parsedExtenso.nombreNegocio;
+      if (parsedExtenso.nombrePropietario) nombrePropietario = parsedExtenso.nombrePropietario;
+      if (parsedExtenso.whatsapp) whatsapp = parsedExtenso.whatsapp;
+    }
+
+    if (!nombreNegocio) {
+      nombreNegocio = "Hospedaje " + (zonaFinal === "mendihuaca" ? "Mendihuaca" : "Minca");
+    }
+
+    // 2. Piloto 1: Mompe Beach (Datos indexados y verificados al 100%)
     if (
       inputLower.includes("mompe") ||
       inputLower.includes("monpet") ||
-      parsed.telefono.includes("3204475264")
+      whatsapp.includes("3204475264") ||
+      rawInput.includes("3204475264")
     ) {
       return {
         success: true,
         borrador: {
           ...DRAFT_PILOTO_MOMPE_BEACH,
-          nombrePropietario: parsed.nombrePropietario || "Alfonso Cardona",
-          whatsapp: parsed.telefono || "573204475264",
-          nombreNegocio: parsed.nombreNegocio || "The Mompe Beach Hostal",
+          nombrePropietario: nombrePropietario || "Alfonso Cardona",
+          whatsapp: whatsapp || "573204475264",
+          nombreNegocio: nombreNegocio || "The Mompe Beach Hostal",
+          habitaciones: DRAFT_PILOTO_MOMPE_BEACH.metadata_hospedaje.habitaciones,
           metadata_hospedaje: {
             ...DRAFT_PILOTO_MOMPE_BEACH.metadata_hospedaje,
-            contacto_propietario: parsed.nombrePropietario || "Alfonso Cardona",
+            contacto_propietario: nombrePropietario || "Alfonso Cardona",
           },
         },
       };
     }
 
-    // 2. Piloto 2: Luma Hostal (Datos indexados y verificados al 100%)
+    // 3. Piloto 2: Luma Hostal (Datos indexados y verificados al 100%)
     if (
       inputLower.includes("luma") ||
       inputLower.includes("zakua") ||
-      parsed.telefono.includes("3226412608")
+      whatsapp.includes("3226412608") ||
+      rawInput.includes("3226412608")
     ) {
       return {
         success: true,
         borrador: {
           ...DRAFT_PILOTO_LUMA_BY_ZAKUA,
-          nombrePropietario: parsed.nombrePropietario || "Leidis",
-          whatsapp: parsed.telefono || "573226412608",
-          nombreNegocio: parsed.nombreNegocio || "Luma by Zakua",
+          nombrePropietario: nombrePropietario || "Leidis",
+          whatsapp: whatsapp || "573226412608",
+          nombreNegocio: nombreNegocio || "Luma by Zakua",
+          habitaciones: DRAFT_PILOTO_LUMA_BY_ZAKUA.metadata_hospedaje.habitaciones,
           metadata_hospedaje: {
             ...DRAFT_PILOTO_LUMA_BY_ZAKUA.metadata_hospedaje,
-            contacto_propietario: parsed.nombrePropietario || "Leidis",
+            contacto_propietario: nombrePropietario || "Leidis",
           },
         },
       };
     }
-
-    // 3. Investigación y Estructuración Autónoma para Cualquier Nuevo Hospedaje
-    const zonaFinal = input.zonaSlug || (inputLower.includes("mendihuaca") ? "mendihuaca" : "minca");
-    const nombreNegocio = parsed.nombreNegocio || "Nuevo Hospedaje";
-    const nombrePropietario = parsed.nombrePropietario || "";
-    const whatsapp = parsed.telefono || "";
     const mapsQuery = encodeURIComponent(
       `${nombreNegocio} ${zonaFinal === "mendihuaca" ? "Mendihuaca Santa Marta" : "Minca Santa Marta"}`
     );
@@ -2034,11 +2054,15 @@ Devuelve ÚNICAMENTE un JSON válido (sin backticks) con esta estructura:
       }
     }
 
-    // Pool de fotos de habitaciones encontradas
-    const poolFotos =
-      fotosWeb.fotosHabitaciones.length > 0
-        ? fotosWeb.fotosHabitaciones
-        : fotosWeb.todas;
+    // Pool de fotos encontradas (combinando texto y web)
+    const fotosDelTexto = extraerYOptimizarUrls(rawInput);
+    const poolFotos = Array.from(
+      new Set([
+        ...fotosDelTexto,
+        ...(fotosWeb.fotosHabitaciones.length > 0 ? fotosWeb.fotosHabitaciones : []),
+        ...fotosWeb.todas,
+      ])
+    );
 
     const baseHabitaciones = habitacionesDetectadas || [
       {
@@ -2107,6 +2131,7 @@ Devuelve ÚNICAMENTE un JSON válido (sin backticks) con esta estructura:
       reviewsGoogle: "",
       mapsUrl,
       imagenUrl: fotoPortadaFinal,
+      habitaciones: habitacionesFinales,
       negocio: {
         nombre: nombreNegocio,
         whatsapp,
