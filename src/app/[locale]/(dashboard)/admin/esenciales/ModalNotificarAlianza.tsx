@@ -105,7 +105,7 @@ Revisa tu enlace y cuéntanos si deseas actualizar algún horario o número. ¡M
 
 /**
  * Plantilla 3: Alianza Oficial de Transporte y Mototaxis
- * Enfoque: Canal Oficial, 0% comisión, stickers y habladores QR oficiales.
+ * Enfoque: Efecto de red (más masivo = más carreras), radar de eventos/dónde está la gente, 0% comisión, sello oficial contra desconfianza y sticker QR.
  */
 export function generarMensajeTransporteAlianza(
   nombreComercial: string,
@@ -117,24 +117,73 @@ export function generarMensajeTransporteAlianza(
   const destino = zonaNombre || (slug === "mendihuaca" ? "Mendihuaca" : "Minca");
   const anchor = servicioId ? `#servicio-${servicioId}` : "";
   const urlPublicacion = `https://www.padonde.lat/es/${slug}?tab=servicios${anchor}`;
+  const urlCartelera = `https://www.padonde.lat/es/${slug}`;
 
-  return `🛵 *¡Buenas tardes, muchachos de ${nombreComercial}! Un saludo de parte del equipo de PaDónde ${destino}.*
+  return `🛵 *¡Buenas tardes muchachos de ${nombreComercial}! Un saludo de parte de PaDónde ${destino}.*
 
-Ya dejamos su punto activo y verificado en la plataforma como el *Canal Oficial de Transporte y Mototaxis de ${destino}*:
-👉 *Revisen su ficha oficial aquí:* ${urlPublicacion}
+Ya dejamos su punto activo y verificado como la *Línea Oficial de Transporte y Mototaxis de ${destino}*:
+👉 *Miren su tarjeta en vivo aquí:* ${urlPublicacion}
 
-Aquí los turistas y visitantes que llegan a la entrada, al río o a los hostales consultan las tarifas de carreras y les escriben directo para pedir el servicio 📲✨
+Les queremos proponer una alianza donde ganamos todos, pensada para que a ustedes les caigan más carreras directas al bolsillo todos los días 📲💰
 
-🤝 *Bases de la Alianza Oficial:*
-1. *Cero comisiones y cero cobro:* No les cobramos mensualidad ni porcentaje por ninguna carrera. Todos los viajes que les salgan son 100% de ustedes.
-2. *Canal preferente:* Son la línea que la plataforma recomienda a extranjeros y locales para moverse seguro por ${destino}, Costeño, la entrada al Tayrona y el río.
-3. *El compromiso del gremio:* Llevar los stickers oficiales y habladores con el código QR de PaDónde en sus cascos y motos, para que los pasajeros escaneen la cartelera mientras viajan y sigamos moviendo el turismo del pueblo entre todos.
+🤝 *¿Cómo funciona el negocio para ustedes?*
 
-Les tenemos listo el material de stickers para entregárselos. Revisen el enlace y quedamos firmes para coordinar la entrega. ¡A rodar con toda! 🏁🌴`;
+1. *Cero comisiones ni cobros raros:*
+No les cobramos porcentaje ni mensualidad por carrera. Cada turista que los llame o les escriba al WhatsApp es 100% ganancia de ustedes.
+
+2. *Entre más masiva se vuelva PaDónde, más carreras les salen:*
+Los extranjeros no conocen las distancias. Cuando el turista ve en la app una fiesta en la playa, un restaurante o un tour al río, ¿a quién le pide la carrera? ¡A ustedes! Si el turista usa la app, ustedes tienen carreras de ida y de regreso aseguradas.
+
+3. *Su "Radar de Carreras" en tiempo real:*
+Ustedes mismos pueden abrir la cartelera (${urlCartelera}) todos los días para saber exactamente *dónde está la gente*: qué hostal tiene evento hoy, qué restaurante tiene noche de música y a qué horas termina la rumba para parquear las motos allá y recoger a los turistas que van saliendo.
+
+4. *Sello oficial que acaba con la desconfianza del gringo:*
+El turista extranjero a veces tiene miedo de subirse a una moto cualquiera o teme que le cobren de más. Al ver las tarifas de referencia y el sello de transporte oficial verificado, se montan tranquilos y no pierden 10 minutos regateando.
+
+🏁 *El único compromiso de parte de ustedes:*
+Que cada moto lleve el sticker o adhesivo QR oficial de PaDónde pegado en el casco, el tanque o el chaleco. Así, cada pasajero que lleven escanea la app en el camino, se entera de los planes del pueblo y los sigue llamando a ustedes para todos sus traslados.
+
+Les tenemos los stickers listos para entregárselos. Revisen el enlace y me confirman si los precios de referencia están al día para coordinar la entrega. ¡A rodar con toda! 🏁🌴✨`;
 }
 
 /**
- * Plantilla 4: Alianza Estándar Cortesía / Canje
+ * Plantilla 4: Alianza para Puntos de Efectivo, Corresponsales Bancarios y Cajeros
+ * Enfoque: Resolver el dolor #1 del turista (conseguir efectivo), aumentar transacciones/comisiones de retiro y ventas en tienda, afiche QR en caja.
+ */
+export function generarMensajeEfectivoBancosAlianza(
+  nombreComercial: string,
+  zonaSlug: string = "mendihuaca",
+  zonaNombre: string = "Mendihuaca",
+  servicioId?: string
+): string {
+  const slug = zonaSlug || "mendihuaca";
+  const destino = zonaNombre || (slug === "mendihuaca" ? "Mendihuaca" : "Minca");
+  const anchor = servicioId ? `#servicio-${servicioId}` : "";
+  const urlPublicacion = `https://www.padonde.lat/es/${slug}?tab=servicios${anchor}`;
+
+  return `💵 *¡Hola equipo de ${nombreComercial}! Un saludo especial desde PaDónde ${destino}.*
+
+Ya dejamos su punto registrado y verificado como el *Punto Oficial de Retiro de Efectivo y Corresponsal Bancario en ${destino}*:
+👉 *Miren su punto en la guía aquí:* ${urlPublicacion}
+
+En ${destino} el efectivo es la necesidad #1 de todo viajero nacional y extranjero (para pagar mototaxis, entradas, artesanías y consumos locales). 
+
+🌟 *¿Cómo los beneficia esta alianza?*
+1. *Llegada directa de turistas con necesidad de efectivo:*
+Los viajeros que abren PaDónde ven de inmediato sus horarios, ubicación exacta y qué bancos o redes manejan (Bancolombia, Efecty, Daviplata, etc.) para llegar directo a retirar con ustedes sin perderse.
+2. *Más transacciones y más ventas para su negocio:*
+Cada turista que va a retirar efectivo termina comprando bebidas, snacks o productos en su tienda, aumentando los ingresos diarios de su punto.
+3. *Cero costo por estar publicados:*
+Su presencia en la guía es 100% gratuita como servicio esencial para la comunidad.
+
+🤝 *El canje es muy sencillo:*
+Les entregamos un hablador o afiche con código QR oficial de PaDónde para colocar en su mostrador de atención o caja. Mientras los clientes esperan su turno o retiro, escanean el código para ver qué planes y restaurantes hay en ${destino}.
+
+Revisen el enlace y cuéntennos si sus horarios y servicios de retiro están al día para entregarles su material oficial. ¡Muchos éxitos con la temporada! 🌿💵🏪`;
+}
+
+/**
+ * Plantilla 5: Alianza Estándar Cortesía / Canje
  */
 export function generarMensajeAlianzaEsencial(
   nombreComercial: string,
@@ -171,7 +220,7 @@ Queremos pedirles un favor muy especial: ¿Podrían abrir el enlace y confirmarn
 ¡Un abrazo y muchos éxitos con esta alianza para impulsar el turismo en la región! 🌿✨`;
 }
 
-export type TipoPlantillaAlianza = "restaurante" | "comercio" | "transporte" | "estandar";
+export type TipoPlantillaAlianza = "restaurante" | "comercio" | "transporte" | "efectivo_bancos" | "estandar";
 
 export function ModalNotificarAlianza({
   servicio,
@@ -191,6 +240,14 @@ export function ModalNotificarAlianza({
 
     if (tipo === "transporte") {
       return generarMensajeTransporteAlianza(
+        servicio.nombre_comercial,
+        zonaSlug,
+        zonaNombre,
+        servicio.id
+      );
+    }
+    if (tipo === "efectivo_bancos") {
+      return generarMensajeEfectivoBancosAlianza(
         servicio.nombre_comercial,
         zonaSlug,
         zonaNombre,
@@ -230,6 +287,8 @@ export function ModalNotificarAlianza({
 
       if (cat === "transporte") {
         tipoDefecto = "transporte";
+      } else if (cat === "efectivo" || cat.includes("banco") || cat.includes("cajero")) {
+        tipoDefecto = "efectivo_bancos";
       } else if (cat === "comida" || cat === "gastronomia") {
         tipoDefecto = "restaurante";
       } else if (cat === "comercio" || cat === "artesanias" || cat === "servicios") {
@@ -328,7 +387,7 @@ export function ModalNotificarAlianza({
             <label className="font-semibold text-forest block">
               Tipo de Acuerdo / Plantilla:
             </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-1 rounded-2xl bg-stone-light/30 border border-stone-light/60">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 p-1 rounded-2xl bg-stone-light/30 border border-stone-light/60">
               <button
                 type="button"
                 onClick={() => handleCambiarPlantilla("restaurante")}
@@ -364,6 +423,17 @@ export function ModalNotificarAlianza({
               </button>
               <button
                 type="button"
+                onClick={() => handleCambiarPlantilla("efectivo_bancos")}
+                className={`py-1.5 px-1 rounded-xl text-[11px] font-semibold transition-all cursor-pointer text-center ${
+                  tipoPlantilla === "efectivo_bancos"
+                    ? "bg-emerald-700 text-white shadow-2xs"
+                    : "text-stone hover:text-emerald-900 hover:bg-white/50"
+                }`}
+              >
+                💵 Efectivo/Bancos
+              </button>
+              <button
+                type="button"
                 onClick={() => handleCambiarPlantilla("estandar")}
                 className={`py-1.5 px-1 rounded-xl text-[11px] font-semibold transition-all cursor-pointer text-center ${
                   tipoPlantilla === "estandar"
@@ -371,7 +441,7 @@ export function ModalNotificarAlianza({
                     : "text-stone hover:text-forest hover:bg-white/50"
                 }`}
               >
-                🤝 Cortesía
+                🤝 General
               </button>
             </div>
           </div>
