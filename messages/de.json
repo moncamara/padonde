@@ -42,7 +42,7 @@
     "featured": "Empfohlen",
     "perPerson": "Pro Person",
     "tipTitle": "PaDónde Tipp",
-    "tipContent": "Der Mobilfunkempfang in Minca kann in den Bergen schwanken. Wir empfehlen, den Gastgeber rechtzeitig zu kontaktieren und im Voraus zu reservieren.",
+    "tipContent": "Der Mobilfunkempfang in {zona} kann je nach Gebiet schwanken. Wir empfehlen, den Gastgeber rechtzeitig zu kontaktieren und im Voraus zu reservieren.",
     "noDescription": "Für diesen Plan ist noch keine ausführliche Beschreibung verfügbar. Bei Fragen kannst du dich direkt an den Gastgeber wenden.",
     "until": "Bis"
   },

@@ -388,7 +388,7 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
               <span>🌿</span> {tDetail("tipTitle")}:
             </p>
             <p>
-              {tDetail("tipContent")}
+              {tDetail("tipContent", { zona: zona.nombre })}
             </p>
           </div>
         </div>

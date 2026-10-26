@@ -42,7 +42,7 @@
     "featured": "Featured",
     "perPerson": "Per person",
     "tipTitle": "PaDónde Tip",
-    "tipContent": "Cell service in Minca can vary in the mountains. We recommend reaching out and confirming your booking in advance.",
+    "tipContent": "Cell service in {zona} can vary depending on the area. We recommend reaching out and confirming your booking in advance.",
     "noDescription": "No detailed description is available yet. Feel free to contact the host directly via WhatsApp with any questions.",
     "until": "Until"
   },
