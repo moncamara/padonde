@@ -113,14 +113,20 @@ export async function extractVideoThumbnail(
               resolve(null);
               return;
             }
+            const mimeType = blob.type || "image/jpeg";
+            const ext = mimeType.includes("webp")
+              ? "webp"
+              : mimeType.includes("png")
+              ? "png"
+              : "jpg";
             const thumbnailFile = new File(
               [blob],
-              `poster-${Date.now()}.webp`,
-              { type: "image/webp" }
+              `poster-${Date.now()}.${ext}`,
+              { type: mimeType }
             );
             resolve(thumbnailFile);
           },
-          "image/webp",
+          "image/jpeg",
           0.85
         );
       } catch (e) {

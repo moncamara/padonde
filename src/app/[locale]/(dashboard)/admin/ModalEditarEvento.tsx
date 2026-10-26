@@ -591,6 +591,7 @@ export function ModalEditarEvento({
                     alt="Previsualización"
                     fill
                     className="object-cover"
+                    unoptimized
                   />
                 </div>
               ) : (

@@ -5,6 +5,7 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const nextConfig: NextConfig = {
   images: {
+    contentDispositionType: "inline",
     // Dominios permitidos para next/image con imágenes externas.
     remotePatterns: [
       {
