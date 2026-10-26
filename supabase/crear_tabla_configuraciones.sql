@@ -44,6 +44,11 @@ BEGIN
     END IF;
 END $$;
 
+-- 2b. Concesión explícita de permisos para Data API (Requerido por Supabase desde Oct 30)
+GRANT SELECT ON public.configuraciones TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.configuraciones TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.configuraciones TO service_role;
+
 -- 3. Sembrar la configuración inicial desde el archivo JSON de respaldo
 INSERT INTO public.configuraciones (clave, valor)
 VALUES ('config_territorial', '{
