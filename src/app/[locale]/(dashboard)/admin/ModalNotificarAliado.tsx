@@ -28,7 +28,8 @@ export type TipoMensajeAliado =
   | "bienvenida"
   | "revision"
   | "correccion"
-  | "propuesta";
+  | "propuesta"
+  | "difusion";
 
 /**
  * Formatea un número telefónico para lectura humana amigable (ej: +57 301 301 0194)
@@ -337,6 +338,48 @@ En PaDónde los viajeros buscan qué hacer hoy, mañana y los fines de semana, y
 Esta publicación estará activa y destacada como cortesía de apertura. Échenle una mirada a toda la cartelera en ${urlCartelera} y nos cuentan si desean ajustar cualquier detalle.
 
 ¡Un abrazo y muchos éxitos con este planazo! 🌿✨`;
+}
+
+/**
+ * Genera el mensaje para motivar al aliado a compartir su vitrina en Estados de WhatsApp e Instagram Stories.
+ * Diseñado con instrucciones paso a paso listas para copiar y pegar.
+ */
+export function generarMensajeDifusionRedesAliado(
+  negocioNombre: string,
+  tituloEvento: string,
+  eventoId: string,
+  zonaSlug?: string,
+  zonaNombre?: string,
+  whatsapp?: string
+): string {
+  const slug = zonaSlug || "minca";
+  const destinoNombre = zonaNombre || (slug === "mendihuaca" ? "Mendihuaca" : "Minca");
+  const urlPublicacion = `https://www.padonde.lat/es/${slug}/${eventoId}`;
+
+  return `🌿 *¡Hola ${negocioNombre}! Qué alegría saludarte desde PaDónde ${destinoNombre}.*
+
+Tu vitrina digital oficial ya está activa en vivo y lista para recibir a viajeros y turistas de la temporada 📲✨
+👉 *Enlace directo:* ${urlPublicacion}
+
+Queremos ayudarte a sacarle el máximo provecho desde hoy. Cuando los negocios comparten su ficha en sus redes y estados, sus propios clientes y huéspedes empiezan a compartirla con amigos y conocidos que están planeando venir a ${destinoNombre}.
+
+Te dejamos dos formas súper rápidas de moverlo hoy mismo:
+
+🟢 *1. En tus Estados de WhatsApp:*
+Sube una foto de tu lugar, cabaña o plato favorito y pega este texto en tu estado:
+_«¡Ya tenemos nuestra vitrina oficial en PaDónde ${destinoNombre}! 🌿 Conoce nuestras fotos, carta y reserva directo a nuestro WhatsApp sin comisiones aquí:_
+👉 ${urlPublicacion}»_
+
+📸 *2. En tus Historias de Instagram:*
+1. Sube una foto o video de tu lugar.
+2. Agrega el sticker de enlace (🔗) con tu link:
+   • *URL:* ${urlPublicacion}
+   • *Texto del sticker:* «Ver Vitrina Oficial 🌿» o «Reservar por WhatsApp 📲»
+3. ¡Y menciónanos para repostearte y darte más visibilidad!
+
+Cualquier viajero que toque el enlace podrá ver tus fotos en alta calidad, cambiar el idioma (inglés/francés/alemán) y escribirte directo al WhatsApp.
+
+¡Muchos éxitos y que se llenen esas reservas! 🚀🌊`;
 }
 
 /**
@@ -684,6 +727,17 @@ export function ModalNotificarAliado({
           telefono
         )
       );
+    } else if (tipo === "difusion") {
+      setMensaje(
+        generarMensajeDifusionRedesAliado(
+          evento.negocioNombre,
+          evento.titulo,
+          evento.id,
+          evento.zonaSlug,
+          evento.zonaNombre,
+          telefono
+        )
+      );
     } else {
       setMensaje(
         generarMensajeRevisionAliado(
@@ -816,9 +870,9 @@ export function ModalNotificarAliado({
             </div>
 
             <div className="flex items-center justify-between pt-1">
-              <span className="text-[11px] font-semibold text-stone">Gestión de Eventos & Cartelera:</span>
+              <span className="text-[11px] font-semibold text-stone">Seguimiento, Eventos & Redes:</span>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-1 bg-stone-100/70 rounded-2xl border border-stone-light/70">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 p-1 bg-stone-100/70 rounded-2xl border border-stone-light/70">
               <button
                 type="button"
                 onClick={() => cambiarPlantilla("bienvenida")}
@@ -830,6 +884,18 @@ export function ModalNotificarAliado({
               >
                 <span>🎁</span>
                 <span>Bienvenida</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => cambiarPlantilla("difusion")}
+                className={`py-1.5 px-1 rounded-xl text-xs font-sans transition-all flex items-center justify-center gap-1 cursor-pointer text-center ${
+                  tipoPlantilla === "difusion"
+                    ? "bg-purple-700 text-white font-semibold shadow-xs"
+                    : "text-purple-900/80 hover:text-purple-950 hover:bg-purple-50/70 font-medium"
+                }`}
+              >
+                <span>📲</span>
+                <span>Difundir en Redes</span>
               </button>
               <button
                 type="button"
