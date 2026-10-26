@@ -1,20 +1,103 @@
 import { supabase } from "@/lib/supabase/client";
 
 /**
+ * Comprime y redimensiona una imagen en el navegador antes de subirla.
+ * - Reduce imágenes pesadas de cámaras o celulares (5MB - 12MB) a ~150KB - 300KB.
+ * - Limita el ancho/alto máximo a 1600px manteniendo la proporción perfecta.
+ * - Convierte a formato WebP/JPEG limpio garantizando carga instantánea.
+ */
+export async function comprimirImagenCliente(
+  file: File,
+  maxDimension = 1600,
+  quality = 0.85
+): Promise<File> {
+  // Si no estamos en el navegador o no es una imagen estándar, retornar original
+  if (typeof window === "undefined" || !file.type.startsWith("image/")) {
+    return file;
+  }
+
+  // Si es un SVG o GIF animado, no alterar
+  if (file.type === "image/svg+xml" || file.type === "image/gif") {
+    return file;
+  }
+
+  return new Promise((resolve) => {
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+
+      let { width, height } = img;
+      if (width > maxDimension || height > maxDimension) {
+        if (width > height) {
+          height = Math.round((height * maxDimension) / width);
+          width = maxDimension;
+        } else {
+          width = Math.round((width * maxDimension) / height);
+          height = maxDimension;
+        }
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+
+      if (!ctx) {
+        resolve(file);
+        return;
+      }
+
+      ctx.drawImage(img, 0, 0, width, height);
+
+      // Intentar WebP primero con fallback a JPEG
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            resolve(file);
+            return;
+          }
+          const mimeType = blob.type || "image/jpeg";
+          const ext = mimeType.includes("webp") ? "webp" : "jpg";
+          const baseName = file.name.replace(/\.[^/.]+$/, "");
+          const compressedFile = new File(
+            [blob],
+            `${baseName}.${ext}`,
+            { type: mimeType }
+          );
+          resolve(compressedFile);
+        },
+        "image/webp",
+        quality
+      );
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve(file);
+    };
+
+    img.src = objectUrl;
+  });
+}
+
+/**
  * Sube una imagen de evento al bucket 'eventos' de Supabase Storage.
- * Si el bucket no existe o falla la subida, retorna null para permitir
- * continuar con un fallback o imagen por defecto.
+ * La comprime y redimensiona automáticamente antes de la subida.
  */
 export async function uploadEventImage(file: File): Promise<string | null> {
   try {
-    const fileExt = file.name.split(".").pop();
+    const fileComprimido = await comprimirImagenCliente(file);
+    const fileExt = fileComprimido.name.split(".").pop() || "jpg";
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
     const filePath = `eventos/${fileName}`;
 
     const { error: uploadError } = await supabase.storage
       .from("eventos")
-      .upload(filePath, file, {
-        cacheControl: "3600",
+      .upload(filePath, fileComprimido, {
+        cacheControl: "31536000",
+        contentType: fileComprimido.type || "image/jpeg",
         upsert: false,
       });
 
