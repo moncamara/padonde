@@ -34,6 +34,7 @@ export interface AdminPublishInput {
     total_reviews: number;
     maps_url: string;
   };
+  galeriaFotos?: string[];
 }
 
 export interface AdminPublishResult {
@@ -152,9 +153,15 @@ export async function adminPublishEventAction(
       destacado: Boolean(input.isFeatured),
       tiene_boleteria: false,
       activo: true,
-      metadata_hospedaje: input.googleReputacion
-        ? { google_reputacion: input.googleReputacion }
-        : null,
+      metadata_hospedaje:
+        input.googleReputacion || (input.galeriaFotos && input.galeriaFotos.length > 0)
+          ? {
+              ...(input.googleReputacion ? { google_reputacion: input.googleReputacion } : {}),
+              ...(input.galeriaFotos && input.galeriaFotos.length > 0
+                ? { galeria_fotos: input.galeriaFotos.filter(Boolean) }
+                : {}),
+            }
+          : null,
     };
 
     let { data: nuevoEvento, error: evError } = await supabase
@@ -700,6 +707,7 @@ export interface EditarEventoAdminInput {
     total_reviews: number;
     maps_url: string;
   } | null;
+  galeriaFotos?: string[] | null;
 }
 
 /**
@@ -739,22 +747,31 @@ export async function editarEventoAdminAction(input: EditarEventoAdminInput) {
       updatePayload.negocio_id = input.negocioId;
     }
 
-    if (input.googleReputacion !== undefined) {
+    if (input.googleReputacion !== undefined || input.galeriaFotos !== undefined) {
       const { data: currentEvent } = await supabase
         .from("eventos")
         .select("metadata_hospedaje")
         .eq("id", input.eventoId)
         .single();
       const currentMeta = (currentEvent?.metadata_hospedaje as Record<string, any>) || {};
-      if (input.googleReputacion === null) {
-        delete currentMeta.google_reputacion;
-        updatePayload.metadata_hospedaje = Object.keys(currentMeta).length > 0 ? currentMeta : null;
-      } else {
-        updatePayload.metadata_hospedaje = {
-          ...currentMeta,
-          google_reputacion: input.googleReputacion,
-        };
+
+      if (input.googleReputacion !== undefined) {
+        if (input.googleReputacion === null) {
+          delete currentMeta.google_reputacion;
+        } else {
+          currentMeta.google_reputacion = input.googleReputacion;
+        }
       }
+
+      if (input.galeriaFotos !== undefined) {
+        if (!input.galeriaFotos || input.galeriaFotos.length === 0) {
+          delete currentMeta.galeria_fotos;
+        } else {
+          currentMeta.galeria_fotos = input.galeriaFotos.filter(Boolean);
+        }
+      }
+
+      updatePayload.metadata_hospedaje = Object.keys(currentMeta).length > 0 ? currentMeta : null;
     }
 
     try {

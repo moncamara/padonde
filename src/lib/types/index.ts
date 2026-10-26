@@ -106,6 +106,7 @@ export type HospedajeMetadata = {
   check_out_hora?: string;    // ej: "11:00"
   google_reputacion?: GoogleReputacion;
   habitaciones?: HabitacionHospedaje[];
+  galeria_fotos?: string[];   // Fotos adicionales de vitrina (hasta 3-4 fotos para restaurantes, tours, o locales)
 };
 
 // ─── Tipos de Servicios Esenciales e Info Útil ────────────────────────────────

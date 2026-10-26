@@ -93,6 +93,12 @@ export function ModalEditarEvento({
     evento.imagen_url || null
   );
 
+  // Manejo de galería de fotos adicionales (hasta 3 fotos para carrusel de vitrina)
+  const [galeriaFotos, setGaleriaFotos] = useState<string[]>(
+    evento.metadata_hospedaje?.galeria_fotos || []
+  );
+  const [subiendoFotoGaleria, setSubiendoFotoGaleria] = useState(false);
+
   // Manejo de video / reel
   const [videoUrl, setVideoUrl] = useState(evento.video_url || "");
   const [archivoVideo, setArchivoVideo] = useState<File | null>(null);
@@ -118,6 +124,31 @@ export function ModalEditarEvento({
       setArchivoVideo(file);
       setVideoNombre(file.name);
     }
+  }
+
+  async function handleAgregarFotoGaleria(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (galeriaFotos.length >= 3) {
+      alert("Puedes agregar un máximo de 3 fotos adicionales de vitrina para mantener la carga ultra rápida.");
+      return;
+    }
+    setSubiendoFotoGaleria(true);
+    try {
+      const url = await uploadEventImage(file);
+      if (url) {
+        setGaleriaFotos((prev) => [...prev, url]);
+      }
+    } catch (err: any) {
+      alert("Error al subir la fotografía: " + (err?.message || "intenta de nuevo"));
+    } finally {
+      setSubiendoFotoGaleria(false);
+      e.target.value = "";
+    }
+  }
+
+  function handleEliminarFotoGaleria(indexAEliminar: number) {
+    setGaleriaFotos((prev) => prev.filter((_, i) => i !== indexAEliminar));
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -174,6 +205,7 @@ export function ModalEditarEvento({
         activo,
         negocioId: negocioId || undefined,
         googleReputacion,
+        galeriaFotos,
       });
 
       if (!res.success) {
@@ -200,15 +232,11 @@ export function ModalEditarEvento({
           imagen_url: finalImg,
           video_url: finalVideo || null,
           negocio_id: negocioId || evento.negocio_id,
-          metadata_hospedaje: googleReputacion
-            ? {
-                ...(evento.metadata_hospedaje || {}),
-                google_reputacion: googleReputacion,
-              }
-            : {
-                ...(evento.metadata_hospedaje || {}),
-                google_reputacion: undefined,
-              },
+          metadata_hospedaje: {
+            ...(evento.metadata_hospedaje || {}),
+            google_reputacion: googleReputacion || undefined,
+            galeria_fotos: galeriaFotos.length > 0 ? galeriaFotos : undefined,
+          },
           negocio: negocioSeleccionado
             ? {
                 id: negocioSeleccionado.id,
@@ -611,6 +639,73 @@ export function ModalEditarEvento({
                   Formatos recomendados: WebP o JPG.
                 </p>
               </div>
+            </div>
+          </div>
+
+          {/* 7b. Galería de Fotos Adicionales (Carrusel de Vitrina) */}
+          <div className="space-y-2.5 p-3.5 rounded-2xl bg-forest/5 border border-forest/15">
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="text-xs font-semibold text-forest font-sans flex items-center gap-1.5">
+                  <span>📸</span> Galería de Vitrina ({galeriaFotos.length}/3 adicionales)
+                </label>
+                <p className="text-[10px] text-stone font-sans mt-0.5">
+                  Fotos adicionales que crean el carrusel swipeable (carta, platos estrella, ambiente, cócteles).
+                </p>
+              </div>
+            </div>
+
+            {/* Grid de fotos cargadas */}
+            <div className="flex items-center gap-2.5 flex-wrap pt-1">
+              {galeriaFotos.map((fotoUrl, idx) => (
+                <div
+                  key={idx}
+                  className="relative w-20 h-20 rounded-xl overflow-hidden border border-forest/20 group bg-stone-100 shadow-2xs"
+                >
+                  <Image
+                    src={fotoUrl}
+                    alt={`Foto galería ${idx + 1}`}
+                    fill
+                    className="object-cover"
+                    unoptimized
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleEliminarFotoGaleria(idx)}
+                    className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center text-[11px] font-bold shadow-md transition-all active:scale-90 cursor-pointer"
+                    title="Eliminar esta foto"
+                  >
+                    ✕
+                  </button>
+                  <span className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1.5 py-0.2 rounded font-sans pointer-events-none">
+                    #{idx + 1}
+                  </span>
+                </div>
+              ))}
+
+              {/* Botón para subir nueva foto si aún no llega al límite */}
+              {galeriaFotos.length < 3 && (
+                <label className="w-20 h-20 rounded-xl border-2 border-dashed border-forest/30 hover:border-forest hover:bg-forest/5 transition-all flex flex-col items-center justify-center gap-1 cursor-pointer text-center p-1 group">
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={handleAgregarFotoGaleria}
+                    disabled={subiendoFotoGaleria}
+                    className="hidden"
+                  />
+                  {subiendoFotoGaleria ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-forest border-t-transparent rounded-full animate-spin" />
+                      <span className="text-[9px] text-forest font-medium">Subiendo...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-base group-hover:scale-110 transition-transform">➕</span>
+                      <span className="text-[10px] text-forest font-semibold leading-tight">Agregar Foto</span>
+                    </>
+                  )}
+                </label>
+              )}
             </div>
           </div>
 

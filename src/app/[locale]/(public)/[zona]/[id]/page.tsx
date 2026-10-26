@@ -24,6 +24,7 @@ import { GoogleRatingBadge } from "@/components/events/GoogleRatingBadge";
 import { DetailBackButton } from "@/components/events/DetailBackButton";
 import { DetailSlideWrapper } from "@/components/events/DetailSlideWrapper";
 import { EventVideoPlayer } from "@/components/events/EventVideoPlayer";
+import { EventHeroGallery } from "@/components/events/EventHeroGallery";
 import type { ZonaSlug } from "@/lib/types";
 import type { Metadata } from "next";
 
@@ -200,36 +201,26 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
         </div>
       </nav>
 
-      {/* 2. Hero Image con aspect ratio generoso */}
-      <div className="relative w-full h-80 sm:h-96 bg-forest">
-        {evento.imagen_url ? (
-          <Image
-            src={evento.imagen_url}
-            alt={evento.titulo}
-            fill
-            priority
-            sizes="(max-width: 640px) 100vw, 640px"
-            className="object-cover"
-          />
-        ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-forest to-stone" />
-        )}
-        <div className="card-overlay absolute inset-0" />
-
-        {/* Badge flotante en la foto */}
-        <div className="absolute bottom-4 left-4 right-4 max-w-lg mx-auto flex items-center gap-2">
-          {categoria && (
+      {/* 2. Hero Image / Gallery con aspect ratio generoso y scroll-snap nativo */}
+      <EventHeroGallery
+        imagenUrl={evento.imagen_url}
+        titulo={evento.titulo}
+        galeriaFotos={evento.metadata_hospedaje?.galeria_fotos}
+        categoriaBadge={
+          categoria ? (
             <span className="bg-white/20 backdrop-blur-md text-white text-xs font-sans font-medium px-3 py-1 rounded-full">
               {categoria.emoji} {tCat(evento.tipo)}
             </span>
-          )}
-          {evento.destacado && (
+          ) : null
+        }
+        destacadoBadge={
+          evento.destacado ? (
             <span className="bg-terra text-white text-xs font-sans font-semibold px-3 py-1 rounded-full shadow-xs">
               ⭐ {tDetail("featured") || "Destacado"}
             </span>
-          )}
-        </div>
-      </div>
+          ) : null
+        }
+      />
 
       {/* 3. Contenedor principal de detalles */}
       <main className="max-w-lg mx-auto px-4 -mt-3 relative z-10">
