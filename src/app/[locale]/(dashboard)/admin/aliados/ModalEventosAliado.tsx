@@ -189,6 +189,7 @@ export function ModalEventosAliado({
                               whatsapp: aliado.whatsapp,
                               zonaSlug: aliado.zonaSlug,
                               zonaNombre: aliado.zonaNombre,
+                              tipoCategoria: ev.tipo || aliado.categoria,
                               esPrimerEvento: (aliado.totalEventos || aliado.eventos?.length || 0) <= 1,
                             })
                           }

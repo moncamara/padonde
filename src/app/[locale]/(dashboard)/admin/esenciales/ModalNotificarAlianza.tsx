@@ -22,8 +22,8 @@ export function calcularFechaEn15Dias(): string {
 }
 
 /**
- * Plantilla 1: Acuerdo Comercial Restaurantes, Cafés, Bares y Comercio
- * Enfoque: 15 días gratis, liquidación trimestral, 4 idiomas y 0% comisiones.
+ * Plantilla 1: Acuerdo Comercial Restaurantes, Cafés, Bares y Gastronomía
+ * Enfoque: 15 días gratis, liquidación trimestral con tabla de tarifas claras, 4 idiomas y 0% comisiones.
  */
 export function generarMensajeRestauranteComercial(
   nombreComercial: string,
@@ -47,11 +47,15 @@ Para que sientas el impacto directo en tus mesas y pedidos, tienes *15 días de 
 🌟 *Ventajas clave para tu restaurante:*
 • *Llegada directa de extranjeros y turistas:* La plataforma traduce tu propuesta a 4 idiomas (ES, EN, FR, DE).
 • *Menú y contacto directo:* Enlace a tu WhatsApp para reservas de mesas, domicilios en playa o eventos privados.
-• *Cero intermediarios ni comisiones de entrega.*
+• *Cero comisiones ni intermediarios de entrega.*
 
-💳 *Condiciones de membresía:*
+🗓️ *Reglas claras de activación:*
 • Disfrutas de visibilidad gratuita hasta el *${fechaLimite}*.
-• A partir del *${fechaLimite}*, para continuar en la temporada, el plan preferencial es el *Trimestral* por *$90.000 COP* *(solo $30.000/mes)* o *$125.000 COP* si incluye botón de WhatsApp directo ilimitado.
+• A partir del *${fechaLimite}*, para continuar en la temporada, nuestro plan más rentable es el *Trimestral*:
+
+Los pagos son trimestrales de la siguiente forma:
+🍽️ Restaurante / Bar con Eventos: $125.000 COP *(incluye publicación de eventos ilimitados en la cartelera semanal)*
+☕ Café / Repostería / Tienda Especializada: $90.000 COP *(menos de $1.000 al día)*
 
 🎸 *¿Tienes música en vivo o Sunset Sessions?* Puedes destacar cualquier evento especial en la cima de la Cartelera durante toda la semana por solo *$30.000 COP*.
 
@@ -59,7 +63,45 @@ Revisa tu enlace y cuéntanos si quieres actualizar algún plato estrella o foto
 }
 
 /**
- * Plantilla 2: Alianza Oficial de Transporte y Mototaxis
+ * Plantilla 2: Comercio Local, Tiendas, Artesanías y Servicios Esenciales
+ * Enfoque: 15 días gratis, liquidación trimestral $60.000 COP ($20k/mes), 4 idiomas y contacto directo.
+ */
+export function generarMensajeComercioServicios(
+  nombreComercial: string,
+  zonaSlug: string = "mendihuaca",
+  zonaNombre: string = "Mendihuaca",
+  servicioId?: string
+): string {
+  const slug = zonaSlug || "mendihuaca";
+  const destino = zonaNombre || (slug === "mendihuaca" ? "Mendihuaca" : "Minca");
+  const anchor = servicioId ? `#servicio-${servicioId}` : "";
+  const urlPublicacion = `https://www.padonde.lat/es/${slug}?tab=servicios${anchor}`;
+  const fechaLimite = calcularFechaEn15Dias();
+
+  return `🛵 *¡Hola, ${nombreComercial}! Te saludamos desde PaDónde ${destino}.*
+
+Tu negocio ya está publicado y verificado en la guía oficial de servicios esenciales de ${destino}:
+👉 *Míralo en vivo aquí:* ${urlPublicacion}
+
+Queremos darte la bienvenida con *15 días de cortesía total (prueba 100% gratuita)* a partir de hoy hasta el *${fechaLimite}*, para que compruebes cómo turistas y residentes encuentran tus servicios 📲✨
+
+🌟 *Lo que ganas con PaDónde:*
+• *Contacto directo a tu WhatsApp:* Los viajeros te escriben a 1 solo toque.
+• *Plataforma en 4 idiomas (ES, EN, FR, DE).*
+• *Presencia permanente en la guía de servicios clave de la región.*
+
+🗓️ *Reglas claras de activación:*
+• Disfrutas de visibilidad gratuita hasta el *${fechaLimite}*.
+• A partir del *${fechaLimite}*, el plan es trimestral:
+
+El pago es trimestral de la siguiente forma:
+🛵 Plan Trimestral Comercio & Servicios: $60.000 COP *($20.000/mes — menos de $700 COP al día)*.
+
+Revisa tu enlace y cuéntanos si deseas actualizar algún horario o número. ¡Muchos éxitos con la temporada! 🌿🛵`;
+}
+
+/**
+ * Plantilla 3: Alianza Oficial de Transporte y Mototaxis
  * Enfoque: Canal Oficial, 0% comisión, stickers y habladores QR oficiales.
  */
 export function generarMensajeTransporteAlianza(
@@ -89,7 +131,7 @@ Les tenemos listo el material de stickers para entregárselos. Revisen el enlace
 }
 
 /**
- * Plantilla 3: Alianza Estándar Cortesía / Canje
+ * Plantilla 4: Alianza Estándar Cortesía / Canje
  */
 export function generarMensajeAlianzaEsencial(
   nombreComercial: string,
@@ -126,7 +168,7 @@ Queremos pedirles un favor muy especial: ¿Podrían abrir el enlace y confirmarn
 ¡Un abrazo y muchos éxitos con esta alianza para impulsar el turismo en la región! 🌿✨`;
 }
 
-export type TipoPlantillaAlianza = "comercial" | "transporte" | "estandar";
+export type TipoPlantillaAlianza = "restaurante" | "comercio" | "transporte" | "estandar";
 
 export function ModalNotificarAlianza({
   servicio,
@@ -135,7 +177,7 @@ export function ModalNotificarAlianza({
   zonaNombre = "Minca",
 }: ModalNotificarAlianzaProps) {
   const [telefono, setTelefono] = useState("");
-  const [tipoPlantilla, setTipoPlantilla] = useState<TipoPlantillaAlianza>("comercial");
+  const [tipoPlantilla, setTipoPlantilla] = useState<TipoPlantillaAlianza>("restaurante");
   const [mensaje, setMensaje] = useState("");
   const [copiado, setCopiado] = useState(false);
 
@@ -152,7 +194,15 @@ export function ModalNotificarAlianza({
         servicio.id
       );
     }
-    if (tipo === "comercial") {
+    if (tipo === "comercio") {
+      return generarMensajeComercioServicios(
+        servicio.nombre_comercial,
+        zonaSlug,
+        zonaNombre,
+        servicio.id
+      );
+    }
+    if (tipo === "restaurante") {
       return generarMensajeRestauranteComercial(
         servicio.nombre_comercial,
         zonaSlug,
@@ -172,8 +222,19 @@ export function ModalNotificarAlianza({
   useEffect(() => {
     if (servicio) {
       setTelefono(servicio.whatsapp || "57");
-      const tipoDefecto: TipoPlantillaAlianza =
-        servicio.categoria === "transporte" ? "transporte" : "comercial";
+      const cat = (servicio.categoria || "").toLowerCase();
+      let tipoDefecto: TipoPlantillaAlianza = "estandar";
+
+      if (cat === "transporte") {
+        tipoDefecto = "transporte";
+      } else if (cat === "comida" || cat === "gastronomia") {
+        tipoDefecto = "restaurante";
+      } else if (cat === "comercio" || cat === "artesanias" || cat === "servicios") {
+        tipoDefecto = "comercio";
+      } else {
+        tipoDefecto = "restaurante";
+      }
+
       setTipoPlantilla(tipoDefecto);
       setMensaje(getTextoPlantilla(tipoDefecto));
       setCopiado(false);
@@ -264,36 +325,47 @@ export function ModalNotificarAlianza({
             <label className="font-semibold text-forest block">
               Tipo de Acuerdo / Plantilla:
             </label>
-            <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-stone-light/30 border border-stone-light/60">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-1 rounded-2xl bg-stone-light/30 border border-stone-light/60">
               <button
                 type="button"
-                onClick={() => handleCambiarPlantilla("comercial")}
-                className={`flex-1 py-1.5 px-2 rounded-xl text-[11px] font-semibold transition-all cursor-pointer text-center ${
-                  tipoPlantilla === "comercial"
+                onClick={() => handleCambiarPlantilla("restaurante")}
+                className={`py-1.5 px-1 rounded-xl text-[11px] font-semibold transition-all cursor-pointer text-center ${
+                  tipoPlantilla === "restaurante"
                     ? "bg-forest text-white shadow-2xs"
-                    : "text-stone hover:text-forest"
+                    : "text-stone hover:text-forest hover:bg-white/50"
                 }`}
               >
-                💼 Restaurantes / Comercio (Trimestre)
+                🍽️ Restaurante
+              </button>
+              <button
+                type="button"
+                onClick={() => handleCambiarPlantilla("comercio")}
+                className={`py-1.5 px-1 rounded-xl text-[11px] font-semibold transition-all cursor-pointer text-center ${
+                  tipoPlantilla === "comercio"
+                    ? "bg-forest text-white shadow-2xs"
+                    : "text-stone hover:text-forest hover:bg-white/50"
+                }`}
+              >
+                🛵 Comercio
               </button>
               <button
                 type="button"
                 onClick={() => handleCambiarPlantilla("transporte")}
-                className={`flex-1 py-1.5 px-2 rounded-xl text-[11px] font-semibold transition-all cursor-pointer text-center ${
+                className={`py-1.5 px-1 rounded-xl text-[11px] font-semibold transition-all cursor-pointer text-center ${
                   tipoPlantilla === "transporte"
                     ? "bg-forest text-white shadow-2xs"
-                    : "text-stone hover:text-forest"
+                    : "text-stone hover:text-forest hover:bg-white/50"
                 }`}
               >
-                🛵 Transporte (Stickers QR)
+                🛵 Mototaxis QR
               </button>
               <button
                 type="button"
                 onClick={() => handleCambiarPlantilla("estandar")}
-                className={`flex-1 py-1.5 px-2 rounded-xl text-[11px] font-semibold transition-all cursor-pointer text-center ${
+                className={`py-1.5 px-1 rounded-xl text-[11px] font-semibold transition-all cursor-pointer text-center ${
                   tipoPlantilla === "estandar"
                     ? "bg-forest text-white shadow-2xs"
-                    : "text-stone hover:text-forest"
+                    : "text-stone hover:text-forest hover:bg-white/50"
                 }`}
               >
                 🤝 Cortesía
