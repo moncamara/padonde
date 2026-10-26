@@ -57,9 +57,12 @@ Los pagos son trimestrales de la siguiente forma:
 🍽️ Restaurante / Bar con Eventos: $125.000 COP *(incluye publicación de eventos ilimitados en la cartelera semanal)*
 ☕ Café / Repostería / Tienda Especializada: $90.000 COP *(menos de $1.000 al día)*
 
-🎸 *¿Tienes música en vivo o Sunset Sessions?* Puedes destacar cualquier evento especial en la cima de la Cartelera durante toda la semana por solo *$30.000 COP*.
+💡 *Con una sola mesa de 2 personas que los visite por vernos en la plataforma durante todo el trimestre, la inversión ya está 100% recuperada.*
 
-Revisa tu enlace y cuéntanos si quieres actualizar algún plato estrella o foto. ¡Muchos éxitos con la temporada! 🌿🍽️`;
+🎉 *Difusión de Eventos Especiales:*
+Cada vez que organicen noches de DJ, música en vivo, sunsets o eventos especiales, la difusión en la Cartelera de ${destino} tiene un valor de *$30.000 COP por semana de anuncio* (incluye flyer, fecha, horarios, descripción y botón directo a su WhatsApp).
+
+¿Pudieron abrir el enlace? Échenle un ojito a la ficha y me cuentan si su WhatsApp y menú están al día para dejarlos activos desde hoy. ¡Muchos éxitos con la temporada! 🍽️🌊🌴`;
 }
 
 /**

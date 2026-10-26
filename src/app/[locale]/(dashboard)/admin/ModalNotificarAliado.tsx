@@ -79,30 +79,32 @@ export function generarMensajeHospedajeAliado(
 
   return `🌿 *¡Hola ${negocioNombre}! Un saludo muy especial desde PaDónde ${destinoNombre}.*
 
-Ya tenemos tu ficha oficial activa y verificada en vivo dentro de la plataforma digital de ${destinoNombre}:
-👉 *Ver tu ficha aquí:* ${urlPublicacion}
+Ya tenemos su propuesta de hospedaje activa y verificada en vivo dentro de la plataforma digital oficial de ${destinoNombre}:
+👉 *Ver su ficha aquí:* ${urlPublicacion}
 
-Queremos darte la bienvenida con *15 días de cortesía total (prueba 100% gratuita)* a partir de hoy, para que compruebes cómo los turistas y viajeros internacionales que llegan a la zona encuentran tus cabañas, fotos y tarifas en tiempo real 📲✨
+Queremos darles la bienvenida con *15 días de cortesía total (prueba 100% gratuita)* a partir de hoy hasta el *${fechaLimite}*, para que comprueben cómo los viajeros y turistas internacionales encuentran sus cabañas, fotos y tarifas en tiempo real 📲✨
 
-🌟 *Lo que ganas con PaDónde:*
-• *0% de comisiones por reserva:* El viajero te escribe directo a tu WhatsApp (te ahorras el 18% que descuentan Booking o Airbnb).
-• *Plataforma global en 4 idiomas:* Tu hospedaje se muestra automáticamente en Español, Inglés, Francés y Alemán (ES / EN / FR / DE).
-• *Presencia turística 24/7:* Indexado en la vitrina oficial de la región.
+🌟 *El valor directo para ${negocioNombre}:*
+• *0% de comisiones por reserva:* El huésped les escribe y cotiza directo a su WhatsApp (se ahorran el 18% al 20% que descuentan Booking o Airbnb).
+• *Catálogo global en 4 idiomas:* Su hospedaje se presenta automáticamente en Español, Inglés, Francés y Alemán (ES / EN / FR / DE) para captar al viajero extranjero.
+• *Presencia fija 24/7:* Indexados en la vitrina oficial recomendada de alojamientos de ${destinoNombre}.
 
 🗓️ *Reglas claras de activación:*
-• Tu periodo de cortesía va desde hoy hasta el *${fechaLimite}*.
-• A partir del *${fechaLimite}*, se liquidará el primer ciclo de visibilidad.
-• Nuestro plan estándar más rentable es el *Trimestral* y va asociado al número de habitaciones y/o espacios para rentar.
+• Su periodo de cortesía corre libre de costo hasta el *${fechaLimite}*.
+• A partir del *${fechaLimite}*, formalizamos su presencia para toda la temporada con nuestro Plan Trimestral (asociado a su capacidad de habitaciones o cabañas):
 
 Los pagos son trimestrales de la siguiente forma:
-🏨 1-5 habs $125.000 
-🏨 6-10 hab $200.000
-🏨 11-20 hab $300.000
-🏨 +20 habs $400.000
+🏨 1 a 5 habitaciones: $125.000 COP *(menos de $1.400 al día)*
+🏨 6 a 10 habitaciones: $200.000 COP
+🏨 11 a 20 habitaciones: $300.000 COP
+🏨 Más de 20 habitaciones: $400.000 COP
 
-🎶 *Add-on de Eventos & Rumba:* Si organizas noches acústicas, yoga matutino o DJ sets, puedes fijar tu evento en la Cartelera de ${destinoNombre} por solo *$30.000 COP por semana completa*.
+💡 *Con 1 sola noche de habitación reservada directo a su WhatsApp en los 3 meses, ya se ahorran más comisiones de Booking que el costo total de la plataforma.*
 
-Por favor entra a tu enlace, confirma que tus fotos y datos estén perfectos, y seguimos impulsando tus reservas directas. ¡Un gran abrazo y buenas olas! 🌊✨`;
+🎉 *Difusión de Eventos Especiales:*
+Si organizan noches acústicas, yoga matutino, sunsets o eventos abiertos, la difusión en la Cartelera de ${destinoNombre} tiene un valor de *$30.000 COP por semana de anuncio* (incluye flyer, fecha, fotos y botón directo a su WhatsApp).
+
+¿Pudieron abrir el enlace? Échenle un ojito a la ficha y me cuentan si sus fotos, tarifas y número de WhatsApp están al día para dejarlos activos desde hoy. ¡Muchos éxitos con las reservas en esta temporada! 🏡🌊✨`;
 }
 
 /**
@@ -122,30 +124,27 @@ export function generarMensajeRestauranteAliado(
   const urlPublicacion = `https://www.padonde.lat/es/${slug}/${eventoId}`;
   const fechaLimite = calcularFechaEn15Dias();
 
-  return `🌿 *¡Hola ${negocioNombre}! Un saludo muy especial desde PaDónde ${destinoNombre}.*
+  return `🌿 *¡Hola equipo de ${negocioNombre}! Un saludo muy especial desde PaDónde ${destinoNombre}.*
 
-Ya tenemos tu propuesta gastronómica activa y verificada en vivo dentro de la plataforma digital de ${destinoNombre}:
-👉 *Ver tu ficha aquí:* ${urlPublicacion}
+Ya tenemos su propuesta gastronómica y de playa activa y verificada en vivo dentro de la plataforma turística oficial de ${destinoNombre}:
+👉 *Miren su vitrina aquí:* ${urlPublicacion}
 
-Queremos darte la bienvenida con *15 días de cortesía total (prueba 100% gratuita)* a partir de hoy hasta el *${fechaLimite}*, para que compruebes cómo los comensales, turistas y viajeros internacionales descubren tu menú, fotos y ambiente en tiempo real 📲✨
+Queremos darles la bienvenida con *15 días de cortesía total (100% gratuita)* desde hoy hasta el *${fechaLimite}*, para que comprueben cómo los viajeros y extranjeros que recorren la costa encuentran su carta, fotos y ubicación en tiempo real 📲✨
 
-🌟 *Lo que ganas con PaDónde:*
-• *0% de comisiones por reserva o pedidos:* Los clientes te escriben directo a tu WhatsApp para reservar mesa o pedir domicilios (sin intermediarios ni cobros por pedido).
-• *Plataforma global en 4 idiomas:* Tu carta y propuesta se muestran automáticamente en Español, Inglés, Francés y Alemán (ES / EN / FR / DE) para turistas que buscan dónde comer.
-• *Presencia turística 24/7:* Indexado en la vitrina oficial de gastronomía y planes de ${destinoNombre}.
+🌟 *Lo que gana ${negocioNombre}:*
+• *0% de comisiones por reserva o consumo:* Los clientes tocan el botón y van directo a su WhatsApp para reservar mesas, camas de playa o pedir información (sin intermediarios ni comisiones de entrega).
+• *Catálogo global en 4 idiomas:* Su propuesta se traduce automáticamente a Español, Inglés, Francés y Alemán (ES / EN / FR / DE) para captar al turista internacional.
+• *Presencia fija 24/7:* Su punto gastronómico indexado de forma permanente en la guía recomendada de ${destinoNombre}.
 
 🗓️ *Reglas claras de activación:*
-• Tu periodo de cortesía va desde hoy hasta el *${fechaLimite}*.
-• A partir del *${fechaLimite}*, se liquidará el primer ciclo de visibilidad.
-• Nuestro plan estándar más rentable es el *Trimestral*, con tarifas claras según tu modelo de negocio:
+• Su periodo de cortesía corre libre de costo hasta el *${fechaLimite}*.
+• A partir de esa fecha, nuestro plan para la temporada es el *Trimestral por $125.000 COP* (cubre los 90 días completos de presencia de su vitrina comercial, menos de $1.400 al día).
+💡 *Con una sola mesa de 2 personas que los visite por vernos en la plataforma durante todo el trimestre, la inversión ya está 100% recuperada.*
 
-Los pagos son trimestrales de la siguiente forma:
-🍽️ Restaurante / Bar con Eventos: $125.000 COP *(incluye publicación de eventos ilimitados en la cartelera semanal)*
-☕ Café / Repostería / Tienda Especializada: $90.000 COP *(menos de $1.000 al día)*
+🎉 *Difusión de Eventos Especiales:*
+Cada vez que organicen noches de DJ, música en vivo, sunsets o eventos especiales, la difusión en la Cartelera de ${destinoNombre} tiene un valor de *$30.000 COP por semana de anuncio* (incluye su flyer, fecha, horarios, descripción completa y botón directo a su WhatsApp para reservas).
 
-🎶 *Add-on de Música & Sunset Sessions:* Si organizas noches acústicas, DJ sets o sunsets especiales, puedes fijar tu evento en la cima de la Cartelera de ${destinoNombre} por solo *$30.000 COP por semana completa*.
-
-Por favor entra a tu enlace, confirma que tus fotos, menú y datos de contacto estén perfectos, y seguimos atrayendo más comensales a tu mesa. ¡Un gran abrazo y excelentes ventas! 🍽️✨`;
+¿Pudieron abrir el enlace? Échenle un ojito a la ficha y me cuentan si su WhatsApp y menú están al día para dejarlos activos desde hoy. ¡Muchos éxitos y excelentes ventas en esta temporada! 🍽️🌊🌴`;
 }
 
 /**
