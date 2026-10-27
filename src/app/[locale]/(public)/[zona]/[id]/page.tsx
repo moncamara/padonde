@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/routing";
 import { getEventoById } from "@/lib/supabase/queries";
-import { getCategoria, getZona, whatsappLink } from "@/constants";
+import { getCategoria, getCategoriaCTA, getZona, whatsappLink } from "@/constants";
 import {
   formatFecha,
   formatHora,
@@ -128,9 +128,9 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
       : formatPrecio(evento.precio, evento.precio_moneda);
 
   const refCode = evento.id.slice(0, 5).toUpperCase();
-  const waMensaje = `${tWa("message", {
-    titulo: evento.titulo,
-  })} [Ref #${refCode}]`;
+  const ctaConfig = getCategoriaCTA(evento.tipo, locale);
+  const plantillaMensaje = ctaConfig.mensajeTemplate || tWa("message", { titulo: evento.titulo });
+  const waMensaje = `${plantillaMensaje.replace("{titulo}", evento.titulo)} [Ref #${refCode}]`;
 
   const waLink = whatsappLink(evento.negocio.whatsapp, waMensaje);
 
@@ -483,13 +483,14 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
 
           <WhatsAppBookingButton
             href={waLink}
-            label={tDetail("bookWhatsApp")}
+            label={ctaConfig.label}
+            icon={ctaConfig.icon}
             eventoId={rawEvento.id}
             eventoTitulo={rawEvento.titulo}
             negocioNombre={rawEvento.negocio.nombre}
             negocioId={rawEvento.negocio_id}
             precio={rawEvento.precio}
-            tipoCategoria={evento.tipo === "hospedaje" ? "hospedaje" : "evento"}
+            tipoCategoria={evento.tipo || "evento"}
             seccionOrigen="detalle_evento"
             zonaSlug={zonaSlug}
           />

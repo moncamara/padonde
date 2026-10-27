@@ -6,6 +6,7 @@ import { trackWhatsAppClick } from "@/lib/analytics";
 interface WhatsAppBookingButtonProps {
   href: string;
   label: string;
+  icon?: string;
   eventoId: string;
   eventoTitulo: string;
   negocioNombre: string;
@@ -19,6 +20,7 @@ interface WhatsAppBookingButtonProps {
 export function WhatsAppBookingButton({
   href,
   label,
+  icon = "💬",
   eventoId,
   eventoTitulo,
   negocioNombre,
@@ -33,7 +35,7 @@ export function WhatsAppBookingButton({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex-1 max-w-[240px]"
+      className="flex-1 max-w-[260px]"
       onClick={() => {
         trackWhatsAppClick({
           aliado_nombre: negocioNombre || "Organizador",
@@ -49,10 +51,14 @@ export function WhatsAppBookingButton({
         });
       }}
     >
-      <Button size="lg" className="w-full shadow-md font-semibold">
-        <span>💬</span>
-        <span>{label}</span>
+      <Button
+        size="lg"
+        className="w-full shadow-md font-semibold text-xs sm:text-sm px-3 sm:px-5 py-2.5 sm:py-3 whitespace-nowrap"
+      >
+        <span>{icon}</span>
+        <span className="truncate">{label}</span>
       </Button>
     </a>
   );
 }
+

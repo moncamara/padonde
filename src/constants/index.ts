@@ -156,3 +156,45 @@ export const WHATSAPP_CONTACTO = "573013010194";
 export const whatsappLink = (numero: string, mensaje: string) =>
   `https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`;
 
+// ─── CTA Dinámicos por Categoría ──────────────────────────────────────────────
+
+import configCTACategoriasData from "./config_cta_categorias.json";
+
+export type CategoriaCTAConfig = {
+  icon: string;
+  boton: Record<string, string>;
+  mensaje: Record<string, string>;
+};
+
+export type ConfigCTACategorias = Record<string, CategoriaCTAConfig>;
+
+export const CONFIG_CTA_CATEGORIAS: ConfigCTACategorias =
+  configCTACategoriasData as ConfigCTACategorias;
+
+/**
+ * Retorna la configuración de CTA (texto del botón, icono y plantilla del mensaje)
+ * adaptada al tipo de negocio/evento y al idioma del usuario, con fallback seguro a default.
+ */
+export function getCategoriaCTA(
+  categoria?: string | null,
+  locale: string = "es"
+): { label: string; icon: string; mensajeTemplate: string } {
+  const ctas = CONFIG_CTA_CATEGORIAS;
+  const config =
+    (categoria && ctas[categoria]) || ctas["default"] || {
+      icon: "💬",
+      boton: { es: "Reservar por WhatsApp", en: "Book via WhatsApp" },
+      mensaje: {
+        es: "¡Hola! Vi tu publicación \"{titulo}\" en PaDónde. [Reserva PaDónde 🌿] Me interesa saber disponibilidad y cómo llegar.",
+        en: "Hello! I saw your post \"{titulo}\" on PaDónde. [PaDónde Booking 🌿] I am interested in availability and how to get there.",
+      },
+    };
+
+  const label = config.boton[locale] || config.boton["es"] || "Reservar por WhatsApp";
+  const icon = config.icon || "💬";
+  const mensajeTemplate = config.mensaje[locale] || config.mensaje["es"] || "";
+
+  return { label, icon, mensajeTemplate };
+}
+
+
