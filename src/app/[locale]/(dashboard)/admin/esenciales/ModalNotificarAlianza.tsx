@@ -59,8 +59,11 @@ Los pagos son trimestrales de la siguiente forma:
 
 💡 *Con una sola mesa de 2 personas que los visite por vernos en la plataforma durante todo el trimestre, la inversión ya está 100% recuperada.*
 
-🎉 *Difusión de Eventos Especiales:*
-Cada vez que organicen noches de DJ, música en vivo, sunsets o eventos especiales, la difusión en la Cartelera de ${destino} tiene un valor de *$30.000 COP por semana de anuncio* (incluye flyer, fecha, horarios, descripción y botón directo a su WhatsApp).
+🎉 *Difusión de Eventos y Actividades:*
+Cada vez que organicen noches de DJ, música en vivo, sunsets o eventos especiales:
+• *1 evento puntual:* $30.000 COP (activo toda la semana de promoción).
+• *Agenda Semanal Completa (hasta 3 eventos en la semana):* $50.000 COP.
+(Incluye flyer, fechas, horarios, descripción y botón directo a su WhatsApp para reservas).
 
 ¿Pudieron abrir el enlace? Échenle un ojito a la ficha y me cuentan si su WhatsApp y menú están al día para dejarlos activos desde hoy. ¡Muchos éxitos con la temporada! 🍽️🌊🌴`;
 }

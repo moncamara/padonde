@@ -102,8 +102,11 @@ Los pagos son trimestrales de la siguiente forma:
 
 💡 *Con 1 sola noche de habitación reservada directo a su WhatsApp en los 3 meses, ya se ahorran más comisiones de Booking que el costo total de la plataforma.*
 
-🎉 *Difusión de Eventos Especiales:*
-Si organizan noches acústicas, yoga matutino, sunsets o eventos abiertos, la difusión en la Cartelera de ${destinoNombre} tiene un valor de *$30.000 COP por semana de anuncio* (incluye flyer, fecha, fotos y botón directo a su WhatsApp).
+🎉 *Difusión de Eventos y Actividades:*
+Si organizan noches acústicas, yoga matutino, sunsets o eventos abiertos:
+• *1 evento puntual:* $30.000 COP (activo toda la semana de promoción).
+• *Agenda Semanal Completa (hasta 3 eventos en la semana):* $50.000 COP.
+(Incluye flyer, fechas, horarios, fotos y botón directo a su WhatsApp para reservas).
 
 ¿Pudieron abrir el enlace? Échenle un ojito a la ficha y me cuentan si sus fotos, tarifas y número de WhatsApp están al día para dejarlos activos desde hoy. ¡Muchos éxitos con las reservas en esta temporada! 🏡🌊✨`;
 }
@@ -142,8 +145,11 @@ Queremos darles la bienvenida con *15 días de cortesía total (100% gratuita)* 
 • A partir de esa fecha, nuestro plan para la temporada es el *Trimestral por $125.000 COP* (cubre los 90 días completos de presencia de su vitrina comercial, menos de $1.400 al día).
 💡 *Con una sola mesa de 2 personas que los visite por vernos en la plataforma durante todo el trimestre, la inversión ya está 100% recuperada.*
 
-🎉 *Difusión de Eventos Especiales:*
-Cada vez que organicen noches de DJ, música en vivo, sunsets o eventos especiales, la difusión en la Cartelera de ${destinoNombre} tiene un valor de *$30.000 COP por semana de anuncio* (incluye su flyer, fecha, horarios, descripción completa y botón directo a su WhatsApp para reservas).
+🎉 *Difusión de Eventos y Actividades:*
+Cada vez que organicen noches de DJ, música en vivo, sunsets o eventos especiales:
+• *1 evento puntual:* $30.000 COP (activo toda la semana de promoción).
+• *Agenda Semanal Completa (hasta 3 eventos en la semana):* $50.000 COP.
+(Incluye su flyer, fechas, horarios, descripción completa y botón directo a su WhatsApp para reservas).
 
 ¿Pudieron abrir el enlace? Échenle un ojito a la ficha y me cuentan si su WhatsApp y menú están al día para dejarlos activos desde hoy. ¡Muchos éxitos y excelentes ventas en esta temporada! 🍽️🌊🌴`;
 }
