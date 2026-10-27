@@ -13,7 +13,9 @@ import {
   limpiarDescripcionRecurrencia,
   getFechaYMDDesdeISO,
   getFechaYMDColombia,
+  extraerGoogleReviewUrl,
 } from "@/lib/utils";
+
 import { getEventoTraducido, getEventoTraducidoAsync } from "@/lib/translations/eventosTraducciones";
 import { Button } from "@/components/ui/Button";
 import { ShareButton } from "@/components/events/ShareButton";
@@ -384,11 +386,20 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
               evento.metadata_hospedaje?.menu_url ||
               (isPepeMojito ? "/menus/menupepe1.jpeg" : undefined);
 
+            const isJungleJoe =
+              evento.id === "6817d5de-d00a-4514-b505-fa2c10608749" ||
+              (evento.negocio?.nombre || "").toLowerCase().includes("jungle joe") ||
+              (evento.titulo || "").toLowerCase().includes("jungle joe");
+
             const googleReviewUrl =
               evento.metadata_hospedaje?.google_review_url ||
+              extraerGoogleReviewUrl(evento.metadata_hospedaje?.google_reputacion?.maps_url) ||
               (isPepeMojito
                 ? "https://search.google.com/local/writereview?placeid=ChIJiQTfKLuV9I4R3E86eG2jG6w"
+                : isJungleJoe
+                ? "https://search.google.com/local/writereview?placeid=ChIJ6S1R3yvx9I4RZovuGgHEzBs"
                 : undefined);
+
 
             return (
               <RestaurantMenuSection

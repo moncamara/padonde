@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import { parseLocalColombiaAISO } from "@/lib/utils";
+import { parseLocalColombiaAISO, extraerGoogleReviewUrl } from "@/lib/utils";
 import { traducirEventoCompleto } from "@/lib/translations/translator";
 import type { CategoriaEvento, PlanNegocio, CategoriaServicioEsencial, ServicioEsencial } from "@/lib/types";
 import sharp from "sharp";
@@ -720,6 +720,9 @@ export interface EditarEventoAdminInput {
     maps_url: string;
   } | null;
   galeriaFotos?: string[] | null;
+  googleReviewUrl?: string | null;
+  menuFotos?: string[] | null;
+  menuUrl?: string | null;
 }
 
 /**
@@ -759,7 +762,13 @@ export async function editarEventoAdminAction(input: EditarEventoAdminInput) {
       updatePayload.negocio_id = input.negocioId;
     }
 
-    if (input.googleReputacion !== undefined || input.galeriaFotos !== undefined) {
+    if (
+      input.googleReputacion !== undefined ||
+      input.galeriaFotos !== undefined ||
+      input.googleReviewUrl !== undefined ||
+      input.menuFotos !== undefined ||
+      input.menuUrl !== undefined
+    ) {
       const { data: currentEvent } = await supabase
         .from("eventos")
         .select("metadata_hospedaje")
@@ -775,6 +784,40 @@ export async function editarEventoAdminAction(input: EditarEventoAdminInput) {
         }
       }
 
+      if (input.googleReviewUrl !== undefined) {
+        if (!input.googleReviewUrl?.trim()) {
+          const auto = extraerGoogleReviewUrl(input.googleReputacion?.maps_url);
+          if (auto) {
+            currentMeta.google_review_url = auto;
+          } else {
+            delete currentMeta.google_review_url;
+          }
+        } else {
+          currentMeta.google_review_url = input.googleReviewUrl.trim();
+        }
+      } else if (input.googleReputacion?.maps_url && !currentMeta.google_review_url) {
+        const auto = extraerGoogleReviewUrl(input.googleReputacion.maps_url);
+        if (auto) {
+          currentMeta.google_review_url = auto;
+        }
+      }
+
+      if (input.menuFotos !== undefined) {
+        if (!input.menuFotos || input.menuFotos.length === 0) {
+          delete currentMeta.menu_fotos;
+        } else {
+          currentMeta.menu_fotos = input.menuFotos.filter(Boolean);
+        }
+      }
+
+      if (input.menuUrl !== undefined) {
+        if (!input.menuUrl?.trim()) {
+          delete currentMeta.menu_url;
+        } else {
+          currentMeta.menu_url = input.menuUrl.trim();
+        }
+      }
+
       if (input.galeriaFotos !== undefined) {
         if (!input.galeriaFotos || input.galeriaFotos.length === 0) {
           delete currentMeta.galeria_fotos;
@@ -785,6 +828,7 @@ export async function editarEventoAdminAction(input: EditarEventoAdminInput) {
 
       updatePayload.metadata_hospedaje = Object.keys(currentMeta).length > 0 ? currentMeta : null;
     }
+
 
     try {
       const traducciones = await traducirEventoCompleto(input.titulo.trim(), input.descripcion?.trim() || null);

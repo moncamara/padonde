@@ -532,3 +532,70 @@ export function parseOrigenTurista(rawLang?: string | null): OrigenTurista {
 
   return { esExtranjero: true, etiqueta: "🌍 Extranjero", pais: clean.toUpperCase(), flag: "🌍" };
 }
+
+/**
+ * Convierte cualquier enlace de Google Maps (con Place ID, CID o FIDs 0x...:0x...)
+ * en la URL oficial directa para escribir una reseña con 5 estrellas:
+ * https://search.google.com/local/writereview?placeid=...
+ */
+export function extraerGoogleReviewUrl(inputUrl?: string | null): string | null {
+  if (!inputUrl) return null;
+  const raw = inputUrl.trim();
+  if (!raw) return null;
+
+  // 1. Si ya es una URL directa de reseñas:
+  if (raw.includes("search.google.com/local/writereview")) {
+    return raw;
+  }
+
+  // 2. Si es un enlace corto g.page:
+  if (raw.includes("g.page/r/")) {
+    return raw.endsWith("/review") ? raw : `${raw.replace(/\/+$/, "")}/review`;
+  }
+
+  // 3. Si contiene placeid o place_id explícito:
+  const matchPlaceId = raw.match(/[?&](?:placeid|place_id)=(ChIJ[a-zA-Z0-9_-]+)/i);
+  if (matchPlaceId && matchPlaceId[1]) {
+    return `https://search.google.com/local/writereview?placeid=${matchPlaceId[1]}`;
+  }
+
+  // 4. Si contiene un ChIJ suelto en el path:
+  const matchChIJ = raw.match(/!(?:1s|3m[0-9]+!)?(ChIJ[a-zA-Z0-9_-]{20,35})/);
+  if (matchChIJ && matchChIJ[1]) {
+    return `https://search.google.com/local/writereview?placeid=${matchChIJ[1]}`;
+  }
+
+  // 5. Si contiene un CID numérico (?cid=123456789):
+  const matchCid = raw.match(/[?&]cid=([0-9]+)/i);
+  if (matchCid && matchCid[1]) {
+    return `https://search.google.com/local/writereview?cid=${matchCid[1]}`;
+  }
+
+  // 6. Si contiene FIDs hexadecimales de Google Maps (!1s0x...:0x...):
+  const matchFid = raw.match(/0x([0-9a-fA-F]{12,18}):0x([0-9a-fA-F]{12,18})/);
+  if (matchFid && matchFid[1] && matchFid[2]) {
+    try {
+      const b1 = Buffer.alloc(8);
+      b1.writeBigUInt64LE(BigInt(`0x${matchFid[1]}`));
+      const b2 = Buffer.alloc(8);
+      b2.writeBigUInt64LE(BigInt(`0x${matchFid[2]}`));
+      const full = Buffer.concat([
+        Buffer.from([0x0a, 0x12, 0x09]),
+        b1,
+        Buffer.from([0x11]),
+        b2,
+      ]);
+      const placeId = full
+        .toString("base64")
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=+$/, "");
+      return `https://search.google.com/local/writereview?placeid=${placeId}`;
+    } catch {
+      // Fallback
+    }
+  }
+
+  return null;
+}
+
