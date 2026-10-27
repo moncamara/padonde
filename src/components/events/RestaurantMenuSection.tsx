@@ -90,57 +90,72 @@ export function RestaurantMenuSection({
       {/* ─── 1. Tarjeta en la ficha del negocio ─── */}
       <section className="space-y-3">
         {tieneMenu && (
-          <div className="p-4 rounded-2xl bg-gradient-to-br from-terra/10 via-cream to-white border border-terra/20 shadow-xs flex items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              trackEvent("ver_menu_carta", {
+                restaurante: businessName,
+                zona: zonaNombre,
+                formato: fotos.length > 0 ? "fotos" : "enlace_externo",
+                paginas: fotos.length,
+              });
+              setModalAbierto(true);
+            }}
+            className="w-full text-left p-4 rounded-2xl bg-gradient-to-br from-terra/10 via-cream to-white border border-terra/20 hover:border-terra/40 hover:shadow-md active:scale-[0.99] transition-all flex items-center justify-between gap-3 cursor-pointer group"
+            aria-label={isEn ? "View menu & dishes" : "Ver carta y menú digital"}
+          >
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-12 h-12 rounded-xl bg-terra text-white flex items-center justify-center text-2xl shrink-0 shadow-xs">
+              <div className="w-12 h-12 rounded-xl bg-terra text-white flex items-center justify-center text-2xl shrink-0 shadow-xs group-hover:scale-105 transition-transform">
                 🍽️
               </div>
               <div className="min-w-0">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <h3 className="font-serif text-base font-semibold text-forest truncate">
-                    {isEn ? "Digital Menu & Dishes" : "Carta & Menú Digital"}
+                <div className="flex items-center gap-1.5">
+                  <h3 className="font-serif text-base font-semibold text-forest truncate group-hover:text-terra transition-colors">
+                    {isEn ? "Digital Menu" : "Carta & Menú"}
                   </h3>
                   {fotos.length > 0 && (
-                    <span className="text-[10px] font-sans font-medium px-2 py-0.5 rounded-full bg-terra/15 text-terra">
-                      {fotos.length} {fotos.length === 1 ? (isEn ? "page" : "pág") : (isEn ? "páginas" : "págs")}
+                    <span className="text-[10px] font-sans font-medium px-2 py-0.5 rounded-full bg-terra/15 text-terra shrink-0">
+                      {fotos.length} {fotos.length === 1 ? (isEn ? "page" : "pág") : (isEn ? "págs" : "págs")}
                     </span>
                   )}
                 </div>
                 <p className="text-xs text-stone line-clamp-1 mt-0.5">
                   {isEn
                     ? "Prices, specialties and options"
-                    : "Precios, especialidades y platos recomendados"}
+                    : "Precios y platos recomendados"}
                 </p>
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                trackEvent("ver_menu_carta", {
-                  restaurante: businessName,
-                  zona: zonaNombre,
-                  formato: fotos.length > 0 ? "fotos" : "enlace_externo",
-                  paginas: fotos.length,
-                });
-                setModalAbierto(true);
-              }}
-              className="shrink-0 bg-terra hover:bg-terra-dark text-white font-sans text-xs font-semibold px-4 py-2.5 rounded-xl transition-all shadow-xs hover:shadow-md active:scale-95 flex items-center gap-1.5 cursor-pointer"
-              aria-label={isEn ? "View menu" : "Ver carta"}
+            <span
+              className="shrink-0 bg-terra group-hover:bg-terra-dark text-white font-sans text-xs font-semibold px-3.5 py-2.5 rounded-xl transition-all shadow-xs group-hover:shadow-md group-hover:scale-105 flex items-center gap-1.5 pointer-events-none"
             >
               <span>📖</span>
               <span>{isEn ? "View Menu" : "Ver Carta"}</span>
-            </button>
-          </div>
+            </span>
+          </button>
         )}
 
         {/* ─── 2. Tarjeta de Calificación Google (Poderoso canal de reputación) ─── */}
         {linkCalificar && (
-          <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-between gap-3">
+          <a
+            href={linkCalificar}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => {
+              trackEvent("click_calificar_google", {
+                restaurante: businessName,
+                zona: zonaNombre,
+                ubicacion: "tarjeta_ficha",
+              });
+            }}
+            className="w-full text-left p-3.5 rounded-2xl bg-amber-500/10 hover:bg-amber-500/15 border border-amber-500/20 hover:border-amber-500/35 hover:shadow-xs active:scale-[0.99] transition-all flex items-center justify-between gap-3 cursor-pointer group text-inherit no-underline"
+            aria-label={isEn ? `Rate ${businessName} on Google` : `Calificar a ${businessName} en Google`}
+          >
             <div className="flex items-center gap-2.5 min-w-0">
-              <span className="text-xl shrink-0">⭐</span>
+              <span className="text-xl shrink-0 group-hover:scale-110 transition-transform">⭐</span>
               <div className="min-w-0">
-                <p className="font-sans text-xs font-semibold text-forest truncate">
+                <p className="font-sans text-xs font-semibold text-forest truncate group-hover:text-terra transition-colors">
                   {isEn ? "Enjoying your visit?" : "¿Disfrutaste tu visita?"}
                 </p>
                 <p className="text-[11px] text-stone line-clamp-1">
@@ -151,23 +166,13 @@ export function RestaurantMenuSection({
               </div>
             </div>
 
-            <a
-              href={linkCalificar}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => {
-                trackEvent("click_calificar_google", {
-                  restaurante: businessName,
-                  zona: zonaNombre,
-                  ubicacion: "tarjeta_ficha",
-                });
-              }}
-              className="shrink-0 bg-white hover:bg-amber-50 text-forest border border-amber-300 text-xs font-semibold px-3 py-1.5 rounded-xl transition-all shadow-2xs hover:shadow-xs active:scale-95 flex items-center gap-1"
+            <span
+              className="shrink-0 bg-white group-hover:bg-amber-50 text-forest border border-amber-300 text-xs font-semibold px-3 py-1.5 rounded-xl transition-all shadow-2xs group-hover:shadow-xs group-hover:scale-105 flex items-center gap-1 pointer-events-none"
             >
               <span className="text-amber-500">★</span>
               <span>{isEn ? "Rate" : "Calificar"}</span>
-            </a>
-          </div>
+            </span>
+          </a>
         )}
       </section>
 
