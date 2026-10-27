@@ -234,7 +234,7 @@ export function AdminQRGenerator({ locale }: { locale: string }) {
                 onClick={() =>
                   setAficheModal({
                     isOpen: true,
-                    nombre: nombrePunto || "PaDónde",
+                    nombre: nombrePunto || "",
                     url: urlGenerada,
                     qrUrl: qrImageUrl,
                     src: slugFinal,

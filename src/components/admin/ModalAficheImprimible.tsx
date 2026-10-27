@@ -30,6 +30,11 @@ export function ModalAficheImprimible({
 
   const nombreLugar = puntoNombre.trim();
   const isMenu = tipoContenido === "menu_restaurante";
+  // Evitar duplicar "PaDónde" debajo del logo de marca si no hay un local específico
+  const mostrarNombreLugar =
+    Boolean(nombreLugar) &&
+    nombreLugar.toLowerCase() !== "padonde" &&
+    nombreLugar.toLowerCase() !== "padónde";
 
   // Sanitizar URL destino
   const urlSeguraDestino = (
@@ -189,7 +194,7 @@ export function ModalAficheImprimible({
       <span>PaDónde</span>
     </div>
 
-    ${nombreLugar ? `<p class="venue-name">${nombreLugar}</p>` : ""}
+    ${mostrarNombreLugar ? `<p class="venue-name">${nombreLugar}</p>` : ""}
 
     <h1 class="title-en">${mainTitleEN}</h1>
     <p class="sub-es">${subTitleES}</p>
@@ -276,9 +281,9 @@ export function ModalAficheImprimible({
       ctx.textBaseline = "middle";
       ctx.fillText("🌿 PaDónde", width / 2, curY);
 
-      // Nombre del establecimiento (si existe)
+      // Nombre del establecimiento (si existe y es distinto a PaDónde)
       curY += 65;
-      if (nombreLugar) {
+      if (mostrarNombreLugar) {
         ctx.fillStyle = "#78716c";
         ctx.font = "bold 30px -apple-system, BlinkMacSystemFont, sans-serif";
         ctx.fillText(nombreLugar, width / 2, curY);
@@ -498,8 +503,8 @@ export function ModalAficheImprimible({
               <span>PaDónde</span>
             </div>
 
-            {/* Nombre del local (sin prefijo 'Punto:') */}
-            {nombreLugar && (
+            {/* Nombre del local (solo si es un establecimiento específico) */}
+            {mostrarNombreLugar && (
               <p className="text-xs font-sans font-bold text-stone tracking-wide">
                 {nombreLugar}
               </p>
