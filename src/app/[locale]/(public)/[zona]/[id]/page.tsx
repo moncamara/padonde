@@ -387,7 +387,7 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
             const googleReviewUrl =
               evento.metadata_hospedaje?.google_review_url ||
               (isPepeMojito
-                ? "https://search.google.com/local/writereview?placeid=ChIJCJBN8ou5X0jtxPOnhtoxus"
+                ? "https://search.google.com/local/writereview?placeid=ChIJiQTfKLuV9I4R3E86eG2jG6w"
                 : undefined);
 
             return (

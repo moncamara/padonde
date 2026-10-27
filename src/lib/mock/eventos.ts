@@ -336,7 +336,7 @@ Buena vibra, buena comida y buenos momentos a orillas del mar. Consulta nuestra 
           total_reviews: 145,
           maps_url: "https://maps.google.com/?cid=12401671911910625244",
         },
-        google_review_url: "https://search.google.com/local/writereview?placeid=ChIJCJBN8ou5X0jtxPOnhtoxus",
+        google_review_url: "https://search.google.com/local/writereview?placeid=ChIJiQTfKLuV9I4R3E86eG2jG6w",
         menu_url: "/menus/menupepe1.jpeg",
         menu_fotos: [
           "/menus/menupepe1.jpeg",

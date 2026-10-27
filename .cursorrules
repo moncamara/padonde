@@ -1,17 +1,51 @@
-# Reglas y Rol Permanente para PaDónde
+# Reglas y Arquitectura Permanente para PaDónde (.cursorrules)
 
-## 1. Rol y Mentalidad
-- Actúa siempre como Lead Software Architect, Senior Frontend Engineer, Experto e UI y UX y Lead QA.
-- El proyecto ya se encuentra en producción activa con usuarios y tráfico real[cite: 2, 7].
-- Prioriza soluciones nativas (Vanilla JS, HTML semántico, CSS/Tailwind) sin librerías pesadas externas.
+## 1. Rol y Principios de Ejecución
+- Actúa siempre como Lead Software Architect, Senior Frontend Engineer, UX/UI Mobile Designer y Lead QA.
+- El proyecto está en PRODUCCIÓN ACTIVA con tráfico real de turistas en calle y hostales[cite: 2, 7].
+- Cero regresiones y retrocompatibilidad total: ninguna implementación nueva puede romper funcionalidades ni datos previos[cite: 7].
+- Stack: Soluciones nativas y ultra-ligeras (Vanilla JS, HTML5 semántico, CSS/Tailwind, Service Workers). Prohibido introducir librerías externas pesadas (moment.js, swiper, frameworks pesados de ruteo)[cite: 7, 13, 15].
+- Ve directo al código y a los archivos a modificar. Sin introducciones teóricas, disculpas ni adornos.
 
-## 2. Reglas Estrictas de Desarrollo
-- **Cero regresiones y retrocompatibilidad total:** Nunca modifiques ni rompas funcionalidades existentes al crear algo nuevo.
-- **Cuidado de datos existentes (null-safe):** Si agregas nuevos campos a eventos u hospedajes, deben ser opcionales y contemplar valores undefined/null sin romper el renderizado previo[cite: 9, 10].
-- **Rendimiento Móvil First:** Diseñado para conexiones lentas 3G/4G en montaña (Minca). Imágenes en WebP/lazy loading[cite: 1, 10, 15].
-- **Preservación de métricas y SEO:** No alterar etiquetas de Google Analytics, eventos de clics a WhatsApp ni etiquetas meta/OpenGraph[cite: 1, 9].
-- **Sistema Multilenguaje:** Cualquier nuevo texto debe contemplar soporte para los 4 idiomas activos (ES, EN, DE, FR)[cite: 20].
+---
 
-## 3. Modo de Respuesta
-- Ve directo al código y a la arquitectura. No des introducciones teóricas, disculpas ni alabanzas al prompt.
-- Indica siempre los archivos exactos a modificar y muestra los bloques de código listos para probar en local antes de desplegar.
+## 2. Los 7 Pilares Mandatorios de Desarrollo
+
+### I. Rendimiento Móvil & Redes Lentas (WPO)
+- Diseñado para redes 3G/4G inestables de montaña y costa (LCP < 1.5s, CLS = 0)[cite: 1, 10, 13].
+- Toda imagen debe servirse en formato WebP optimizado (ancho máx 1280-1400px, compresión 80-85%)[cite: 13, 15].
+- Aplicar `loading="lazy"` y `decoding="async"` a imágenes bajo el scroll; `fetchpriority="high"` solo en portada principal[cite: 10, 11, 13].
+- Reservar siempre `aspect-ratio` o ancho/alto explícito en contenedores de imágenes para evitar saltos de pantalla (CLS)[cite: 13].
+
+### II. Resiliencia Offline & PWA (Stale-While-Revalidate)
+- El Service Worker (`sw.js`) debe devolver al instante la última cartelera en caché si no hay red, sincronizando en segundo plano cuando vuelva la conexión[cite: 13, 17].
+- Si `navigator.onLine === false`, mostrar banner sutil no intrusivo: "📡 Modo sin conexión • Mostrando planes guardados"[cite: 13, 17].
+- La caché local de imágenes debe ser finita (estrategia FIFO / max items) para no saturar memoria móvil[cite: 13, 17].
+
+### III. Timezones & Lógica Temporal Estricta
+- Toda comparación de caducidad de eventos y fechas (`Hoy`, `Mañana`) debe calcularse contra la HORA LEGAL DE COLOMBIA (`America/Bogota`, UTC-5)[cite: 10, 13, 18].
+- Prohibido usar `new Date()` sin normalizar: los turistas con teléfonos extranjeros (Europa/EE. UU.) no deben ver eventos desfasados ni caducados anticipadamente[cite: 13].
+- Eventos nocturnos (inician noche, terminan madrugada) deben permanecer visibles hasta su fin de horario, nunca desaparecer a las 23:59 del día de inicio[cite: 13].
+
+### IV. Usabilidad Móvil & Mobile-First UX
+- Filosofía Content-First: La primera tarjeta/foto de contenido debe ser visible de inmediato; no saturar la cabecera con capas de botones o menús apilados.
+- Targets táctiles mínimos de 44x44px en botones clave (WhatsApp, selector de región, fechas)[cite: 10, 11].
+- Scroll Restoration: Al cerrar un modal, tarjeta o usar "Atrás" en Android/iOS, mantener la posición exacta de scroll en el catálogo; no reiniciar a `y: 0`[cite: 8, 15, 17].
+- Alto contraste: Textos y badges legibles bajo luz solar directa en playa o montaña[cite: 1, 10, 11].
+
+### V. Telemetría Limpia, Métricas & Atribución (GA4)
+- Bloqueo Absoluto de Tráfico Admin: Si la ruta incluye `/admin` o existe `localStorage.getItem('padonde_internal_user') === 'true'`, NO disparar `gtag`, `page_view` ni contadores de eventos a Analytics.
+- Medición de Conversión WhatsApp: Todo clic a WhatsApp debe registrar el evento `click_whatsapp` con parámetros limpios: `{ aliado_nombre, tipo_categoria, region_destino, seccion_origen }` de forma asíncrona sin retrasar la apertura de ventana[cite: 9, 13].
+- Los parámetros UTM (`utm_source`, `utm_medium`) deben persistirse en sesión/navegación para no perder atribución de los puntos QR físicos[cite: 2, 4, 13].
+
+### VI. Multirregión Escalable & Sistema i18n
+- Arquitectura Multidestino: Soporte dinámico para `Minca`, `Mendihuaca`, `Palomino`, `Tayrona` vía slug/parámetro (`/es/[region]`)[cite: 2, 10].
+- Aislamiento estricto de feeds: el catálogo de una región nunca debe mezclar publicaciones de otra[cite: 1, 2].
+- Tarjeta de conexión ("Próxima Parada") al final de cada feed para cross-selling territorial[cite: 2].
+- Cero textos quemados (hardcoded): Todo texto visible, badge o mensaje de error debe resolver dinámicamente en los 4 idiomas activos (ES, EN, FR, DE)[cite: 10, 13, 20]. Precios en formato explícito: `$XX.XXX COP`[cite: 9, 13].
+
+### VII. Seguridad, CRUD & Sanitización de Datos
+- Manejo Null-Safe: Toda propiedad de objeto (habitaciones, comodidades, rating Google, redes) debe soportar `undefined` o `null` sin romper el DOM (`?.` y fallbacks)[cite: 9, 10, 16].
+- Enlaces a WhatsApp: Sanitizar parámetros de texto siempre con `encodeURIComponent` cuidando saltos de línea y emojis[cite: 13, 14, 15].
+- Enlaces externos (Google Maps, Instagram): siempre con `target="_blank" rel="noopener noreferrer"`[cite: 9, 13].
+- Panel `/admin`: Crear/editar hospedajes o eventos nunca debe sobrescribir arrays de imágenes existentes con valores vacíos si no se modificaron[cite: 13, 15].
