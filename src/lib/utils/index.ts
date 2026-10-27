@@ -575,26 +575,15 @@ export function extraerGoogleReviewUrl(inputUrl?: string | null): string | null 
   const matchFid = raw.match(/0x([0-9a-fA-F]{12,18}):0x([0-9a-fA-F]{12,18})/);
   if (matchFid && matchFid[1] && matchFid[2]) {
     try {
-      const b1 = Buffer.alloc(8);
-      b1.writeBigUInt64LE(BigInt(`0x${matchFid[1]}`));
-      const b2 = Buffer.alloc(8);
-      b2.writeBigUInt64LE(BigInt(`0x${matchFid[2]}`));
-      const full = Buffer.concat([
-        Buffer.from([0x0a, 0x12, 0x09]),
-        b1,
-        Buffer.from([0x11]),
-        b2,
-      ]);
-      const placeId = full
-        .toString("base64")
-        .replace(/\+/g, "-")
-        .replace(/\//g, "_")
-        .replace(/=+$/, "");
-      return `https://search.google.com/local/writereview?placeid=${placeId}`;
+      const cid = BigInt(`0x${matchFid[2]}`).toString();
+      if (cid && cid !== "0") {
+        return `https://search.google.com/local/writereview?cid=${cid}`;
+      }
     } catch {
       // Fallback
     }
   }
+
 
   return null;
 }

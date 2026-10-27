@@ -17,6 +17,8 @@ import {
   BOOKMARKLET_URI,
 } from "@/lib/fotoUtils";
 import { buscarCoincidenciaHospedaje } from "@/lib/hospedajeParser";
+import { extraerGoogleReviewUrl } from "@/lib/utils";
+
 
 interface ModalEditarHospedajeProps {
   hospedaje?: any | null;
@@ -490,6 +492,11 @@ export function ModalEditarHospedaje({
                 maps_url: mapsUrl.trim(),
               }
             : undefined,
+        google_review_url:
+          extraerGoogleReviewUrl(mapsUrl) ||
+          hospedaje?.metadata_hospedaje?.google_review_url ||
+          undefined,
+
         habitaciones: habitaciones.map((h) => ({
           ...h,
           precio_noche_cop: Number(h.precio_noche_cop),
