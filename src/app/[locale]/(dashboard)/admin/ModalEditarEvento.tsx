@@ -69,17 +69,32 @@ export function ModalEditarEvento({
     evento.metadata_hospedaje?.google_reputacion?.maps_url || ""
   );
 
+  // Detectar Pepe Mojito para fallback automático de fotos de menú si la BD aún no las tiene guardadas
+  const isPepeMojito =
+    evento.id === "0274476c-aa64-42d9-9cbc-1e0a41940c2d" ||
+    (evento.negocio?.nombre || "").toLowerCase().includes("pepe mojito") ||
+    (evento.titulo || "").toLowerCase().includes("pepe mojito");
+
   // Carta digital y calificaciones de Google
   const [menuUrl, setMenuUrl] = useState(
-    evento.metadata_hospedaje?.menu_url || ""
+    evento.metadata_hospedaje?.menu_url ||
+      (isPepeMojito ? "/menus/menupepe1.jpeg" : "")
   );
   const [menuFotos, setMenuFotos] = useState<string[]>(
-    evento.metadata_hospedaje?.menu_fotos || []
+    evento.metadata_hospedaje?.menu_fotos &&
+      evento.metadata_hospedaje.menu_fotos.length > 0
+      ? evento.metadata_hospedaje.menu_fotos
+      : isPepeMojito
+      ? ["/menus/menupepe1.jpeg", "/menus/menupepe2.jpeg"]
+      : []
   );
   const [subiendoFotoMenu, setSubiendoFotoMenu] = useState(false);
   const [subiendoPdfMenu, setSubiendoPdfMenu] = useState(false);
   const [googleReviewUrl, setGoogleReviewUrl] = useState(
-    evento.metadata_hospedaje?.google_review_url || ""
+    evento.metadata_hospedaje?.google_review_url ||
+      (isPepeMojito
+        ? "https://search.google.com/local/writereview?placeid=ChIJiQTfKLuV9I4R3E86eG2jG6w"
+        : "")
   );
   const [mostrarHabladorMesa, setMostrarHabladorMesa] = useState(false);
 
@@ -931,19 +946,34 @@ export function ModalEditarEvento({
 
           {/* 9b. Carta Digital & Hablador de Mesa para Restaurantes y Comercios */}
           <div className="space-y-3.5 p-3.5 sm:p-4 rounded-2xl bg-amber-50/70 border border-amber-200/90 font-sans text-xs">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <span className="font-semibold text-forest flex items-center gap-1.5">
                 <span>🍽️</span> Carta Digital & Hablador de Mesa (Opcional)
               </span>
-              <button
-                type="button"
-                onClick={() => setMostrarHabladorMesa(true)}
-                className="bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-semibold px-2.5 py-1 rounded-lg transition-all shadow-2xs flex items-center gap-1 cursor-pointer"
-                title="Generar hablador de mesa con código QR para imprimir"
-              >
-                <span>🖨️</span>
-                <span>Generar Hablador QR</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <a
+                  href={`https://api.qrserver.com/v1/create-qr-code/?size=1200x1200&margin=8&data=${encodeURIComponent(
+                    `https://www.padonde.lat/es/${(evento.zona_id || "mendihuaca").replace(/^zona-/, "")}/${evento.id}?src=mesa-restaurante&menu=abrir`
+                  )}`}
+                  target="_blank"
+                  download={`solo-qr-mesa-${(evento.negocio?.nombre || "restaurante").toLowerCase().replace(/[^\w-]/g, "-")}.png`}
+                  className="bg-white hover:bg-stone-50 text-forest border border-stone-300 text-[11px] font-semibold px-2.5 py-1 rounded-lg transition-all shadow-2xs flex items-center gap-1 cursor-pointer"
+                  title="Descargar solo el código QR limpio en PNG alta resolución (sin texto ni marcos)"
+                >
+                  <span>🔲</span>
+                  <span>Descargar Solo QR (PNG)</span>
+                </a>
+
+                <button
+                  type="button"
+                  onClick={() => setMostrarHabladorMesa(true)}
+                  className="bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-semibold px-2.5 py-1 rounded-lg transition-all shadow-2xs flex items-center gap-1 cursor-pointer"
+                  title="Generar hablador de mesa con código QR para imprimir"
+                >
+                  <span>🖨️</span>
+                  <span>Hablador con Diseño</span>
+                </button>
+              </div>
             </div>
             <p className="text-stone text-[11px] leading-relaxed">
               Sube las fotos de tu menú (página por página) o tu archivo PDF. Habilitará el visor de lujo a pantalla completa y el QR de mesa para los comensales.
@@ -1166,7 +1196,7 @@ export function ModalEditarEvento({
           isOpen={mostrarHabladorMesa}
           onClose={() => setMostrarHabladorMesa(false)}
           puntoNombre={evento.negocio?.nombre || evento.titulo}
-          urlDestino={`https://www.padonde.lat/es/minca/${evento.id}?src=mesa-restaurante`}
+          urlDestino={`https://www.padonde.lat/es/${(evento.zona_id || "mendihuaca").replace(/^zona-/, "")}/${evento.id}?src=mesa-restaurante&menu=abrir`}
           tipoContenido="menu_restaurante"
           srcParam="mesa-restaurante"
         />
