@@ -1079,12 +1079,19 @@ export function ModalEditarHospedaje({
                 </div>
                 <div className="flex items-center gap-2">
                   <input
-                    type="url"
+                    type="text"
                     value={mapsUrl}
-                    onChange={(e) => setMapsUrl(e.target.value)}
+                    onChange={(e) => {
+                      let val = e.target.value.trim();
+                      if (val && !val.startsWith("http://") && !val.startsWith("https://")) {
+                        val = `https://${val}`;
+                      }
+                      setMapsUrl(val);
+                    }}
                     placeholder="https://maps.app.goo.gl/... o https://maps.google.com/?q=..."
                     className="flex-1 bg-cream/70 border border-stone-light rounded-xl px-3 py-2 text-forest focus:outline-none focus:border-forest font-mono text-[11px]"
                   />
+
                   {mapsUrl && (
                     <a
                       href={mapsUrl}

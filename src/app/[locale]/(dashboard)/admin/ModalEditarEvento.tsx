@@ -942,10 +942,13 @@ export function ModalEditarEvento({
                   Enlace a Google Maps
                 </label>
                 <input
-                  type="url"
+                  type="text"
                   value={mapsUrl}
                   onChange={(e) => {
-                    const val = e.target.value;
+                    let val = e.target.value.trim();
+                    if (val && !val.startsWith("http://") && !val.startsWith("https://")) {
+                      val = `https://${val}`;
+                    }
                     setMapsUrl(val);
                     const autoReview = extraerGoogleReviewUrl(val);
                     if (autoReview) {
@@ -956,6 +959,7 @@ export function ModalEditarEvento({
                   className="w-full bg-white border border-stone-light rounded-xl px-3 py-2 text-forest focus:outline-none focus:border-forest text-xs"
                 />
               </div>
+
 
               <div className="col-span-2 sm:col-span-3">
                 <div className="flex items-center justify-between mb-1">
