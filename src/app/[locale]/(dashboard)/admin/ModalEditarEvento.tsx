@@ -285,10 +285,14 @@ export function ModalEditarEvento({
         negocioId: negocioId || undefined,
         googleReputacion,
         galeriaFotos,
-        googleReviewUrl: googleReviewUrl.trim() || undefined,
+        googleReviewUrl:
+          (googleReviewUrl && (googleReviewUrl.startsWith("http://") || googleReviewUrl.startsWith("https://")))
+            ? googleReviewUrl.trim()
+            : extraerGoogleReviewUrl(mapsUrl) || undefined,
         menuFotos: menuFotos.length > 0 ? menuFotos : undefined,
         menuUrl: menuUrl.trim() || undefined,
       });
+
 
       if (!res.success) {
         setError(res.error || "No se pudo actualizar el evento.");
@@ -944,11 +948,11 @@ export function ModalEditarEvento({
                     const val = e.target.value;
                     setMapsUrl(val);
                     const autoReview = extraerGoogleReviewUrl(val);
-                    if (autoReview && !googleReviewUrl) {
+                    if (autoReview) {
                       setGoogleReviewUrl(autoReview);
                     }
                   }}
-                  placeholder="https://maps.app.goo.gl/... o search"
+                  placeholder="https://www.google.com/maps/place/..."
                   className="w-full bg-white border border-stone-light rounded-xl px-3 py-2 text-forest focus:outline-none focus:border-forest text-xs"
                 />
               </div>
@@ -959,16 +963,26 @@ export function ModalEditarEvento({
                     <span>⭐</span>
                     <span>Enlace directo a Calificar con 5 estrellas (Google Reviews)</span>
                   </label>
-                  {googleReviewUrl && (
+                  {googleReviewUrl && (googleReviewUrl.startsWith("http://") || googleReviewUrl.startsWith("https://")) && (
                     <span className="text-[10px] text-emerald-700 bg-emerald-100 font-semibold px-2 py-0.5 rounded-full">
                       ✓ Directo a estrellas
                     </span>
                   )}
                 </div>
                 <input
-                  type="url"
+                  type="text"
                   value={googleReviewUrl}
-                  onChange={(e) => setGoogleReviewUrl(e.target.value)}
+                  onChange={(e) => {
+                    const rawVal = e.target.value;
+                    const auto = extraerGoogleReviewUrl(rawVal);
+                    if (auto) {
+                      setGoogleReviewUrl(auto);
+                    } else if (rawVal.trim().startsWith("ChIJ")) {
+                      setGoogleReviewUrl(`https://search.google.com/local/writereview?placeid=${rawVal.trim()}`);
+                    } else {
+                      setGoogleReviewUrl(rawVal);
+                    }
+                  }}
                   placeholder="https://search.google.com/local/writereview?placeid=... (se auto-calcula al pegar Google Maps)"
                   className="w-full bg-white border border-stone-light rounded-xl px-3 py-2 text-forest focus:outline-none focus:border-forest text-xs font-mono text-[11px]"
                 />
@@ -976,6 +990,7 @@ export function ModalEditarEvento({
                   Lleva al turista directo a las 5 estrellas sin rodeos. Si pegas el enlace de Maps arriba, se auto-completa solo.
                 </p>
               </div>
+
             </div>
           </div>
 
