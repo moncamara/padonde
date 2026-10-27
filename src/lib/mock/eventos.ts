@@ -334,9 +334,9 @@ Buena vibra, buena comida y buenos momentos a orillas del mar. Consulta nuestra 
         google_reputacion: {
           rating: 4.8,
           total_reviews: 145,
-          maps_url: "https://maps.app.goo.gl/mendihuaca",
+          maps_url: "https://maps.google.com/?cid=12401671911910625244",
         },
-        google_review_url: "https://search.google.com/local/writereview?placeid=ChIJpepemojito",
+        google_review_url: "https://search.google.com/local/writereview?placeid=ChIJCJBN8ou5X0jtxPOnhtoxus",
         menu_url: "/menus/menupepe1.jpeg",
         menu_fotos: [
           "/menus/menupepe1.jpeg",

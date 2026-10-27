@@ -387,7 +387,7 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
             const googleReviewUrl =
               evento.metadata_hospedaje?.google_review_url ||
               (isPepeMojito
-                ? "https://search.google.com/local/writereview?placeid=ChIJpepemojito"
+                ? "https://search.google.com/local/writereview?placeid=ChIJCJBN8ou5X0jtxPOnhtoxus"
                 : undefined);
 
             return (
@@ -398,7 +398,7 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
                 googleReviewUrl={googleReviewUrl}
                 googleMapsUrl={
                   evento.metadata_hospedaje?.google_reputacion?.maps_url ||
-                  (isPepeMojito ? "https://maps.app.goo.gl/mendihuaca" : undefined)
+                  (isPepeMojito ? "https://maps.google.com/?cid=12401671911910625244" : undefined)
                 }
                 zonaNombre={zona.nombre}
                 locale={locale}
