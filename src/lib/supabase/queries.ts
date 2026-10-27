@@ -21,6 +21,7 @@ const COLUMNAS_BASE = `
   tiene_boleteria,
   activo,
   created_at,
+  metadata_hospedaje,
   negocio:negocios (
     nombre,
     whatsapp,

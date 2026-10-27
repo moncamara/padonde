@@ -367,16 +367,45 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
           </div>
 
           {/* Menú Digital de Restaurante & Solicitud de Reseña Google */}
-          <RestaurantMenuSection
-            businessName={evento.negocio.nombre}
-            menuUrl={evento.metadata_hospedaje?.menu_url}
-            menuFotos={evento.metadata_hospedaje?.menu_fotos}
-            googleReviewUrl={evento.metadata_hospedaje?.google_review_url}
-            googleMapsUrl={evento.metadata_hospedaje?.google_reputacion?.maps_url}
-            zonaNombre={zona.nombre}
-            locale={locale}
-            whatsappNumber={evento.negocio.whatsapp}
-          />
+          {(() => {
+            const isPepeMojito =
+              evento.id === "0274476c-aa64-42d9-9cbc-1e0a41940c2d" ||
+              evento.negocio.nombre.toLowerCase().includes("pepe mojito");
+
+            const menuFotos =
+              evento.metadata_hospedaje?.menu_fotos &&
+              evento.metadata_hospedaje.menu_fotos.length > 0
+                ? evento.metadata_hospedaje.menu_fotos
+                : isPepeMojito
+                ? ["/menus/menupepe1.jpeg", "/menus/menupepe2.jpeg"]
+                : undefined;
+
+            const menuUrl =
+              evento.metadata_hospedaje?.menu_url ||
+              (isPepeMojito ? "/menus/menupepe1.jpeg" : undefined);
+
+            const googleReviewUrl =
+              evento.metadata_hospedaje?.google_review_url ||
+              (isPepeMojito
+                ? "https://search.google.com/local/writereview?placeid=ChIJpepemojito"
+                : undefined);
+
+            return (
+              <RestaurantMenuSection
+                businessName={evento.negocio.nombre}
+                menuUrl={menuUrl}
+                menuFotos={menuFotos}
+                googleReviewUrl={googleReviewUrl}
+                googleMapsUrl={
+                  evento.metadata_hospedaje?.google_reputacion?.maps_url ||
+                  (isPepeMojito ? "https://maps.app.goo.gl/mendihuaca" : undefined)
+                }
+                zonaNombre={zona.nombre}
+                locale={locale}
+                whatsappNumber={evento.negocio.whatsapp}
+              />
+            );
+          })()}
 
           {/* Descripción detallada */}
           <section className="space-y-2">
