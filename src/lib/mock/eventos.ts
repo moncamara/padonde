@@ -45,6 +45,19 @@ export function getMockEventos(zonaSlug?: string): EventoConNegocio[] {
       tiene_boleteria: false,
       activo: true,
       created_at: new Date().toISOString(),
+      metadata_hospedaje: {
+        google_reputacion: {
+          rating: 4.9,
+          total_reviews: 184,
+          maps_url: "https://maps.app.goo.gl/minca",
+        },
+        google_review_url: "https://search.google.com/local/writereview?placeid=ChIJplaceholder",
+        menu_url: "https://www.padonde.lat",
+        menu_fotos: [
+          "https://images.unsplash.com/photo-1544025162-d76694265947?w=1200&q=80",
+          "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1200&q=80",
+        ],
+      },
       negocio: {
         nombre: "Café Sierra",
         whatsapp: "573001234567",
@@ -297,6 +310,43 @@ Disfruta de habitaciones privadas frente a la playa con balcón y hamacas, jard�
         nombre: "Casa Maya Mendihuaca",
         whatsapp: "573124082342",
         instagram: "@casamaya_mendihuaca",
+      },
+    },
+    {
+      id: "evt-pepe-mojito-mendihuaca",
+      negocio_id: "neg-pepe-mojito",
+      zona_id: "zona-mendihuaca",
+      titulo: "🍹 Sunsets, Mojitos & Sabores del Mar — Pepe Mojito Bar",
+      descripcion: `Frente al mar en Playa Mendihuaca. Ven a disfrutar de la mejor coctelería caribeña, mojitos de autor, mariscos frescos, hamburguesas de angus y pizzas al horno con la mejor vista al atardecer caribeño.
+      
+Buena vibra, buena comida y buenos momentos a orillas del mar. Consulta nuestra carta digital completa o escanea en mesa para ordenar directo.`,
+      tipo: "comida",
+      precio: 35000,
+      precio_moneda: "COP",
+      fecha_inicio: toISO(hoy, 12, 0),
+      fecha_fin: toISO(hoy, 23, 0),
+      imagen_url: "/menus/menupepe1.jpeg",
+      destacado: true,
+      tiene_boleteria: false,
+      activo: true,
+      created_at: new Date().toISOString(),
+      metadata_hospedaje: {
+        google_reputacion: {
+          rating: 4.8,
+          total_reviews: 145,
+          maps_url: "https://maps.app.goo.gl/mendihuaca",
+        },
+        google_review_url: "https://search.google.com/local/writereview?placeid=ChIJpepemojito",
+        menu_url: "/menus/menupepe1.jpeg",
+        menu_fotos: [
+          "/menus/menupepe1.jpeg",
+          "/menus/menupepe2.jpeg",
+        ],
+      },
+      negocio: {
+        nombre: "Pepe Mojito Bar",
+        whatsapp: "573145678901",
+        instagram: "@pepemojitobar",
       },
     },
   ];

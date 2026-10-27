@@ -25,6 +25,7 @@ import { DetailBackButton } from "@/components/events/DetailBackButton";
 import { DetailSlideWrapper } from "@/components/events/DetailSlideWrapper";
 import { EventVideoPlayer } from "@/components/events/EventVideoPlayer";
 import { EventHeroGallery } from "@/components/events/EventHeroGallery";
+import { RestaurantMenuSection } from "@/components/events/RestaurantMenuSection";
 import type { ZonaSlug } from "@/lib/types";
 import type { Metadata } from "next";
 
@@ -137,7 +138,39 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
     limpiarDescripcionRecurrencia(evento.descripcion) ||
     `${evento.titulo} en ${evento.negocio.nombre}, ${zona.nombre}.`;
 
-  // Datos estructurados Schema.org para Google Events Rich Snippets
+  // Datos estructurados Schema.org para Google Events y Restaurant Rich Snippets
+  const isRestaurante = evento.tipo === "comida";
+  const restaurantJsonLd = isRestaurante
+    ? {
+        "@context": "https://schema.org",
+        "@type": "Restaurant",
+        name: evento.negocio.nombre,
+        description: descripcionLimpia,
+        image: evento.imagen_url ? [evento.imagen_url] : [],
+        url: `https://www.padonde.lat/${locale}/${zonaSlug}/${evento.id}`,
+        telephone: `+${evento.negocio.whatsapp.replace(/\D/g, "")}`,
+        address: {
+          "@type": "PostalAddress",
+          addressLocality: zona.nombre,
+          addressRegion: "Magdalena",
+          addressCountry: "CO",
+        },
+        priceRange: evento.precio ? `${evento.precio} COP` : "$$",
+        ...(evento.metadata_hospedaje?.menu_url || (evento.metadata_hospedaje?.menu_fotos && evento.metadata_hospedaje.menu_fotos.length > 0)
+          ? { hasMenu: evento.metadata_hospedaje?.menu_url || `https://www.padonde.lat/${locale}/${zonaSlug}/${evento.id}` }
+          : {}),
+        ...(evento.metadata_hospedaje?.google_reputacion?.rating
+          ? {
+              aggregateRating: {
+                "@type": "AggregateRating",
+                ratingValue: evento.metadata_hospedaje.google_reputacion.rating,
+                reviewCount: evento.metadata_hospedaje.google_reputacion.total_reviews || 1,
+              },
+            }
+          : {}),
+      }
+    : null;
+
   const eventJsonLd = {
     "@context": "https://schema.org",
     "@type": "Event",
@@ -170,14 +203,15 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
       url: `https://www.padonde.lat/${locale}/${zonaSlug}/${evento.id}`,
       availability: "https://schema.org/InStock",
     },
+    ...(evento.metadata_hospedaje?.menu_url ? { hasMenu: evento.metadata_hospedaje.menu_url } : {}),
   };
 
   return (
     <DetailSlideWrapper zonaSlug={zonaSlug}>
-      {/* Datos estructurados JSON-LD para Google Search Events */}
+      {/* Datos estructurados JSON-LD para Google Search Events y Restaurantes */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(eventJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(restaurantJsonLd || eventJsonLd) }}
       />
 
       {/* 1. Header flotante sobre la foto con botón atrás, selector de idioma y compartir */}
@@ -331,6 +365,18 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
               )}
             </div>
           </div>
+
+          {/* Menú Digital de Restaurante & Solicitud de Reseña Google */}
+          <RestaurantMenuSection
+            businessName={evento.negocio.nombre}
+            menuUrl={evento.metadata_hospedaje?.menu_url}
+            menuFotos={evento.metadata_hospedaje?.menu_fotos}
+            googleReviewUrl={evento.metadata_hospedaje?.google_review_url}
+            googleMapsUrl={evento.metadata_hospedaje?.google_reputacion?.maps_url}
+            zonaNombre={zona.nombre}
+            locale={locale}
+            whatsappNumber={evento.negocio.whatsapp}
+          />
 
           {/* Descripción detallada */}
           <section className="space-y-2">

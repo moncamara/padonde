@@ -226,3 +226,51 @@ export async function extractVideoThumbnail(
   });
 }
 
+/**
+ * Sube un archivo de menú (PDF o Imagen) al bucket 'eventos' bajo 'menus/'.
+ * - Si es imagen, la comprime automáticamente a WebP/JPEG optimizado para móviles.
+ * - Si es PDF, lo sube directamente con content-type 'application/pdf'.
+ */
+export async function uploadMenuDocument(file: File): Promise<string | null> {
+  try {
+    const isPdf =
+      file.type === "application/pdf" ||
+      file.name.toLowerCase().endsWith(".pdf");
+
+    let fileToUpload = file;
+    let contentType = file.type;
+
+    if (!isPdf) {
+      fileToUpload = await comprimirImagenCliente(file, 1600, 0.88);
+      contentType = fileToUpload.type || "image/jpeg";
+    } else {
+      contentType = "application/pdf";
+    }
+
+    const fileExt =
+      fileToUpload.name.split(".").pop() || (isPdf ? "pdf" : "jpg");
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+    const filePath = `menus/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("eventos")
+      .upload(filePath, fileToUpload, {
+        cacheControl: "31536000",
+        contentType,
+        upsert: false,
+      });
+
+    if (uploadError) {
+      console.warn("Error al subir documento de menú a Supabase Storage:", uploadError);
+      return null;
+    }
+
+    const { data } = supabase.storage.from("eventos").getPublicUrl(filePath);
+    return data.publicUrl;
+  } catch (err) {
+    console.error("Excepción en uploadMenuDocument:", err);
+    return null;
+  }
+}
+
+

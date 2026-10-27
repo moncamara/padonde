@@ -3,7 +3,13 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { Link } from "@/i18n/routing";
 import { CATEGORIAS_EVENTOS, getCategoria } from "@/constants";
-import { uploadEventImage, uploadEventVideo, extractVideoThumbnail } from "@/lib/supabase/storage";
+import Image from "next/image";
+import {
+  uploadEventImage,
+  uploadEventVideo,
+  uploadMenuDocument,
+  extractVideoThumbnail,
+} from "@/lib/supabase/storage";
 import { adminPublishEventAction } from "../actions";
 import { Button } from "@/components/ui/Button";
 import { ModalAsistenteEvento } from "../ModalAsistenteEvento";
@@ -167,6 +173,13 @@ export function AdminPublishForm({
   const [reviewsGoogle, setReviewsGoogle] = useState("");
   const [mapsUrl, setMapsUrl] = useState("");
 
+  // Carta digital y calificaciones de Google
+  const [menuUrl, setMenuUrl] = useState("");
+  const [menuFotos, setMenuFotos] = useState<string[]>([]);
+  const [subiendoFotoMenu, setSubiendoFotoMenu] = useState(false);
+  const [subiendoPdfMenu, setSubiendoPdfMenu] = useState(false);
+  const [googleReviewUrl, setGoogleReviewUrl] = useState("");
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createdEventId, setCreatedEventId] = useState<string | null>(null);
@@ -266,6 +279,50 @@ export function AdminPublishForm({
     }
   }
 
+  async function handleAgregarFotosMenu(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    if (menuFotos.length + files.length > 10) {
+      alert("Puedes agregar un máximo de 10 páginas para la carta digital.");
+      return;
+    }
+    setSubiendoFotoMenu(true);
+    try {
+      for (const f of files) {
+        const url = await uploadMenuDocument(f);
+        if (url) {
+          setMenuFotos((prev) => [...prev, url]);
+        }
+      }
+    } catch (err: any) {
+      alert("Error al subir imagen de la carta: " + (err?.message || "intenta de nuevo"));
+    } finally {
+      setSubiendoFotoMenu(false);
+      e.target.value = "";
+    }
+  }
+
+  function handleEliminarFotoMenu(indexAEliminar: number) {
+    setMenuFotos((prev) => prev.filter((_, i) => i !== indexAEliminar));
+  }
+
+  async function handleSubirPdfMenu(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setSubiendoPdfMenu(true);
+    try {
+      const url = await uploadMenuDocument(f);
+      if (url) {
+        setMenuUrl(url);
+      }
+    } catch (err: any) {
+      alert("Error al subir archivo PDF: " + (err?.message || "intenta de nuevo"));
+    } finally {
+      setSubiendoPdfMenu(false);
+      e.target.value = "";
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -323,6 +380,9 @@ export function AdminPublishForm({
         isFeatured,
         zonaSlug,
         googleReputacion,
+        menuUrl: menuUrl.trim() || undefined,
+        menuFotos: menuFotos.length > 0 ? menuFotos : undefined,
+        googleReviewUrl: googleReviewUrl.trim() || undefined,
       });
 
       if (!result.success) {
@@ -1145,6 +1205,134 @@ export function AdminPublishForm({
               value={mapsUrl}
               onChange={(e) => setMapsUrl(e.target.value)}
               placeholder="https://maps.app.goo.gl/..."
+              className="w-full px-4 py-3 rounded-xl border border-stone-light bg-cream text-forest text-sm font-sans focus:outline-none focus:border-forest transition-colors"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* 5. CARTA DIGITAL & MENÚ DE RESTAURANTE (OPCIONAL) */}
+      <section className="bg-white/70 backdrop-blur-sm rounded-3xl p-6 border border-stone-light/70 space-y-4">
+        <div>
+          <h2 className="font-serif text-lg text-forest flex items-center justify-between">
+            <span className="flex items-center gap-2">
+              <span>🍽️</span> 5. Carta Digital & Menú (Restaurantes / Cafés)
+            </span>
+            {menuFotos.length > 0 && (
+              <span className="text-xs bg-amber-100 text-amber-900 px-2.5 py-0.5 rounded-full font-medium font-sans">
+                {menuFotos.length} pág{menuFotos.length > 1 ? "s" : ""}
+              </span>
+            )}
+          </h2>
+          <p className="font-sans text-xs text-stone mt-1">
+            Sube las páginas de tu menú en fotos o en archivo PDF. Habilita el visor de lujo a pantalla completa y la generación del hablador QR para mesas.
+          </p>
+        </div>
+
+        {/* A. Subida de Fotos de la Carta (Página 1, Página 2, etc.) */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-forest font-semibold text-xs font-sans flex items-center gap-1">
+              <span>📸</span> Páginas del Menú en Fotos ({menuFotos.length}/10)
+            </span>
+            <span className="text-[10px] text-stone font-sans">
+              {menuFotos.length === 0
+                ? "Sin fotos cargadas"
+                : `${menuFotos.length} página${menuFotos.length > 1 ? "s" : ""} lista${menuFotos.length > 1 ? "s" : ""}`}
+            </span>
+          </div>
+
+          <div className="flex flex-wrap gap-2.5 items-center">
+            {menuFotos.map((foto, idx) => (
+              <div
+                key={idx}
+                className="relative w-20 h-24 rounded-xl overflow-hidden border border-amber-300 bg-white shadow-2xs group"
+              >
+                <Image
+                  src={foto}
+                  alt={`Página ${idx + 1}`}
+                  fill
+                  className="object-cover"
+                  unoptimized
+                />
+                <button
+                  type="button"
+                  onClick={() => handleEliminarFotoMenu(idx)}
+                  className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center text-[10px] font-bold shadow-md transition-all active:scale-90 cursor-pointer"
+                  title="Eliminar esta página"
+                >
+                  ✕
+                </button>
+                <span className="absolute bottom-1 left-1 bg-black/70 text-white text-[9px] px-1.5 py-0.5 rounded font-sans font-bold">
+                  Pág. {idx + 1}
+                </span>
+              </div>
+            ))}
+
+            {menuFotos.length < 10 && (
+              <label className="w-20 h-24 rounded-xl border-2 border-dashed border-amber-400/80 hover:border-amber-600 hover:bg-amber-100/50 transition-all flex flex-col items-center justify-center gap-1 cursor-pointer text-center p-1 group">
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  multiple
+                  onChange={handleAgregarFotosMenu}
+                  disabled={subiendoFotoMenu}
+                  className="hidden"
+                />
+                {subiendoFotoMenu ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-amber-600 border-t-transparent rounded-full animate-spin" />
+                    <span className="text-[9px] text-amber-800 font-medium">Subiendo...</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-base group-hover:scale-110 transition-transform">➕</span>
+                    <span className="text-[10px] text-amber-900 font-semibold leading-tight">
+                      {menuFotos.length === 0 ? "Subir Fotos" : "+ Otra Pág."}
+                    </span>
+                  </>
+                )}
+              </label>
+            )}
+          </div>
+        </div>
+
+        {/* B. PDF o Enlace Web a la Carta + Google Reviews */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-stone-light/60">
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-medium text-forest font-sans">
+                PDF o Enlace Web a la Carta
+              </label>
+              <label className="text-[10px] text-amber-800 hover:text-amber-950 font-semibold cursor-pointer underline flex items-center gap-0.5 font-sans">
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  onChange={handleSubirPdfMenu}
+                  disabled={subiendoPdfMenu}
+                  className="hidden"
+                />
+                <span>{subiendoPdfMenu ? "Subiendo PDF..." : "📁 Subir archivo PDF"}</span>
+              </label>
+            </div>
+            <input
+              type="url"
+              value={menuUrl}
+              onChange={(e) => setMenuUrl(e.target.value)}
+              placeholder="https://... o sube tu PDF arriba"
+              className="w-full px-4 py-3 rounded-xl border border-stone-light bg-cream text-forest text-sm font-sans focus:outline-none focus:border-forest transition-colors"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-forest mb-1.5 font-sans">
+              Enlace directo a Calificar en Google (Opcional)
+            </label>
+            <input
+              type="url"
+              value={googleReviewUrl}
+              onChange={(e) => setGoogleReviewUrl(e.target.value)}
+              placeholder="https://search.google.com/local/writereview?placeid=..."
               className="w-full px-4 py-3 rounded-xl border border-stone-light bg-cream text-forest text-sm font-sans focus:outline-none focus:border-forest transition-colors"
             />
           </div>

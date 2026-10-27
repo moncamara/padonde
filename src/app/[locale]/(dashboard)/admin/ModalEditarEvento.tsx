@@ -15,9 +15,14 @@ import {
   getDayOfWeekColombia,
   getFechaYMDDesdeISO,
 } from "@/lib/utils";
-import { uploadEventImage, uploadEventVideo } from "@/lib/supabase/storage";
+import {
+  uploadEventImage,
+  uploadEventVideo,
+  uploadMenuDocument,
+} from "@/lib/supabase/storage";
 import { editarEventoAdminAction, eliminarEventoAdminAction } from "./actions";
 import { Button } from "@/components/ui/Button";
+import { ModalAficheImprimible } from "@/components/admin/ModalAficheImprimible";
 import type { CategoriaEvento } from "@/lib/types";
 import type { EventoAdminItem } from "./AdminEventList";
 
@@ -63,6 +68,20 @@ export function ModalEditarEvento({
   const [mapsUrl, setMapsUrl] = useState(
     evento.metadata_hospedaje?.google_reputacion?.maps_url || ""
   );
+
+  // Carta digital y calificaciones de Google
+  const [menuUrl, setMenuUrl] = useState(
+    evento.metadata_hospedaje?.menu_url || ""
+  );
+  const [menuFotos, setMenuFotos] = useState<string[]>(
+    evento.metadata_hospedaje?.menu_fotos || []
+  );
+  const [subiendoFotoMenu, setSubiendoFotoMenu] = useState(false);
+  const [subiendoPdfMenu, setSubiendoPdfMenu] = useState(false);
+  const [googleReviewUrl, setGoogleReviewUrl] = useState(
+    evento.metadata_hospedaje?.google_review_url || ""
+  );
+  const [mostrarHabladorMesa, setMostrarHabladorMesa] = useState(false);
 
   // Recurrencia y días de la semana
   const recInicial = extraerRecurrencia(evento.descripcion);
@@ -151,6 +170,50 @@ export function ModalEditarEvento({
     setGaleriaFotos((prev) => prev.filter((_, i) => i !== indexAEliminar));
   }
 
+  async function handleAgregarFotosMenu(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    if (menuFotos.length + files.length > 10) {
+      alert("Puedes agregar un máximo de 10 páginas para la carta digital.");
+      return;
+    }
+    setSubiendoFotoMenu(true);
+    try {
+      for (const file of files) {
+        const url = await uploadMenuDocument(file);
+        if (url) {
+          setMenuFotos((prev) => [...prev, url]);
+        }
+      }
+    } catch (err: any) {
+      alert("Error al subir imagen de la carta: " + (err?.message || "intenta de nuevo"));
+    } finally {
+      setSubiendoFotoMenu(false);
+      e.target.value = "";
+    }
+  }
+
+  function handleEliminarFotoMenu(indexAEliminar: number) {
+    setMenuFotos((prev) => prev.filter((_, i) => i !== indexAEliminar));
+  }
+
+  async function handleSubirPdfMenu(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setSubiendoPdfMenu(true);
+    try {
+      const url = await uploadMenuDocument(file);
+      if (url) {
+        setMenuUrl(url);
+      }
+    } catch (err: any) {
+      alert("Error al subir archivo PDF: " + (err?.message || "intenta de nuevo"));
+    } finally {
+      setSubiendoPdfMenu(false);
+      e.target.value = "";
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!titulo.trim()) {
@@ -236,6 +299,9 @@ export function ModalEditarEvento({
             ...(evento.metadata_hospedaje || {}),
             google_reputacion: googleReputacion || undefined,
             galeria_fotos: galeriaFotos.length > 0 ? galeriaFotos : undefined,
+            menu_fotos: menuFotos.length > 0 ? menuFotos : undefined,
+            menu_url: menuUrl.trim() || undefined,
+            google_review_url: googleReviewUrl.trim() || undefined,
           },
           negocio: negocioSeleccionado
             ? {
@@ -863,6 +929,136 @@ export function ModalEditarEvento({
             </div>
           </div>
 
+          {/* 9b. Carta Digital & Hablador de Mesa para Restaurantes y Comercios */}
+          <div className="space-y-3.5 p-3.5 sm:p-4 rounded-2xl bg-amber-50/70 border border-amber-200/90 font-sans text-xs">
+            <div className="flex items-center justify-between">
+              <span className="font-semibold text-forest flex items-center gap-1.5">
+                <span>🍽️</span> Carta Digital & Hablador de Mesa (Opcional)
+              </span>
+              <button
+                type="button"
+                onClick={() => setMostrarHabladorMesa(true)}
+                className="bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-semibold px-2.5 py-1 rounded-lg transition-all shadow-2xs flex items-center gap-1 cursor-pointer"
+                title="Generar hablador de mesa con código QR para imprimir"
+              >
+                <span>🖨️</span>
+                <span>Generar Hablador QR</span>
+              </button>
+            </div>
+            <p className="text-stone text-[11px] leading-relaxed">
+              Sube las fotos de tu menú (página por página) o tu archivo PDF. Habilitará el visor de lujo a pantalla completa y el QR de mesa para los comensales.
+            </p>
+
+            {/* A. Subida de Fotos de la Carta (Página 1, Página 2, etc.) */}
+            <div className="space-y-1.5 pt-1">
+              <div className="flex items-center justify-between">
+                <span className="text-forest font-semibold text-xs flex items-center gap-1">
+                  <span>📸</span> Páginas del Menú en Fotos ({menuFotos.length}/10)
+                </span>
+                <span className="text-[10px] text-stone">
+                  {menuFotos.length === 0
+                    ? "Sin fotos cargadas"
+                    : `${menuFotos.length} página${menuFotos.length > 1 ? "s" : ""} lista${menuFotos.length > 1 ? "s" : ""}`}
+                </span>
+              </div>
+
+              <div className="flex flex-wrap gap-2.5 items-center">
+                {menuFotos.map((foto, idx) => (
+                  <div
+                    key={idx}
+                    className="relative w-20 h-24 rounded-xl overflow-hidden border border-amber-300 bg-white shadow-2xs group"
+                  >
+                    <Image
+                      src={foto}
+                      alt={`Página ${idx + 1}`}
+                      fill
+                      className="object-cover"
+                      unoptimized
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleEliminarFotoMenu(idx)}
+                      className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center text-[10px] font-bold shadow-md transition-all active:scale-90 cursor-pointer"
+                      title="Eliminar esta página"
+                    >
+                      ✕
+                    </button>
+                    <span className="absolute bottom-1 left-1 bg-black/70 text-white text-[9px] px-1.5 py-0.5 rounded font-sans font-bold">
+                      Pág. {idx + 1}
+                    </span>
+                  </div>
+                ))}
+
+                {menuFotos.length < 10 && (
+                  <label className="w-20 h-24 rounded-xl border-2 border-dashed border-amber-400/80 hover:border-amber-600 hover:bg-amber-100/50 transition-all flex flex-col items-center justify-center gap-1 cursor-pointer text-center p-1 group">
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      multiple
+                      onChange={handleAgregarFotosMenu}
+                      disabled={subiendoFotoMenu}
+                      className="hidden"
+                    />
+                    {subiendoFotoMenu ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-amber-600 border-t-transparent rounded-full animate-spin" />
+                        <span className="text-[9px] text-amber-800 font-medium">Subiendo...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-base group-hover:scale-110 transition-transform">➕</span>
+                        <span className="text-[10px] text-amber-900 font-semibold leading-tight">
+                          {menuFotos.length === 0 ? "Subir Fotos" : "+ Otra Pág."}
+                        </span>
+                      </>
+                    )}
+                  </label>
+                )}
+              </div>
+            </div>
+
+            {/* B. PDF o Enlace Web a la Carta + Google Reviews */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-amber-200/70">
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-stone font-medium">
+                    PDF o Enlace Web a la Carta
+                  </label>
+                  <label className="text-[10px] text-amber-800 hover:text-amber-950 font-semibold cursor-pointer underline flex items-center gap-0.5">
+                    <input
+                      type="file"
+                      accept="application/pdf"
+                      onChange={handleSubirPdfMenu}
+                      disabled={subiendoPdfMenu}
+                      className="hidden"
+                    />
+                    <span>{subiendoPdfMenu ? "Subiendo PDF..." : "📁 Subir archivo PDF"}</span>
+                  </label>
+                </div>
+                <input
+                  type="url"
+                  value={menuUrl}
+                  onChange={(e) => setMenuUrl(e.target.value)}
+                  placeholder="https://... o sube tu PDF arriba"
+                  className="w-full bg-white border border-stone-light rounded-xl px-3 py-2 text-forest focus:outline-none focus:border-forest text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="block text-stone font-medium mb-1">
+                  Enlace directo a Calificar en Google (Opcional)
+                </label>
+                <input
+                  type="url"
+                  value={googleReviewUrl}
+                  onChange={(e) => setGoogleReviewUrl(e.target.value)}
+                  placeholder="https://search.google.com/local/writereview?placeid=..."
+                  className="w-full bg-white border border-stone-light rounded-xl px-3 py-2 text-forest focus:outline-none focus:border-forest text-xs"
+                />
+              </div>
+            </div>
+          </div>
+
           {/* 8. Switches de Control (Destacado y Activo) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
             <label className="flex items-center gap-2.5 p-3 rounded-xl bg-stone-50 border border-stone-light/70 cursor-pointer hover:bg-stone-100/60 transition-colors">
@@ -963,6 +1159,18 @@ export function ModalEditarEvento({
           </div>
         </form>
       </div>
+
+      {/* Modal para previsualizar e imprimir el Hablador de Mesa / QR */}
+      {mostrarHabladorMesa && (
+        <ModalAficheImprimible
+          isOpen={mostrarHabladorMesa}
+          onClose={() => setMostrarHabladorMesa(false)}
+          puntoNombre={evento.negocio?.nombre || evento.titulo}
+          urlDestino={`https://www.padonde.lat/es/minca/${evento.id}?src=mesa-restaurante`}
+          tipoContenido="menu_restaurante"
+          srcParam="mesa-restaurante"
+        />
+      )}
     </div>
   );
 }

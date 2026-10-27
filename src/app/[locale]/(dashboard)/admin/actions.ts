@@ -35,6 +35,9 @@ export interface AdminPublishInput {
     maps_url: string;
   };
   galeriaFotos?: string[];
+  menuUrl?: string;
+  menuFotos?: string[];
+  googleReviewUrl?: string;
 }
 
 export interface AdminPublishResult {
@@ -154,12 +157,21 @@ export async function adminPublishEventAction(
       tiene_boleteria: false,
       activo: true,
       metadata_hospedaje:
-        input.googleReputacion || (input.galeriaFotos && input.galeriaFotos.length > 0)
+        input.googleReputacion ||
+        (input.galeriaFotos && input.galeriaFotos.length > 0) ||
+        input.menuUrl ||
+        (input.menuFotos && input.menuFotos.length > 0) ||
+        input.googleReviewUrl
           ? {
               ...(input.googleReputacion ? { google_reputacion: input.googleReputacion } : {}),
               ...(input.galeriaFotos && input.galeriaFotos.length > 0
                 ? { galeria_fotos: input.galeriaFotos.filter(Boolean) }
                 : {}),
+              ...(input.menuFotos && input.menuFotos.length > 0
+                ? { menu_fotos: input.menuFotos.filter(Boolean) }
+                : {}),
+              ...(input.menuUrl ? { menu_url: input.menuUrl.trim() } : {}),
+              ...(input.googleReviewUrl ? { google_review_url: input.googleReviewUrl.trim() } : {}),
             }
           : null,
     };

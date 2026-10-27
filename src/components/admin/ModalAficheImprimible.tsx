@@ -7,8 +7,9 @@ interface ModalAficheImprimibleProps {
   onClose: () => void;
   puntoNombre: string;
   urlDestino: string;
-  qrImageUrl: string;
-  srcParam: string;
+  qrImageUrl?: string;
+  srcParam?: string;
+  tipoContenido?: "general" | "menu_restaurante";
 }
 
 export function ModalAficheImprimible({
@@ -17,9 +18,12 @@ export function ModalAficheImprimible({
   puntoNombre,
   urlDestino,
   qrImageUrl,
-  srcParam,
+  srcParam = "punto-fisico",
+  tipoContenido = "general",
 }: ModalAficheImprimibleProps) {
-  const [formato, setFormato] = useState<"pared" | "mesa">("pared");
+  const [formato, setFormato] = useState<"pared" | "mesa">(
+    tipoContenido === "menu_restaurante" ? "mesa" : "pared"
+  );
   const [imprimiendo, setImprimiendo] = useState(false);
 
   if (!isOpen) return null;
@@ -42,6 +46,7 @@ export function ModalAficheImprimible({
 
   function getAficheHTML() {
     const isPared = formato === "pared";
+    const isMenu = tipoContenido === "menu_restaurante";
     // Dimensiones y tipografías grandes calibradas para máxima legibilidad a distancia (1 a 2 metros)
     const maxWidth = isPared ? "760px" : "580px";
     const padding = isPared ? "32px 30px" : "24px 20px";
@@ -54,7 +59,7 @@ export function ModalAficheImprimible({
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <title>Afiche PaDónde - ${nombreLugar}</title>
+  <title>${isMenu ? `Hablador de Mesa - ${nombreLugar}` : `Afiche PaDónde - ${nombreLugar}`}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -279,27 +284,27 @@ export function ModalAficheImprimible({
       <div class="badge-brand">
         <span>🌿</span>
         <span>PaDónde</span>
-        <span class="sub">Cartelera en Vivo</span>
+        <span class="sub">${isMenu ? "Menú & Carta" : "Cartelera en Vivo"}</span>
       </div>
       ${
         nombreLugar
-          ? `<p class="point-name">PUNTO OFICIAL: <strong>${nombreLugar}</strong></p>`
+          ? `<p class="point-name">${isMenu ? "MESA OFICIAL:" : "PUNTO OFICIAL:"} <strong>${nombreLugar}</strong></p>`
           : ""
       }
     </div>
 
     <div class="titles-block">
-      <h1 class="title-es">¿Qué hacer hoy?</h1>
-      <p class="title-en">What to do today?</p>
+      <h1 class="title-es">${isMenu ? "🍽️ Carta & Especialidades" : "¿Qué hacer hoy?"}</h1>
+      <p class="title-en">${isMenu ? "Digital Menu & Local Flavors" : "What to do today?"}</p>
       <div class="langs-grid">
-        <div class="lang-pill">🇩🇪 Was geht heute?</div>
-        <div class="lang-pill">🇫🇷 Que faire aujourd'hui ?</div>
+        <div class="lang-pill">${isMenu ? "📖 Ver carta en tu celular" : "🇩🇪 Was geht heute?"}</div>
+        <div class="lang-pill">${isMenu ? "⭐ Califícanos con 5 estrellas" : "🇫🇷 Que faire aujourd'hui ?"}</div>
       </div>
     </div>
 
     <div class="qr-stage">
       <div class="qr-wrapper">
-        <div class="qr-badge-scan">📸 Escanear con tu cámara</div>
+        <div class="qr-badge-scan">${isMenu ? "📸 Escanea desde tu mesa" : "📸 Escanear con tu cámara"}</div>
         <img
           src="${qrImageUrlSegura}"
           alt="Código QR PaDónde"
@@ -311,31 +316,31 @@ export function ModalAficheImprimible({
 
     <div class="categories-grid">
       <div class="cat-card">
-        <p class="cat-title">🎵 Música & Atardeceres</p>
-        <p class="cat-sub">Live Music · Nightlife</p>
+        <p class="cat-title">${isMenu ? "🍽️ Platos, Bebidas & Postres" : "🎵 Música & Atardeceres"}</p>
+        <p class="cat-sub">${isMenu ? "Full Menu & Options" : "Live Music · Nightlife"}</p>
       </div>
       <div class="cat-card">
-        <p class="cat-title">🍽️ Gastronomía & Café</p>
-        <p class="cat-sub">Food, Drinks & Local Flavors</p>
+        <p class="cat-title">${isMenu ? "⭐ Califica tu Experiencia" : "🍽️ Gastronomía & Café"}</p>
+        <p class="cat-sub">${isMenu ? "Google Reviews" : "Food, Drinks & Local Flavors"}</p>
       </div>
       <div class="cat-card">
-        <p class="cat-title">🏖️ Playas, Cascadas & Tours</p>
-        <p class="cat-sub">Beaches, Nature & Tours</p>
+        <p class="cat-title">${isMenu ? "🛵 Transporte & Motos" : "🏖️ Playas, Cascadas & Tours"}</p>
+        <p class="cat-sub">${isMenu ? "Mototaxis · PaDónde" : "Beaches, Nature & Tours"}</p>
       </div>
       <div class="cat-card">
-        <p class="cat-title">🏡 Hospedaje, Cabañas & Relax</p>
-        <p class="cat-sub">Hotels, Cabins & Wellness</p>
+        <p class="cat-title">${isMenu ? "🌿 ¿Qué hacer en Minca hoy?" : "🏡 Hospedaje, Cabañas & Relax"}</p>
+        <p class="cat-sub">${isMenu ? "Plans, Nature & Tours" : "Hotels, Cabins & Wellness"}</p>
       </div>
     </div>
 
     <div class="footer-section">
       <div class="footer-features">
-        <span>⚡ Sin descargar apps</span>
+        <span>⚡ ${isMenu ? "Sin descargar aplicaciones" : "Sin descargar apps"}</span>
         <span>·</span>
-        <span class="wa">💬 Reserva directa por WhatsApp</span>
+        <span class="wa">💬 ${isMenu ? "Pide a tu mesero o por WhatsApp" : "Reserva directa por WhatsApp"}</span>
       </div>
       <p class="footer-sub">
-        Cartelera turística en vivo · Eventos, hospedajes y planes 🌿 <strong>www.padonde.lat</strong>
+        ${isMenu ? `Alianza gastronómica ${nombreLugar} × PaDónde 🌿 <strong>www.padonde.lat</strong>` : `Cartelera turística en vivo · Eventos, hospedajes y planes 🌿 <strong>www.padonde.lat</strong>`}
       </p>
     </div>
   </div>

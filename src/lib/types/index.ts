@@ -107,6 +107,9 @@ export type HospedajeMetadata = {
   google_reputacion?: GoogleReputacion;
   habitaciones?: HabitacionHospedaje[];
   galeria_fotos?: string[];   // Fotos adicionales de vitrina (hasta 3-4 fotos para restaurantes, tours, o locales)
+  menu_url?: string;          // Enlace directo a carta digital (PDF, Canva, link)
+  menu_fotos?: string[];      // Fotos de las páginas de la carta
+  google_review_url?: string; // Enlace directo para calificar en Google
 };
 
 // ─── Tipos de Servicios Esenciales e Info Útil ────────────────────────────────
