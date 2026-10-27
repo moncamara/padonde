@@ -308,15 +308,7 @@ export function AdminQRGenerator({ locale }: { locale: string }) {
                   </p>
                 </div>
 
-                <div className="pt-2 border-t border-stone-light/50 flex items-center justify-between gap-1.5 flex-wrap sm:flex-nowrap">
-                  <button
-                    type="button"
-                    onClick={() => handleCopiar(urlPreset, preset.id)}
-                    className="flex-1 py-1.5 px-2.5 rounded-xl text-xs font-sans font-medium text-forest bg-white border border-stone-light hover:bg-stone-50 transition-colors cursor-pointer text-center"
-                  >
-                    {copiadoSrc === preset.id ? "✓ Copiado" : "📋 Enlace"}
-                  </button>
-
+                <div className="pt-3 border-t border-stone-light/60 flex flex-col gap-2">
                   <button
                     type="button"
                     onClick={() =>
@@ -328,23 +320,34 @@ export function AdminQRGenerator({ locale }: { locale: string }) {
                         src: preset.src,
                       })
                     }
-                    className="py-1.5 px-3 rounded-xl text-xs font-sans font-semibold text-emerald-800 bg-emerald-50 border border-emerald-300 hover:bg-emerald-100 transition-colors flex items-center gap-1 shrink-0 cursor-pointer shadow-2xs"
+                    className="w-full py-2 px-3 rounded-xl text-xs font-sans font-semibold text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs active:scale-[0.99]"
                     title="Generar afiche o hablador completo (PDF o Imagen)"
                   >
                     <span>📄</span>
-                    <span>Afiche (PDF / Imagen)</span>
+                    <span>Generar Afiche (PDF / Imagen)</span>
                   </button>
 
-                  <a
-                    href={qrPresetPngUrl}
-                    target="_blank"
-                    download={`solo-qr-${preset.src}.png`}
-                    className="py-1.5 px-2.5 rounded-xl text-xs font-sans font-semibold text-indigo-800 bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 transition-colors flex items-center gap-1 shrink-0 cursor-pointer"
-                    title="Descargar únicamente el código QR en imagen PNG de alta resolución"
-                  >
-                    <span>🖼️</span>
-                    <span>Solo QR (PNG)</span>
-                  </a>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleCopiar(urlPreset, preset.id)}
+                      className="py-1.5 px-2 rounded-xl text-xs font-sans font-medium text-forest bg-white border border-stone-light hover:bg-stone-50 transition-colors cursor-pointer flex items-center justify-center gap-1"
+                    >
+                      <span>{copiadoSrc === preset.id ? "✓" : "📋"}</span>
+                      <span>{copiadoSrc === preset.id ? "Copiado" : "Copiar Link"}</span>
+                    </button>
+
+                    <a
+                      href={qrPresetPngUrl}
+                      target="_blank"
+                      download={`solo-qr-${preset.src}.png`}
+                      className="py-1.5 px-2 rounded-xl text-xs font-sans font-medium text-indigo-900 bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                      title="Descargar únicamente el código QR en imagen PNG"
+                    >
+                      <span>🖼️</span>
+                      <span>Descargar QR</span>
+                    </a>
+                  </div>
                 </div>
               </article>
             );
