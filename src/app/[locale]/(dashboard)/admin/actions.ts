@@ -81,14 +81,34 @@ export async function adminPublishEventAction(
     let negocioId: string;
     if (input.negocioId) {
       negocioId = input.negocioId;
+      const negUpdates: Record<string, any> = {};
       if (input.whatsapp) {
-        await supabase
-          .from("negocios")
-          .update({
-            whatsapp: input.whatsapp.replace(/\D/g, ""),
-            instagram: input.instagram?.trim() || null,
-          })
-          .eq("id", negocioId);
+        negUpdates.whatsapp = input.whatsapp.replace(/\D/g, "");
+      }
+      if (input.instagram !== undefined) {
+        negUpdates.instagram = input.instagram?.trim() || null;
+      }
+      if (input.googleReputacion) {
+        negUpdates.google_rating = input.googleReputacion.rating;
+        negUpdates.google_total_reviews = input.googleReputacion.total_reviews;
+        negUpdates.google_maps_url = input.googleReputacion.maps_url;
+      }
+      if (input.googleReviewUrl) {
+        negUpdates.google_review_url = input.googleReviewUrl.trim();
+      }
+      if (Object.keys(negUpdates).length > 0) {
+        try {
+          const { error: negUpErr } = await supabase.from("negocios").update(negUpdates).eq("id", negocioId);
+          if (negUpErr && negUpErr.code === "42703") {
+            delete negUpdates.google_rating;
+            delete negUpdates.google_total_reviews;
+            delete negUpdates.google_maps_url;
+            delete negUpdates.google_review_url;
+            if (Object.keys(negUpdates).length > 0) {
+              await supabase.from("negocios").update(negUpdates).eq("id", negocioId);
+            }
+          }
+        } catch {}
       }
     } else {
       const { data: negocioExistente } = await supabase
@@ -100,17 +120,30 @@ export async function adminPublishEventAction(
 
       if (negocioExistente) {
         negocioId = negocioExistente.id;
-        await supabase
-          .from("negocios")
-          .update({
-            whatsapp: input.whatsapp.replace(/\D/g, ""),
-            instagram: input.instagram?.trim() || null,
-          })
-          .eq("id", negocioId);
+        const negUpdates: Record<string, any> = {
+          whatsapp: input.whatsapp.replace(/\D/g, ""),
+          instagram: input.instagram?.trim() || null,
+        };
+        if (input.googleReputacion) {
+          negUpdates.google_rating = input.googleReputacion.rating;
+          negUpdates.google_total_reviews = input.googleReputacion.total_reviews;
+          negUpdates.google_maps_url = input.googleReputacion.maps_url;
+        }
+        if (input.googleReviewUrl) {
+          negUpdates.google_review_url = input.googleReviewUrl.trim();
+        }
+        try {
+          const { error: negUpErr } = await supabase.from("negocios").update(negUpdates).eq("id", negocioId);
+          if (negUpErr && negUpErr.code === "42703") {
+            delete negUpdates.google_rating;
+            delete negUpdates.google_total_reviews;
+            delete negUpdates.google_maps_url;
+            delete negUpdates.google_review_url;
+            await supabase.from("negocios").update(negUpdates).eq("id", negocioId);
+          }
+        } catch {}
       } else {
-      const { data: nuevoNegocio, error: negError } = await supabase
-        .from("negocios")
-        .insert({
+        const nuevoNegocioPayload: Record<string, any> = {
           zona_id: zona.id,
           user_id: user.id, // Vinculado al admin creador
           nombre: input.businessName.trim(),
@@ -119,14 +152,41 @@ export async function adminPublishEventAction(
           instagram: input.instagram?.trim() || null,
           plan: input.isFeatured ? "pro" : "gratis",
           activo: true,
-        })
-        .select("id")
-        .single();
+        };
+        if (input.googleReputacion) {
+          nuevoNegocioPayload.google_rating = input.googleReputacion.rating;
+          nuevoNegocioPayload.google_total_reviews = input.googleReputacion.total_reviews;
+          nuevoNegocioPayload.google_maps_url = input.googleReputacion.maps_url;
+        }
+        if (input.googleReviewUrl) {
+          nuevoNegocioPayload.google_review_url = input.googleReviewUrl.trim();
+        }
 
-      if (negError || !nuevoNegocio) {
-        return { success: false, error: "No se pudo registrar el negocio." };
-      }
-      negocioId = nuevoNegocio.id;
+        let { data: nuevoNegocio, error: negError } = await supabase
+          .from("negocios")
+          .insert(nuevoNegocioPayload)
+          .select("id")
+          .single();
+
+        if (negError && negError.code === "42703") {
+          delete nuevoNegocioPayload.google_rating;
+          delete nuevoNegocioPayload.google_total_reviews;
+          delete nuevoNegocioPayload.google_maps_url;
+          delete nuevoNegocioPayload.google_review_url;
+
+          const retryRes = await supabase
+            .from("negocios")
+            .insert(nuevoNegocioPayload)
+            .select("id")
+            .single();
+          nuevoNegocio = retryRes.data;
+          negError = retryRes.error;
+        }
+
+        if (negError || !nuevoNegocio) {
+          return { success: false, error: "No se pudo registrar el negocio." };
+        }
+        negocioId = nuevoNegocio.id;
       }
     }
 
@@ -775,7 +835,7 @@ export async function editarEventoAdminAction(input: EditarEventoAdminInput) {
     ) {
       const { data: currentEvent } = await supabase
         .from("eventos")
-        .select("metadata_hospedaje")
+        .select("metadata_hospedaje, negocio_id")
         .eq("id", input.eventoId)
         .single();
       const currentMeta = (currentEvent?.metadata_hospedaje as Record<string, any>) || {};
@@ -809,6 +869,34 @@ export async function editarEventoAdminAction(input: EditarEventoAdminInput) {
         const auto = extraerGoogleReviewUrl(input.googleReputacion.maps_url);
         if (auto) {
           currentMeta.google_review_url = auto;
+        }
+      }
+
+      // Sincronizar reputación de Google hacia la tabla 'negocios' del aliado
+      const targetNegocioId = input.negocioId || currentEvent?.negocio_id;
+      if (targetNegocioId && (input.googleReputacion !== undefined || input.googleReviewUrl !== undefined)) {
+        const negSync: Record<string, any> = {};
+        if (input.googleReputacion !== undefined) {
+          if (input.googleReputacion) {
+            negSync.google_rating = input.googleReputacion.rating;
+            negSync.google_total_reviews = input.googleReputacion.total_reviews;
+            negSync.google_maps_url = input.googleReputacion.maps_url;
+          } else {
+            negSync.google_rating = null;
+            negSync.google_total_reviews = null;
+            negSync.google_maps_url = null;
+          }
+        }
+        if (input.googleReviewUrl !== undefined) {
+          negSync.google_review_url = currentMeta.google_review_url || null;
+        }
+        if (Object.keys(negSync).length > 0) {
+          try {
+            const { error: negErr } = await supabase.from("negocios").update(negSync).eq("id", targetNegocioId);
+            if (negErr && negErr.code === "42703") {
+              // Si las columnas aún no existen en la BD, no bloquear
+            }
+          } catch {}
         }
       }
 
@@ -1006,6 +1094,10 @@ export interface EditarAliadoInput {
   plan: PlanNegocio;
   diasVigencia?: number;
   sincronizarPublicaciones?: boolean;
+  google_rating?: number | null;
+  google_total_reviews?: number | null;
+  google_maps_url?: string | null;
+  google_review_url?: string | null;
 }
 
 /**
@@ -1056,16 +1148,42 @@ export async function editarAliadoCompletoAction(input: EditarAliadoInput) {
       plan: input.plan,
     };
 
+    if (input.google_rating !== undefined) {
+      updatePayload.google_rating = input.google_rating;
+    }
+    if (input.google_total_reviews !== undefined) {
+      updatePayload.google_total_reviews = input.google_total_reviews;
+    }
+    if (input.google_maps_url !== undefined) {
+      updatePayload.google_maps_url = input.google_maps_url;
+    }
+    if (input.google_review_url !== undefined) {
+      updatePayload.google_review_url = input.google_review_url;
+    }
+
     if (input.plan === "gratis") {
       updatePayload.plan_expira_en = null;
     } else if (planExpiraEn) {
       updatePayload.plan_expira_en = planExpiraEn;
     }
 
-    const { error } = await supabase
+    let { error } = await supabase
       .from("negocios")
       .update(updatePayload)
       .eq("id", input.id);
+
+    if (error && error.code === "42703") {
+      delete updatePayload.google_rating;
+      delete updatePayload.google_total_reviews;
+      delete updatePayload.google_maps_url;
+      delete updatePayload.google_review_url;
+
+      const fallbackRes = await supabase
+        .from("negocios")
+        .update(updatePayload)
+        .eq("id", input.id);
+      error = fallbackRes.error;
+    }
 
     if (error) {
       console.error("Error al actualizar aliado:", error);

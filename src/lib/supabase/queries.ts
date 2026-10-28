@@ -23,6 +23,7 @@ const COLUMNAS_BASE = `
   created_at,
   metadata_hospedaje,
   negocio:negocios (
+    id,
     nombre,
     whatsapp,
     instagram,
@@ -50,10 +51,43 @@ const COLUMNAS_CON_TRADUCCIONES = `
   traducciones,
   metadata_hospedaje,
   negocio:negocios (
+    id,
     nombre,
     whatsapp,
     instagram,
     activo
+  )
+`;
+
+const COLUMNAS_CON_REPUTACION_Y_TRADUCCIONES = `
+  id,
+  negocio_id,
+  zona_id,
+  titulo,
+  descripcion,
+  tipo,
+  precio,
+  precio_moneda,
+  fecha_inicio,
+  fecha_fin,
+  imagen_url,
+  video_url,
+  destacado,
+  tiene_boleteria,
+  activo,
+  created_at,
+  traducciones,
+  metadata_hospedaje,
+  negocio:negocios (
+    id,
+    nombre,
+    whatsapp,
+    instagram,
+    activo,
+    google_rating,
+    google_total_reviews,
+    google_maps_url,
+    google_review_url
   )
 `;
 
@@ -82,7 +116,7 @@ export async function getEventosByZona(zonaSlug: ZonaSlug): Promise<EventoConNeg
     let eventosData: any[] | null = null;
     const resInicial = await supabase
       .from("eventos")
-      .select(COLUMNAS_CON_TRADUCCIONES)
+      .select(COLUMNAS_CON_REPUTACION_Y_TRADUCCIONES)
       .eq("zona_id", zona.id)
       .eq("activo", true)
       .order("destacado", { ascending: false })
@@ -91,17 +125,29 @@ export async function getEventosByZona(zonaSlug: ZonaSlug): Promise<EventoConNeg
     let eventosError = resInicial.error;
     eventosData = resInicial.data;
 
-    // Fallback retrocompatible por si la columna traducciones aún no existe en la BD
+    // Fallback retrocompatible por si las nuevas columnas de reputación aún no existen en 'negocios'
     if (eventosError && eventosError.code === "42703") {
-      const fallbackRes = await supabase
+      const fallbackTraducciones = await supabase
         .from("eventos")
-        .select(COLUMNAS_BASE)
+        .select(COLUMNAS_CON_TRADUCCIONES)
         .eq("zona_id", zona.id)
         .eq("activo", true)
         .order("destacado", { ascending: false })
         .order("fecha_inicio", { ascending: true });
-      eventosData = fallbackRes.data;
-      eventosError = fallbackRes.error;
+      eventosData = fallbackTraducciones.data;
+      eventosError = fallbackTraducciones.error;
+
+      if (eventosError && eventosError.code === "42703") {
+        const fallbackBase = await supabase
+          .from("eventos")
+          .select(COLUMNAS_BASE)
+          .eq("zona_id", zona.id)
+          .eq("activo", true)
+          .order("destacado", { ascending: false })
+          .order("fecha_inicio", { ascending: true });
+        eventosData = fallbackBase.data;
+        eventosError = fallbackBase.error;
+      }
     }
 
     if (eventosError) {
@@ -133,7 +179,7 @@ export async function getEventoById(id: string): Promise<EventoConNegocio | null
     let eventoData: any = null;
     const resInicial = await supabase
       .from("eventos")
-      .select(COLUMNAS_CON_TRADUCCIONES)
+      .select(COLUMNAS_CON_REPUTACION_Y_TRADUCCIONES)
       .eq("id", id)
       .eq("activo", true)
       .single();
@@ -141,16 +187,27 @@ export async function getEventoById(id: string): Promise<EventoConNegocio | null
     let error = resInicial.error;
     eventoData = resInicial.data;
 
-    // Fallback retrocompatible por si la columna traducciones aún no existe en la BD
+    // Fallback retrocompatible por si las nuevas columnas de reputación aún no existen en 'negocios'
     if (error && error.code === "42703") {
-      const fallbackRes = await supabase
+      const fallbackTraducciones = await supabase
         .from("eventos")
-        .select(COLUMNAS_BASE)
+        .select(COLUMNAS_CON_TRADUCCIONES)
         .eq("id", id)
         .eq("activo", true)
         .single();
-      eventoData = fallbackRes.data;
-      error = fallbackRes.error;
+      eventoData = fallbackTraducciones.data;
+      error = fallbackTraducciones.error;
+
+      if (error && error.code === "42703") {
+        const fallbackBase = await supabase
+          .from("eventos")
+          .select(COLUMNAS_BASE)
+          .eq("id", id)
+          .eq("activo", true)
+          .single();
+        eventoData = fallbackBase.data;
+        error = fallbackBase.error;
+      }
     }
 
     if (error || !eventoData) {

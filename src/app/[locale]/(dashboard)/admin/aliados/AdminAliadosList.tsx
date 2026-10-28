@@ -44,6 +44,10 @@ export interface AliadoItem {
   zona_id?: string;
   zonaSlug?: string;
   zonaNombre?: string;
+  google_rating?: number | null;
+  google_total_reviews?: number | null;
+  google_maps_url?: string | null;
+  google_review_url?: string | null;
   eventos?: EventoAliadoItem[];
 }
 
@@ -375,6 +379,20 @@ export function AdminAliadosList({
                   >
                     {aliado.zonaSlug === "mendihuaca" ? "🌊 Mendihuaca" : "🌿 Minca"}
                   </span>
+
+                  {/* Badge de Google Maps si está configurado */}
+                  {aliado.google_rating && (
+                    <span
+                      className="text-[10px] px-2 py-0.5 rounded-full font-semibold border bg-amber-50 text-amber-900 border-amber-200 flex items-center gap-1 shrink-0"
+                      title={`Google Maps: ${aliado.google_rating} (${aliado.google_total_reviews || 0} reseñas)`}
+                    >
+                      <span>★</span>
+                      <span>{Number(aliado.google_rating).toFixed(1)}</span>
+                      {aliado.google_total_reviews ? (
+                        <span className="text-stone-500 font-normal">({aliado.google_total_reviews})</span>
+                      ) : null}
+                    </span>
+                  )}
 
                   {/* Switch rápido de Activo / Pausado */}
                   <button

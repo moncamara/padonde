@@ -28,7 +28,7 @@ export default async function AdminAliadosPage({
   }
 
   // 2. Cargar negocios con sus eventos asociados
-  const { data: rawNegocios } = await supabase
+  let { data: rawNegocios, error: errNegocios } = await supabase
     .from("negocios")
     .select(`
       id,
@@ -41,6 +41,10 @@ export default async function AdminAliadosPage({
       plan,
       plan_expira_en,
       activo,
+      google_rating,
+      google_total_reviews,
+      google_maps_url,
+      google_review_url,
       created_at,
       eventos (
         id,
@@ -60,6 +64,42 @@ export default async function AdminAliadosPage({
       )
     `)
     .order("nombre", { ascending: true });
+
+  if (errNegocios && errNegocios.code === "42703") {
+    const fallbackNeg = await supabase
+      .from("negocios")
+      .select(`
+        id,
+        nombre,
+        descripcion,
+        categoria,
+        zona_id,
+        whatsapp,
+        instagram,
+        plan,
+        plan_expira_en,
+        activo,
+        created_at,
+        eventos (
+          id,
+          titulo,
+          tipo,
+          precio,
+          precio_moneda,
+          fecha_inicio,
+          fecha_fin,
+          activo,
+          destacado,
+          imagen_url,
+          video_url,
+          metadata_hospedaje,
+          zona_id,
+          descripcion
+        )
+      `)
+      .order("nombre", { ascending: true });
+    rawNegocios = fallbackNeg.data as any;
+  }
 
   const { data: rawZonas } = await supabase
     .from("zonas")
@@ -117,6 +157,10 @@ export default async function AdminAliadosPage({
       plan: n.plan,
       plan_expira_en: n.plan_expira_en,
       activo: n.activo,
+      google_rating: n.google_rating ?? null,
+      google_total_reviews: n.google_total_reviews ?? null,
+      google_maps_url: n.google_maps_url ?? null,
+      google_review_url: n.google_review_url ?? null,
       created_at: n.created_at,
       totalEventos: evList.length,
       eventosActivos: evList.filter((e: any) => e.activo).length,

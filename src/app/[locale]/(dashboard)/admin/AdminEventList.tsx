@@ -46,6 +46,10 @@ export interface EventoAdminItem {
     id?: string;
     nombre: string;
     whatsapp: string;
+    google_rating?: number | null;
+    google_total_reviews?: number | null;
+    google_maps_url?: string | null;
+    google_review_url?: string | null;
   } | null;
   clicsCount?: number;
   metadata_hospedaje?: any | null;
@@ -393,14 +397,19 @@ export function AdminEventList({
                     📲 {ev.clicsCount || 0} clics
                   </span>
 
-                  {ev.metadata_hospedaje?.google_reputacion?.rating && (
-                    <span
-                      className="text-[10px] bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-full font-medium"
-                      title="Calificación en Google Maps"
-                    >
-                      ★ {ev.metadata_hospedaje.google_reputacion.rating.toFixed(1)} ({ev.metadata_hospedaje.google_reputacion.total_reviews})
-                    </span>
-                  )}
+                  {(() => {
+                    const rating = ev.negocio?.google_rating ?? ev.metadata_hospedaje?.google_reputacion?.rating;
+                    const totalReviews = ev.negocio?.google_total_reviews ?? ev.metadata_hospedaje?.google_reputacion?.total_reviews;
+                    if (!rating) return null;
+                    return (
+                      <span
+                        className="text-[10px] bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-full font-medium"
+                        title="Calificación en Google Maps"
+                      >
+                        ★ {Number(rating).toFixed(1)} {totalReviews ? `(${totalReviews})` : ""}
+                      </span>
+                    );
+                  })()}
                 </div>
 
                 {/* Datos del Negocio y Fecha */}

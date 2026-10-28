@@ -51,6 +51,10 @@ export type Negocio = {
   plan: PlanNegocio;
   plan_expira_en: string | null; // ISO 8601
   activo: boolean;
+  google_rating?: number | null;
+  google_total_reviews?: number | null;
+  google_maps_url?: string | null;
+  google_review_url?: string | null;
   created_at: string;
 };
 
@@ -75,7 +79,17 @@ export type Evento = {
   /** Datos opcionales para hospedajes (habitaciones, cotizador, reputación Google) */
   metadata_hospedaje?: HospedajeMetadata | null;
   // Relación — se incluye en queries con JOIN
-  negocio?: Pick<Negocio, "nombre" | "whatsapp" | "instagram">;
+  negocio?: {
+    id?: string;
+    nombre: string;
+    whatsapp: string;
+    instagram?: string | null;
+    activo?: boolean;
+    google_rating?: number | null;
+    google_total_reviews?: number | null;
+    google_maps_url?: string | null;
+    google_review_url?: string | null;
+  };
 };
 
 // ─── Tipos de Hospedaje y Cotizador ──────────────────────────────────────────

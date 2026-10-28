@@ -48,7 +48,7 @@ export default async function AdminDashboardPage({
   const telegramActivas = configTelegram?.valor?.activas ?? true;
 
   // 2. Cargar eventos y negocios desde Supabase
-  const { data: rawEventos } = await supabase
+  let { data: rawEventos, error: errEventos } = await supabase
     .from("eventos")
     .select(`
       id,
@@ -70,15 +70,57 @@ export default async function AdminDashboardPage({
       negocio:negocios (
         id,
         nombre,
-        whatsapp
+        whatsapp,
+        google_rating,
+        google_total_reviews,
+        google_maps_url,
+        google_review_url
       )
     `)
     .order("fecha_inicio", { ascending: false });
 
-  const { data: rawNegocios } = await supabase
+  if (errEventos && errEventos.code === "42703") {
+    const fallbackEventos = await supabase
+      .from("eventos")
+      .select(`
+        id,
+        negocio_id,
+        zona_id,
+        titulo,
+        descripcion,
+        tipo,
+        precio,
+        precio_moneda,
+        fecha_inicio,
+        fecha_fin,
+        imagen_url,
+        video_url,
+        destacado,
+        tiene_boleteria,
+        activo,
+        metadata_hospedaje,
+        negocio:negocios (
+          id,
+          nombre,
+          whatsapp
+        )
+      `)
+      .order("fecha_inicio", { ascending: false });
+    rawEventos = fallbackEventos.data as any;
+  }
+
+  let { data: rawNegocios, error: errNegocios } = await supabase
     .from("negocios")
-    .select("id, nombre, whatsapp, instagram, categoria, zona_id")
+    .select("id, nombre, whatsapp, instagram, categoria, zona_id, google_rating, google_total_reviews, google_maps_url, google_review_url")
     .order("nombre");
+
+  if (errNegocios && errNegocios.code === "42703") {
+    const fallbackNegocios = await supabase
+      .from("negocios")
+      .select("id, nombre, whatsapp, instagram, categoria, zona_id")
+      .order("nombre");
+    rawNegocios = fallbackNegocios.data as any;
+  }
 
   const { count: totalNegocios } = await supabase
     .from("negocios")

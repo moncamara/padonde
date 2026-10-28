@@ -140,6 +140,16 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
     limpiarDescripcionRecurrencia(evento.descripcion) ||
     `${evento.titulo} en ${evento.negocio.nombre}, ${zona.nombre}.`;
 
+  // Reputación de Google: cascada segura (negocio aliado -> metadata_hospedaje evento)
+  const googleReputacion =
+    evento.negocio?.google_rating && evento.negocio?.google_maps_url
+      ? {
+          rating: Number(evento.negocio.google_rating),
+          total_reviews: Number(evento.negocio.google_total_reviews || 0),
+          maps_url: evento.negocio.google_maps_url,
+        }
+      : evento.metadata_hospedaje?.google_reputacion;
+
   // Datos estructurados Schema.org para Google Events y Restaurant Rich Snippets
   const isRestaurante = evento.tipo === "comida";
   const restaurantJsonLd = isRestaurante
@@ -161,12 +171,12 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
         ...(evento.metadata_hospedaje?.menu_url || (evento.metadata_hospedaje?.menu_fotos && evento.metadata_hospedaje.menu_fotos.length > 0)
           ? { hasMenu: evento.metadata_hospedaje?.menu_url || `https://www.padonde.lat/${locale}/${zonaSlug}/${evento.id}` }
           : {}),
-        ...(evento.metadata_hospedaje?.google_reputacion?.rating
+        ...(googleReputacion?.rating
           ? {
               aggregateRating: {
                 "@type": "AggregateRating",
-                ratingValue: evento.metadata_hospedaje.google_reputacion.rating,
-                reviewCount: evento.metadata_hospedaje.google_reputacion.total_reviews || 1,
+                ratingValue: googleReputacion.rating,
+                reviewCount: googleReputacion.total_reviews || 1,
               },
             }
           : {}),
@@ -284,8 +294,8 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
               </div>
 
               <div className="flex flex-col items-end gap-1.5">
-                {evento.metadata_hospedaje?.google_reputacion && (
-                  <GoogleRatingBadge reputacion={evento.metadata_hospedaje.google_reputacion} />
+                {googleReputacion && (
+                  <GoogleRatingBadge reputacion={googleReputacion} />
                 )}
 
                 {evento.negocio.instagram && (
@@ -392,14 +402,18 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
               (evento.titulo || "").toLowerCase().includes("jungle joe");
 
             const googleReviewUrl =
+              evento.negocio?.google_review_url ||
               evento.metadata_hospedaje?.google_review_url ||
-              extraerGoogleReviewUrl(evento.metadata_hospedaje?.google_reputacion?.maps_url) ||
+              extraerGoogleReviewUrl(googleReputacion?.maps_url) ||
               (isPepeMojito
                 ? "https://search.google.com/local/writereview?placeid=ChIJiQTfKLuV9I4R3E86eG2jG6w"
                 : isJungleJoe
                 ? "https://search.google.com/local/writereview?placeid=ChIJ6S1R3yvx9I4RZovuGgHEzBs"
                 : undefined);
 
+            const googleMapsUrl =
+              googleReputacion?.maps_url ||
+              (isPepeMojito ? "https://maps.google.com/?cid=12401671911910625244" : undefined);
 
             return (
               <RestaurantMenuSection
@@ -407,10 +421,7 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
                 menuUrl={menuUrl}
                 menuFotos={menuFotos}
                 googleReviewUrl={googleReviewUrl}
-                googleMapsUrl={
-                  evento.metadata_hospedaje?.google_reputacion?.maps_url ||
-                  (isPepeMojito ? "https://maps.google.com/?cid=12401671911910625244" : undefined)
-                }
+                googleMapsUrl={googleMapsUrl}
                 zonaNombre={zona.nombre}
                 locale={locale}
                 whatsappNumber={evento.negocio.whatsapp}

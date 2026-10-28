@@ -127,20 +127,25 @@ export function EventCard({ evento: rawEvento, zona, priority = false }: EventCa
             <span className="text-forest font-semibold">{evento.negocio.nombre}</span>
             <span>·</span>
             <span className="text-stone">{getEtiquetaHorario(evento, locale)}</span>
-            {evento.metadata_hospedaje?.google_reputacion?.rating && (
-              <>
-                <span>·</span>
-                <span className="inline-flex items-center gap-0.5 text-amber-700 font-semibold bg-amber-50 px-1.5 py-0.5 rounded-md border border-amber-200/80 text-[11px]">
-                  <span>★</span>
-                  <span>{evento.metadata_hospedaje.google_reputacion.rating.toFixed(1)}</span>
-                  {evento.metadata_hospedaje.google_reputacion.total_reviews && (
-                    <span className="text-stone font-normal text-[10px]">
-                      ({evento.metadata_hospedaje.google_reputacion.total_reviews})
-                    </span>
-                  )}
-                </span>
-              </>
-            )}
+            {(() => {
+              const rating = evento.negocio?.google_rating ?? evento.metadata_hospedaje?.google_reputacion?.rating;
+              const totalReviews = evento.negocio?.google_total_reviews ?? evento.metadata_hospedaje?.google_reputacion?.total_reviews;
+              if (!rating) return null;
+              return (
+                <>
+                  <span>·</span>
+                  <span className="inline-flex items-center gap-0.5 text-amber-700 font-semibold bg-amber-50 px-1.5 py-0.5 rounded-md border border-amber-200/80 text-[11px]">
+                    <span>★</span>
+                    <span>{Number(rating).toFixed(1)}</span>
+                    {totalReviews ? (
+                      <span className="text-stone font-normal text-[10px]">
+                        ({totalReviews})
+                      </span>
+                    ) : null}
+                  </span>
+                </>
+              );
+            })()}
           </div>
 
           {/* Título de la Experiencia en Tipografía Serif */}

@@ -29,15 +29,23 @@ export default async function AdminNuevoEventoPage({
   }
 
   // Cargar aliados existentes y zonas para autocompletado y vinculación
-  const [negociosRes, zonasRes] = await Promise.all([
-    supabase
+  let rawNegocios: any[] = [];
+  const negociosRes = await supabase
+    .from("negocios")
+    .select("id, nombre, whatsapp, instagram, categoria, zona_id, activo, google_rating, google_total_reviews, google_maps_url, google_review_url")
+    .order("nombre", { ascending: true });
+
+  if (negociosRes.error && negociosRes.error.code === "42703") {
+    const fallbackRes = await supabase
       .from("negocios")
       .select("id, nombre, whatsapp, instagram, categoria, zona_id, activo")
-      .order("nombre", { ascending: true }),
-    supabase.from("zonas").select("id, nombre, slug"),
-  ]);
+      .order("nombre", { ascending: true });
+    rawNegocios = fallbackRes.data || [];
+  } else {
+    rawNegocios = negociosRes.data || [];
+  }
 
-  const rawNegocios = negociosRes.data || [];
+  const zonasRes = await supabase.from("zonas").select("id, nombre, slug");
   const rawZonas = zonasRes.data || [];
   const mapaZonas: Record<string, { slug: string; nombre: string }> = {};
   for (const z of rawZonas) {
@@ -54,6 +62,10 @@ export default async function AdminNuevoEventoPage({
     zonaSlug: n.zona_id && mapaZonas[n.zona_id] ? mapaZonas[n.zona_id].slug : "minca",
     zonaNombre: n.zona_id && mapaZonas[n.zona_id] ? mapaZonas[n.zona_id].nombre : "Minca",
     activo: n.activo,
+    google_rating: (n as any).google_rating ?? null,
+    google_total_reviews: (n as any).google_total_reviews ?? null,
+    google_maps_url: (n as any).google_maps_url ?? null,
+    google_review_url: (n as any).google_review_url ?? null,
   }));
 
   let defaultNegocio:

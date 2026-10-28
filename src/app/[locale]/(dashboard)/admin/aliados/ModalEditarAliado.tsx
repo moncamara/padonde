@@ -13,6 +13,7 @@ interface ModalEditarAliadoProps {
 }
 
 import { CATEGORIAS } from "@/constants";
+import { extraerGoogleReviewUrl } from "@/lib/utils";
 
 export function ModalEditarAliado({ aliado, isOpen, onClose }: ModalEditarAliadoProps) {
   const router = useRouter();
@@ -31,11 +32,25 @@ export function ModalEditarAliado({ aliado, isOpen, onClose }: ModalEditarAliado
   const [activo, setActivo] = useState(aliado.activo);
   const [sincronizarPublicaciones, setSincronizarPublicaciones] = useState(true);
 
+  // Reputación en Google Maps
+  const [googleRating, setGoogleRating] = useState(aliado.google_rating?.toString() || "");
+  const [googleTotalReviews, setGoogleTotalReviews] = useState(aliado.google_total_reviews?.toString() || "");
+  const [googleMapsUrl, setGoogleMapsUrl] = useState(aliado.google_maps_url || "");
+  const [googleReviewUrl, setGoogleReviewUrl] = useState(aliado.google_review_url || "");
+
   // Plan y Vigencia
   const [plan, setPlan] = useState<PlanNegocio>(aliado.plan);
   const [diasVigencia, setDiasVigencia] = useState<number>(30);
 
   if (!isOpen) return null;
+
+  const handleMapsUrlChange = (val: string) => {
+    setGoogleMapsUrl(val);
+    if (val && !googleReviewUrl) {
+      const auto = extraerGoogleReviewUrl(val);
+      if (auto) setGoogleReviewUrl(auto);
+    }
+  };
 
   const handleEliminar = () => {
     setErrorMsg(null);
@@ -71,6 +86,10 @@ export function ModalEditarAliado({ aliado, isOpen, onClose }: ModalEditarAliado
         plan,
         diasVigencia: plan === "gratis" ? 0 : diasVigencia,
         sincronizarPublicaciones,
+        google_rating: googleRating ? parseFloat(googleRating) : null,
+        google_total_reviews: googleTotalReviews ? parseInt(googleTotalReviews, 10) : null,
+        google_maps_url: googleMapsUrl.trim() || null,
+        google_review_url: googleReviewUrl.trim() || null,
       };
 
       const res = await editarAliadoCompletoAction(input);
@@ -314,6 +333,100 @@ export function ModalEditarAliado({ aliado, isOpen, onClose }: ModalEditarAliado
                 </div>
               </div>
             )}
+          </div>
+
+          {/* 7. Reputación en Google Maps (Estrellas y Reseñas) */}
+          <div className="p-3.5 rounded-2xl bg-stone-light/20 border border-stone-light/80 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-semibold text-forest text-xs flex items-center gap-1.5">
+                  <span>⭐</span>
+                  <span>Reputación en Google Maps</span>
+                </p>
+                <p className="text-[10px] text-stone mt-0.5">
+                  Se reflejará en todas las publicaciones y experiencias de este aliado.
+                </p>
+              </div>
+              {googleRating && (
+                <span className="text-[10px] bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-full font-semibold">
+                  ★ {Number(googleRating).toFixed(1)} ({googleTotalReviews || 0})
+                </span>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5">
+              <div>
+                <label className="text-[11px] font-semibold text-forest block mb-1">
+                  Calificación (Estrellas)
+                </label>
+                <input
+                  type="number"
+                  step="0.1"
+                  min="1"
+                  max="5"
+                  placeholder="ej: 4.8"
+                  value={googleRating}
+                  onChange={(e) => setGoogleRating(e.target.value)}
+                  className="w-full px-3 py-2 bg-white border border-stone-light rounded-xl focus:outline-none focus:ring-1 focus:ring-forest text-forest text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-semibold text-forest block mb-1">
+                  Total de Reseñas
+                </label>
+                <input
+                  type="number"
+                  step="1"
+                  min="0"
+                  placeholder="ej: 245"
+                  value={googleTotalReviews}
+                  onChange={(e) => setGoogleTotalReviews(e.target.value)}
+                  className="w-full px-3 py-2 bg-white border border-stone-light rounded-xl focus:outline-none focus:ring-1 focus:ring-forest text-forest text-xs"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[11px] font-semibold text-forest block mb-1">
+                Enlace de Google Maps (Ubicación)
+              </label>
+              <input
+                type="url"
+                placeholder="https://maps.app.goo.gl/... o https://google.com/maps/place/..."
+                value={googleMapsUrl}
+                onChange={(e) => handleMapsUrlChange(e.target.value)}
+                className="w-full px-3 py-2 bg-white border border-stone-light rounded-xl focus:outline-none focus:ring-1 focus:ring-forest text-forest font-mono text-[11px]"
+              />
+              <span className="text-[10px] text-stone">
+                Al pegar el enlace, autocompleta el link para calificar 5 estrellas.
+              </span>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[11px] font-semibold text-forest block">
+                  Enlace directo a Calificar 5 estrellas
+                </label>
+                {googleReviewUrl && (
+                  <a
+                    href={googleReviewUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[10px] text-forest font-semibold hover:underline"
+                  >
+                    Probar enlace ↗
+                  </a>
+                )}
+              </div>
+              <input
+                type="url"
+                placeholder="https://search.google.com/local/writereview?placeid=..."
+                value={googleReviewUrl}
+                onChange={(e) => setGoogleReviewUrl(e.target.value)}
+                className="w-full px-3 py-2 bg-white border border-stone-light rounded-xl focus:outline-none focus:ring-1 focus:ring-forest text-forest font-mono text-[11px]"
+              />
+            </div>
           </div>
 
           {/* Reconfirmación de eliminación */}

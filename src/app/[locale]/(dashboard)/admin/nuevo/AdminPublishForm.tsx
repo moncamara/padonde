@@ -33,6 +33,10 @@ export interface AliadoResumen {
   zonaSlug?: string;
   zonaNombre?: string;
   activo?: boolean;
+  google_rating?: number | null;
+  google_total_reviews?: number | null;
+  google_maps_url?: string | null;
+  google_review_url?: string | null;
 }
 
 interface AdminPublishFormProps {
@@ -134,6 +138,21 @@ export function AdminPublishForm({
     if (aliado.zonaSlug) {
       setZonaSlug(aliado.zonaSlug);
     }
+    if (aliado.google_rating) {
+      setRatingGoogle(aliado.google_rating.toString());
+    }
+    if (aliado.google_total_reviews) {
+      setReviewsGoogle(aliado.google_total_reviews.toString());
+    }
+    if (aliado.google_maps_url) {
+      setMapsUrl(aliado.google_maps_url);
+    }
+    if (aliado.google_review_url) {
+      setGoogleReviewUrl(aliado.google_review_url);
+    } else if (aliado.google_maps_url) {
+      const autoRev = extraerGoogleReviewUrl(aliado.google_maps_url);
+      if (autoRev) setGoogleReviewUrl(autoRev);
+    }
     setSelectedAliadoId(aliado.id);
     setIsDropdownOpen(false);
   }
@@ -143,6 +162,10 @@ export function AdminPublishForm({
     setBusinessName("");
     setWhatsapp("");
     setInstagram("");
+    setRatingGoogle("");
+    setReviewsGoogle("");
+    setMapsUrl("");
+    setGoogleReviewUrl("");
     setIsDropdownOpen(true);
   }
   const [eventTitle, setEventTitle] = useState("");
