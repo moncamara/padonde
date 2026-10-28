@@ -97,7 +97,12 @@ export function ModalEditarHospedaje({
     const auto =
       extraerGoogleReviewUrl(raw) ||
       extraerGoogleReviewUrl(hospedaje?.metadata_hospedaje?.google_reputacion?.maps_url || hospedaje?.mapsUrl);
-    return auto || raw || "";
+    if (auto) return auto;
+    const nombre = ((hospedaje?.titulo || "") + " " + (hospedaje?.negocio?.nombre || "") + " " + (hospedaje?.nombreNegocio || "")).toLowerCase();
+    if (nombre.includes("casa maya") || nombre.includes("maya mendihuaca")) {
+      return "https://search.google.com/local/writereview?placeid=ChIJgF89uOY1hU4Rvi-gBTRYVWA";
+    }
+    return raw || "";
   });
 
   // Estados Habitaciones
@@ -151,11 +156,13 @@ export function ModalEditarHospedaje({
           ""
       );
       const rawRev = hospedaje?.metadata_hospedaje?.google_review_url || hospedaje?.googleReviewUrl;
+      const nombre = ((hospedaje?.titulo || "") + " " + (hospedaje?.negocio?.nombre || "") + " " + (hospedaje?.nombreNegocio || "")).toLowerCase();
       const autoRev =
         (rawRev && (rawRev.includes("search.google.com/local/writereview") || rawRev.includes("g.page/r/")))
           ? rawRev
           : extraerGoogleReviewUrl(rawRev) ||
             extraerGoogleReviewUrl(hospedaje?.metadata_hospedaje?.google_reputacion?.maps_url || hospedaje?.mapsUrl) ||
+            (nombre.includes("casa maya") ? "https://search.google.com/local/writereview?placeid=ChIJgF89uOY1hU4Rvi-gBTRYVWA" : "") ||
             rawRev ||
             "";
       setGoogleReviewUrl(autoRev);
