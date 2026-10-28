@@ -4,6 +4,9 @@ import { AdminNav } from "../AdminNav";
 import { AdminHospedajesList } from "./AdminHospedajesList";
 import type { Metadata } from "next";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export const metadata: Metadata = {
   title: "Gestión de Hospedajes — PaDónde Admin",
 };

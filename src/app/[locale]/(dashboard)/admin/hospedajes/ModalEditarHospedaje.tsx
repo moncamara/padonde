@@ -89,6 +89,16 @@ export function ModalEditarHospedaje({
       hospedaje?.mapsUrl ||
       ""
   );
+  const [googleReviewUrl, setGoogleReviewUrl] = useState<string>(() => {
+    const raw = hospedaje?.metadata_hospedaje?.google_review_url || hospedaje?.googleReviewUrl;
+    if (raw && (raw.includes("search.google.com/local/writereview") || raw.includes("g.page/r/"))) {
+      return raw;
+    }
+    const auto =
+      extraerGoogleReviewUrl(raw) ||
+      extraerGoogleReviewUrl(hospedaje?.metadata_hospedaje?.google_reputacion?.maps_url || hospedaje?.mapsUrl);
+    return auto || raw || "";
+  });
 
   // Estados Habitaciones
   const [habitaciones, setHabitaciones] = useState<any[]>(
@@ -140,6 +150,15 @@ export function ModalEditarHospedaje({
           hospedaje?.mapsUrl ||
           ""
       );
+      const rawRev = hospedaje?.metadata_hospedaje?.google_review_url || hospedaje?.googleReviewUrl;
+      const autoRev =
+        (rawRev && (rawRev.includes("search.google.com/local/writereview") || rawRev.includes("g.page/r/")))
+          ? rawRev
+          : extraerGoogleReviewUrl(rawRev) ||
+            extraerGoogleReviewUrl(hospedaje?.metadata_hospedaje?.google_reputacion?.maps_url || hospedaje?.mapsUrl) ||
+            rawRev ||
+            "";
+      setGoogleReviewUrl(autoRev);
       if (hospedaje?.metadata_hospedaje?.habitaciones || hospedaje?.habitaciones) {
         setHabitaciones(hospedaje?.metadata_hospedaje?.habitaciones || hospedaje?.habitaciones);
       }
@@ -493,9 +512,12 @@ export function ModalEditarHospedaje({
               }
             : undefined,
         google_review_url:
-          extraerGoogleReviewUrl(mapsUrl) ||
-          hospedaje?.metadata_hospedaje?.google_review_url ||
-          undefined,
+          (googleReviewUrl && (googleReviewUrl.includes("search.google.com/local/writereview") || googleReviewUrl.includes("g.page/r/")))
+            ? googleReviewUrl.trim()
+            : extraerGoogleReviewUrl(googleReviewUrl) ||
+              extraerGoogleReviewUrl(mapsUrl) ||
+              googleReviewUrl.trim() ||
+              undefined,
 
         habitaciones: habitaciones.map((h) => ({
           ...h,
@@ -1087,6 +1109,10 @@ export function ModalEditarHospedaje({
                         val = `https://${val}`;
                       }
                       setMapsUrl(val);
+                      const auto = extraerGoogleReviewUrl(val);
+                      if (auto) {
+                        setGoogleReviewUrl(auto);
+                      }
                     }}
                     placeholder="https://maps.app.goo.gl/... o https://maps.google.com/?q=..."
                     className="flex-1 bg-cream/70 border border-stone-light rounded-xl px-3 py-2 text-forest focus:outline-none focus:border-forest font-mono text-[11px]"
@@ -1107,6 +1133,40 @@ export function ModalEditarHospedaje({
                 </div>
                 <p className="text-[10px] text-stone mt-1">
                   Al hacer clic en la ficha pública, los turistas podrán navegar directamente a esta ubicación en Google Maps.
+                </p>
+              </div>
+
+              <div className="col-span-2 sm:col-span-3 pt-2 border-t border-stone-light/40">
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-stone font-medium flex items-center gap-1.5">
+                    <span>⭐</span>
+                    <span>Enlace directo a Calificar con 5 estrellas (Google Reviews)</span>
+                  </label>
+                  {googleReviewUrl && (googleReviewUrl.startsWith("http://") || googleReviewUrl.startsWith("https://")) && (
+                    <span className="text-[10px] text-emerald-700 bg-emerald-100 font-semibold px-2 py-0.5 rounded-full">
+                      ✓ Directo a estrellas
+                    </span>
+                  )}
+                </div>
+                <input
+                  type="text"
+                  value={googleReviewUrl}
+                  onChange={(e) => {
+                    const rawVal = e.target.value;
+                    const auto = extraerGoogleReviewUrl(rawVal);
+                    if (auto) {
+                      setGoogleReviewUrl(auto);
+                    } else if (rawVal.trim().startsWith("ChIJ")) {
+                      setGoogleReviewUrl(`https://search.google.com/local/writereview?placeid=${rawVal.trim()}`);
+                    } else {
+                      setGoogleReviewUrl(rawVal);
+                    }
+                  }}
+                  placeholder="https://search.google.com/local/writereview?placeid=... (se auto-calcula al pegar Google Maps)"
+                  className="w-full bg-cream/70 border border-stone-light rounded-xl px-3 py-2 text-forest focus:outline-none focus:border-forest text-xs font-mono text-[11px]"
+                />
+                <p className="text-[10px] text-stone mt-1">
+                  Lleva al huésped directo a las 5 estrellas sin rodeos. Si pegas el enlace de Maps arriba, se auto-completa solo.
                 </p>
               </div>
             </div>

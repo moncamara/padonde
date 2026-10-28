@@ -1159,6 +1159,8 @@ export interface GuardarHospedajeInput {
       total_reviews: number;
       maps_url: string;
     };
+    google_review_url?: string;
+    contacto_propietario?: string;
     habitaciones: Array<{
       id: string;
       titulo: string;
@@ -1279,7 +1281,16 @@ export async function guardarHospedajeAction(input: GuardarHospedajeInput) {
       destacado: Boolean(input.destacado),
       tiene_boleteria: false,
       activo: true,
-      metadata_hospedaje: input.metadataHospedaje,
+      metadata_hospedaje: {
+        ...(input.metadataHospedaje || {}),
+        google_review_url:
+          (input.metadataHospedaje?.google_review_url && (input.metadataHospedaje.google_review_url.includes("search.google.com/local/writereview") || input.metadataHospedaje.google_review_url.includes("g.page/r/")))
+            ? input.metadataHospedaje.google_review_url.trim()
+            : extraerGoogleReviewUrl(input.metadataHospedaje?.google_review_url) ||
+              extraerGoogleReviewUrl(input.metadataHospedaje?.google_reputacion?.maps_url) ||
+              input.metadataHospedaje?.google_review_url?.trim() ||
+              undefined,
+      },
     };
 
     const esEdicionReal = Boolean(input.id && !input.id.startsWith("temp-"));
