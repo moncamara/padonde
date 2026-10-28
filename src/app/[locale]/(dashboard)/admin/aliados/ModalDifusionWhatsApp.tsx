@@ -82,12 +82,13 @@ Habilitamos la opción de integrar tu *Menú Digital Interactivo* dentro de PaD�
 
 🎁 *¿Cuánto cuesta activar el Menú Digital?*
 Es un único pago de *$50.000 COP* e incluye:
-• La digitalización y montaje de tus fotos de carta en la plataforma.
+• Publicación y habilitación de tu carta en la plataforma (solo nos envías las fotos o archivo actual de tu menú por WhatsApp y nosotros te lo dejamos enlazado y visible).
 • El paquete de stickers con código QR listos para colocar en tus mesas.
 • El archivo digital en alta resolución del código QR por si más adelante deseas mandar a hacer habladores en madera, acrílico o piezas especiales para tu barra.
 
 👉 *¿Te gustaría que te incluyamos el Menú Digital con tus stickers para arrancar este 1 de noviembre junto con tu trimestre?*
-¡Quedamos muy atentos para coordinar y tomar los datos de tu carta! ✨🍽️`,
+
+¡Quedamos muy atentos al envío del archivo o foto del menú! ✨🍽️`,
 
     hospedajes: `🌿 *Hola {nombre}, ¡un saludo muy especial desde el equipo de PaDónde!*
 
