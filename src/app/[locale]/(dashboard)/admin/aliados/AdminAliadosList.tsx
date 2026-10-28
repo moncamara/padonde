@@ -67,6 +67,7 @@ export function AdminAliadosList({
   const router = useRouter();
   const [filtro, setFiltro] = useState<FiltroPlan>("todos");
   const [filtroZona, setFiltroZona] = useState<string>("todas");
+  const [filtroCategoria, setFiltroCategoria] = useState<string>("todas");
   const [busqueda, setBusqueda] = useState("");
   const [copiadoId, setCopiadoId] = useState<string | null>(null);
 
@@ -127,6 +128,46 @@ export function AdminAliadosList({
         return false;
       }
 
+      // 0.1 Filtro por Categoría
+      if (filtroCategoria !== "todas") {
+        const cat = (a.categoria || "").toLowerCase();
+        const nom = (a.nombre || "").toLowerCase();
+        if (filtroCategoria === "restaurantes") {
+          const matchRest =
+            cat.includes("comida") ||
+            cat.includes("restaurante") ||
+            cat.includes("bar") ||
+            cat.includes("café") ||
+            cat.includes("cafe") ||
+            cat.includes("gastronom") ||
+            nom.includes("restaurante") ||
+            nom.includes("bar") ||
+            nom.includes("cafe");
+          if (!matchRest) return false;
+        } else if (filtroCategoria === "hospedajes") {
+          const matchHosp =
+            cat.includes("hospedaje") ||
+            cat.includes("hostal") ||
+            cat.includes("hotel") ||
+            cat.includes("glamping") ||
+            cat.includes("cabaña") ||
+            cat.includes("finca") ||
+            nom.includes("hostel") ||
+            nom.includes("hostal") ||
+            nom.includes("hotel") ||
+            nom.includes("finca") ||
+            nom.includes("glamping") ||
+            nom.includes("cabaña");
+          if (!matchHosp) return false;
+        } else if (filtroCategoria === "tours") {
+          const matchTour =
+            cat.includes("tours") ||
+            cat.includes("aventura") ||
+            cat.includes("guia");
+          if (!matchTour) return false;
+        }
+      }
+
       // 1. Filtro por plan / estado
       const est = getEstadoExpiracion(a);
       if (filtro === "pro_premium" && a.plan === "gratis") return false;
@@ -141,7 +182,7 @@ export function AdminAliadosList({
       const matchWa = a.whatsapp.includes(q);
       return matchNombre || matchCategoria || matchWa;
     });
-  }, [aliados, filtro, busqueda, filtroZona]);
+  }, [aliados, filtro, busqueda, filtroZona, filtroCategoria]);
 
   // Mensaje para cobrar o contactar por WhatsApp
   function generarEnlaceWhatsAppCobro(aliado: AliadoItem) {
@@ -215,8 +256,9 @@ export function AdminAliadosList({
 
   return (
     <div className="space-y-6">
-      {/* Selector de Región / Zona */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-white/70 p-2.5 sm:p-3 rounded-2xl border border-stone-light/70 shadow-2xs">
+      {/* Selector de Región / Zona y Tipo de Negocio */}
+      <div className="bg-white/70 p-2.5 sm:p-3 rounded-2xl border border-stone-light/70 shadow-2xs space-y-2.5">
+        {/* Fila 1: Regiones */}
         <div className="flex items-center gap-1.5 overflow-x-auto w-full">
           <span className="text-xs font-semibold text-forest font-sans mr-1 shrink-0">
             Región:
@@ -256,6 +298,33 @@ export function AdminAliadosList({
               >
                 {z.count}
               </span>
+            </button>
+          ))}
+        </div>
+
+        {/* Fila 2: Categorías (Restaurantes, Hospedajes, Tours, Todos) */}
+        <div className="flex items-center gap-1.5 overflow-x-auto w-full pt-1.5 border-t border-stone-light/50">
+          <span className="text-xs font-semibold text-forest font-sans mr-1 shrink-0">
+            Tipo:
+          </span>
+          {[
+            { id: "todas", label: "Todas las Categorías" },
+            { id: "restaurantes", label: "🍽️ Restaurantes" },
+            { id: "hospedajes", label: "🏡 Hospedajes" },
+            { id: "tours", label: "🎒 Tours & Guías" },
+          ].map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => setFiltroCategoria(c.id)}
+              className={[
+                "py-1 px-2.5 rounded-lg text-xs font-sans font-medium transition-all cursor-pointer flex items-center gap-1 shrink-0",
+                filtroCategoria === c.id
+                  ? "bg-forest/90 text-white shadow-2xs font-semibold"
+                  : "bg-cream/80 text-stone hover:text-forest hover:bg-stone-100 border border-stone-light/60",
+              ].join(" ")}
+            >
+              <span>{c.label}</span>
             </button>
           ))}
         </div>

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { AdminNav } from "../AdminNav";
 import { AdminAliadosList, type AliadoItem } from "./AdminAliadosList";
 import { ModalKitProspeccion } from "./ModalKitProspeccion";
+import { ModalDifusionWhatsApp } from "./ModalDifusionWhatsApp";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -232,6 +233,7 @@ export default async function AdminAliadosPage({
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0 flex-wrap">
+            <ModalDifusionWhatsApp aliados={aliados} />
             <Link href="/admin/nuevo">
               <Button size="sm" className="shadow-xs py-2 px-3 text-xs flex items-center gap-1.5 cursor-pointer">
                 <span>+</span>
