@@ -10,6 +10,7 @@ import {
 } from "../actions";
 import { ModalEditarAliado } from "./ModalEditarAliado";
 import { ModalEventosAliado } from "./ModalEventosAliado";
+import { obtenerMetricasGA4Aliado } from "@/lib/constants/vistasAnalyticsHistoricas";
 import type { PlanNegocio } from "@/lib/types";
 
 export interface EventoAliadoItem {
@@ -208,8 +209,19 @@ export function AdminAliadosList({
   function handleCopiarReporte(aliado: AliadoItem) {
     const est = getEstadoExpiracion(aliado);
     const destinoNombre = aliado.zonaNombre || (aliado.zonaSlug === "mendihuaca" ? "Mendihuaca" : "Minca");
+    const metricas = obtenerMetricasGA4Aliado(aliado.nombre);
+    const fechaPub = aliado.created_at
+      ? new Date(aliado.created_at).toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" })
+      : null;
+    const diasActivo = aliado.created_at
+      ? Math.max(1, Math.ceil((new Date().getTime() - new Date(aliado.created_at).getTime()) / (1000 * 60 * 60 * 24)))
+      : null;
+
     const texto = `🌿 Reporte PaDónde — ${aliado.nombre}
 📍 ${destinoNombre}, Magdalena
+🗓️ Publicado: ${fechaPub || "Julio 2026"} (${diasActivo} días ${aliado.activo ? "activo" : "pausado"})
+👁️ Visitas a la ficha: ${metricas.vistas} vistas (${metricas.usuariosUnicos} turistas únicos)
+📲 Contactos a WhatsApp: ${aliado.totalClics || 0}
 🟢 Eventos vigentes en cartelera: ${aliado.eventosActivos}
 📅 Total de eventos registrados: ${aliado.totalEventos}
 ⭐ Plan: ${aliado.plan.toUpperCase()} (${est.texto})
@@ -419,6 +431,13 @@ export function AdminAliadosList({
         {aliadosFiltrados.map((aliado) => {
           const est = getEstadoExpiracion(aliado);
           const cleanWa = aliado.whatsapp.replace(/\D/g, "");
+          const metricasGA4 = obtenerMetricasGA4Aliado(aliado.nombre);
+          const fechaPub = aliado.created_at
+            ? new Date(aliado.created_at).toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" })
+            : null;
+          const diasActivo = aliado.created_at
+            ? Math.max(1, Math.ceil((new Date().getTime() - new Date(aliado.created_at).getTime()) / (1000 * 60 * 60 * 24)))
+            : null;
 
           return (
             <article
@@ -509,6 +528,18 @@ export function AdminAliadosList({
                 </div>
 
                 <div className="flex items-center gap-2 flex-wrap">
+                  {/* Métrica de Vistas Reales GA4 */}
+                  {metricasGA4.vistas > 0 && (
+                    <div
+                      className="inline-flex items-center gap-1.5 text-xs text-forest bg-forest/5 border border-forest/20 px-2.5 py-1 rounded-xl font-medium shrink-0"
+                      title={`Google Analytics: ${metricasGA4.vistas} visitas reales por ${metricasGA4.usuariosUnicos} usuarios únicos`}
+                    >
+                      <span>👁️</span>
+                      <span><strong>{metricasGA4.vistas}</strong> vistas</span>
+                      <span className="text-[10px] text-stone">({metricasGA4.usuariosUnicos} turistas)</span>
+                    </div>
+                  )}
+
                   {/* Métrica de Clics a WhatsApp */}
                   <div
                     className="inline-flex items-center gap-1.5 text-xs text-emerald-800 bg-emerald-50 border border-emerald-200/90 px-2.5 py-1 rounded-xl font-medium shrink-0"
@@ -537,11 +568,23 @@ export function AdminAliadosList({
                 </div>
               </div>
 
-              {/* Fila 2: Metadatos de Contacto (Categoría, WhatsApp, Instagram) */}
+              {/* Fila 2: Metadatos de Contacto (Categoría, Fecha de Publicación, Permanencia, WhatsApp, Instagram) */}
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-stone font-sans">
                 <span className="capitalize text-forest font-medium">
                   🏷️ {aliado.categoria}
                 </span>
+
+                {fechaPub && (
+                  <>
+                    <span>·</span>
+                    <span
+                      className="text-stone-600"
+                      title={`Ficha publicada el ${fechaPub}. Lleva ${diasActivo} días ${aliado.activo ? "activa en cartelera" : "registrada (actualmente en pausa)"}.`}
+                    >
+                      🗓️ Publicada: <strong className="text-forest">{fechaPub}</strong> ({diasActivo}d {aliado.activo ? "activo" : "pausado"})
+                    </span>
+                  </>
+                )}
 
                 <span>·</span>
                 <a
@@ -785,12 +828,44 @@ export function AdminAliadosList({
           (reporteNegocio.zonaSlug === "mendihuaca" ? "Mendihuaca" : "Minca");
         const destinoUrl = `https://padonde.lat/es/${reporteNegocio.zonaSlug || "minca"}`;
 
-        const clicsTexto =
-          typeof reporteNegocio.totalClics === "number" && reporteNegocio.totalClics > 0
-            ? `• 📲 *Clientes interesados directos a tu WhatsApp:* ${reporteNegocio.totalClics} personas${reporteNegocio.clics7Dias ? ` (+${reporteNegocio.clics7Dias} esta semana)` : ""}\n`
+        const metricas = obtenerMetricasGA4Aliado(reporteNegocio.nombre);
+        const fechaPub = reporteNegocio.created_at
+          ? new Date(reporteNegocio.created_at).toLocaleDateString("es-CO", {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+            })
+          : "Julio 2026";
+        const diasActivo = reporteNegocio.created_at
+          ? Math.max(
+              1,
+              Math.ceil(
+                (new Date().getTime() - new Date(reporteNegocio.created_at).getTime()) /
+                  (1000 * 60 * 60 * 24)
+              )
+            )
+          : 90;
+
+        const visitasTexto =
+          metricas.vistas > 0
+            ? `• 👁️ *Visitas a tu ficha completa:* ${metricas.vistas} vistas (${metricas.usuariosUnicos} turistas únicos exploraron tus fotos y servicios)\n`
             : "";
 
-        const textoReporte = `🌿 *Reporte de Impacto PaDónde* — *${reporteNegocio.nombre}*\n📍 *${destinoNombre}, Magdalena*\n\nHola! Te compartimos el balance de visibilidad y clientes que generó tu negocio en la cartelera:\n\n${clicsTexto}• 🟢 *Eventos vigentes en cartelera:* ${reporteNegocio.eventosActivos}\n• 📅 *Total de eventos registrados:* ${reporteNegocio.totalEventos}\n• ⭐ *Plan comercial:* ${reporteNegocio.plan.toUpperCase()} (${est.texto})\n• 🏷️ *Categoría:* ${reporteNegocio.categoria}\n\n🔗 *Ver cartelera:* ${destinoUrl}\n\n¡Gracias por conectar a viajeros y locales con lo mejor de ${destinoNombre}! 🌿`;
+        const idiomasTexto =
+          (metricas.idiomasDetectados?.length || 0) > 0
+            ? `• 🌍 *Audiencia multilingüe:* Consultada en ${(metricas.idiomasDetectados || []).join(", ")}\n`
+            : "";
+
+        const clicsTexto =
+          typeof reporteNegocio.totalClics === "number" && reporteNegocio.totalClics > 0
+            ? `• 📲 *Clientes directos a tu WhatsApp:* ${reporteNegocio.totalClics} prospectos${
+                reporteNegocio.clics7Dias ? ` (+${reporteNegocio.clics7Dias} esta semana)` : ""
+              }\n`
+            : `• 📲 *Contacto WhatsApp directo:* Habilitado sin intermediarios (0% comisión)\n`;
+
+        const textoReporte = `🌿 *Reporte de Impacto PaDónde* — *${reporteNegocio.nombre}*\n📍 *${destinoNombre}, Magdalena*\n\nHola! Te compartimos el balance de visibilidad y clientes que ha generado tu negocio en la cartelera turística:\n\n• 🗓️ *Fecha de publicación:* ${fechaPub}\n• ⏳ *Permanencia en cartelera:* ${diasActivo} días ${
+          reporteNegocio.activo ? "activos en vitrina 🟢" : "(actualmente en pausa ⏸️)"
+        }\n${visitasTexto}${idiomasTexto}${clicsTexto}• 🟢 *Planes y eventos en vitrina:* ${reporteNegocio.eventosActivos} vigentes (${reporteNegocio.totalEventos} en historial)\n• ⭐ *Plan comercial:* ${reporteNegocio.plan.toUpperCase()} (${est.texto})\n• 🏷️ *Categoría:* ${reporteNegocio.categoria}\n\n💡 *Balance comercial:*\nDurante estos ${diasActivo} días tu propuesta ha estado visible ante viajeros nacionales y extranjeros que buscan qué hacer en ${destinoNombre}, con *0% de comisión* por reserva.\n\nA partir del 1 de noviembre iniciamos el nuevo ciclo trimestral de visibilidad ($125.000 COP el trimestre, es decir menos de $42.000 al mes) e incluimos la digitalización interactiva de tu menú o catálogo de servicios.\n\n🔗 *Ver cartelera:* ${destinoUrl}\n\n¡Gracias por conectar a viajeros y locales con lo mejor de ${destinoNombre}! 🌿`;
 
         const waUrl = `https://wa.me/${cleanWa}?text=${encodeURIComponent(textoReporte)}`;
 
@@ -829,19 +904,43 @@ export function AdminAliadosList({
                   </span>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2 text-xs">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                  {/* Caja 1: Visitas GA4 */}
+                  <div className="p-2.5 bg-white/10 rounded-xl">
+                    <span className="text-[10px] text-cream/80 block">Visitas Reales</span>
+                    <span className="font-serif text-2xl font-bold text-white mt-0.5 block">
+                      {metricas.vistas}
+                    </span>
+                    <span className="text-[9px] text-emerald-300">
+                      {metricas.usuariosUnicos} turistas
+                    </span>
+                  </div>
+
+                  {/* Caja 2: Días Activo */}
+                  <div className="p-2.5 bg-white/10 rounded-xl">
+                    <span className="text-[10px] text-cream/80 block">Permanencia</span>
+                    <span className="font-serif text-2xl font-bold text-white mt-0.5 block">
+                      {diasActivo}d
+                    </span>
+                    <span className="text-[9px] text-cream/70 truncate block" title={`Desde ${fechaPub}`}>
+                      Desde {fechaPub}
+                    </span>
+                  </div>
+
+                  {/* Caja 3: Clientes WhatsApp */}
                   <div className="p-2.5 bg-emerald-500/20 border border-emerald-400/30 rounded-xl">
-                    <span className="text-[10px] text-emerald-200 block">Clientes WhatsApp</span>
+                    <span className="text-[10px] text-emerald-200 block">WhatsApp</span>
                     <span className="font-serif text-2xl font-bold text-white mt-0.5 block">
                       {reporteNegocio.totalClics || 0}
                     </span>
                     <span className="text-[9px] text-emerald-300">
                       {typeof reporteNegocio.clics7Dias === "number" && reporteNegocio.clics7Dias > 0
                         ? `+${reporteNegocio.clics7Dias} en 7d`
-                        : "Prospectos"}
+                        : "Directos"}
                     </span>
                   </div>
 
+                  {/* Caja 4: Vigentes */}
                   <div className="p-2.5 bg-white/10 rounded-xl">
                     <span className="text-[10px] text-cream/70 block">Vigentes</span>
                     <span className="font-serif text-2xl font-bold text-cream mt-0.5 block">
@@ -849,20 +948,33 @@ export function AdminAliadosList({
                     </span>
                     <span className="text-[9px] text-emerald-300">En cartelera</span>
                   </div>
-
-                  <div className="p-2.5 bg-white/10 rounded-xl">
-                    <span className="text-[10px] text-cream/70 block">Historial</span>
-                    <span className="font-serif text-2xl font-bold text-cream mt-0.5 block">
-                      {reporteNegocio.totalEventos}
-                    </span>
-                    <span className="text-[9px] text-cream/70">Planes</span>
-                  </div>
                 </div>
 
-                <div className="text-[11px] text-cream/80 space-y-1 pt-1 font-sans">
-                  <p>📍 <strong>Destino:</strong> {destinoNombre}, Magdalena</p>
-                  <p>💬 <strong>Canal de Reservas:</strong> WhatsApp verificado (+{cleanWa})</p>
-                  <p>⏳ <strong>Vigencia del Acuerdo:</strong> {est.texto}</p>
+                <div className="text-[11px] text-cream/90 space-y-1.5 pt-1 font-sans border-t border-cream/15">
+                  <div className="flex items-center justify-between">
+                    <span>🗓️ <strong>Publicación:</strong></span>
+                    <span className="font-medium text-white">{fechaPub} ({diasActivo} días {reporteNegocio.activo ? "activa" : "pausada"})</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>📍 <strong>Destino:</strong></span>
+                    <span>{destinoNombre}, Magdalena</span>
+                  </div>
+                  {(metricas.idiomasDetectados?.length || 0) > 0 && (
+                    <div className="flex items-center justify-between">
+                      <span>🌍 <strong>Idiomas de turistas:</strong></span>
+                      <span className="text-emerald-300 font-medium">{(metricas.idiomasDetectados || []).join(", ")}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between">
+                    <span>💬 <strong>Canal de Reservas:</strong></span>
+                    <span>WhatsApp verificado (+{cleanWa})</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>⏳ <strong>Estado:</strong></span>
+                    <span className={reporteNegocio.activo ? "text-emerald-300 font-medium" : "text-amber-300 font-medium"}>
+                      {reporteNegocio.activo ? "🟢 Activo en vitrina" : "⏸️ Pausado"} · {est.texto}
+                    </span>
+                  </div>
                 </div>
               </div>
 
