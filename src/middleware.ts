@@ -42,8 +42,29 @@ export default async function middleware(request: NextRequest) {
   // (evita que parámetros como ?moto o ?src= se pierdan al redirigir de / a /es/minca)
   if (response.status >= 300 && response.status < 400) {
     const loc = response.headers.get("location");
-    if (loc && request.nextUrl.search && !loc.includes("?")) {
-      response.headers.set("location", `${loc}${request.nextUrl.search}`);
+    if (loc && request.nextUrl.search) {
+      try {
+        const redirectTarget = new URL(loc, request.url);
+        let updated = false;
+
+        request.nextUrl.searchParams.forEach((v, k) => {
+          if (!redirectTarget.searchParams.has(k)) {
+            redirectTarget.searchParams.set(k, v);
+            updated = true;
+          }
+        });
+
+        if (!redirectTarget.search && request.nextUrl.search) {
+          redirectTarget.search = request.nextUrl.search;
+          updated = true;
+        }
+
+        if (updated) {
+          const newRedirect = NextResponse.redirect(redirectTarget, response.status as 307 | 308);
+          response.cookies.getAll().forEach((c) => newRedirect.cookies.set(c));
+          return newRedirect;
+        }
+      } catch {}
     }
   }
 
