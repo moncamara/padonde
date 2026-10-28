@@ -5,6 +5,8 @@ import { AdminNav } from "../AdminNav";
 import { AdminAliadosList, type AliadoItem } from "./AdminAliadosList";
 import { ModalKitProspeccion } from "./ModalKitProspeccion";
 import { ModalDifusionWhatsApp } from "./ModalDifusionWhatsApp";
+import { ModalActualizarAnalytics } from "./ModalActualizarAnalytics";
+import type { MetricaHistoricaAliado } from "@/lib/constants/vistasAnalyticsHistoricas";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -210,6 +212,18 @@ export default async function AdminAliadosPage({
     return diffDias <= 5; // Vencidos o por vencer en 5 días
   }).length;
 
+  // 5. Cargar métricas dinámicas de Google Analytics guardadas en configuraciones
+  const { data: ga4ConfigRow } = await supabase
+    .from("configuraciones")
+    .select("valor, updated_at")
+    .eq("clave", "metricas_ga4_historicas")
+    .maybeSingle();
+
+  const ga4Config = ga4ConfigRow?.valor as {
+    ultimaActualizacion?: string;
+    metricasPorAliado?: Record<string, MetricaHistoricaAliado>;
+  } | null;
+
   return (
     <div className="min-h-screen bg-cream pb-24">
       {/* Header unificado con navegación */}
@@ -233,6 +247,10 @@ export default async function AdminAliadosPage({
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0 flex-wrap">
+            <ModalActualizarAnalytics
+              negociosRegistrados={negociosList}
+              ultimaActualizacion={ga4Config?.ultimaActualizacion || ga4ConfigRow?.updated_at}
+            />
             <ModalDifusionWhatsApp aliados={aliados} />
             <Link href="/admin/nuevo">
               <Button size="sm" className="shadow-xs py-2 px-3 text-xs flex items-center gap-1.5 cursor-pointer">
@@ -318,6 +336,7 @@ export default async function AdminAliadosPage({
             aliados={aliados}
             negociosList={negociosList}
             locale={locale}
+            metricasDinamicas={ga4Config?.metricasPorAliado || null}
           />
         </div>
       </main>

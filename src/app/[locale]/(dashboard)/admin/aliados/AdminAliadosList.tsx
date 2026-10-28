@@ -10,7 +10,7 @@ import {
 } from "../actions";
 import { ModalEditarAliado } from "./ModalEditarAliado";
 import { ModalEventosAliado } from "./ModalEventosAliado";
-import { obtenerMetricasGA4Aliado } from "@/lib/constants/vistasAnalyticsHistoricas";
+import { obtenerMetricasGA4Aliado, type MetricaHistoricaAliado } from "@/lib/constants/vistasAnalyticsHistoricas";
 import type { PlanNegocio } from "@/lib/types";
 
 export interface EventoAliadoItem {
@@ -56,6 +56,7 @@ interface AdminAliadosListProps {
   aliados: AliadoItem[];
   negociosList?: { id: string; nombre: string }[];
   locale: string;
+  metricasDinamicas?: Record<string, MetricaHistoricaAliado> | null;
 }
 
 type FiltroPlan = "todos" | "pro_premium" | "por_vencer" | "gratis";
@@ -64,6 +65,7 @@ export function AdminAliadosList({
   aliados,
   negociosList = [],
   locale,
+  metricasDinamicas = null,
 }: AdminAliadosListProps) {
   const router = useRouter();
   const [filtro, setFiltro] = useState<FiltroPlan>("todos");
@@ -209,7 +211,7 @@ export function AdminAliadosList({
   function handleCopiarReporte(aliado: AliadoItem) {
     const est = getEstadoExpiracion(aliado);
     const destinoNombre = aliado.zonaNombre || (aliado.zonaSlug === "mendihuaca" ? "Mendihuaca" : "Minca");
-    const metricas = obtenerMetricasGA4Aliado(aliado.nombre);
+    const metricas = obtenerMetricasGA4Aliado(aliado.nombre, metricasDinamicas);
     const fechaPub = aliado.created_at
       ? new Date(aliado.created_at).toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" })
       : null;
@@ -431,7 +433,7 @@ export function AdminAliadosList({
         {aliadosFiltrados.map((aliado) => {
           const est = getEstadoExpiracion(aliado);
           const cleanWa = aliado.whatsapp.replace(/\D/g, "");
-          const metricasGA4 = obtenerMetricasGA4Aliado(aliado.nombre);
+          const metricasGA4 = obtenerMetricasGA4Aliado(aliado.nombre, metricasDinamicas);
           const fechaPub = aliado.created_at
             ? new Date(aliado.created_at).toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" })
             : null;
@@ -828,7 +830,7 @@ export function AdminAliadosList({
           (reporteNegocio.zonaSlug === "mendihuaca" ? "Mendihuaca" : "Minca");
         const destinoUrl = `https://padonde.lat/es/${reporteNegocio.zonaSlug || "minca"}`;
 
-        const metricas = obtenerMetricasGA4Aliado(reporteNegocio.nombre);
+        const metricas = obtenerMetricasGA4Aliado(reporteNegocio.nombre, metricasDinamicas);
         const fechaPub = reporteNegocio.created_at
           ? new Date(reporteNegocio.created_at).toLocaleDateString("es-CO", {
               day: "numeric",

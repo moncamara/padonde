@@ -2741,5 +2741,86 @@ export async function testNotificacionTelegramAction() {
   }
 }
 
+/**
+ * Guarda las métricas consolidadas de Google Analytics 4 en la tabla 'configuraciones'
+ */
+export async function guardarMetricasGA4Action(payload: {
+  fechaInicio?: string;
+  fechaFin?: string;
+  totalVistas: number;
+  totalUsuarios: number;
+  totalAliados: number;
+  metricasPorAliado: Record<string, {
+    vistas: number;
+    usuariosUnicos: number;
+    idiomasDetectados: string[];
+  }>;
+}) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: "No autorizado." };
+    }
+
+    const valorJson = {
+      ultimaActualizacion: new Date().toISOString(),
+      fechaInicio: payload.fechaInicio,
+      fechaFin: payload.fechaFin,
+      totalVistas: payload.totalVistas,
+      totalUsuarios: payload.totalUsuarios,
+      totalAliados: payload.totalAliados,
+      metricasPorAliado: payload.metricasPorAliado,
+    };
+
+    const { error } = await supabase.from("configuraciones").upsert(
+      {
+        clave: "metricas_ga4_historicas",
+        valor: valorJson,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "clave" }
+    );
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    revalidatePath("/[locale]/admin/aliados", "page");
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || "Error al guardar métricas de Google Analytics." };
+  }
+}
+
+/**
+ * Obtiene las métricas de Google Analytics 4 guardadas en 'configuraciones'
+ */
+export async function obtenerMetricasGA4ConfigAction() {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("configuraciones")
+      .select("valor, updated_at")
+      .eq("clave", "metricas_ga4_historicas")
+      .maybeSingle();
+
+    if (error || !data) {
+      return { success: false, data: null };
+    }
+
+    return {
+      success: true,
+      data: data.valor,
+      updatedAt: data.updated_at,
+    };
+  } catch {
+    return { success: false, data: null };
+  }
+}
+
 
 

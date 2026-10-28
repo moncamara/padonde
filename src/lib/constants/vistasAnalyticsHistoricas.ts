@@ -286,19 +286,33 @@ export const METRICAS_HISTORICAS_GA4: Record<string, MetricaHistoricaAliado> = {
 };
 
 /**
- * Busca las métricas de Google Analytics para un aliado según su nombre o título
+ * Busca las métricas de Google Analytics para un aliado según su nombre o título.
+ * Si se pasa un mapa dinámico (cargado de la base de datos tras subir el CSV),
+ * se prioriza sobre el catálogo histórico de respaldo.
  */
-export function obtenerMetricasGA4Aliado(nombreAliado: string): MetricaHistoricaAliado {
+export function obtenerMetricasGA4Aliado(
+  nombreAliado: string,
+  mapaDinamico?: Record<string, MetricaHistoricaAliado> | null
+): MetricaHistoricaAliado {
   const norm = (nombreAliado || "").toLowerCase().trim();
 
-  // Búsqueda directa o por coincidencia parcial
+  // 1. Priorizar mapa dinámico subido por el administrador
+  if (mapaDinamico && typeof mapaDinamico === "object") {
+    for (const [clave, data] of Object.entries(mapaDinamico)) {
+      if (norm.includes(clave) || clave.includes(norm)) {
+        return data;
+      }
+    }
+  }
+
+  // 2. Fallback a catálogo histórico estático
   for (const [clave, data] of Object.entries(METRICAS_HISTORICAS_GA4)) {
     if (norm.includes(clave) || clave.includes(norm)) {
       return data;
     }
   }
 
-  // Si no tiene registros específicos en el top de GA4, asignar un piso estimado mínimo realista
+  // 3. Piso estimado mínimo realista para aliados nuevos
   return {
     vistas: 4,
     usuariosUnicos: 3,
