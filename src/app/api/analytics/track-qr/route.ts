@@ -32,21 +32,15 @@ export async function POST(request: NextRequest) {
     const rawIp = forwardedFor.split(",")[0]?.trim() || "127.0.0.1";
     const ipHash = crypto.createHash("sha256").update(rawIp + "padonde_salt_2026").digest("hex").slice(0, 32);
 
-    // 1. Filtro Anti-Admin: Ignorar escaneos de prueba del administrador
-    const isAdminCookie = request.cookies.get("padonde_admin_device")?.value === "true";
-    if (isAdminCookie) {
-      return NextResponse.json({ success: true, recorded: false, reason: "admin_cookie" });
-    }
-
     const supabase = await createClient();
 
+    // 1. Identificar si es escaneo de prueba del administrador
+    const isAdminCookie = request.cookies.get("padonde_admin_device")?.value === "true";
     const {
       data: { user },
     } = await supabase.auth.getUser();
-
-    if (user) {
-      return NextResponse.json({ success: true, recorded: false, reason: "admin_session" });
-    }
+    const esPruebaAdmin = Boolean(user || isAdminCookie);
+    const userAgentFinal = esPruebaAdmin ? `[PRUEBA_ADMIN] ${userAgentConLang}` : userAgentConLang;
 
     // 2. Antifraude: Verificar si este dispositivo ya había escaneado este punto
     const { data: escaneoPrevio } = await supabase
@@ -69,7 +63,7 @@ export async function POST(request: NextRequest) {
         es_primer_escaneo: esPrimerEscaneo,
         es_valido: false, // Se valida a los 5 segundos de permanencia
         dispositivo_tipo: dispositivoTipo,
-        user_agent: userAgentConLang,
+        user_agent: userAgentFinal,
         ip_hash: ipHash,
       })
       .select("id")

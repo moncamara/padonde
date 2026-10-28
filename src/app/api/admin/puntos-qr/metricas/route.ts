@@ -21,7 +21,16 @@ export async function GET(request: NextRequest) {
     // 2. Consulta base
     let query = supabase.from("escaneos_qr").select("*");
     if (puntoId) {
-      query = query.eq("punto_id", puntoId);
+      if (
+        puntoId === "mototaxis-minca" ||
+        puntoId === "moto" ||
+        puntoId === "motos" ||
+        puntoId === "mototaxi"
+      ) {
+        query = query.in("punto_id", ["mototaxis-minca", "moto", "motos", "mototaxi"]);
+      } else {
+        query = query.eq("punto_id", puntoId);
+      }
     }
 
     const { data: escaneos, error } = await query
@@ -43,8 +52,10 @@ export async function GET(request: NextRequest) {
     const lista = escaneos || [];
 
     const totales = lista.length;
-    // Escaneos válidos a pagar: Primer escaneo de ese celular Y permaneció >= 5s
-    const unicosValidados = lista.filter((e) => e.es_primer_escaneo && e.es_valido).length;
+    // Escaneos válidos a pagar: Primer escaneo de ese celular Y permaneció >= 5s (excluye pruebas de admin)
+    const unicosValidados = lista.filter(
+      (e) => e.es_primer_escaneo && e.es_valido && !e.user_agent?.includes("[PRUEBA_ADMIN]")
+    ).length;
     // Abrió y cerró de inmediato (<5s)
     const unicosSinPermanencia = lista.filter((e) => e.es_primer_escaneo && !e.es_valido).length;
     // Celulares repetidos (auto-escaneos o personas que ya lo habían escaneado)
@@ -59,8 +70,9 @@ export async function GET(request: NextRequest) {
       const matchLang = e.user_agent?.match(/\[LANG:([^\]]+)\]/);
       const rawLang = matchLang ? matchLang[1] : null;
       const origen = parseOrigenTurista(rawLang);
+      const esPruebaAdmin = Boolean(e.user_agent?.includes("[PRUEBA_ADMIN]"));
 
-      if (e.es_primer_escaneo && e.es_valido) {
+      if (e.es_primer_escaneo && e.es_valido && !esPruebaAdmin) {
         if (origen.esExtranjero) totalExtranjeros++;
         else totalNacionales++;
       }
@@ -74,6 +86,7 @@ export async function GET(request: NextRequest) {
         esValido: e.es_valido,
         tiempoPermanenciaSeg: e.tiempo_permanencia_seg,
         createdAt: e.created_at,
+        esPruebaAdmin,
         origen,
       };
     });

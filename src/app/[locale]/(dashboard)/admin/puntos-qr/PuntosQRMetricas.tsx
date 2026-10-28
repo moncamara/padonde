@@ -11,6 +11,7 @@ interface EscaneoLog {
   esValido: boolean;
   tiempoPermanenciaSeg: number;
   createdAt: string;
+  esPruebaAdmin?: boolean;
   origen?: {
     esExtranjero: boolean;
     etiqueta: string;
@@ -30,7 +31,7 @@ interface MetricasData {
 }
 
 export function PuntosQRMetricas() {
-  const [puntoFiltro, setPuntoFiltro] = useState<string>("promotor-estacion");
+  const [puntoFiltro, setPuntoFiltro] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<MetricasData>({
     totales: 0,
@@ -129,9 +130,9 @@ export function PuntosQRMetricas() {
             onChange={(e) => setPuntoFiltro(e.target.value)}
             className="text-xs font-sans bg-white border border-stone-light rounded-xl px-2.5 py-1.5 text-forest focus:outline-none focus:ring-1 focus:ring-forest cursor-pointer"
           >
+            <option value="">🌐 Todos los puntos QR</option>
+            <option value="mototaxis-minca">🛵 Parada Mototaxis (Minca)</option>
             <option value="promotor-estacion">📍 Promotor Estación</option>
-            <option value="">Todos los puntos QR</option>
-            <option value="mototaxis-minca">🛵 Parada Mototaxis</option>
             <option value="hostal-rio-elemento">🏨 Rio Elemento</option>
             <option value="cafe-duni">☕ Café Duni</option>
             <option value="casas-viejas">🏡 Casas Viejas</option>
@@ -380,6 +381,12 @@ export function PuntosQRMetricas() {
                               <span className="text-stone font-normal">
                                 · {esc.puntoId}
                               </span>
+                              {esc.esPruebaAdmin && (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-purple-100 text-purple-800 border border-purple-200">
+                                  <span>🧪</span>
+                                  <span>Prueba Admin</span>
+                                </span>
+                              )}
                               {esc.origen && (
                                 <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold ${
                                   esc.origen.esExtranjero

@@ -109,6 +109,12 @@ export function AdminQRGenerator({ locale }: { locale: string }) {
     setSlugPersonalizado(autSlug);
   }
 
+  function seleccionarPreset(preset: PuntoPreset) {
+    setNombrePunto(preset.nombre);
+    setSlugPersonalizado(preset.src);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   const slugFinal = slugPersonalizado || "punto-fisico";
   const urlGenerada = `${dominioBase}/${locale}/${zonaSeleccionada}?src=${slugFinal}`;
   const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=12&data=${encodeURIComponent(
@@ -348,6 +354,16 @@ export function AdminQRGenerator({ locale }: { locale: string }) {
                       <span>Descargar QR</span>
                     </a>
                   </div>
+
+                  <button
+                    type="button"
+                    onClick={() => seleccionarPreset(preset)}
+                    className="w-full py-1.5 px-3 rounded-xl text-xs font-sans font-medium text-stone hover:text-forest bg-stone-50 hover:bg-stone-100 border border-stone-light/60 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                    title="Cargar los datos de este punto en el formulario superior para editarlo o personalizarlo"
+                  >
+                    <span>⚙️</span>
+                    <span>Cargar en el Generador Superior</span>
+                  </button>
                 </div>
               </article>
             );

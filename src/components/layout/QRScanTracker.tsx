@@ -12,7 +12,49 @@ export function QRScanTracker({ zonaSlug }: QRScanTrackerProps) {
   const trackedRef = useRef<boolean>(false);
 
   useEffect(() => {
-    const src = searchParams.get("src");
+    // 1. Detección universal de cualquier parámetro de origen o punto QR
+    let src =
+      searchParams.get("src") ||
+      searchParams.get("punto") ||
+      searchParams.get("punto_id") ||
+      searchParams.get("ref") ||
+      searchParams.get("source") ||
+      searchParams.get("utm_source") ||
+      searchParams.get("origen") ||
+      searchParams.get("p");
+
+    // 2. Si no viene como clave con valor, buscar banderas sin valor (?moto, ?mototaxis, ?estacion...)
+    if (!src) {
+      for (const [key, val] of searchParams.entries()) {
+        const k = key.toLowerCase().trim();
+        // Ignorar parámetros estándar de navegación y analítica genérica
+        if (k && !["tab", "q", "categoria", "fbclid", "gclid", "locale"].includes(k)) {
+          src = val ? `${k}-${val}` : k;
+          break;
+        }
+      }
+    }
+
+    // 3. Normalizar alias comunes al identificador oficial
+    if (src) {
+      const sNorm = src.toLowerCase().trim();
+      if (
+        sNorm === "moto" ||
+        sNorm === "motos" ||
+        sNorm === "mototaxi" ||
+        sNorm === "mototaxis" ||
+        sNorm === "transporte"
+      ) {
+        src = "mototaxis-minca";
+      } else if (
+        sNorm === "estacion" ||
+        sNorm === "terminal" ||
+        sNorm === "promotor"
+      ) {
+        src = "promotor-estacion";
+      }
+    }
+
     if (!src || trackedRef.current) return;
 
     // Evitar registrar dos veces en la misma sesión de pestaña

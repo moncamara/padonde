@@ -11,8 +11,39 @@ export default async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Soporte para enlaces cortos y amigables de códigos QR (ej: /moto, /motos, /mototaxis)
+  const pathnameClean = request.nextUrl.pathname.toLowerCase().replace(/^\/+|\/+$/g, "");
+  if (
+    pathnameClean === "moto" ||
+    pathnameClean === "motos" ||
+    pathnameClean === "mototaxi" ||
+    pathnameClean === "mototaxis"
+  ) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/es/minca";
+    url.searchParams.set("src", "mototaxis-minca");
+    return NextResponse.redirect(url, 307);
+  }
+
+  if (pathnameClean.startsWith("qr/") || pathnameClean.startsWith("p/")) {
+    const slugPunto = pathnameClean.split("/")[1] || "punto-fisico";
+    const url = request.nextUrl.clone();
+    url.pathname = "/es/minca";
+    url.searchParams.set("src", slugPunto);
+    return NextResponse.redirect(url, 307);
+  }
+
   // 1. Manejar enrutamiento de idiomas
   const response = handleI18nRouting(request);
+
+  // Asegurar que las redirecciones de idioma conserven siempre el query string completo
+  // (evita que parámetros como ?moto o ?src= se pierdan al redirigir de / a /es/minca)
+  if (response.status >= 300 && response.status < 400) {
+    const loc = response.headers.get("location");
+    if (loc && request.nextUrl.search && !loc.includes("?")) {
+      response.headers.set("location", `${loc}${request.nextUrl.search}`);
+    }
+  }
 
   // 2. Refrescar sesión de Supabase Auth en las cookies
   const supabase = createServerClient(
