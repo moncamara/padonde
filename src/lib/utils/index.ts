@@ -572,8 +572,20 @@ export function extraerGoogleReviewUrl(inputUrl?: string | null): string | null 
   }
 
   // 6. Si contiene FIDs hexadecimales de Google Maps (!1s0x...:0x...):
-  const matchFid = raw.match(/0x([0-9a-fA-F]{12,18}):0x([0-9a-fA-F]{12,18})/);
+  const matchFid = raw.match(/0x([0-9a-fA-F]+):0x([0-9a-fA-F]+)/);
   if (matchFid && matchFid[1] && matchFid[2]) {
+    // Caso 6a: Si el primer FID es 0 o abreviado (ej: 0x0:0x21d1e000f0d3ca79), el segundo FID es el CID exacto
+    if (matchFid[1] === "0" || matchFid[1].length < 8) {
+      try {
+        const cid = BigInt(`0x${matchFid[2]}`).toString();
+        if (cid && cid !== "0") {
+          return `https://search.google.com/local/writereview?cid=${cid}`;
+        }
+      } catch {
+        // Fallback
+      }
+    }
+
     try {
       // Conversión matemática exacta de FIDs de Google Maps a Place ID oficial (ChIJ...)
       const bytes = new Uint8Array(20);
