@@ -20,6 +20,7 @@ export function ModalActualizarAnalytics({
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [mostrarGuia, setMostrarGuia] = useState(false);
   const [modoManual, setModoManual] = useState(false);
   const [csvTexto, setCsvTexto] = useState("");
   const [nombreArchivo, setNombreArchivo] = useState<string | null>(null);
@@ -179,6 +180,63 @@ export function ModalActualizarAnalytics({
                     <span>Abrir Reporte en GA4 ↗</span>
                   </a>
                 </div>
+              </div>
+
+              {/* Acordeón discreto de Ayuda Paso a Paso (No invasivo) */}
+              <div className="border border-stone-light/80 rounded-2xl overflow-hidden bg-stone-50/50">
+                <button
+                  type="button"
+                  onClick={() => setMostrarGuia(!mostrarGuia)}
+                  className="w-full p-3 flex items-center justify-between text-left hover:bg-stone-50 transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">💡</span>
+                    <span className="font-semibold text-forest text-xs">
+                      ¿Cómo descargar el reporte de Google Analytics? (Guía paso a paso)
+                    </span>
+                  </div>
+                  <span className="text-stone text-[11px] font-medium">
+                    {mostrarGuia ? "▲ Ocultar guía" : "▼ Ver paso a paso"}
+                  </span>
+                </button>
+
+                {mostrarGuia && (
+                  <div className="p-4 pt-1 border-t border-stone-light/60 bg-white space-y-3 text-[11px] text-stone-dark animate-in fade-in duration-150">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                      <div className="p-2.5 rounded-xl bg-forest/5 border border-forest/10 space-y-1">
+                        <span className="font-bold text-forest block">1. Abrir el informe oficial</span>
+                        <p className="text-stone">
+                          Haz clic en el botón verde <strong>&quot;Abrir Reporte en GA4&quot;</strong> de aquí arriba. Te llevará directo a la vista de <em>Páginas y Pantallas</em> de PaDónde.
+                        </p>
+                      </div>
+
+                      <div className="p-2.5 rounded-xl bg-forest/5 border border-forest/10 space-y-1">
+                        <span className="font-bold text-forest block">2. Periodo de tiempo</span>
+                        <p className="text-stone">
+                          El enlace ya tiene pre-seleccionados los <strong>últimos 90 días</strong>. Si deseas otro rango (ej. último mes), puedes cambiarlo arriba a la derecha en GA4.
+                        </p>
+                      </div>
+
+                      <div className="p-2.5 rounded-xl bg-forest/5 border border-forest/10 space-y-1">
+                        <span className="font-bold text-forest block">3. Exportar archivo</span>
+                        <p className="text-stone">
+                          En la esquina superior derecha de GA4, pulsa en el botón <strong>Compartir este informe 📤</strong>, luego <strong>Descargar archivo</strong> y selecciona <strong>Descargar CSV</strong>.
+                        </p>
+                      </div>
+
+                      <div className="p-2.5 rounded-xl bg-forest/5 border border-forest/10 space-y-1">
+                        <span className="font-bold text-forest block">4. Arrastrar y Guardar</span>
+                        <p className="text-stone">
+                          Regresa aquí, arrastra ese archivo <code>.csv</code> a la caja de carga. Revisa la vista previa y pulsa <strong>Guardar y Actualizar</strong>.
+                        </p>
+                      </div>
+                    </div>
+
+                    <p className="text-[10px] text-stone text-center pt-1 border-t border-stone-light/40">
+                      💡 <em>Puedes hacer este proceso cada 15 o 30 días o antes de enviar las propuestas comerciales de renovación.</em>
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Paso 2: Zona de Carga de Archivo */}
