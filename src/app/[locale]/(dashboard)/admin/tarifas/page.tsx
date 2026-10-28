@@ -30,7 +30,7 @@ export default async function AdminTarifasPage({
     <div className="min-h-screen bg-cream flex flex-col font-sans">
       <AdminNav userEmail={user?.email} />
 
-      <main className="flex-1 max-w-5xl w-full mx-auto p-4 sm:p-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
         <CotizadorVentas />
       </main>
     </div>

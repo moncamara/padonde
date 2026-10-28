@@ -285,7 +285,7 @@ A partir del 1 de noviembre iniciamos el ciclo de renovación trimestral para la
         mounted &&
         createPortal(
           <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-            <div className="bg-white w-full max-w-4xl max-h-[92vh] rounded-2xl sm:rounded-3xl shadow-2xl border border-stone-light flex flex-col overflow-hidden">
+            <div className="bg-white w-full max-w-5xl max-h-[92vh] rounded-2xl sm:rounded-3xl shadow-2xl border border-stone-light flex flex-col overflow-hidden">
               {/* Header del Modal */}
               <div className="p-4 sm:p-5 bg-stone-50 border-b border-stone-light/80 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-2.5">

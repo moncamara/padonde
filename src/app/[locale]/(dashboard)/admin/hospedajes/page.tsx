@@ -116,7 +116,7 @@ export default async function AdminHospedajesPage({
     <div className="min-h-screen bg-cream flex flex-col">
       <AdminNav userEmail={user?.email} />
 
-      <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
         <AdminHospedajesList
           hospedajes={(hospedajesData as any[]) || []}
           zonas={(zonasData as any[]) || []}

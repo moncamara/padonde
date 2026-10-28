@@ -215,19 +215,19 @@ export default async function AdminAliadosPage({
       {/* Header unificado con navegación */}
       <AdminNav userEmail={user?.email} />
 
-      <main className="max-w-4xl mx-auto px-3.5 sm:px-6 py-4 sm:py-8 space-y-4 sm:space-y-6">
+      <main className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-4 sm:space-y-6">
         {/* Banner principal con Kit de Prospección */}
-        <div className="bg-white/70 backdrop-blur-sm p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-stone-light/80 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="bg-white/70 backdrop-blur-sm p-4 sm:p-6 lg:p-7 rounded-2xl sm:rounded-3xl border border-stone-light/80 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="font-serif text-xl sm:text-2xl text-forest font-bold">
+              <h1 className="font-serif text-xl sm:text-2xl lg:text-3xl text-forest font-bold">
                 Aliados Comerciales y Planes B2B
               </h1>
               <span className="text-[11px] bg-forest/10 text-forest px-2.5 py-0.5 rounded-full font-medium">
                 Paso 2: Monetización
               </span>
             </div>
-            <p className="font-sans text-xs text-stone mt-1">
+            <p className="font-sans text-xs sm:text-sm text-stone mt-1 max-w-2xl">
               Gestiona acuerdos con hostales, restaurantes, guías y aliados turísticos en cada destino.
               Controla renovaciones y genera mensajes de cobro por WhatsApp en 1 clic.
             </p>

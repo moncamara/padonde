@@ -31,7 +31,7 @@ export default async function AdminPuntosQRPage({
       {/* Header unificado con navegación */}
       <AdminNav userEmail={user?.email} />
 
-      <main className="max-w-3xl mx-auto px-3.5 sm:px-4 py-4 sm:py-8 space-y-4 sm:space-y-6">
+      <main className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-4 sm:space-y-6">
         {/* Banner principal */}
         <div className="bg-white/70 backdrop-blur-sm p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-stone-light/80 shadow-xs">
           <div className="flex items-center gap-2">

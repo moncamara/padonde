@@ -72,7 +72,7 @@ export default async function AdminEsencialesPage({
     <div className="min-h-screen bg-cream pb-16">
       <AdminNav userEmail={user?.email} />
 
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 pt-6 sm:pt-8 space-y-6">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 space-y-6">
         {/* Cabecera Informativa y Contexto Comercial */}
         <div className="space-y-2">
           <div className="flex items-center gap-2">
