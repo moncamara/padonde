@@ -127,31 +127,42 @@ export function generarMensajeRestauranteAliado(
   const destinoNombre = zonaNombre || (slug === "mendihuaca" ? "Mendihuaca" : "Minca");
   const urlPublicacion = `https://www.padonde.lat/es/${slug}/${eventoId}`;
   const fechaLimite = calcularFechaEn15Dias();
+  const wpVisual = formatearTelefonoVisual(whatsapp);
+  const textoWhatsapp = wpVisual ? ` (${wpVisual})` : "";
 
-  return `🌿 *¡Hola equipo de ${negocioNombre}! Un saludo muy especial desde PaDónde ${destinoNombre}.*
+  return `🌿 *¡Hola ${negocioNombre}! Un saludo muy especial desde PaDónde ${destinoNombre}.*
 
-Ya tenemos su propuesta gastronómica y de playa activa y verificada en vivo dentro de la plataforma turística oficial de ${destinoNombre}:
+Ya tenemos su propuesta gastronómica activa y verificada en vivo dentro de la cartelera oficial de ${destinoNombre}:
 👉 *Miren su vitrina aquí:* ${urlPublicacion}
 
-Queremos darles la bienvenida con *15 días de cortesía total (100% gratuita)* desde hoy hasta el *${fechaLimite}*, para que comprueben cómo los viajeros y extranjeros que recorren la costa encuentran su carta, fotos y ubicación en tiempo real 📲✨
+Échale una mirada y fíjate en esto:
+• Puedes ver tus fotos, horarios y descripción detallada.
+• Puedes darle play al video/reel vertical.
+• Toca en *"Reservar por WhatsApp"* para comprobar que te llega directo a tu número${textoWhatsapp}.
+• La plataforma traduce automáticamente al inglés, alemán y francés para mochileros extranjeros.
 
-🌟 *Lo que gana ${negocioNombre}:*
-• *0% de comisiones por reserva o consumo:* Los clientes tocan el botón y van directo a su WhatsApp para reservar mesas, camas de playa o pedir información (sin intermediarios ni comisiones de entrega).
-• *Catálogo global en 4 idiomas:* Su propuesta se traduce automáticamente a Español, Inglés, Francés y Alemán (ES / EN / FR / DE) para captar al turista internacional.
-• *Presencia fija 24/7:* Su punto gastronómico indexado de forma permanente en la guía recomendada de ${destinoNombre}.
+🎁 *Por lanzamiento, ya te dejamos la publicación activa y destacada durante 15 días de cortesía 100% libres de costo (hasta el ${fechaLimite})* para que compruebes cuántos viajeros te descubren y contactan. 🚀
 
-🗓️ *Reglas claras de activación:*
-• Su periodo de cortesía corre libre de costo hasta el *${fechaLimite}*.
-• A partir de esa fecha, nuestro plan para la temporada es el *Trimestral por $125.000 COP* (cubre los 90 días completos de presencia de su vitrina comercial, menos de $1.400 al día).
-💡 *Con una sola mesa de 2 personas que los visite por vernos en la plataforma durante todo el trimestre, la inversión ya está 100% recuperada.*
+---
 
-🎉 *Difusión de Eventos y Actividades:*
-Cada vez que organicen noches de DJ, música en vivo, sunsets o eventos especiales:
-• *1 evento puntual:* $30.000 COP (activo toda la semana de promoción).
-• *Agenda Semanal Completa (hasta 3 eventos en la semana):* $50.000 COP.
-(Incluye su flyer, fechas, horarios, descripción completa y botón directo a su WhatsApp para reservas).
+📋 *Nuestra Propuesta Comercial (para después de tus 15 días):*
+Las apps de delivery o comisionistas descuentan márgenes altos. En PaDónde los clientes y turistas te escriben directo a tu WhatsApp con *0% de comisiones*.
 
-¿Pudieron abrir el enlace? Échenle un ojito a la ficha y me cuentan si su WhatsApp y menú están al día para dejarlos activos desde hoy. ¡Muchos éxitos y excelentes ventas en esta temporada! 🍽️🌊🌴`;
+💰 *Plan Trimestral Restaurantes, Bares & Cafés:*
+• *$125.000 COP el trimestre* (equivale a menos de $42.000 al mes).
+Incluye tu ficha activa 24/7, publicación en cartelera turística, 0% comisiones y catálogo en 4 idiomas.
+
+💡 *Opción recomendada para mesa: Menú Digital + Reseñas en Google* (Único pago de $50.000 COP):
+• *Stickers con código QR resistentes para tus mesas:* El comensal se sienta, escanea y ve tu menú en su celular al instante.
+• *Reseñas 5 Estrellas en Google sin rodeos:* Al final del menú dejamos un botón directo para que el cliente califique tu negocio en Google Maps en 1 solo clic.
+• Publicación y habilitación de tu carta en la plataforma *(solo nos pasas las fotos o archivo de tu menú y nosotros te lo dejamos listo)* + el archivo del código QR en alta calidad por si deseas mandar a hacer habladores.
+
+🔗 *Mira cómo funciona el ejemplo real en Pepe Mojito Bar:*
+👉 https://www.padonde.lat/es/mendihuaca/0274476c-aa64-42d9-9cbc-1e0a41940c2d
+
+---
+
+¿Pudiste abrir el enlace de *${negocioNombre}*? ¿Te gusta cómo quedó o le afinamos algún horario o detalle? 📲✨`;
 }
 
 /**
@@ -447,10 +458,18 @@ export function generarMensajePropuestaAliado(
   } else if (esResto) {
     tipoPlanTexto = "Restaurantes, Bares & Cafés";
     argumentoComisiones =
-      "Las apps de delivery o comisionistas descuentan márgenes altos. En PaDónde los clientes y turistas te escriben directo a tu WhatsApp para reservar mesa o pedir a domicilio con 0% de comisiones.";
-    bloqueTarifas = `💰 *Tarifas Trimestrales:*
-🍽️ Restaurante / Bar con Eventos: $125.000 COP *(eventos ilimitados en cartelera)*
-☕ Café / Tienda de Especialidad: $90.000 COP *($30.000/mes)*`;
+      "Las apps de delivery o comisionistas descuentan márgenes altos. En PaDónde los clientes y turistas te escriben directo a tu WhatsApp con 0% de comisiones.";
+    bloqueTarifas = `💰 *Plan Trimestral Restaurantes, Bares & Cafés:*
+• $125.000 COP el trimestre *(equivale a menos de $42.000 al mes)*.
+Incluye tu ficha activa 24/7, publicación en cartelera turística, 0% comisiones y catálogo en 4 idiomas.
+
+💡 *Opción recomendada para mesa: Menú Digital + Reseñas en Google* *(Único pago de $50.000 COP)*:
+• *Stickers con código QR resistentes para tus mesas:* El comensal se sienta, escanea y ve tu menú en su celular al instante.
+• *Reseñas 5 Estrellas en Google sin rodeos:* Al final del menú dejamos un botón directo para que el cliente califique tu negocio en Google Maps en 1 solo clic.
+• Publicación y habilitación de tu carta en la plataforma *(solo nos pasas las fotos o archivo de tu menú y nosotros te lo dejamos listo)* + el archivo del código QR en alta calidad por si deseas mandar a hacer habladores.
+
+🔗 *Mira cómo funciona el ejemplo real en Pepe Mojito Bar:*
+👉 https://www.padonde.lat/es/mendihuaca/0274476c-aa64-42d9-9cbc-1e0a41940c2d`;
   } else if (esComercio) {
     tipoPlanTexto = "Comercio Local & Servicios Esenciales";
     argumentoComisiones =
