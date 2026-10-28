@@ -4,7 +4,7 @@
  * Optimizada para conexiones móviles intermitentes 3G/4G en la Sierra Nevada (Minca).
  */
 
-const CACHE_VERSION = 'padonde-v6';
+const CACHE_VERSION = 'padonde-v7';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const PAGES_CACHE = `${CACHE_VERSION}-pages`;
 const IMAGES_CACHE = `${CACHE_VERSION}-images`;
@@ -130,11 +130,25 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // ESTRATEGIA C: Navegación de Páginas HTML (Cartelera, Detalles, PWA standalone) -> Network-First
+  // ESTRATEGIA C: Navegación de Páginas HTML (Cartelera, Detalles, PWA standalone)
+  // Network-First con Fast Fallback a Caché (evita pantalla negra o espera de arranque en frío)
   if (request.mode === 'navigate') {
     event.respondWith(
       (async () => {
-        try {
+        const findCached = async () => {
+          let cached = await caches.match(request, { ignoreSearch: true });
+          if (!cached && url.pathname.includes('/minca')) {
+            cached = await caches.match('/es/minca', { ignoreSearch: true });
+          } else if (!cached && url.pathname.includes('/mendihuaca')) {
+            cached = await caches.match('/es/mendihuaca', { ignoreSearch: true });
+          }
+          if (!cached) {
+            cached = await caches.match('/es/minca', { ignoreSearch: true });
+          }
+          return cached;
+        };
+
+        const fetchNetwork = async () => {
           const networkResponse = await fetch(request);
           if (networkResponse && networkResponse.status === 200) {
             const cache = await caches.open(PAGES_CACHE);
@@ -146,9 +160,33 @@ self.addEventListener('fetch', (event) => {
             }
           }
           return networkResponse;
+        };
+
+        const cachedPromise = findCached();
+
+        try {
+          const cached = await cachedPromise;
+          if (cached) {
+            // Si ya existe una versión en caché (acceso directo o navegación previa),
+            // damos máx 500ms a la red. Si el servidor o la señal tardan más,
+            // servimos el caché al instante y dejamos que la red actualice en segundo plano.
+            const timeoutPromise = new Promise((resolve) =>
+              setTimeout(() => resolve(null), 500)
+            );
+            const netPromise = fetchNetwork().catch(() => null);
+
+            const winner = await Promise.race([netPromise, timeoutPromise]);
+            if (winner && winner.status === 200) {
+              return winner;
+            }
+            return cached;
+          }
+
+          // Si es la primera visita y no hay caché, esperamos normalmente a la red
+          return await fetchNetwork();
         } catch {
           // MODO AVIÓN / SIN SEÑAL: Buscar en caché de páginas
-          const cachedMatch = await caches.match(request, { ignoreSearch: true });
+          const cachedMatch = await cachedPromise;
           if (cachedMatch) return cachedMatch;
 
           // Si el usuario intentó abrir Mendihuaca sin conexión
@@ -161,13 +199,6 @@ self.addEventListener('fetch', (event) => {
           if (url.pathname.includes('/minca')) {
             const mincaCached = await caches.match('/es/minca', { ignoreSearch: true });
             if (mincaCached) return mincaCached;
-          }
-
-          // Si el usuario abrió '/' o variantes sin conexión, respetar la última región guardada
-          const cookieHeader = request.headers.get('cookie') || '';
-          if (cookieHeader.includes('padonde_zona=mendihuaca')) {
-            const mendiCached = await caches.match('/es/mendihuaca', { ignoreSearch: true });
-            if (mendiCached) return mendiCached;
           }
 
           const defaultCached = await caches.match('/es/minca', { ignoreSearch: true });
@@ -190,7 +221,7 @@ self.addEventListener('fetch', (event) => {
                 }
               </script>
             </head>
-            <body></body>
+            <body style="background:#F4F1EA;"></body>
             </html>`,
             {
               status: 200,

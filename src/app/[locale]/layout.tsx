@@ -24,10 +24,19 @@ const inter = Inter({
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#1C3829" },
+    { media: "(prefers-color-scheme: dark)", color: "#1C3829" },
+  ],
 };
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.padonde.lat"),
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "PaDónde",
+  },
   title: {
     default: "PaDónde — Qué hacer hoy en Minca & Santa Marta",
     template: "%s | PaDónde",
@@ -126,8 +135,12 @@ export default async function LocaleLayout({
     <html
       lang={locale}
       className={`${playfair.variable} ${inter.variable} h-full bg-cream`}
+      style={{ backgroundColor: "#F4F1EA" }}
     >
-      <body className="min-h-full flex flex-col antialiased bg-cream text-stone-dark">
+      <body
+        className="min-h-full flex flex-col antialiased bg-cream text-stone-dark"
+        style={{ backgroundColor: "#F4F1EA" }}
+      >
         <GoogleAnalytics />
         <NextIntlClientProvider messages={messages}>
           <ServiceWorkerRegister />
