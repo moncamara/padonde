@@ -19,6 +19,7 @@ import {
   formatearDiasRecurrencia,
   getDayOfWeekColombia,
   getFechaYMDDesdeISO,
+  extraerGoogleReviewUrl,
 } from "@/lib/utils";
 import type { EventoExtraido } from "@/lib/eventoParser";
 import type { CategoriaEvento } from "@/lib/types";
@@ -1201,10 +1202,20 @@ export function AdminPublishForm({
               Enlace de Google Maps
             </label>
             <input
-              type="url"
+              type="text"
               value={mapsUrl}
-              onChange={(e) => setMapsUrl(e.target.value)}
-              placeholder="https://maps.app.goo.gl/..."
+              onChange={(e) => {
+                let val = e.target.value.trim();
+                if (val && !val.startsWith("http://") && !val.startsWith("https://")) {
+                  val = `https://${val}`;
+                }
+                setMapsUrl(val);
+                const auto = extraerGoogleReviewUrl(val);
+                if (auto) {
+                  setGoogleReviewUrl(auto);
+                }
+              }}
+              placeholder="https://maps.app.goo.gl/... o https://www.google.com/maps/place/..."
               className="w-full px-4 py-3 rounded-xl border border-stone-light bg-cream text-forest text-sm font-sans focus:outline-none focus:border-forest transition-colors"
             />
           </div>
@@ -1329,10 +1340,20 @@ export function AdminPublishForm({
               Enlace directo a Calificar en Google (Opcional)
             </label>
             <input
-              type="url"
+              type="text"
               value={googleReviewUrl}
-              onChange={(e) => setGoogleReviewUrl(e.target.value)}
-              placeholder="https://search.google.com/local/writereview?placeid=..."
+              onChange={(e) => {
+                const rawVal = e.target.value;
+                const auto = extraerGoogleReviewUrl(rawVal);
+                if (auto) {
+                  setGoogleReviewUrl(auto);
+                } else if (rawVal.trim().startsWith("ChIJ")) {
+                  setGoogleReviewUrl(`https://search.google.com/local/writereview?placeid=${rawVal.trim()}`);
+                } else {
+                  setGoogleReviewUrl(rawVal);
+                }
+              }}
+              placeholder="https://search.google.com/local/writereview?placeid=... (se auto-calcula al pegar Google Maps)"
               className="w-full px-4 py-3 rounded-xl border border-stone-light bg-cream text-forest text-sm font-sans focus:outline-none focus:border-forest transition-colors"
             />
           </div>

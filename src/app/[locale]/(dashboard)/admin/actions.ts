@@ -171,7 +171,11 @@ export async function adminPublishEventAction(
                 ? { menu_fotos: input.menuFotos.filter(Boolean) }
                 : {}),
               ...(input.menuUrl ? { menu_url: input.menuUrl.trim() } : {}),
-              ...(input.googleReviewUrl ? { google_review_url: input.googleReviewUrl.trim() } : {}),
+              ...(input.googleReviewUrl
+                ? { google_review_url: input.googleReviewUrl.trim() }
+                : input.googleReputacion?.maps_url
+                ? { google_review_url: extraerGoogleReviewUrl(input.googleReputacion.maps_url) || undefined }
+                : {}),
             }
           : null,
     };
