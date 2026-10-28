@@ -575,12 +575,38 @@ export function extraerGoogleReviewUrl(inputUrl?: string | null): string | null 
   const matchFid = raw.match(/0x([0-9a-fA-F]{12,18}):0x([0-9a-fA-F]{12,18})/);
   if (matchFid && matchFid[1] && matchFid[2]) {
     try {
-      const cid = BigInt(`0x${matchFid[2]}`).toString();
-      if (cid && cid !== "0") {
-        return `https://search.google.com/local/writereview?cid=${cid}`;
+      // Conversión matemática exacta de FIDs de Google Maps a Place ID oficial (ChIJ...)
+      const bytes = new Uint8Array(20);
+      bytes[0] = 0x0a;
+      bytes[1] = 0x12;
+      bytes[2] = 0x09;
+      const h1 = matchFid[1].padStart(16, "0");
+      for (let i = 0; i < 8; i++) {
+        bytes[3 + i] = parseInt(h1.substring(14 - i * 2, 16 - i * 2), 16);
+      }
+      bytes[11] = 0x11;
+      const h2 = matchFid[2].padStart(16, "0");
+      for (let i = 0; i < 8; i++) {
+        bytes[12 + i] = parseInt(h2.substring(14 - i * 2, 16 - i * 2), 16);
+      }
+      let binary = "";
+      for (let i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      const placeId = btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+      if (placeId && placeId.startsWith("ChIJ")) {
+        return `https://search.google.com/local/writereview?placeid=${placeId}`;
       }
     } catch {
-      // Fallback
+      // Fallback a CID decimal
+      try {
+        const cid = BigInt(`0x${matchFid[2]}`).toString();
+        if (cid && cid !== "0") {
+          return `https://search.google.com/local/writereview?cid=${cid}`;
+        }
+      } catch {
+        // Ignorar
+      }
     }
   }
 
