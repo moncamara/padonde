@@ -969,6 +969,11 @@ export function ModalEditarEvento({
                   placeholder="https://www.google.com/maps/place/..."
                   className="w-full bg-white border border-stone-light rounded-xl px-3 py-2 text-forest focus:outline-none focus:border-forest text-xs"
                 />
+                {mapsUrl.includes("/maps/search/") && (
+                  <p className="mt-1 text-[10px] text-amber-800 bg-amber-50 p-1.5 rounded-lg border border-amber-200">
+                    💡 <strong>Enlace de búsqueda general.</strong> Haz clic en el nombre del lugar en Maps para abrir su ficha y auto-calcular las 5 estrellas.
+                  </p>
+                )}
               </div>
 
 

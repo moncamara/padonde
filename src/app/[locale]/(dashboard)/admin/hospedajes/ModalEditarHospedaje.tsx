@@ -1138,9 +1138,18 @@ export function ModalEditarHospedaje({
                     </a>
                   )}
                 </div>
-                <p className="text-[10px] text-stone mt-1">
-                  Al hacer clic en la ficha pública, los turistas podrán navegar directamente a esta ubicación en Google Maps.
-                </p>
+                {mapsUrl.includes("/maps/search/") ? (
+                  <div className="mt-1.5 p-2 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-900 flex items-start gap-1.5">
+                    <span>💡</span>
+                    <span>
+                      <strong>Pegaste un enlace de búsqueda general (/search/).</strong> En Google Maps, haz clic sobre el nombre del alojamiento en el panel izquierdo (o en <strong>Compartir ↗️</strong>) para copiar la ficha directa y auto-calcular las 5 estrellas.
+                    </span>
+                  </div>
+                ) : (
+                  <p className="text-[10px] text-stone mt-1">
+                    Al hacer clic en la ficha pública, los turistas podrán navegar directamente a esta ubicación en Google Maps.
+                  </p>
+                )}
               </div>
 
               <div className="col-span-2 sm:col-span-3 pt-2 border-t border-stone-light/40">
