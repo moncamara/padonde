@@ -214,15 +214,16 @@ export function AdminAliadosList({
     const metricas = obtenerMetricasGA4Aliado(aliado.nombre, metricasDinamicas);
     const fechaPub = aliado.created_at
       ? new Date(aliado.created_at).toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" })
-      : null;
+      : "14 oct 2026";
     const diasActivo = aliado.created_at
       ? Math.max(1, Math.ceil((new Date().getTime() - new Date(aliado.created_at).getTime()) / (1000 * 60 * 60 * 24)))
-      : null;
+      : 14;
+    const promedioDiario = (metricas.vistas / (diasActivo || 1)).toFixed(1);
 
     const texto = `🌿 Reporte PaDónde — ${aliado.nombre}
 📍 ${destinoNombre}, Magdalena
-🗓️ Publicado: ${fechaPub || "Julio 2026"} (${diasActivo} días ${aliado.activo ? "activo" : "pausado"})
-👁️ Visitas a la ficha: ${metricas.vistas} vistas (${metricas.usuariosUnicos} turistas únicos)
+🗓️ Publicado: ${fechaPub} (⚡ En solo ${diasActivo} ${diasActivo === 1 ? "día" : "días"} ${aliado.activo ? "al aire" : "pausado"})
+👁️ Visitas a tu ficha: ${metricas.vistas} vistas (${metricas.usuariosUnicos} turistas únicos ~ prom. ${promedioDiario}/día)
 📲 Contactos a WhatsApp: ${aliado.totalClics || 0}
 🟢 Eventos vigentes en cartelera: ${aliado.eventosActivos}
 📅 Total de eventos registrados: ${aliado.totalEventos}
@@ -837,7 +838,7 @@ export function AdminAliadosList({
               month: "short",
               year: "numeric",
             })
-          : "Julio 2026";
+          : "14 oct 2026";
         const diasActivo = reporteNegocio.created_at
           ? Math.max(
               1,
@@ -846,11 +847,13 @@ export function AdminAliadosList({
                   (1000 * 60 * 60 * 24)
               )
             )
-          : 90;
+          : 14;
+
+        const promedioDiario = (metricas.vistas / (diasActivo || 1)).toFixed(1);
 
         const visitasTexto =
           metricas.vistas > 0
-            ? `• 👁️ *Visitas a tu ficha completa:* ${metricas.vistas} vistas (${metricas.usuariosUnicos} turistas únicos exploraron tus fotos y servicios)\n`
+            ? `• 👁️ *Visitas (en solo ${diasActivo} ${diasActivo === 1 ? "día" : "días"} al aire):* ${metricas.vistas} visualizaciones (${metricas.usuariosUnicos} turistas únicos exploraron tus fotos y menú ~ prom. ${promedioDiario}/día)\n`
             : "";
 
         const idiomasTexto =
@@ -865,9 +868,13 @@ export function AdminAliadosList({
               }\n`
             : `• 📲 *Contacto WhatsApp directo:* Habilitado sin intermediarios (0% comisión)\n`;
 
-        const textoReporte = `🌿 *Reporte de Impacto PaDónde* — *${reporteNegocio.nombre}*\n📍 *${destinoNombre}, Magdalena*\n\nHola! Te compartimos el balance de visibilidad y clientes que ha generado tu negocio en la cartelera turística:\n\n• 🗓️ *Fecha de publicación:* ${fechaPub}\n• ⏳ *Permanencia en cartelera:* ${diasActivo} días ${
+        const balancePeriodo = diasActivo <= 3
+          ? `En tus primeras ${diasActivo === 1 ? "24 horas" : `${diasActivo} días`} al aire tu propuesta ya comenzó a registrar visualizaciones reales de turistas, con *0% de comisión* por reserva.`
+          : `Durante estos ${diasActivo} días de lanzamiento tu propuesta ha tenido una visibilidad constante con un promedio de ~${promedioDiario} turistas diarios conociendo lo que ofreces, con *0% de comisión* por reserva.`;
+
+        const textoReporte = `🌿 *Reporte de Impacto PaDónde* — *${reporteNegocio.nombre}*\n📍 *${destinoNombre}, Magdalena*\n\n¡Hola! Te compartimos el balance de visibilidad y clientes que ha generado tu negocio en la cartelera turística:\n\n• 🗓️ *Fecha de publicación:* ${fechaPub}\n• ⏳ *Permanencia en cartelera:* ${diasActivo} ${diasActivo === 1 ? "día" : "días"} ${
           reporteNegocio.activo ? "activos en vitrina 🟢" : "(actualmente en pausa ⏸️)"
-        }\n${visitasTexto}${idiomasTexto}${clicsTexto}• 🟢 *Planes y eventos en vitrina:* ${reporteNegocio.eventosActivos} vigentes (${reporteNegocio.totalEventos} en historial)\n• ⭐ *Plan comercial:* ${reporteNegocio.plan.toUpperCase()} (${est.texto})\n• 🏷️ *Categoría:* ${reporteNegocio.categoria}\n\n💡 *Balance comercial:*\nDurante estos ${diasActivo} días tu propuesta ha estado visible ante viajeros nacionales y extranjeros que buscan qué hacer en ${destinoNombre}, con *0% de comisión* por reserva.\n\nA partir del 1 de noviembre iniciamos el nuevo ciclo trimestral de visibilidad ($125.000 COP el trimestre, es decir menos de $42.000 al mes) e incluimos la digitalización interactiva de tu menú o catálogo de servicios.\n\n🔗 *Ver cartelera:* ${destinoUrl}\n\n¡Gracias por conectar a viajeros y locales con lo mejor de ${destinoNombre}! 🌿`;
+        }\n${visitasTexto}${idiomasTexto}${clicsTexto}• 🟢 *Planes y eventos en vitrina:* ${reporteNegocio.eventosActivos} vigentes (${reporteNegocio.totalEventos} en historial)\n• ⭐ *Plan comercial:* ${reporteNegocio.plan.toUpperCase()} (${est.texto})\n• 🏷️ *Categoría:* ${reporteNegocio.categoria}\n\n💡 *Balance comercial:*\n${balancePeriodo}\n\nA partir del 1 de noviembre iniciamos el nuevo ciclo trimestral de visibilidad ($125.000 COP el trimestre, es decir menos de $42.000 al mes) e incluimos la digitalización interactiva de tu menú o catálogo de servicios.\n\n🔗 *Ver cartelera:* ${destinoUrl}\n\n¡Gracias por conectar a viajeros y locales con lo mejor de ${destinoNombre}! 🌿`;
 
         const waUrl = `https://wa.me/${cleanWa}?text=${encodeURIComponent(textoReporte)}`;
 
