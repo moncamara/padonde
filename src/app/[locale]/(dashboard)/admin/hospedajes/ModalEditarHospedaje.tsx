@@ -98,6 +98,19 @@ export function ModalEditarHospedaje({
       extraerGoogleReviewUrl(raw) ||
       extraerGoogleReviewUrl(hospedaje?.metadata_hospedaje?.google_reputacion?.maps_url || hospedaje?.mapsUrl);
     if (auto) return auto;
+    const nom = ((hospedaje?.titulo || "") + " " + (hospedaje?.negocio?.nombre || "") + " " + (hospedaje?.nombreNegocio || "")).toLowerCase();
+    if (nom.includes("velero")) {
+      return "https://search.google.com/local/writereview?placeid=ChIJk8ryXc6V9I4RecrT8ADg0SE";
+    }
+    if (nom.includes("almendr")) {
+      return "https://search.google.com/local/writereview?placeid=ChIJiwR53JiV9I4RuLUXsKSFFzw";
+    }
+    if (nom.includes("mompe")) {
+      return "https://search.google.com/local/writereview?placeid=ChIJaSJS53H19I4RqVvLCT4BGfQ";
+    }
+    if (nom.includes("marley")) {
+      return "https://search.google.com/local/writereview?placeid=ChIJpSe4a_319I4RvXXlynR0mMc";
+    }
     return raw || "";
   });
 
@@ -152,12 +165,16 @@ export function ModalEditarHospedaje({
           ""
       );
       const rawRev = hospedaje?.metadata_hospedaje?.google_review_url || hospedaje?.googleReviewUrl;
-      const nombre = ((hospedaje?.titulo || "") + " " + (hospedaje?.negocio?.nombre || "") + " " + (hospedaje?.nombreNegocio || "")).toLowerCase();
+      const nom = ((hospedaje?.titulo || "") + " " + (hospedaje?.negocio?.nombre || "") + " " + (hospedaje?.nombreNegocio || "")).toLowerCase();
       const autoRev =
         (rawRev && (rawRev.includes("search.google.com/local/writereview") || rawRev.includes("g.page/r/")))
           ? rawRev
           : extraerGoogleReviewUrl(rawRev) ||
             extraerGoogleReviewUrl(hospedaje?.metadata_hospedaje?.google_reputacion?.maps_url || hospedaje?.mapsUrl) ||
+            (nom.includes("velero") ? "https://search.google.com/local/writereview?placeid=ChIJk8ryXc6V9I4RecrT8ADg0SE" : "") ||
+            (nom.includes("almendr") ? "https://search.google.com/local/writereview?placeid=ChIJiwR53JiV9I4RuLUXsKSFFzw" : "") ||
+            (nom.includes("mompe") ? "https://search.google.com/local/writereview?placeid=ChIJaSJS53H19I4RqVvLCT4BGfQ" : "") ||
+            (nom.includes("marley") ? "https://search.google.com/local/writereview?placeid=ChIJpSe4a_319I4RvXXlynR0mMc" : "") ||
             rawRev ||
             "";
       setGoogleReviewUrl(autoRev);
