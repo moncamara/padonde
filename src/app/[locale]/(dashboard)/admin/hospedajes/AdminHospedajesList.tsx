@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useTransition } from "react";
+import { useState, useEffect, useMemo, useTransition } from "react";
 import Image from "next/image";
 import { Link, useRouter } from "@/i18n/routing";
 import { ModalEditarHospedaje } from "./ModalEditarHospedaje";
@@ -26,9 +26,47 @@ export function AdminHospedajesList({
   const [isPending, startTransition] = useTransition();
   const [listaHospedajes, setListaHospedajes] = useState<any[]>(hospedajes);
 
+  // Estados de Búsqueda y Filtro de Zona
+  const [busqueda, setBusqueda] = useState("");
+  const [filtroZona, setFiltroZona] = useState<string>("todas");
+
   useEffect(() => {
     setListaHospedajes(hospedajes);
   }, [hospedajes]);
+
+  // Filtrado reactivo en tiempo real
+  const hospedajesFiltrados = useMemo(() => {
+    let resultado = listaHospedajes;
+
+    // Filtro por zona
+    if (filtroZona !== "todas") {
+      resultado = resultado.filter((h) => {
+        const slug = h.zonas?.slug || h.zonaSlug;
+        return slug === filtroZona;
+      });
+    }
+
+    // Buscador por texto libre
+    if (busqueda.trim()) {
+      const q = busqueda.trim().toLowerCase();
+      resultado = resultado.filter((h) => {
+        const titulo = (h.titulo || "").toLowerCase();
+        const negocio = (h.negocio?.nombre || h.nombreNegocio || "").toLowerCase();
+        const wa = (h.negocio?.whatsapp || h.whatsapp || "").toLowerCase();
+        const contacto = (h.metadata_hospedaje?.contacto_propietario || "").toLowerCase();
+        const zona = (h.zonas?.nombre || h.zonaNombre || "").toLowerCase();
+        return (
+          titulo.includes(q) ||
+          negocio.includes(q) ||
+          wa.includes(q) ||
+          contacto.includes(q) ||
+          zona.includes(q)
+        );
+      });
+    }
+
+    return resultado;
+  }, [listaHospedajes, filtroZona, busqueda]);
 
   const [modalAbierto, setModalAbierto] = useState(false);
   const [asistenteAbierto, setAsistenteAbierto] = useState(false);
@@ -260,6 +298,72 @@ export function AdminHospedajesList({
         </button>
       </form>
 
+      {/* Barra de Filtros y Buscador */}
+      <div className="bg-white/90 backdrop-blur-xs border border-stone-light/80 p-3 sm:p-4 rounded-3xl shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        {/* Selector de Zonas */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+          <button
+            type="button"
+            onClick={() => setFiltroZona("todas")}
+            className={[
+              "px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all cursor-pointer",
+              filtroZona === "todas"
+                ? "bg-forest text-white shadow-xs font-semibold"
+                : "bg-stone-light/30 text-stone hover:text-forest hover:bg-stone-light/50",
+            ].join(" ")}
+          >
+            Todos ({listaHospedajes.length})
+          </button>
+
+          {zonas.map((z) => {
+            const count = listaHospedajes.filter(
+              (h) => (h.zonas?.slug || h.zonaSlug) === z.slug
+            ).length;
+            const emoji = z.slug === "mendihuaca" ? "🌊" : z.slug === "minca" ? "🌿" : "📍";
+            return (
+              <button
+                key={z.id}
+                type="button"
+                onClick={() => setFiltroZona(z.slug)}
+                className={[
+                  "px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all cursor-pointer flex items-center gap-1",
+                  filtroZona === z.slug
+                    ? "bg-forest text-white shadow-xs font-semibold"
+                    : "bg-stone-light/30 text-stone hover:text-forest hover:bg-stone-light/50",
+                ].join(" ")}
+              >
+                <span>{emoji}</span>
+                <span>{z.nombre}</span>
+                <span className="opacity-70 text-[11px]">({count})</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Buscador de Hospedaje */}
+        <div className="relative w-full sm:w-72 shrink-0">
+          <input
+            type="text"
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            placeholder="Buscar por nombre, anfitrión..."
+            className="w-full pl-9 pr-8 py-2 text-xs bg-stone-light/20 focus:bg-white rounded-2xl border border-stone-light/80 placeholder:text-stone/60 focus:outline-none focus:ring-1 focus:ring-forest text-forest transition-colors font-sans"
+          />
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone text-xs pointer-events-none">
+            🔍
+          </span>
+          {busqueda && (
+            <button
+              onClick={() => setBusqueda("")}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone hover:text-forest text-xs cursor-pointer p-1"
+              title="Limpiar búsqueda"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Lista de Hospedajes */}
       {listaHospedajes.length === 0 ? (
         <div className="text-center py-12 px-4 bg-white/60 rounded-3xl border border-dashed border-stone-light space-y-3">
@@ -278,14 +382,38 @@ export function AdminHospedajesList({
             <span>Registrar Hospedaje Ahora</span>
           </button>
         </div>
+      ) : hospedajesFiltrados.length === 0 ? (
+        <div className="text-center py-12 px-4 bg-white/60 rounded-3xl border border-dashed border-stone-light space-y-3">
+          <span className="text-4xl">🔍</span>
+          <h3 className="font-serif text-lg text-forest font-semibold">
+            No se encontraron hospedajes
+          </h3>
+          <p className="font-sans text-xs text-stone max-w-sm mx-auto">
+            {busqueda
+              ? `No hay hospedajes que coincidan con "${busqueda}" en ${
+                  filtroZona === "todas" ? "las zonas" : "esta zona"
+                }.`
+              : "No hay hospedajes registrados en esta zona."}
+          </p>
+          <button
+            onClick={() => {
+              setBusqueda("");
+              setFiltroZona("todas");
+            }}
+            className="px-4 py-2 bg-stone-light/60 hover:bg-stone-light text-forest font-sans text-xs font-semibold rounded-xl transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
+          >
+            <span>✕</span>
+            <span>Limpiar filtros de búsqueda</span>
+          </button>
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {listaHospedajes.map((hosp) => {
+          {hospedajesFiltrados.map((hosp) => {
             const zonaNombre = hosp.zonas?.nombre || "Minca";
             const zonaSlug = hosp.zonas?.slug || "minca";
             const numHabitaciones = hosp.metadata_hospedaje?.habitaciones?.length || 0;
-            const rating = hosp.metadata_hospedaje?.google_reputacion?.rating;
-            const totalReviews = hosp.metadata_hospedaje?.google_reputacion?.total_reviews;
+            const rating = hosp.negocio?.google_rating ?? hosp.metadata_hospedaje?.google_reputacion?.rating;
+            const totalReviews = hosp.negocio?.google_total_reviews ?? hosp.metadata_hospedaje?.google_reputacion?.total_reviews;
 
             return (
               <article

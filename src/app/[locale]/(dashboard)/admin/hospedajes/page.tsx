@@ -29,7 +29,7 @@ export default async function AdminHospedajesPage({
   }
 
   // 2. Obtener hospedajes registrados
-  const { data: hospedajesData } = await supabase
+  let { data: hospedajesData, error: hospErr } = await supabase
     .from("eventos")
     .select(`
       id,
@@ -54,14 +54,56 @@ export default async function AdminHospedajesPage({
         slug
       ),
       negocio:negocios (
+        id,
         nombre,
         whatsapp,
         instagram,
-        activo
+        activo,
+        google_rating,
+        google_total_reviews,
+        google_maps_url,
+        google_review_url
       )
     `)
     .eq("tipo", "hospedaje")
     .order("created_at", { ascending: false });
+
+  if (hospErr && hospErr.code === "42703") {
+    const fallbackRes = await supabase
+      .from("eventos")
+      .select(`
+        id,
+        negocio_id,
+        zona_id,
+        titulo,
+        descripcion,
+        tipo,
+        precio,
+        precio_moneda,
+        fecha_inicio,
+        fecha_fin,
+        imagen_url,
+        destacado,
+        tiene_boleteria,
+        activo,
+        created_at,
+        metadata_hospedaje,
+        zonas:zona_id (
+          id,
+          nombre,
+          slug
+        ),
+        negocio:negocios (
+          nombre,
+          whatsapp,
+          instagram,
+          activo
+        )
+      `)
+      .eq("tipo", "hospedaje")
+      .order("created_at", { ascending: false });
+    hospedajesData = fallbackRes.data as any;
+  }
 
   // 3. Obtener zonas activas para el formulario
   const { data: zonasData } = await supabase
