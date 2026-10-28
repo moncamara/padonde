@@ -91,12 +91,23 @@ export function ModalEditarEvento({
   );
   const [subiendoFotoMenu, setSubiendoFotoMenu] = useState(false);
   const [subiendoPdfMenu, setSubiendoPdfMenu] = useState(false);
-  const [googleReviewUrl, setGoogleReviewUrl] = useState(
-    evento.metadata_hospedaje?.google_review_url ||
-      (isPepeMojito
-        ? "https://search.google.com/local/writereview?placeid=ChIJiQTfKLuV9I4R3E86eG2jG6w"
-        : "")
-  );
+  const [googleReviewUrl, setGoogleReviewUrl] = useState<string>(() => {
+    const raw = evento.metadata_hospedaje?.google_review_url;
+    if (raw && (raw.includes("search.google.com/local/writereview") || raw.includes("g.page/r/"))) {
+      return raw;
+    }
+    const auto =
+      extraerGoogleReviewUrl(raw) ||
+      extraerGoogleReviewUrl(evento.metadata_hospedaje?.google_reputacion?.maps_url);
+    if (auto) return auto;
+    if (isPepeMojito) {
+      return "https://search.google.com/local/writereview?placeid=ChIJiQTfKLuV9I4R3E86eG2jG6w";
+    }
+    if (evento.id === "0ddcac29-63ec-46f4-b900-b05bc51500d5" || (evento.titulo || "").toLowerCase().includes("puiro")) {
+      return "https://search.google.com/local/writereview?placeid=ChIJy8hRqomV9I4RyifSHssIq_s";
+    }
+    return raw || "";
+  });
   const [mostrarHabladorMesa, setMostrarHabladorMesa] = useState(false);
 
   // Recurrencia y días de la semana
@@ -286,9 +297,9 @@ export function ModalEditarEvento({
         googleReputacion,
         galeriaFotos,
         googleReviewUrl:
-          (googleReviewUrl && (googleReviewUrl.startsWith("http://") || googleReviewUrl.startsWith("https://")))
+          (googleReviewUrl.includes("search.google.com/local/writereview") || googleReviewUrl.includes("g.page/r/"))
             ? googleReviewUrl.trim()
-            : extraerGoogleReviewUrl(mapsUrl) || undefined,
+            : extraerGoogleReviewUrl(googleReviewUrl) || extraerGoogleReviewUrl(mapsUrl) || googleReviewUrl.trim() || undefined,
         menuFotos: menuFotos.length > 0 ? menuFotos : undefined,
         menuUrl: menuUrl.trim() || undefined,
       });

@@ -789,15 +789,21 @@ export async function editarEventoAdminAction(input: EditarEventoAdminInput) {
       }
 
       if (input.googleReviewUrl !== undefined) {
-        if (!input.googleReviewUrl?.trim()) {
-          const auto = extraerGoogleReviewUrl(input.googleReputacion?.maps_url);
+        const val = input.googleReviewUrl?.trim() || "";
+        const isDirect = val.includes("search.google.com/local/writereview") || val.includes("g.page/r/");
+        if (isDirect) {
+          currentMeta.google_review_url = val;
+        } else {
+          const auto =
+            extraerGoogleReviewUrl(val) ||
+            extraerGoogleReviewUrl(input.googleReputacion?.maps_url);
           if (auto) {
             currentMeta.google_review_url = auto;
+          } else if (val) {
+            currentMeta.google_review_url = val;
           } else {
             delete currentMeta.google_review_url;
           }
-        } else {
-          currentMeta.google_review_url = input.googleReviewUrl.trim();
         }
       } else if (input.googleReputacion?.maps_url && !currentMeta.google_review_url) {
         const auto = extraerGoogleReviewUrl(input.googleReputacion.maps_url);
