@@ -34,7 +34,7 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://www.padonde.lat"),
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent",
+    statusBarStyle: "default",
     title: "PaDónde",
   },
   title: {
