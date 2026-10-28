@@ -11,13 +11,15 @@ export default async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Soporte para enlaces cortos y amigables de códigos QR (ej: /moto, /motos, /mototaxis)
+  // Soporte para enlaces cortos y amigables de códigos QR (ej: /moto, /es/moto, /qr/punto)
   const pathnameClean = request.nextUrl.pathname.toLowerCase().replace(/^\/+|\/+$/g, "");
+  const pathSinLocale = pathnameClean.replace(/^(es|en|fr|de)\//, "");
+
   if (
-    pathnameClean === "moto" ||
-    pathnameClean === "motos" ||
-    pathnameClean === "mototaxi" ||
-    pathnameClean === "mototaxis"
+    pathSinLocale === "moto" ||
+    pathSinLocale === "motos" ||
+    pathSinLocale === "mototaxi" ||
+    pathSinLocale === "mototaxis"
   ) {
     const url = request.nextUrl.clone();
     url.pathname = "/es/minca";
@@ -25,8 +27,8 @@ export default async function middleware(request: NextRequest) {
     return NextResponse.redirect(url, 307);
   }
 
-  if (pathnameClean.startsWith("qr/") || pathnameClean.startsWith("p/")) {
-    const slugPunto = pathnameClean.split("/")[1] || "punto-fisico";
+  if (pathSinLocale.startsWith("qr/") || pathSinLocale.startsWith("p/")) {
+    const slugPunto = pathSinLocale.split("/")[1] || "punto-fisico";
     const url = request.nextUrl.clone();
     url.pathname = "/es/minca";
     url.searchParams.set("src", slugPunto);
