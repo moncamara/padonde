@@ -35,6 +35,35 @@ export default async function middleware(request: NextRequest) {
     return NextResponse.redirect(url, 307);
   }
 
+  // Si trae cualquier variación del parámetro moto (?moto, ?src=moto, ?ref=moto), normalizar a mototaxis-minca
+  const searchLower = request.nextUrl.search.toLowerCase();
+  const tieneMoto =
+    request.nextUrl.searchParams.has("moto") ||
+    request.nextUrl.searchParams.get("src") === "moto" ||
+    request.nextUrl.searchParams.get("ref") === "moto" ||
+    request.nextUrl.searchParams.get("punto") === "moto" ||
+    searchLower.includes("moto");
+
+  const hasLocale = /^\/(es|en|fr|de)(\/|$)/.test(request.nextUrl.pathname);
+
+  if (tieneMoto && !hasLocale) {
+    const url = request.nextUrl.clone();
+    const p = url.pathname.replace(/^\/+|\/+$/g, "");
+    url.pathname = `/es/${p || "minca"}`;
+    if (url.searchParams.has("moto")) url.searchParams.delete("moto");
+    url.searchParams.set("src", "mototaxis-minca");
+    return NextResponse.redirect(url, 307);
+  }
+
+  // Si la petición trae query params pero no tiene prefijo de idioma (/minca?src=... o /?src=...)
+  // redirigir directamente preservando la URL y params intactos sin depender de next-intl
+  if (!hasLocale && request.nextUrl.search) {
+    const url = request.nextUrl.clone();
+    const p = url.pathname.replace(/^\/+|\/+$/g, "");
+    url.pathname = `/es/${p || "minca"}`;
+    return NextResponse.redirect(url, 307);
+  }
+
   // 1. Manejar enrutamiento de idiomas
   const response = handleI18nRouting(request);
 
