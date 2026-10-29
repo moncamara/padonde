@@ -3,12 +3,11 @@
 import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/routing";
-import { getCategoria, whatsappLink } from "@/constants";
-import { formatHora, formatPrecio, mensajeWhatsApp, truncar, getEtiquetaHorario } from "@/lib/utils";
+import { getCategoria } from "@/constants";
+import { formatPrecio, getEtiquetaHorario } from "@/lib/utils";
 import { getEventoTraducido } from "@/lib/translations/eventosTraducciones";
 import type { EventoConNegocio } from "@/lib/types";
-import { Button } from "@/components/ui/Button";
-import { trackWhatsAppClick } from "@/lib/analytics";
+import { trackEvent } from "@/lib/analytics";
 
 interface EventCardProps {
   evento: EventoConNegocio;
@@ -34,23 +33,14 @@ export function EventCard({ evento: rawEvento, zona, priority = false }: EventCa
   const tCard = useTranslations("eventCard");
   const tCat = useTranslations("categories");
   const tPrice = useTranslations("price");
-  const tWa = useTranslations("whatsapp");
 
   const categoria = getCategoria(evento.tipo);
-  const hora = formatHora(evento.fecha_inicio);
   
   // Si es 0 o null, mostramos precio a consultar
   const precioDisplay =
     evento.precio === null || evento.precio === 0
       ? tPrice("consult")
       : formatPrecio(evento.precio, evento.precio_moneda);
-
-  const refCode = evento.id.slice(0, 5).toUpperCase();
-  const mensajeDirecto = `${tWa("message", {
-    titulo: evento.titulo,
-  })} [Ref #${refCode}]`;
-
-  const waLink = whatsappLink(evento.negocio.whatsapp, mensajeDirecto);
 
   return (
     <article
@@ -174,36 +164,35 @@ export function EventCard({ evento: rawEvento, zona, priority = false }: EventCa
             )}
           </div>
 
-          {/* Acción directa de reserva por WhatsApp */}
-          <div className="flex items-center pointer-events-auto z-20">
-            <a
-              href={waLink}
-              target="_blank"
-              rel="noopener noreferrer"
+          {/* Botón Ver más hacia la ficha completa */}
+          <div className="flex items-center z-20">
+            <Link
+              href={`/${zona}/${evento.id}`}
               onClick={(e) => {
                 e.stopPropagation();
-                trackWhatsAppClick({
+                if (typeof window !== "undefined") {
+                  try {
+                    sessionStorage.setItem("padonde_scroll_pos", window.scrollY.toString());
+                    sessionStorage.setItem("padonde_last_card", `card-evento-${evento.id}`);
+                  } catch {
+                    // Silencioso
+                  }
+                }
+                trackEvent("click_ver_mas_tarjeta", {
                   aliado_nombre: rawEvento.negocio?.nombre || "Organizador",
                   tipo_categoria: rawEvento.tipo === "hospedaje" ? "hospedaje" : "evento",
-                  seccion_origen: "tarjeta_feed",
                   region_destino: zona,
                   eventoId: rawEvento.id,
                   eventoTitulo: rawEvento.titulo,
                   negocioNombre: rawEvento.negocio?.nombre,
                   negocioId: rawEvento.negocio_id,
-                  ubicacion: "tarjeta",
-                  precio: rawEvento.precio,
                 });
               }}
+              className="inline-flex items-center gap-1.5 bg-forest/5 hover:bg-forest text-forest hover:text-cream font-medium text-xs px-3.5 py-2 rounded-xl border border-forest/15 hover:border-forest shadow-2xs transition-all active:scale-95 group/btn cursor-pointer"
             >
-              <Button
-                size="sm"
-                className="bg-terra hover:bg-terra-dark text-white font-medium shadow-xs text-xs px-3.5 py-2 flex items-center gap-1.5 active:scale-95 transition-transform"
-              >
-                <span>💬</span>
-                <span>{tCard("reserve")}</span>
-              </Button>
-            </a>
+              <span>{tCard("seeMore")}</span>
+              <span className="group-hover/btn:translate-x-0.5 transition-transform">→</span>
+            </Link>
           </div>
         </div>
       </div>
