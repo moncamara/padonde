@@ -135,10 +135,10 @@ Si te interesa hacer parte de la comunidad o crees que a tu negocio le sirve est
       <Button
         type="button"
         onClick={() => setAbierto(true)}
-        className="bg-emerald-700 hover:bg-emerald-800 text-white font-sans text-xs font-semibold px-3.5 py-2 rounded-xl shadow-xs flex items-center gap-2 cursor-pointer active:scale-95 transition-all"
+        className="w-full h-full bg-emerald-700 hover:bg-emerald-800 text-white font-sans text-xs font-semibold px-3 py-2 rounded-xl shadow-xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 transition-all whitespace-nowrap"
       >
         <span>📲</span>
-        <span>Kit de Prospección WhatsApp</span>
+        <span>Kit de Prospección</span>
       </Button>
 
       {/* Modal montado directamente en document.body para quedar encima de todo */}

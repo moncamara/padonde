@@ -231,34 +231,36 @@ export default async function AdminAliadosPage({
 
       <main className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-4 sm:space-y-6">
         {/* Banner principal con Kit de Prospección */}
-        <div className="bg-white/70 backdrop-blur-sm p-4 sm:p-6 lg:p-7 rounded-2xl sm:rounded-3xl border border-stone-light/80 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2">
+        <div className="bg-white/70 backdrop-blur-sm p-4 sm:p-6 lg:p-7 rounded-2xl sm:rounded-3xl border border-stone-light/80 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div className="max-w-xl space-y-1">
+            <div className="flex items-center gap-2 flex-wrap">
               <h1 className="font-serif text-xl sm:text-2xl lg:text-3xl text-forest font-bold">
                 Aliados Comerciales y Planes B2B
               </h1>
-              <span className="text-[11px] bg-forest/10 text-forest px-2.5 py-0.5 rounded-full font-medium">
+              <span className="text-[11px] bg-forest/10 text-forest px-2.5 py-0.5 rounded-full font-medium shrink-0">
                 Paso 2: Monetización
               </span>
             </div>
-            <p className="font-sans text-xs sm:text-sm text-stone mt-1 max-w-2xl">
+            <p className="font-sans text-xs sm:text-sm text-stone mt-1 leading-relaxed">
               Gestiona acuerdos con hostales, restaurantes, guías y aliados turísticos en cada destino.
               Controla renovaciones y genera mensajes de cobro por WhatsApp en 1 clic.
             </p>
           </div>
-          <div className="flex items-center gap-2 shrink-0 flex-wrap">
+
+          {/* Cuadrícula balanceada de 2x2 para botones de acción en desktop */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full lg:w-auto lg:min-w-[460px] xl:min-w-[520px]">
             <ModalActualizarAnalytics
               negociosRegistrados={negociosList}
               ultimaActualizacion={ga4Config?.ultimaActualizacion || ga4ConfigRow?.updated_at}
             />
             <ModalDifusionWhatsApp aliados={aliados} />
-            <Link href="/admin/nuevo">
-              <Button size="sm" className="shadow-xs py-2 px-3 text-xs flex items-center gap-1.5 cursor-pointer">
+            <ModalKitProspeccion />
+            <Link href="/admin/nuevo" className="w-full">
+              <Button size="sm" className="w-full h-full shadow-xs py-2 px-3 text-xs flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap">
                 <span>+</span>
                 <span>Publicar Plan / Nuevo Aliado</span>
               </Button>
             </Link>
-            <ModalKitProspeccion />
           </div>
         </div>
 

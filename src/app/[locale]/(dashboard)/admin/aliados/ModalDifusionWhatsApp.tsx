@@ -272,10 +272,10 @@ A partir del 1 de noviembre iniciamos el ciclo de renovación trimestral para la
       {/* Botón Disparador en el Panel */}
       <Button
         onClick={() => setAbierto(true)}
-        className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold py-2 px-3.5 text-xs rounded-xl shadow-xs flex items-center gap-2 cursor-pointer transition-all active:scale-95"
+        className="w-full h-full bg-emerald-700 hover:bg-emerald-800 text-white font-semibold py-2 px-3 text-xs rounded-xl shadow-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 whitespace-nowrap"
       >
         <span>📢</span>
-        <span>Difusión & Cobro Trimestral (WhatsApp)</span>
+        <span>Difusión & Cobro</span>
         <span className="bg-white/20 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">
           1 Nov
         </span>
