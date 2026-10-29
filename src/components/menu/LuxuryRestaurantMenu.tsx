@@ -1045,78 +1045,61 @@ export function LuxuryRestaurantMenu({
       >
         <div
           style={{
-            maxWidth: "56rem",
+            maxWidth: "32rem",
             margin: "0 auto",
             display: "flex",
             alignItems: "center",
-            justifyContent: "space-between",
-            gap: "0.75rem",
+            justifyContent: "center",
+            gap: "0.65rem",
+            width: "100%",
           }}
         >
-          <div style={{ minWidth: 0 }}>
-            <p
-              style={{
-                fontSize: "0.78rem",
-                fontFamily: th.fontTitle,
-                fontWeight: 700,
-                color: th.heading,
-                margin: 0,
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }}
-            >
-              {menu.negocioNombre}
-            </p>
-            <p style={{ fontSize: "0.68rem", color: th.textMuted, margin: "2px 0 0" }}>
-              {menu.zona}
-            </p>
-          </div>
+          <a
+            href={whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="luxury-btn-gold"
+            style={{
+              flex: 1,
+              padding: "0.75rem 1rem",
+              fontSize: "0.85rem",
+              textDecoration: "none",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "0.45rem",
+              whiteSpace: "nowrap",
+              fontWeight: 700,
+            }}
+          >
+            <span style={{ fontSize: "1rem" }}>💬</span>
+            <span>{t.consultarMesa}</span>
+          </a>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <a
-              href={whatsappUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="luxury-btn-gold"
-              style={{
-                padding: "0.6rem 1rem",
-                fontSize: "0.8rem",
-                textDecoration: "none",
-                display: "flex",
-                alignItems: "center",
-                gap: "0.35rem",
-                whiteSpace: "nowrap",
-              }}
-            >
-              <span>💬</span>
-              <span>{t.consultarMesa}</span>
-            </a>
-
-            <a
-              href={menu.googleMapsUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                padding: "0.6rem 0.85rem",
-                fontSize: "0.8rem",
-                textDecoration: "none",
-                display: "flex",
-                alignItems: "center",
-                gap: "0.35rem",
-                whiteSpace: "nowrap",
-                borderRadius: "0.85rem",
-                backgroundColor: th.secondaryBg,
-                border: `1px solid ${th.secondaryBorder}`,
-                color: th.secondaryText,
-                fontWeight: 600,
-              }}
-            >
-              <span>⭐</span>
-              <span className="hidden sm:inline">{t.calificarGoogle}</span>
-              <span className="sm:hidden">{t.calificarCorto}</span>
-            </a>
-          </div>
+          <a
+            href={menu.googleMapsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              flex: 1,
+              padding: "0.75rem 1rem",
+              fontSize: "0.85rem",
+              textDecoration: "none",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "0.45rem",
+              whiteSpace: "nowrap",
+              borderRadius: "0.85rem",
+              backgroundColor: th.secondaryBg,
+              border: `1px solid ${th.secondaryBorder}`,
+              color: th.secondaryText,
+              fontWeight: 700,
+            }}
+          >
+            <span style={{ fontSize: "1rem" }}>⭐</span>
+            <span>{t.calificarGoogle}</span>
+          </a>
         </div>
       </footer>
 
