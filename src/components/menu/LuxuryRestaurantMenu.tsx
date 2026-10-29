@@ -60,10 +60,9 @@ export function LuxuryRestaurantMenu({
     menu.categorias[0]?.id || ""
   );
 
-  // Búsqueda o filtro dietario
+  // Búsqueda o filtro dietario (mutuamente excluyentes para evitar conflicto visual)
   const [busqueda, setBusqueda] = useState<string>("");
-  const [filtroVeggie, setFiltroVeggie] = useState<boolean>(false);
-  const [filtroChef, setFiltroChef] = useState<boolean>(false);
+  const [filtroEspecial, setFiltroEspecial] = useState<"ninguno" | "veggie" | "chef">("ninguno");
 
   // Happy Hour en vivo (Colombia UTC-5)
   const [esHappyHourActivo, setEsHappyHourActivo] = useState<boolean>(false);
@@ -278,17 +277,24 @@ export function LuxuryRestaurantMenu({
   const filtroBtn = (
     activo: boolean,
     colorBorde: string,
-    textoOscuro: string,
-    textoClaro: string
+    colorBg: string,
+    colorTexto: string
   ): CSSProperties => ({
-    fontSize: "0.75rem",
-    padding: "0.45rem 0.85rem",
+    flex: 1,
+    fontSize: "0.78rem",
+    padding: "0.5rem 0.75rem",
     borderRadius: "0.75rem",
-    border: activo ? `1px solid ${colorBorde}` : `1px solid ${th.border}`,
-    backgroundColor: activo ? `${colorBorde}26` : th.inputBg,
-    color: activo ? (th.isDark ? textoOscuro : textoClaro) : th.textSoft,
-    fontWeight: activo ? 600 : "normal",
+    border: activo ? `1.5px solid ${colorBorde}` : `1px solid ${th.border}`,
+    backgroundColor: activo ? colorBg : th.inputBg,
+    color: activo ? colorTexto : th.textMuted,
+    fontWeight: activo ? 700 : 500,
     cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "0.35rem",
+    transition: "all 0.2s ease",
+    boxShadow: activo ? `0 2px 10px ${colorBorde}33` : "none",
   });
 
   return (
@@ -634,17 +640,33 @@ export function LuxuryRestaurantMenu({
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
             <button
               type="button"
-              onClick={() => setFiltroVeggie(!filtroVeggie)}
-              style={filtroBtn(filtroVeggie, "#10B981", "#A7F3D0", "#047857")}
+              onClick={() =>
+                setFiltroEspecial(filtroEspecial === "veggie" ? "ninguno" : "veggie")
+              }
+              style={filtroBtn(
+                filtroEspecial === "veggie",
+                "#10B981",
+                "rgba(16, 185, 129, 0.16)",
+                "#34D399"
+              )}
             >
-              {t.soloVeggie}
+              <span>{filtroEspecial === "veggie" ? "✓" : "🌱"}</span>
+              <span>{t.soloVeggie.replace(/^🌱\s*/, "")}</span>
             </button>
             <button
               type="button"
-              onClick={() => setFiltroChef(!filtroChef)}
-              style={filtroBtn(filtroChef, "#F59E0B", "#FDE68A", "#B45309")}
+              onClick={() =>
+                setFiltroEspecial(filtroEspecial === "chef" ? "ninguno" : "chef")
+              }
+              style={filtroBtn(
+                filtroEspecial === "chef",
+                "#F59E0B",
+                "rgba(245, 158, 11, 0.16)",
+                "#FBBF24"
+              )}
             >
-              {t.soloChef}
+              <span>{filtroEspecial === "chef" ? "✓" : "⭐"}</span>
+              <span>{t.soloChef.replace(/^⭐\s*/, "")}</span>
             </button>
           </div>
         </div>
@@ -718,10 +740,10 @@ export function LuxuryRestaurantMenu({
       >
         {menu.categorias.map((cat) => {
           const itemsFiltrados = cat.items.filter((item) => {
-            if (filtroVeggie && !item.etiquetas?.includes("vegetariano")) {
+            if (filtroEspecial === "veggie" && !item.etiquetas?.includes("vegetariano")) {
               return false;
             }
-            if (filtroChef && !item.etiquetas?.includes("chef")) {
+            if (filtroEspecial === "chef" && !item.etiquetas?.includes("chef")) {
               return false;
             }
             if (busqueda.trim()) {
