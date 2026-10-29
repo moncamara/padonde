@@ -2885,5 +2885,44 @@ export async function obtenerMetricasGA4ConfigAction() {
   }
 }
 
+/**
+ * Asigna un tema visual exclusivo a un restaurante desde el Admin Studio
+ */
+export async function asignarTemaMenuAction(params: {
+  eventoId?: string;
+  tema: "fogon" | "sierra" | "caribe" | "oro";
+}) {
+  try {
+    const supabase = await createClient();
+    const targetId = params.eventoId || "a9cb4306-82f5-4784-b6d3-546b6d10f5ec"; // Lazy Cat Minca por defecto
 
+    const { data: cur, error: fetchErr } = await supabase
+      .from("eventos")
+      .select("metadata_hospedaje")
+      .eq("id", targetId)
+      .single();
 
+    if (fetchErr) {
+      return { success: false, error: fetchErr.message };
+    }
+
+    const meta = (cur?.metadata_hospedaje as Record<string, any>) || {};
+    meta.menu_interactivo = true;
+    meta.menu_tema = params.tema;
+
+    const { error: updateErr } = await supabase
+      .from("eventos")
+      .update({ metadata_hospedaje: meta })
+      .eq("id", targetId);
+
+    if (updateErr) {
+      return { success: false, error: updateErr.message };
+    }
+
+    revalidatePath("/[locale]/(public)/[zona]/[id]", "page");
+    revalidatePath("/[locale]/(public)/[zona]/menu-demo", "page");
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || "Error al asignar tema de la carta" };
+  }
+}

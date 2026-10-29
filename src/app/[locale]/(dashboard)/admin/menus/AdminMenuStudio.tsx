@@ -9,6 +9,7 @@ import {
   LISTA_TEMAS,
   type TemaMenuId,
 } from "@/components/menu/menuThemes";
+import { asignarTemaMenuAction } from "../actions";
 
 interface AdminMenuStudioProps {
   locale: string;
@@ -20,8 +21,28 @@ export function AdminMenuStudio({ locale }: AdminMenuStudioProps) {
   const [temaActivo, setTemaActivo] = useState<TemaMenuId>("fogon");
   const [viewport, setViewport] = useState<ViewportModo>("mobile");
   const [idiomaTest, setIdiomaTest] = useState<"es" | "en" | "fr" | "de">("es");
+  const [guardando, setGuardando] = useState(false);
+  const [mensajeExito, setMensajeExito] = useState<string | null>(null);
 
   const temaInfo = TEMAS_MENU[temaActivo];
+
+  async function handleAsignarTema() {
+    setGuardando(true);
+    setMensajeExito(null);
+    try {
+      const res = await asignarTemaMenuAction({ tema: temaActivo });
+      if (res.success) {
+        setMensajeExito(`¡Tema "${temaInfo.nombre}" (${temaInfo.emoji}) asignado y bloqueado para Lazy Cat en producción!`);
+        setTimeout(() => setMensajeExito(null), 5000);
+      } else {
+        alert("Error al guardar: " + (res.error || "Intenta nuevamente"));
+      }
+    } catch (e: any) {
+      alert("Error: " + (e?.message || "Inesperado"));
+    } finally {
+      setGuardando(false);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -31,32 +52,48 @@ export function AdminMenuStudio({ locale }: AdminMenuStudioProps) {
           <div className="flex items-center gap-2">
             <span className="text-2xl">🍽️</span>
             <h1 className="font-serif text-xl sm:text-2xl font-bold text-forest">
-              Estudio de Cartas Digitales & Temas
+              Estudio de Cartas Digitales & Asignación de Temas
             </h1>
             <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-terra/10 text-terra border border-terra/20">
-              Demo Interactiva
+              Control de Admin
             </span>
           </div>
           <p className="text-xs sm:text-sm text-stone mt-1 max-w-2xl">
-            Previsualiza cómo luce la carta interactiva de los restaurantes aliados según su identidad real.
-            Prueba temas, idiomas y tamaños de pantalla para definir la mejor experiencia operativa.
+            Selecciona y asigna el tema visual oficial para cada comercio aliado. Los comensales y turistas solo verán el tema asignado aquí, sin controles para cambiarlo.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 flex-wrap">
+          <button
+            type="button"
+            onClick={handleAsignarTema}
+            disabled={guardando}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-black transition-all shadow-xs active:scale-95 cursor-pointer disabled:opacity-50"
+            title="Guardar este tema de forma permanente en la base de datos para Lazy Cat"
+          >
+            <span>{guardando ? "⏳ Guardando..." : `💾 Asignar "${temaInfo.nombre}" a Lazy Cat`}</span>
+          </button>
+
           <Link
             href={`/minca/menu-demo?tema=${temaActivo}`}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-forest text-white hover:bg-forest/90 transition-all shadow-xs"
-            title="Abrir vista completa en nueva pestaña"
+            title="Abrir vista pública del comensal en nueva pestaña"
           >
             <span>📱</span>
-            <span>Abrir en nueva pestaña</span>
+            <span>Ver como Comensal</span>
             <span className="text-white/60 text-[10px]">↗</span>
           </Link>
         </div>
       </div>
+
+      {mensajeExito && (
+        <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-900 text-xs font-semibold flex items-center gap-2 shadow-xs animate-in fade-in">
+          <span className="text-lg">✅</span>
+          <span>{mensajeExito}</span>
+        </div>
+      )}
 
       {/* ─── Selector Visual de Temas ─── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">

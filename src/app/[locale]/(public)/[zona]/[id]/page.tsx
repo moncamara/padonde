@@ -430,7 +430,7 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
               (isLazyCat ? "fogon" : "fogon");
 
             const luxuryMenuUrl = tieneMenuInteractivo
-              ? `/${locale}/${zonaSlug}/menu-demo${menuTema ? `?tema=${menuTema}` : ""}`
+              ? `/${locale}/${zonaSlug}/menu-demo?eventoId=${evento.id}&tema=${menuTema}`
               : undefined;
 
             return (
