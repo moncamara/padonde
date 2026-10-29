@@ -152,9 +152,9 @@ export function LuxuryRestaurantMenu({
       buscarPlato: "Buscar plato o ingrediente...",
       soloVeggie: "🌱 Solo Vegetarianos",
       soloChef: "⭐ Favoritos del Chef",
-      happyHourActivo: "¡HAPPY HOUR ACTIVO AHORA!",
-      happyHourInactivo: "HAPPY HOUR DIARIO",
-      horarioHh: "5:00 PM – 7:00 PM",
+      happyHourTitulo: "Happy Hour Diario",
+      happyHourHorario: "5:00 PM – 7:00 PM",
+      enCurso: "En curso",
       verPdf: "Ver Menú Original (PDF)",
       consultarMesa: "Reservar Mesa",
       calificarGoogle: "Calificar en Google",
@@ -170,9 +170,9 @@ export function LuxuryRestaurantMenu({
       buscarPlato: "Search dishes or ingredients...",
       soloVeggie: "🌱 Vegetarian Only",
       soloChef: "⭐ Chef's Favorites",
-      happyHourActivo: "HAPPY HOUR IS ACTIVE NOW!",
-      happyHourInactivo: "DAILY HAPPY HOUR",
-      horarioHh: "5:00 PM – 7:00 PM",
+      happyHourTitulo: "Daily Happy Hour",
+      happyHourHorario: "5:00 PM – 7:00 PM",
+      enCurso: "Active now",
       verPdf: "View Original Printed Menu (PDF)",
       consultarMesa: "Reserve Table",
       calificarGoogle: "Rate on Google",
@@ -188,9 +188,9 @@ export function LuxuryRestaurantMenu({
       buscarPlato: "Rechercher un plat ou ingrédient...",
       soloVeggie: "🌱 Végétarien Uniquement",
       soloChef: "⭐ Coups de Cœur du Chef",
-      happyHourActivo: "HAPPY HOUR EN COURS MAINTENANT !",
-      happyHourInactivo: "HAPPY HOUR QUOTIDIEN",
-      horarioHh: "17h00 – 19h00",
+      happyHourTitulo: "Happy Hour Quotidien",
+      happyHourHorario: "17h00 – 19h00",
+      enCurso: "En cours",
       verPdf: "Voir le Menu Imprimé Original (PDF)",
       consultarMesa: "Réserver une Table",
       calificarGoogle: "Noter sur Google",
@@ -206,9 +206,9 @@ export function LuxuryRestaurantMenu({
       buscarPlato: "Gericht oder Zutat suchen...",
       soloVeggie: "🌱 Nur Vegetarisch",
       soloChef: "⭐ Empfehlungen des Chefs",
-      happyHourActivo: "HAPPY HOUR JETZT AKTIV!",
-      happyHourInactivo: "TÄGLICHE HAPPY HOUR",
-      horarioHh: "17:00 – 19:00 Uhr",
+      happyHourTitulo: "Tägliche Happy Hour",
+      happyHourHorario: "17:00 – 19:00 Uhr",
+      enCurso: "Jetzt aktiv",
       verPdf: "Original gedruckte Speisekarte (PDF)",
       consultarMesa: "Tisch anfragen",
       calificarGoogle: "Auf Google bewerten",
@@ -588,7 +588,7 @@ export function LuxuryRestaurantMenu({
           />
         </div>
 
-        {/* Happy Hour en vivo */}
+        {/* Happy Hour con horario siempre visible y transparente */}
         <div style={{ display: "inline-block" }}>
           <div
             style={{
@@ -598,7 +598,7 @@ export function LuxuryRestaurantMenu({
                 ? "1px solid rgba(16, 185, 129, 0.6)"
                 : `1px solid ${th.borderStrong}`,
               backgroundColor: esHappyHourActivo
-                ? "rgba(16, 185, 129, 0.15)"
+                ? "rgba(16, 185, 129, 0.12)"
                 : th.surface,
               color: esHappyHourActivo
                 ? th.isDark
@@ -608,8 +608,9 @@ export function LuxuryRestaurantMenu({
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              gap: "0.5rem",
+              gap: "0.45rem",
               boxShadow: th.cardShadow,
+              flexWrap: "wrap",
             }}
           >
             <span style={{ fontSize: "0.85rem" }}>
@@ -618,15 +619,30 @@ export function LuxuryRestaurantMenu({
             <span
               style={{
                 fontSize: "0.75rem",
-                fontWeight: 600,
-                letterSpacing: "0.08em",
+                fontWeight: 700,
+                letterSpacing: "0.06em",
                 textTransform: "uppercase",
               }}
             >
-              {esHappyHourActivo
-                ? t.happyHourActivo
-                : `${t.happyHourInactivo} · ${t.horarioHh}`}
+              {t.happyHourTitulo} · {t.happyHourHorario}
             </span>
+            {esHappyHourActivo && (
+              <span
+                style={{
+                  fontSize: "0.68rem",
+                  fontWeight: 700,
+                  backgroundColor: "rgba(16, 185, 129, 0.25)",
+                  color: th.isDark ? "#6EE7B7" : "#065F46",
+                  padding: "0.15rem 0.5rem",
+                  borderRadius: "9999px",
+                  border: "1px solid rgba(16, 185, 129, 0.4)",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                }}
+              >
+                ● {t.enCurso}
+              </span>
+            )}
           </div>
         </div>
 
