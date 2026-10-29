@@ -801,7 +801,7 @@ export const LAZY_CAT_MENU: MenuRestaurante = {
             fr: "🍺 Pression Locale de la Sierra",
             de: "🍺 Lokales Bier aus der Sierra",
           },
-          etiquetas: ["happy_hour"],
+          etiquetas: ["happy_hour", "vegetariano", "chef"],
         },
         {
           id: "hh-mojito-cubano",
@@ -935,6 +935,7 @@ export const LAZY_CAT_MENU: MenuRestaurante = {
             de: "Lokale Bergbiere: Happy Toucan ($8.000), Happy Nebbi ($8.000), Happy Coca ($9.000), Happy Colibri ($9.000).",
           },
           precio: 8000,
+          etiquetas: ["vegetariano", "chef"],
           preciosVariados: [
             { etiqueta: "Happy Toucan / Nebbi", precio: 8000 },
             { etiqueta: "Happy Coca / Colibrí", precio: 9000 },
@@ -960,6 +961,7 @@ export const LAZY_CAT_MENU: MenuRestaurante = {
             de: "Kokos-Minz-Limonade",
           },
           precio: 8000,
+          etiquetas: ["vegetariano", "chef"],
         },
       ],
     },

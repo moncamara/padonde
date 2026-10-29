@@ -297,6 +297,80 @@ export function LuxuryRestaurantMenu({
     boxShadow: activo ? `0 2px 10px ${colorBorde}33` : "none",
   });
 
+  // Normalizador para búsqueda insensible a mayúsculas, minúsculas y tildes
+  const normalizar = (texto: string) =>
+    (texto || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim();
+
+  // Filtrado de platos con búsqueda inteligente multilingüe y sin tildes
+  const categoriasConPlatos = useMemo(() => {
+    const q = normalizar(busqueda);
+
+    return menu.categorias.map((cat) => {
+      // Coincidencia por nombre de categoría (ej: "cervezas", "hamburguesa", "postres", "cocteles")
+      const catCoincide = q
+        ? normalizar(cat.titulos[idioma] || "").includes(q) ||
+          normalizar(cat.titulos.es || "").includes(q) ||
+          normalizar(cat.titulos.en || "").includes(q)
+        : false;
+
+      const itemsFiltrados = cat.items.filter((item) => {
+        // Filtro especial dietario o de recomendación
+        if (filtroEspecial === "veggie" && !item.etiquetas?.includes("vegetariano")) {
+          return false;
+        }
+        if (filtroEspecial === "chef" && !item.etiquetas?.includes("chef")) {
+          return false;
+        }
+
+        if (!q) return true;
+        if (catCoincide) return true;
+
+        // Búsqueda en nombre (idioma actual, español e inglés)
+        const nomActual = normalizar(item.nombres[idioma] || "");
+        const nomEs = normalizar(item.nombres.es || "");
+        const nomEn = normalizar(item.nombres.en || "");
+
+        // Búsqueda en ingredientes
+        const ingActual = normalizar(item.ingredientes?.[idioma] || "");
+        const ingEs = normalizar(item.ingredientes?.es || "");
+        const ingEn = normalizar(item.ingredientes?.en || "");
+
+        // Búsqueda en insignias o notas
+        const insignia = normalizar(item.insignia?.[idioma] || "");
+
+        return (
+          nomActual.includes(q) ||
+          nomEs.includes(q) ||
+          nomEn.includes(q) ||
+          ingActual.includes(q) ||
+          ingEs.includes(q) ||
+          ingEn.includes(q) ||
+          insignia.includes(q)
+        );
+      });
+
+      return {
+        ...cat,
+        itemsFiltrados,
+      };
+    });
+  }, [menu, busqueda, filtroEspecial, idioma]);
+
+  const categoriasVisibles = useMemo(() => {
+    return categoriasConPlatos.filter((cat) => cat.itemsFiltrados.length > 0);
+  }, [categoriasConPlatos]);
+
+  const totalResultados = useMemo(() => {
+    return categoriasVisibles.reduce(
+      (acc, cat) => acc + cat.itemsFiltrados.length,
+      0
+    );
+  }, [categoriasVisibles]);
+
   return (
     <div
       key={temaId}
@@ -669,6 +743,46 @@ export function LuxuryRestaurantMenu({
               <span>{t.soloChef.replace(/^⭐\s*/, "")}</span>
             </button>
           </div>
+
+          {/* Indicador de resultados activos cuando hay búsqueda o filtro */}
+          {(busqueda.trim() || filtroEspecial !== "ninguno") && (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                fontSize: "0.72rem",
+                color: th.textMuted,
+                padding: "0.2rem 0.25rem 0",
+              }}
+            >
+              <span>
+                {totalResultados === 1
+                  ? `1 ${t.opcion} encontrada`
+                  : `${totalResultados} ${t.opciones} encontradas`}
+                {busqueda && ` para "${busqueda}"`}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setBusqueda("");
+                  setFiltroEspecial("ninguno");
+                }}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: th.accent,
+                  cursor: "pointer",
+                  textDecoration: "underline",
+                  fontSize: "0.72rem",
+                  padding: 0,
+                  fontWeight: 600,
+                }}
+              >
+                ✕ Limpiar filtros
+              </button>
+            </div>
+          )}
         </div>
       </section>
 
@@ -695,7 +809,7 @@ export function LuxuryRestaurantMenu({
             width: "max-content",
           }}
         >
-          {menu.categorias.map((cat) => {
+          {categoriasVisibles.map((cat) => {
             const esActiva = categoriaActiva === cat.id;
             return (
               <button
@@ -719,6 +833,18 @@ export function LuxuryRestaurantMenu({
               >
                 <span>{cat.icono}</span>
                 <span>{cat.titulos[idioma]}</span>
+                {(busqueda.trim() || filtroEspecial !== "ninguno") && (
+                  <span
+                    style={{
+                      fontSize: "0.68rem",
+                      opacity: 0.75,
+                      marginLeft: "0.15rem",
+                      fontWeight: 700,
+                    }}
+                  >
+                    ({cat.itemsFiltrados.length})
+                  </span>
+                )}
               </button>
             );
           })}
@@ -738,24 +864,63 @@ export function LuxuryRestaurantMenu({
           gap: "2.75rem",
         }}
       >
-        {menu.categorias.map((cat) => {
-          const itemsFiltrados = cat.items.filter((item) => {
-            if (filtroEspecial === "veggie" && !item.etiquetas?.includes("vegetariano")) {
-              return false;
-            }
-            if (filtroEspecial === "chef" && !item.etiquetas?.includes("chef")) {
-              return false;
-            }
-            if (busqueda.trim()) {
-              const q = busqueda.toLowerCase();
-              const nombre = (item.nombres[idioma] || "").toLowerCase();
-              const ing = (item.ingredientes?.[idioma] || "").toLowerCase();
-              return nombre.includes(q) || ing.includes(q);
-            }
-            return true;
-          });
+        {/* Estado Vacío si ningún plato coincide con la búsqueda */}
+        {categoriasVisibles.length === 0 && (
+          <div
+            style={{
+              textAlign: "center",
+              padding: "3.5rem 1.5rem",
+              backgroundColor: th.surface,
+              borderRadius: "1.25rem",
+              border: `1px dashed ${th.border}`,
+              maxWidth: "32rem",
+              margin: "1rem auto 2rem",
+            }}
+          >
+            <div style={{ fontSize: "2.5rem", marginBottom: "0.75rem" }}>🍽️</div>
+            <h3
+              style={{
+                fontFamily: th.fontTitle,
+                color: th.heading,
+                fontSize: "1.15rem",
+                margin: "0 0 0.5rem",
+              }}
+            >
+              No encontramos platos para &ldquo;{busqueda}&rdquo;
+            </h3>
+            {filtroEspecial !== "ninguno" && (
+              <p style={{ fontSize: "0.8rem", color: th.textMuted, margin: "0 0 1rem" }}>
+                {filtroEspecial === "veggie"
+                  ? "Tienes activo el filtro 🌱 Solo Vegetarianos. Prueba desactivándolo para ver todas las opciones."
+                  : "Tienes activo el filtro ⭐ Favoritos del Chef. Prueba desactivándolo para ver todas las opciones."}
+              </p>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setBusqueda("");
+                setFiltroEspecial("ninguno");
+              }}
+              className="luxury-btn-gold"
+              style={{
+                padding: "0.6rem 1.35rem",
+                fontSize: "0.82rem",
+                borderRadius: "0.85rem",
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.45rem",
+                fontWeight: 700,
+              }}
+            >
+              <span>✕</span>
+              <span>Ver toda la carta</span>
+            </button>
+          </div>
+        )}
 
-          if (itemsFiltrados.length === 0) return null;
+        {categoriasVisibles.map((cat) => {
+          const itemsFiltrados = cat.itemsFiltrados;
 
           return (
             <section
