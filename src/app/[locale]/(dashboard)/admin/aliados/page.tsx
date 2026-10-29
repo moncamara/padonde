@@ -135,6 +135,21 @@ export default async function AdminAliadosPage({
     (c) => new Date(c.created_at) >= hace7Dias
   ).length;
 
+  // 2.2 Cargar mapa de fechas de edición manual (guardadas en configuraciones)
+  let mapaFechasEdicion: Record<string, string> = {};
+  try {
+    const { data: cfgEdiciones } = await supabase
+      .from("configuraciones")
+      .select("valor")
+      .eq("clave", "fechas_edicion_aliados")
+      .maybeSingle();
+    if (cfgEdiciones?.valor && typeof cfgEdiciones.valor === "object") {
+      mapaFechasEdicion = cfgEdiciones.valor as Record<string, string>;
+    }
+  } catch {
+    // Silencioso para producción
+  }
+
   // 3. Normalizar datos
   const todosLosAliados: AliadoItem[] = (rawNegocios || []).map((n: any) => {
     const evList = Array.isArray(n.eventos) ? n.eventos : [];
@@ -146,6 +161,18 @@ export default async function AdminAliadosPage({
     const eventosOrdenados = [...evList].sort(
       (a: any, b: any) => new Date(b.fecha_inicio).getTime() - new Date(a.fecha_inicio).getTime()
     );
+
+    // Calcular la fecha más reciente de actividad (creación de negocio, edición manual o creación de eventos)
+    const fechaEdicionManual = mapaFechasEdicion[n.id] ? new Date(mapaFechasEdicion[n.id]).getTime() : 0;
+    let maxTime = n.created_at ? new Date(n.created_at).getTime() : 0;
+    if (fechaEdicionManual > maxTime) maxTime = fechaEdicionManual;
+
+    for (const ev of evList) {
+      if (ev.created_at) {
+        const t = new Date(ev.created_at).getTime();
+        if (t > maxTime) maxTime = t;
+      }
+    }
 
     return {
       id: n.id,
@@ -170,6 +197,7 @@ export default async function AdminAliadosPage({
       totalClics: clicsAliado.length,
       clics7Dias: clicsAliado.filter((c) => new Date(c.created_at) >= hace7Dias).length,
       eventos: eventosOrdenados,
+      ultimaActividad: maxTime,
     };
   });
 
@@ -193,6 +221,9 @@ export default async function AdminAliadosPage({
   }
 
   const aliados = Array.from(mapaUnicos.values());
+
+  // 3.2 Ordenar por defecto del más reciente al más antiguo (última fecha de creación o edición)
+  aliados.sort((a, b) => (b.ultimaActividad || 0) - (a.ultimaActividad || 0));
 
   const negociosList = aliados.map((a) => ({
     id: a.id,

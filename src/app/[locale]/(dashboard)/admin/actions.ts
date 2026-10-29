@@ -265,6 +265,27 @@ export async function adminPublishEventAction(
     revalidatePath("/", "layout");
     revalidatePath(`/[locale]/${input.zonaSlug}`, "page");
     revalidatePath(`/[locale]/admin`, "page");
+    revalidatePath(`/[locale]/admin/aliados`, "page");
+
+    // Registrar fecha de actividad en configuraciones para ordenar aliados del más reciente al más antiguo
+    try {
+      const { data: cfgRow } = await supabase
+        .from("configuraciones")
+        .select("valor")
+        .eq("clave", "fechas_edicion_aliados")
+        .maybeSingle();
+
+      const mapa = (cfgRow?.valor && typeof cfgRow.valor === "object" ? cfgRow.valor : {}) as Record<string, string>;
+      mapa[negocioId] = new Date().toISOString();
+
+      await supabase.from("configuraciones").upsert({
+        clave: "fechas_edicion_aliados",
+        valor: mapa,
+        updated_at: new Date().toISOString(),
+      });
+    } catch {
+      // Silencioso
+    }
 
     return { success: true, eventId: nuevoEvento.id };
   } catch (err) {
@@ -1196,6 +1217,26 @@ export async function editarAliadoCompletoAction(input: EditarAliadoInput) {
         .from("eventos")
         .update({ activo: input.activo })
         .eq("negocio_id", input.id);
+    }
+
+    // Registrar fecha de edición en configuraciones para ordenar del más reciente al más antiguo
+    try {
+      const { data: cfgRow } = await supabase
+        .from("configuraciones")
+        .select("valor")
+        .eq("clave", "fechas_edicion_aliados")
+        .maybeSingle();
+
+      const mapa = (cfgRow?.valor && typeof cfgRow.valor === "object" ? cfgRow.valor : {}) as Record<string, string>;
+      mapa[input.id] = new Date().toISOString();
+
+      await supabase.from("configuraciones").upsert({
+        clave: "fechas_edicion_aliados",
+        valor: mapa,
+        updated_at: new Date().toISOString(),
+      });
+    } catch {
+      // Silencioso
     }
 
     revalidatePath(`/[locale]/admin`, "page");

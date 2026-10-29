@@ -50,6 +50,7 @@ export interface AliadoItem {
   google_maps_url?: string | null;
   google_review_url?: string | null;
   eventos?: EventoAliadoItem[];
+  ultimaActividad?: number;
 }
 
 interface AdminAliadosListProps {
@@ -60,6 +61,7 @@ interface AdminAliadosListProps {
 }
 
 type FiltroPlan = "todos" | "pro_premium" | "por_vencer" | "gratis";
+type CriterioOrden = "recientes" | "nombre" | "vistas" | "antiguos";
 
 export function AdminAliadosList({
   aliados,
@@ -71,6 +73,7 @@ export function AdminAliadosList({
   const [filtro, setFiltro] = useState<FiltroPlan>("todos");
   const [filtroZona, setFiltroZona] = useState<string>("todas");
   const [filtroCategoria, setFiltroCategoria] = useState<string>("todas");
+  const [criterioOrden, setCriterioOrden] = useState<CriterioOrden>("recientes");
   const [busqueda, setBusqueda] = useState("");
   const [copiadoId, setCopiadoId] = useState<string | null>(null);
 
@@ -125,7 +128,7 @@ export function AdminAliadosList({
 
   // Filtrado de aliados
   const aliadosFiltrados = useMemo(() => {
-    return aliados.filter((a) => {
+    const res = aliados.filter((a) => {
       // 0. Filtro por Región / Zona
       if (filtroZona !== "todas" && (a.zonaSlug || "minca") !== filtroZona) {
         return false;
@@ -185,7 +188,28 @@ export function AdminAliadosList({
       const matchWa = a.whatsapp.includes(q);
       return matchNombre || matchCategoria || matchWa;
     });
-  }, [aliados, filtro, busqueda, filtroZona, filtroCategoria]);
+
+    // Ordenación: Más reciente al más antiguo (última fecha de creación o edición)
+    return [...res].sort((a, b) => {
+      if (criterioOrden === "nombre") {
+        return a.nombre.localeCompare(b.nombre, "es", { sensitivity: "base" });
+      }
+      if (criterioOrden === "vistas") {
+        const vA = obtenerMetricasGA4Aliado(a.nombre, metricasDinamicas).vistas;
+        const vB = obtenerMetricasGA4Aliado(b.nombre, metricasDinamicas).vistas;
+        return vB - vA;
+      }
+      if (criterioOrden === "antiguos") {
+        const tA = a.ultimaActividad ?? (a.created_at ? new Date(a.created_at).getTime() : 0);
+        const tB = b.ultimaActividad ?? (b.created_at ? new Date(b.created_at).getTime() : 0);
+        return tA - tB;
+      }
+      // "recientes" (por defecto): del más reciente al más antiguo
+      const tA = a.ultimaActividad ?? (a.created_at ? new Date(a.created_at).getTime() : 0);
+      const tB = b.ultimaActividad ?? (b.created_at ? new Date(b.created_at).getTime() : 0);
+      return tB - tA;
+    });
+  }, [aliados, filtro, busqueda, filtroZona, filtroCategoria, criterioOrden, metricasDinamicas]);
 
   // Mensaje para cobrar o contactar por WhatsApp
   function generarEnlaceWhatsAppCobro(aliado: AliadoItem) {
@@ -409,23 +433,44 @@ export function AdminAliadosList({
           </button>
         </div>
 
-        {/* Buscador de Negocio */}
-        <div className="relative w-full sm:w-auto">
-          <input
-            type="text"
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-            placeholder="Buscar por nombre o teléfono..."
-            className="w-full sm:w-64 px-3.5 py-2 sm:py-1.5 text-xs bg-white/80 rounded-xl border border-stone-light/80 placeholder:text-stone/60 focus:outline-none focus:ring-1 focus:ring-forest text-forest"
-          />
-          {busqueda && (
-            <button
-              onClick={() => setBusqueda("")}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone hover:text-forest text-xs cursor-pointer p-1"
+        {/* Controles de Orden y Búsqueda */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+          {/* Selector de Orden */}
+          <div className="relative shrink-0">
+            <select
+              value={criterioOrden}
+              onChange={(e) => setCriterioOrden(e.target.value as any)}
+              className="w-full sm:w-auto py-2 sm:py-1.5 pl-3 pr-7 text-xs bg-white/90 rounded-xl border border-stone-light/80 text-forest font-medium focus:outline-none focus:ring-1 focus:ring-forest cursor-pointer appearance-none shadow-2xs"
+              title="Criterio de orden de comercios"
             >
-              ✕
-            </button>
-          )}
+              <option value="recientes">⚡ Más recientes primero</option>
+              <option value="nombre">🔤 Nombre (A-Z)</option>
+              <option value="vistas">👁️ Más vistos</option>
+              <option value="antiguos">🗓️ Más antiguos primero</option>
+            </select>
+            <span className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-[10px] text-stone">
+              ▼
+            </span>
+          </div>
+
+          {/* Buscador de Negocio */}
+          <div className="relative w-full sm:w-60">
+            <input
+              type="text"
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              placeholder="Buscar por nombre o teléfono..."
+              className="w-full px-3.5 py-2 sm:py-1.5 text-xs bg-white/80 rounded-xl border border-stone-light/80 placeholder:text-stone/60 focus:outline-none focus:ring-1 focus:ring-forest text-forest"
+            />
+            {busqueda && (
+              <button
+                onClick={() => setBusqueda("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone hover:text-forest text-xs cursor-pointer p-1"
+              >
+                ✕
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -585,6 +630,18 @@ export function AdminAliadosList({
                       title={`Ficha publicada el ${fechaPub}. Lleva ${diasActivo} días ${aliado.activo ? "activa en cartelera" : "registrada (actualmente en pausa)"}.`}
                     >
                       🗓️ Publicada: <strong className="text-forest">{fechaPub}</strong> ({diasActivo}d {aliado.activo ? "activo" : "pausado"})
+                    </span>
+                  </>
+                )}
+
+                {aliado.ultimaActividad && (
+                  <>
+                    <span>·</span>
+                    <span
+                      className="text-stone-500 font-medium"
+                      title={`Última actividad registrada (creación o edición): ${new Date(aliado.ultimaActividad).toLocaleString("es-CO")}`}
+                    >
+                      ⚡ Actividad: <span className="text-forest font-semibold">{new Date(aliado.ultimaActividad).toLocaleDateString("es-CO", { day: "numeric", month: "short" })}</span>
                     </span>
                   </>
                 )}
