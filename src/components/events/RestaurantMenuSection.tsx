@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
+import Link from "next/link";
 import { trackEvent } from "@/lib/analytics";
 
 interface RestaurantMenuSectionProps {
@@ -14,6 +15,7 @@ interface RestaurantMenuSectionProps {
   zonaNombre: string;
   locale?: string;
   whatsappNumber?: string;
+  luxuryMenuUrl?: string | null;
 }
 
 export function RestaurantMenuSection({
@@ -25,6 +27,7 @@ export function RestaurantMenuSection({
   zonaNombre,
   locale = "es",
   whatsappNumber,
+  luxuryMenuUrl,
 }: RestaurantMenuSectionProps) {
   const [mounted, setMounted] = useState(false);
   const [modalAbierto, setModalAbierto] = useState(false);
@@ -78,8 +81,8 @@ export function RestaurantMenuSection({
     }
   }, [tieneMenu, businessName, zonaNombre]);
 
-  // Si no hay menú ni enlace para calificar, no ocupamos espacio
-  if (!tieneMenu && !linkCalificar) {
+  // Si no hay menú ni enlace para calificar ni menú de lujo, no ocupamos espacio
+  if (!tieneMenu && !linkCalificar && !luxuryMenuUrl) {
     return null;
   }
 
@@ -87,8 +90,48 @@ export function RestaurantMenuSection({
 
   return (
     <>
-      {/* ─── 1. Tarjeta en la ficha del negocio ─── */}
+      {/* ─── 1. Tarjetas en la ficha del negocio ─── */}
       <section className="space-y-3">
+        {/* Carta de Lujo Oro Puro si está disponible */}
+        {luxuryMenuUrl && (
+          <Link
+            href={luxuryMenuUrl}
+            onClick={() => {
+              trackEvent("click_menu_lujo_oro", {
+                restaurante: businessName,
+                zona: zonaNombre,
+              });
+            }}
+            className="w-full text-left p-4 rounded-2xl bg-gradient-to-br from-[#121E17] via-[#1A2E23] to-[#0A120E] border border-amber-400/50 hover:border-amber-300 hover:shadow-lg hover:shadow-amber-500/10 active:scale-[0.99] transition-all flex items-center justify-between gap-3 cursor-pointer group text-inherit no-underline"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 text-black flex items-center justify-center text-2xl shrink-0 shadow-md group-hover:scale-105 transition-transform font-bold">
+                👑
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <h3 className="font-serif text-base font-bold text-amber-200 truncate group-hover:text-amber-100 transition-colors">
+                    {isEn ? "Haute Cuisine Digital Menu" : "Carta Digital Alta Selección"}
+                  </h3>
+                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 shrink-0">
+                    ✨ Oro
+                  </span>
+                </div>
+                <p className="text-xs text-amber-100/70 line-clamp-1 mt-0.5 font-serif italic">
+                  {isEn
+                    ? "Interactive menu in 4 languages & currency converter"
+                    : "Menú interactivo en 4 idiomas y conversor de moneda"}
+                </p>
+              </div>
+            </div>
+
+            <span className="shrink-0 bg-gradient-to-r from-amber-400 to-amber-500 text-black font-serif text-xs font-bold px-3.5 py-2.5 rounded-xl transition-all shadow-md group-hover:scale-105 flex items-center gap-1.5 pointer-events-none">
+              <span>✨</span>
+              <span>{isEn ? "Open Menu" : "Ver Menú"}</span>
+            </span>
+          </Link>
+        )}
+
         {tieneMenu && (
           <button
             type="button"

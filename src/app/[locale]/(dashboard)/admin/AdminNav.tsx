@@ -24,9 +24,10 @@ export function AdminNav({ userEmail }: AdminNavProps) {
   const isCartelera = pathname === "/admin" || pathname.endsWith("/admin");
   const isHospedajes = pathname.includes("/admin/hospedajes");
   const isAliados = pathname.includes("/admin/aliados");
+  const isTarifas = pathname.includes("/admin/tarifas");
+  const isMenus = pathname.includes("/admin/menus");
   const isPuntosQR = pathname.includes("/admin/puntos-qr");
   const isEsenciales = pathname.includes("/admin/esenciales");
-  const isTarifas = pathname.includes("/admin/tarifas");
   const isRegiones = pathname.includes("/admin/regiones");
 
   return (
@@ -124,6 +125,19 @@ export function AdminNav({ userEmail }: AdminNavProps) {
           </Link>
 
           <Link
+            href="/admin/menus"
+            className={[
+              "py-1.5 px-2.5 sm:px-3 rounded-xl font-sans text-[11px] sm:text-xs font-medium transition-all text-center flex items-center justify-center gap-1 shrink-0",
+              isMenus
+                ? "bg-white text-forest shadow-xs font-semibold"
+                : "text-stone hover:text-forest",
+            ].join(" ")}
+          >
+            <span>🍽️</span>
+            <span>Cartas & Temas</span>
+          </Link>
+
+          <Link
             href="/admin/puntos-qr"
             className={[
               "py-1.5 px-2.5 sm:px-3 rounded-xl font-sans text-[11px] sm:text-xs font-medium transition-all text-center flex items-center justify-center gap-1 shrink-0",
@@ -166,6 +180,14 @@ export function AdminNav({ userEmail }: AdminNavProps) {
         {/* Acciones de Cuenta en Desktop */}
         <div className="hidden lg:flex items-center justify-end gap-3 text-xs font-sans shrink-0">
           <div className="flex items-center gap-2">
+            <Link
+              href="/admin/menus"
+              className="text-forest bg-forest/10 border border-forest/20 px-2.5 py-1 rounded-lg hover:bg-forest/15 flex items-center gap-1 font-semibold text-[11px]"
+              title="Estudio interactivo de temas para cartas digitales"
+            >
+              <span>🍽️ Estudio Cartas</span>
+            </Link>
+            <span className="text-stone-light">|</span>
             <Link
               href="/minca"
               className="text-stone hover:text-forest underline underline-offset-2 flex items-center gap-1"

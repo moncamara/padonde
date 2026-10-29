@@ -415,6 +415,12 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
               googleReputacion?.maps_url ||
               (isPepeMojito ? "https://maps.google.com/?cid=12401671911910625244" : undefined);
 
+            const isLazyCat =
+              evento.negocio.nombre.toLowerCase().includes("lazy cat") ||
+              evento.titulo.toLowerCase().includes("lazy cat");
+
+            const luxuryMenuUrl = isLazyCat ? `/${locale}/${zonaSlug}/menu-demo` : undefined;
+
             return (
               <RestaurantMenuSection
                 businessName={evento.negocio.nombre}
@@ -425,6 +431,7 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
                 zonaNombre={zona.nombre}
                 locale={locale}
                 whatsappNumber={evento.negocio.whatsapp}
+                luxuryMenuUrl={luxuryMenuUrl}
               />
             );
           })()}
