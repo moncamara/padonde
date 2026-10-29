@@ -38,6 +38,8 @@ export interface AdminPublishInput {
   menuUrl?: string;
   menuFotos?: string[];
   googleReviewUrl?: string;
+  menuInteractivo?: boolean;
+  menuTema?: "fogon" | "sierra" | "caribe" | "oro";
 }
 
 export interface AdminPublishResult {
@@ -221,7 +223,9 @@ export async function adminPublishEventAction(
         (input.galeriaFotos && input.galeriaFotos.length > 0) ||
         input.menuUrl ||
         (input.menuFotos && input.menuFotos.length > 0) ||
-        input.googleReviewUrl
+        input.googleReviewUrl ||
+        input.menuInteractivo !== undefined ||
+        input.menuTema
           ? {
               ...(input.googleReputacion ? { google_reputacion: input.googleReputacion } : {}),
               ...(input.galeriaFotos && input.galeriaFotos.length > 0
@@ -236,6 +240,8 @@ export async function adminPublishEventAction(
                 : input.googleReputacion?.maps_url
                 ? { google_review_url: extraerGoogleReviewUrl(input.googleReputacion.maps_url) || undefined }
                 : {}),
+              ...(input.menuInteractivo !== undefined ? { menu_interactivo: Boolean(input.menuInteractivo) } : {}),
+              ...(input.menuTema ? { menu_tema: input.menuTema } : {}),
             }
           : null,
     };
@@ -808,6 +814,8 @@ export interface EditarEventoAdminInput {
   googleReviewUrl?: string | null;
   menuFotos?: string[] | null;
   menuUrl?: string | null;
+  menuInteractivo?: boolean;
+  menuTema?: "fogon" | "sierra" | "caribe" | "oro";
 }
 
 /**
@@ -852,7 +860,9 @@ export async function editarEventoAdminAction(input: EditarEventoAdminInput) {
       input.galeriaFotos !== undefined ||
       input.googleReviewUrl !== undefined ||
       input.menuFotos !== undefined ||
-      input.menuUrl !== undefined
+      input.menuUrl !== undefined ||
+      input.menuInteractivo !== undefined ||
+      input.menuTema !== undefined
     ) {
       const { data: currentEvent } = await supabase
         .from("eventos")
@@ -934,6 +944,18 @@ export async function editarEventoAdminAction(input: EditarEventoAdminInput) {
           delete currentMeta.menu_url;
         } else {
           currentMeta.menu_url = input.menuUrl.trim();
+        }
+      }
+
+      if (input.menuInteractivo !== undefined) {
+        currentMeta.menu_interactivo = Boolean(input.menuInteractivo);
+      }
+
+      if (input.menuTema !== undefined) {
+        if (!input.menuTema) {
+          delete currentMeta.menu_tema;
+        } else {
+          currentMeta.menu_tema = input.menuTema;
         }
       }
 

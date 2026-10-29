@@ -124,6 +124,8 @@ export type HospedajeMetadata = {
   menu_url?: string;          // Enlace directo a carta digital (PDF, Canva, link)
   menu_fotos?: string[];      // Fotos de las páginas de la carta
   google_review_url?: string; // Enlace directo para calificar en Google
+  menu_interactivo?: boolean; // Carta digital interactiva multilingüe
+  menu_tema?: "fogon" | "sierra" | "caribe" | "oro"; // Tema visual de autor para la carta
 };
 
 // ─── Tipos de Servicios Esenciales e Info Útil ────────────────────────────────

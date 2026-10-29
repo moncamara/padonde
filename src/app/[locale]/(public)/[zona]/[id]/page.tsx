@@ -419,7 +419,19 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
               evento.negocio.nombre.toLowerCase().includes("lazy cat") ||
               evento.titulo.toLowerCase().includes("lazy cat");
 
-            const luxuryMenuUrl = isLazyCat ? `/${locale}/${zonaSlug}/menu-demo` : undefined;
+            const meta = evento.metadata_hospedaje;
+            const tieneMenuInteractivo =
+              meta?.menu_interactivo !== undefined
+                ? Boolean(meta.menu_interactivo)
+                : isLazyCat;
+
+            const menuTema =
+              (meta?.menu_tema as "fogon" | "sierra" | "caribe" | "oro") ||
+              (isLazyCat ? "fogon" : "fogon");
+
+            const luxuryMenuUrl = tieneMenuInteractivo
+              ? `/${locale}/${zonaSlug}/menu-demo${menuTema ? `?tema=${menuTema}` : ""}`
+              : undefined;
 
             return (
               <RestaurantMenuSection
@@ -432,6 +444,7 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
                 locale={locale}
                 whatsappNumber={evento.negocio.whatsapp}
                 luxuryMenuUrl={luxuryMenuUrl}
+                menuTema={menuTema}
               />
             );
           })()}

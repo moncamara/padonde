@@ -76,6 +76,25 @@ export function ModalEditarEvento({
     (evento.negocio?.nombre || "").toLowerCase().includes("pepe mojito") ||
     (evento.titulo || "").toLowerCase().includes("pepe mojito");
 
+  const isLazyCat =
+    evento.id === "a9cb4306-82f5-4784-b6d3-546b6d10f5ec" ||
+    (evento.negocio?.nombre || "").toLowerCase().includes("lazy cat") ||
+    (evento.titulo || "").toLowerCase().includes("lazy cat");
+
+  const [menuInteractivo, setMenuInteractivo] = useState<boolean>(() => {
+    if (evento.metadata_hospedaje?.menu_interactivo !== undefined) {
+      return Boolean(evento.metadata_hospedaje.menu_interactivo);
+    }
+    return isLazyCat;
+  });
+
+  const [menuTema, setMenuTema] = useState<"fogon" | "sierra" | "caribe" | "oro">(() => {
+    return (
+      (evento.metadata_hospedaje?.menu_tema as "fogon" | "sierra" | "caribe" | "oro") ||
+      (isLazyCat ? "fogon" : "fogon")
+    );
+  });
+
   // Carta digital y calificaciones de Google
   const [menuUrl, setMenuUrl] = useState(
     evento.metadata_hospedaje?.menu_url ||
@@ -302,6 +321,8 @@ export function ModalEditarEvento({
             : extraerGoogleReviewUrl(googleReviewUrl) || extraerGoogleReviewUrl(mapsUrl) || googleReviewUrl.trim() || undefined,
         menuFotos: menuFotos.length > 0 ? menuFotos : undefined,
         menuUrl: menuUrl.trim() || undefined,
+        menuInteractivo,
+        menuTema,
       });
 
 
@@ -336,6 +357,8 @@ export function ModalEditarEvento({
             menu_fotos: menuFotos.length > 0 ? menuFotos : undefined,
             menu_url: menuUrl.trim() || undefined,
             google_review_url: googleReviewUrl.trim() || undefined,
+            menu_interactivo: menuInteractivo,
+            menu_tema: menuTema,
           },
           negocio: negocioSeleccionado
             ? {
@@ -1018,12 +1041,14 @@ export function ModalEditarEvento({
           <div className="space-y-3.5 p-3.5 sm:p-4 rounded-2xl bg-amber-50/70 border border-amber-200/90 font-sans text-xs">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <span className="font-semibold text-forest flex items-center gap-1.5">
-                <span>🍽️</span> Carta Digital & Hablador de Mesa (Opcional)
+                <span>🍽️</span> Carta Digital & Hablador de Mesa
               </span>
               <div className="flex items-center gap-2">
                 <a
                   href={`https://api.qrserver.com/v1/create-qr-code/?size=1200x1200&margin=8&data=${encodeURIComponent(
-                    `https://www.padonde.lat/es/${(evento.zona_id || "mendihuaca").replace(/^zona-/, "")}/${evento.id}?src=mesa-restaurante&menu=abrir`
+                    menuInteractivo
+                      ? `https://www.padonde.lat/es/${(evento.zona_id || "minca").replace(/^zona-/, "")}/menu-demo?tema=${menuTema}&src=mesa-restaurante`
+                      : `https://www.padonde.lat/es/${(evento.zona_id || "mendihuaca").replace(/^zona-/, "")}/${evento.id}?src=mesa-restaurante&menu=abrir`
                   )}`}
                   target="_blank"
                   download={`solo-qr-mesa-${(evento.negocio?.nombre || "restaurante").toLowerCase().replace(/[^\w-]/g, "-")}.png`}
@@ -1045,8 +1070,101 @@ export function ModalEditarEvento({
                 </button>
               </div>
             </div>
+
+            {/* Selector de tipo de menú: Carta Interactiva vs Tradicional */}
+            <div className="p-3 bg-white/90 rounded-xl border border-amber-300/80 space-y-3">
+              <label className="text-[11px] font-bold text-forest uppercase tracking-wider block">
+                Tipo de Carta Digital para este Comercio
+              </label>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setMenuInteractivo(true)}
+                  className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex items-start gap-2.5 ${
+                    menuInteractivo
+                      ? "border-amber-600 bg-amber-50 ring-2 ring-amber-500/40 shadow-xs"
+                      : "border-stone-200 bg-white hover:bg-stone-50 text-stone"
+                  }`}
+                >
+                  <span className="text-2xl shrink-0">🌟</span>
+                  <div className="min-w-0">
+                    <span className="text-xs font-bold text-forest block">Carta Interactiva de Lujo</span>
+                    <span className="text-[10px] text-stone leading-tight block mt-0.5">
+                      4 idiomas, fotos de platos, conversor de moneda (COP, USD, EUR) y temas de autor
+                    </span>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setMenuInteractivo(false)}
+                  className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex items-start gap-2.5 ${
+                    !menuInteractivo
+                      ? "border-amber-600 bg-amber-50 ring-2 ring-amber-500/40 shadow-xs"
+                      : "border-stone-200 bg-white hover:bg-stone-50 text-stone"
+                  }`}
+                >
+                  <span className="text-2xl shrink-0">📄</span>
+                  <div className="min-w-0">
+                    <span className="text-xs font-bold text-forest block">Carta Tradicional (PDF / Fotos)</span>
+                    <span className="text-[10px] text-stone leading-tight block mt-0.5">
+                      Visor de fotos página a página o enlace directo a archivo PDF
+                    </span>
+                  </div>
+                </button>
+              </div>
+
+              {/* Si es interactiva, selector de temas de autor */}
+              {menuInteractivo && (
+                <div className="pt-2.5 border-t border-amber-200 space-y-2">
+                  <div className="flex items-center justify-between flex-wrap gap-1">
+                    <span className="text-[11px] font-bold text-forest flex items-center gap-1">
+                      <span>🎨</span> Tema Visual Aplicado:
+                    </span>
+                    <a
+                      href={`/es/${(evento.zona_id || "minca").replace(/^zona-/, "")}/menu-demo?tema=${menuTema}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[11px] text-amber-800 hover:text-amber-950 font-semibold underline flex items-center gap-1"
+                    >
+                      <span>👁️ Ver demo en vivo</span>
+                    </a>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {[
+                      { id: "fogon", emoji: "🔥", nombre: "Fogón", desc: "Carbón & fuego ámbar" },
+                      { id: "sierra", emoji: "🌿", nombre: "Sierra", desc: "Verde esmeralda selva" },
+                      { id: "caribe", emoji: "🌊", nombre: "Caribe", desc: "Zafiro & azul océano" },
+                      { id: "oro", emoji: "👑", nombre: "Oro", desc: "Obsidiana & oro cepillado" },
+                    ].map((t) => (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => setMenuTema(t.id as any)}
+                        className={`p-2 rounded-lg border text-left transition-all cursor-pointer ${
+                          menuTema === t.id
+                            ? "border-amber-600 bg-amber-100 ring-2 ring-amber-500/50 font-bold"
+                            : "border-stone-200 bg-white hover:bg-stone-50"
+                        }`}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-base">{t.emoji}</span>
+                          <span className="text-xs text-forest">{t.nombre}</span>
+                        </div>
+                        <span className="text-[9px] text-stone block mt-0.5 leading-tight">{t.desc}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
             <p className="text-stone text-[11px] leading-relaxed">
-              Sube las fotos de tu menú (página por página) o tu archivo PDF. Habilitará el visor de lujo a pantalla completa y el QR de mesa para los comensales.
+              {menuInteractivo
+                ? "La carta interactiva de alta selección está activa. Puedes también dejar el PDF o fotos de respaldo a continuación."
+                : "Sube las fotos de tu menú (página por página) o tu archivo PDF para habilitar el visor digital."}
             </p>
 
             {/* A. Subida de Fotos de la Carta (Página 1, Página 2, etc.) */}
@@ -1253,7 +1371,11 @@ export function ModalEditarEvento({
           isOpen={mostrarHabladorMesa}
           onClose={() => setMostrarHabladorMesa(false)}
           puntoNombre={evento.negocio?.nombre || evento.titulo}
-          urlDestino={`https://www.padonde.lat/es/${(evento.zona_id || "mendihuaca").replace(/^zona-/, "")}/${evento.id}?src=mesa-restaurante&menu=abrir`}
+          urlDestino={
+            menuInteractivo
+              ? `https://www.padonde.lat/es/${(evento.zona_id || "minca").replace(/^zona-/, "")}/menu-demo?tema=${menuTema}&src=mesa-restaurante`
+              : `https://www.padonde.lat/es/${(evento.zona_id || "mendihuaca").replace(/^zona-/, "")}/${evento.id}?src=mesa-restaurante&menu=abrir`
+          }
           tipoContenido="menu_restaurante"
           srcParam="mesa-restaurante"
         />

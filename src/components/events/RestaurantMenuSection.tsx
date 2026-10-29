@@ -16,7 +16,63 @@ interface RestaurantMenuSectionProps {
   locale?: string;
   whatsappNumber?: string;
   luxuryMenuUrl?: string | null;
+  menuTema?: "fogon" | "sierra" | "caribe" | "oro" | null;
 }
+
+const THEME_STYLES = {
+  fogon: {
+    emoji: "🔥",
+    badge: "🔥 Fogón",
+    titleEs: "Carta Digital Fogón & Brasas",
+    titleEn: "Artisanal Fire & Grill Menu",
+    cardBg: "from-[#1F140E] via-[#2A180E] to-[#120B07] border-amber-500/50 hover:border-amber-400 hover:shadow-lg hover:shadow-amber-500/10",
+    iconBg: "from-amber-500 via-orange-500 to-amber-600 text-black",
+    titleColor: "text-amber-200 group-hover:text-amber-100",
+    badgeClass: "bg-amber-500/20 text-amber-300 border-amber-500/30",
+    subtitleColor: "text-amber-100/75",
+    btnBg: "from-amber-500 to-orange-500 text-black",
+    btnIcon: "🔥",
+  },
+  sierra: {
+    emoji: "🌿",
+    badge: "🌿 Sierra",
+    titleEs: "Carta Digital Sierra Esmeralda",
+    titleEn: "Emerald Rainforest Menu",
+    cardBg: "from-[#081810] via-[#0C2218] to-[#05100B] border-emerald-500/50 hover:border-emerald-400 hover:shadow-lg hover:shadow-emerald-500/10",
+    iconBg: "from-emerald-400 via-teal-500 to-emerald-600 text-black",
+    titleColor: "text-emerald-200 group-hover:text-emerald-100",
+    badgeClass: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
+    subtitleColor: "text-emerald-100/75",
+    btnBg: "from-emerald-400 to-teal-500 text-black",
+    btnIcon: "🌿",
+  },
+  caribe: {
+    emoji: "🌊",
+    badge: "🌊 Caribe",
+    titleEs: "Carta Digital Sabor Caribe",
+    titleEn: "Caribbean Sapphire Menu",
+    cardBg: "from-[#071524] via-[#0C2035] to-[#040E18] border-sky-500/50 hover:border-sky-400 hover:shadow-lg hover:shadow-sky-500/10",
+    iconBg: "from-sky-400 via-cyan-500 to-sky-600 text-black",
+    titleColor: "text-sky-200 group-hover:text-sky-100",
+    badgeClass: "bg-sky-500/20 text-sky-300 border-sky-500/30",
+    subtitleColor: "text-sky-100/75",
+    btnBg: "from-sky-400 to-cyan-500 text-black",
+    btnIcon: "🌊",
+  },
+  oro: {
+    emoji: "👑",
+    badge: "✨ Oro",
+    titleEs: "Carta Digital Alta Selección",
+    titleEn: "Haute Cuisine Digital Menu",
+    cardBg: "from-[#121E17] via-[#1A2E23] to-[#0A120E] border-amber-400/50 hover:border-amber-300 hover:shadow-lg hover:shadow-amber-500/10",
+    iconBg: "from-amber-400 via-amber-500 to-amber-600 text-black",
+    titleColor: "text-amber-200 group-hover:text-amber-100",
+    badgeClass: "bg-amber-400/20 text-amber-300 border-amber-400/30",
+    subtitleColor: "text-amber-100/70",
+    btnBg: "from-amber-400 to-amber-500 text-black",
+    btnIcon: "✨",
+  },
+};
 
 export function RestaurantMenuSection({
   businessName,
@@ -28,6 +84,7 @@ export function RestaurantMenuSection({
   locale = "es",
   whatsappNumber,
   luxuryMenuUrl,
+  menuTema = "fogon",
 }: RestaurantMenuSectionProps) {
   const [mounted, setMounted] = useState(false);
   const [modalAbierto, setModalAbierto] = useState(false);
@@ -70,6 +127,10 @@ export function RestaurantMenuSection({
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const srcParam = params.get("src") || "";
+      if (luxuryMenuUrl && (srcParam.includes("mesa") || params.get("menu") === "abrir")) {
+        window.location.href = luxuryMenuUrl;
+        return;
+      }
       if (tieneMenu && (srcParam.includes("mesa") || params.get("menu") === "abrir")) {
         setModalAbierto(true);
         trackEvent("apertura_automatica_menu_qr", {
@@ -79,7 +140,7 @@ export function RestaurantMenuSection({
         });
       }
     }
-  }, [tieneMenu, businessName, zonaNombre]);
+  }, [tieneMenu, luxuryMenuUrl, businessName, zonaNombre]);
 
   // Si no hay menú ni enlace para calificar ni menú de lujo, no ocupamos espacio
   if (!tieneMenu && !linkCalificar && !luxuryMenuUrl) {
@@ -87,37 +148,39 @@ export function RestaurantMenuSection({
   }
 
   const isEn = locale === "en";
+  const curTheme = THEME_STYLES[menuTema || "fogon"] || THEME_STYLES.fogon;
 
   return (
     <>
       {/* ─── 1. Tarjetas en la ficha del negocio ─── */}
       <section className="space-y-3">
-        {/* Carta de Lujo Oro Puro si está disponible */}
+        {/* Carta Interactiva de Lujo con tema dinámico si está configurada */}
         {luxuryMenuUrl && (
           <Link
             href={luxuryMenuUrl}
             onClick={() => {
-              trackEvent("click_menu_lujo_oro", {
+              trackEvent("click_menu_lujo_interactivo", {
                 restaurante: businessName,
                 zona: zonaNombre,
+                tema: menuTema,
               });
             }}
-            className="w-full text-left p-4 rounded-2xl bg-gradient-to-br from-[#121E17] via-[#1A2E23] to-[#0A120E] border border-amber-400/50 hover:border-amber-300 hover:shadow-lg hover:shadow-amber-500/10 active:scale-[0.99] transition-all flex items-center justify-between gap-3 cursor-pointer group text-inherit no-underline"
+            className={`w-full text-left p-4 rounded-2xl bg-gradient-to-br ${curTheme.cardBg} active:scale-[0.99] transition-all flex items-center justify-between gap-3 cursor-pointer group text-inherit no-underline`}
           >
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 text-black flex items-center justify-center text-2xl shrink-0 shadow-md group-hover:scale-105 transition-transform font-bold">
-                👑
+              <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${curTheme.iconBg} flex items-center justify-center text-2xl shrink-0 shadow-md group-hover:scale-105 transition-transform font-bold`}>
+                {curTheme.emoji}
               </div>
               <div className="min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <h3 className="font-serif text-base font-bold text-amber-200 truncate group-hover:text-amber-100 transition-colors">
-                    {isEn ? "Haute Cuisine Digital Menu" : "Carta Digital Alta Selección"}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <h3 className={`font-serif text-base font-bold ${curTheme.titleColor} truncate transition-colors`}>
+                    {isEn ? curTheme.titleEn : curTheme.titleEs}
                   </h3>
-                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 shrink-0">
-                    ✨ Oro
+                  <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border shrink-0 ${curTheme.badgeClass}`}>
+                    {curTheme.badge}
                   </span>
                 </div>
-                <p className="text-xs text-amber-100/70 line-clamp-1 mt-0.5 font-serif italic">
+                <p className={`text-xs ${curTheme.subtitleColor} line-clamp-1 mt-0.5 font-serif italic`}>
                   {isEn
                     ? "Interactive menu in 4 languages & currency converter"
                     : "Menú interactivo en 4 idiomas y conversor de moneda"}
@@ -125,14 +188,15 @@ export function RestaurantMenuSection({
               </div>
             </div>
 
-            <span className="shrink-0 bg-gradient-to-r from-amber-400 to-amber-500 text-black font-serif text-xs font-bold px-3.5 py-2.5 rounded-xl transition-all shadow-md group-hover:scale-105 flex items-center gap-1.5 pointer-events-none">
-              <span>✨</span>
+            <span className={`shrink-0 bg-gradient-to-r ${curTheme.btnBg} font-serif text-xs font-bold px-3.5 py-2.5 rounded-xl transition-all shadow-md group-hover:scale-105 flex items-center gap-1.5 pointer-events-none`}>
+              <span>{curTheme.btnIcon}</span>
               <span>{isEn ? "Open Menu" : "Ver Menú"}</span>
             </span>
           </Link>
         )}
 
-        {tieneMenu && (
+        {/* Solo mostrar la carta tradicional si NO hay carta interactiva de lujo configurada */}
+        {!luxuryMenuUrl && tieneMenu && (
           <button
             type="button"
             onClick={() => {
