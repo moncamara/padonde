@@ -175,6 +175,7 @@ export function LuxuryRestaurantMenu({
       opcion: "opción",
       opciones: "opciones",
       irArriba: "Subir al inicio",
+      limpiarFiltros: "Limpiar filtros",
     },
     en: {
       volver: "← Back to Live Board",
@@ -194,6 +195,7 @@ export function LuxuryRestaurantMenu({
       opcion: "option",
       opciones: "options",
       irArriba: "Back to top",
+      limpiarFiltros: "Clear filters",
     },
     fr: {
       volver: "← Retour à l'Agenda",
@@ -213,6 +215,7 @@ export function LuxuryRestaurantMenu({
       opcion: "option",
       opciones: "options",
       irArriba: "Haut de page",
+      limpiarFiltros: "Effacer les filtres",
     },
     de: {
       volver: "← Zurück zur Übersicht",
@@ -232,6 +235,7 @@ export function LuxuryRestaurantMenu({
       opcion: "Option",
       opciones: "Optionen",
       irArriba: "Nach oben",
+      limpiarFiltros: "Filter zurücksetzen",
     },
   }[idioma];
 
@@ -710,19 +714,26 @@ export function LuxuryRestaurantMenu({
           {(busqueda.trim() || filtroEspecial !== "ninguno") && (
             <div
               style={{
+                width: "100%",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                fontSize: "0.72rem",
+                gap: "0.75rem",
+                fontSize: "0.74rem",
                 color: th.textMuted,
-                padding: "0.2rem 0.25rem 0",
+                paddingTop: "0.45rem",
+                marginTop: "0.15rem",
+                borderTop: `1px solid ${th.border}`,
               }}
             >
-              <span>
-                {totalResultados === 1
-                  ? `1 ${t.opcion} encontrada`
-                  : `${totalResultados} ${t.opciones} encontradas`}
-                {busqueda && ` para "${busqueda}"`}
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem" }}>
+                <span style={{ color: th.accent, fontSize: "0.65rem" }}>●</span>
+                <span>
+                  {totalResultados === 1
+                    ? `1 ${t.opcion} encontrada`
+                    : `${totalResultados} ${t.opciones} encontradas`}
+                  {busqueda && ` para "${busqueda}"`}
+                </span>
               </span>
               <button
                 type="button"
@@ -731,17 +742,23 @@ export function LuxuryRestaurantMenu({
                   setFiltroEspecial("ninguno");
                 }}
                 style={{
-                  background: "none",
-                  border: "none",
+                  background: th.isDark ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.04)",
+                  border: `1px solid ${th.border}`,
+                  borderRadius: "9999px",
                   color: th.accent,
                   cursor: "pointer",
-                  textDecoration: "underline",
-                  fontSize: "0.72rem",
-                  padding: 0,
+                  fontSize: "0.7rem",
+                  padding: "0.22rem 0.65rem",
                   fontWeight: 600,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.3rem",
+                  whiteSpace: "nowrap",
+                  transition: "all 0.15s ease",
                 }}
               >
-                ✕ Limpiar filtros
+                <span>✕</span>
+                <span>{t.limpiarFiltros}</span>
               </button>
             </div>
           )}
