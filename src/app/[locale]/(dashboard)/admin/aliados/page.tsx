@@ -253,6 +253,8 @@ export default async function AdminAliadosPage({
 
   const ga4Config = ga4ConfigRow?.valor as {
     ultimaActualizacion?: string;
+    fechaInicio?: string;
+    fechaFin?: string;
     metricasPorAliado?: Record<string, MetricaHistoricaAliado>;
   } | null;
 
@@ -382,6 +384,7 @@ export default async function AdminAliadosPage({
             negociosList={negociosList}
             locale={locale}
             metricasDinamicas={ga4Config?.metricasPorAliado || null}
+            fechaCorteGA4={ga4Config?.fechaFin || "2026-10-27"}
           />
         </div>
       </main>

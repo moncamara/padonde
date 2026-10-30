@@ -10,7 +10,11 @@ import {
 } from "../actions";
 import { ModalEditarAliado } from "./ModalEditarAliado";
 import { ModalEventosAliado } from "./ModalEventosAliado";
-import { obtenerMetricasGA4Aliado, type MetricaHistoricaAliado } from "@/lib/constants/vistasAnalyticsHistoricas";
+import {
+  obtenerMetricasGA4Aliado,
+  calcularPeriodoReporteAliado,
+  type MetricaHistoricaAliado,
+} from "@/lib/constants/vistasAnalyticsHistoricas";
 import type { PlanNegocio } from "@/lib/types";
 
 export interface EventoAliadoItem {
@@ -58,6 +62,7 @@ interface AdminAliadosListProps {
   negociosList?: { id: string; nombre: string }[];
   locale: string;
   metricasDinamicas?: Record<string, MetricaHistoricaAliado> | null;
+  fechaCorteGA4?: string | null;
 }
 
 type FiltroPlan = "todos" | "pro_premium" | "por_vencer" | "gratis";
@@ -68,6 +73,7 @@ export function AdminAliadosList({
   negociosList = [],
   locale,
   metricasDinamicas = null,
+  fechaCorteGA4 = "2026-10-27",
 }: AdminAliadosListProps) {
   const router = useRouter();
   const [filtro, setFiltro] = useState<FiltroPlan>("todos");
@@ -235,19 +241,13 @@ export function AdminAliadosList({
   function handleCopiarReporte(aliado: AliadoItem) {
     const est = getEstadoExpiracion(aliado);
     const destinoNombre = aliado.zonaNombre || (aliado.zonaSlug === "mendihuaca" ? "Mendihuaca" : "Minca");
-    const metricas = obtenerMetricasGA4Aliado(aliado.nombre, metricasDinamicas);
-    const fechaPub = aliado.created_at
-      ? new Date(aliado.created_at).toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" })
-      : "14 oct 2026";
-    const diasActivo = aliado.created_at
-      ? Math.max(1, Math.ceil((new Date().getTime() - new Date(aliado.created_at).getTime()) / (1000 * 60 * 60 * 24)))
-      : 14;
-    const promedioDiario = (metricas.vistas / (diasActivo || 1)).toFixed(1);
+    const info = calcularPeriodoReporteAliado(aliado, metricasDinamicas, fechaCorteGA4);
 
     const texto = `🌿 Reporte PaDónde — ${aliado.nombre}
 📍 ${destinoNombre}, Magdalena
-🗓️ Publicado: ${fechaPub} (⚡ En solo ${diasActivo} ${diasActivo === 1 ? "día" : "días"} ${aliado.activo ? "al aire" : "pausado"})
-👁️ Visitas a tu ficha: ${metricas.vistas} vistas (${metricas.usuariosUnicos} turistas únicos ~ prom. ${promedioDiario}/día)
+🗓️ Periodo analizado: ${info.periodoTexto}
+⏱️ Tiempo al aire en este reporte: ${info.diasEfectivos} ${info.diasEfectivos === 1 ? "día" : "días"} (${aliado.activo ? "activo en vitrina" : "pausado"})
+👁️ Visitas a tu propuesta: ${info.metricas.vistas} vistas (${info.metricas.usuariosUnicos} turistas únicos ~ prom. ${info.promedioDiario}/día)
 📲 Contactos a WhatsApp: ${aliado.totalClics || 0}
 🟢 Eventos vigentes en cartelera: ${aliado.eventosActivos}
 📅 Total de eventos registrados: ${aliado.totalEventos}
@@ -479,13 +479,7 @@ export function AdminAliadosList({
         {aliadosFiltrados.map((aliado) => {
           const est = getEstadoExpiracion(aliado);
           const cleanWa = aliado.whatsapp.replace(/\D/g, "");
-          const metricasGA4 = obtenerMetricasGA4Aliado(aliado.nombre, metricasDinamicas);
-          const fechaPub = aliado.created_at
-            ? new Date(aliado.created_at).toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" })
-            : null;
-          const diasActivo = aliado.created_at
-            ? Math.max(1, Math.ceil((new Date().getTime() - new Date(aliado.created_at).getTime()) / (1000 * 60 * 60 * 24)))
-            : null;
+          const infoPeriodo = calcularPeriodoReporteAliado(aliado, metricasDinamicas, fechaCorteGA4);
 
           return (
             <article
@@ -577,14 +571,14 @@ export function AdminAliadosList({
 
                 <div className="flex items-center gap-2 flex-wrap">
                   {/* Métrica de Vistas Reales GA4 */}
-                  {metricasGA4.vistas > 0 && (
+                  {infoPeriodo.metricas.vistas > 0 && (
                     <div
                       className="inline-flex items-center gap-1.5 text-xs text-forest bg-forest/5 border border-forest/20 px-2.5 py-1 rounded-xl font-medium shrink-0"
-                      title={`Google Analytics: ${metricasGA4.vistas} visitas reales por ${metricasGA4.usuariosUnicos} usuarios únicos`}
+                      title={`Google Analytics: ${infoPeriodo.metricas.vistas} visitas reales por ${infoPeriodo.metricas.usuariosUnicos} usuarios únicos (${infoPeriodo.periodoTexto} ~ prom. ${infoPeriodo.promedioDiario}/día)`}
                     >
                       <span>👁️</span>
-                      <span><strong>{metricasGA4.vistas}</strong> vistas</span>
-                      <span className="text-[10px] text-stone">({metricasGA4.usuariosUnicos} turistas)</span>
+                      <span><strong>{infoPeriodo.metricas.vistas}</strong> vistas</span>
+                      <span className="text-[10px] text-stone">({infoPeriodo.metricas.usuariosUnicos} turistas)</span>
                     </div>
                   )}
 
@@ -622,14 +616,19 @@ export function AdminAliadosList({
                   🏷️ {aliado.categoria}
                 </span>
 
-                {fechaPub && (
+                {infoPeriodo.fechaPubStr && (
                   <>
                     <span>·</span>
                     <span
                       className="text-stone-600"
-                      title={`Ficha publicada el ${fechaPub}. Lleva ${diasActivo} días ${aliado.activo ? "activa en cartelera" : "registrada (actualmente en pausa)"}.`}
+                      title={`Ficha publicada el ${infoPeriodo.fechaPubStr}. Periodo analizado en reporte: ${infoPeriodo.periodoTexto}.`}
                     >
-                      🗓️ Publicada: <strong className="text-forest">{fechaPub}</strong> ({diasActivo}d {aliado.activo ? "activo" : "pausado"})
+                      🗓️ Publicada: <strong className="text-forest">{infoPeriodo.fechaPubStr}</strong>{" "}
+                      <span className="text-[11px] text-stone">
+                        ({infoPeriodo.esEventoPuntual
+                          ? `🎪 ${infoPeriodo.diasEfectivos}d convocatoria`
+                          : `📊 ${infoPeriodo.diasEfectivos}d periodo GA4`})
+                      </span>
                     </span>
                   </>
                 )}
@@ -888,34 +887,26 @@ export function AdminAliadosList({
           (reporteNegocio.zonaSlug === "mendihuaca" ? "Mendihuaca" : "Minca");
         const destinoUrl = `https://padonde.lat/es/${reporteNegocio.zonaSlug || "minca"}`;
 
-        const metricas = obtenerMetricasGA4Aliado(reporteNegocio.nombre, metricasDinamicas);
-        const fechaPub = reporteNegocio.created_at
-          ? new Date(reporteNegocio.created_at).toLocaleDateString("es-CO", {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            })
-          : "14 oct 2026";
-        const diasActivo = reporteNegocio.created_at
-          ? Math.max(
-              1,
-              Math.ceil(
-                (new Date().getTime() - new Date(reporteNegocio.created_at).getTime()) /
-                  (1000 * 60 * 60 * 24)
-              )
-            )
-          : 14;
-
-        const promedioDiario = (metricas.vistas / (diasActivo || 1)).toFixed(1);
+        const infoPeriodo = calcularPeriodoReporteAliado(
+          reporteNegocio,
+          metricasDinamicas,
+          fechaCorteGA4
+        );
 
         const visitasTexto =
-          metricas.vistas > 0
-            ? `• 👁️ *Visitas (en solo ${diasActivo} ${diasActivo === 1 ? "día" : "días"} al aire):* ${metricas.vistas} visualizaciones (${metricas.usuariosUnicos} turistas únicos exploraron tus fotos y menú ~ prom. ${promedioDiario}/día)\n`
+          infoPeriodo.metricas.vistas > 0
+            ? `• 👁️ *Impacto de visualizaciones (${infoPeriodo.diasEfectivos} ${
+                infoPeriodo.diasEfectivos === 1 ? "día" : "días"
+              } al aire en este reporte):* ${infoPeriodo.metricas.vistas} visualizaciones (${
+                infoPeriodo.metricas.usuariosUnicos
+              } turistas únicos exploraron tu propuesta ~ prom. ${infoPeriodo.promedioDiario}/día)\n`
             : "";
 
         const idiomasTexto =
-          (metricas.idiomasDetectados?.length || 0) > 0
-            ? `• 🌍 *Audiencia multilingüe:* Consultada en ${(metricas.idiomasDetectados || []).join(", ")}\n`
+          (infoPeriodo.metricas.idiomasDetectados?.length || 0) > 0
+            ? `• 🌍 *Audiencia multilingüe:* Consultada en ${(
+                infoPeriodo.metricas.idiomasDetectados || []
+              ).join(", ")}\n`
             : "";
 
         const clicsTexto =
@@ -925,13 +916,11 @@ export function AdminAliadosList({
               }\n`
             : `• 📲 *Contacto WhatsApp directo:* Habilitado sin intermediarios (0% comisión)\n`;
 
-        const balancePeriodo = diasActivo <= 3
-          ? `En tus primeras ${diasActivo === 1 ? "24 horas" : `${diasActivo} días`} al aire tu propuesta ya comenzó a registrar visualizaciones reales de turistas, con *0% de comisión* por reserva.`
-          : `Durante estos ${diasActivo} días de lanzamiento tu propuesta ha tenido una visibilidad constante con un promedio de ~${promedioDiario} turistas diarios conociendo lo que ofreces, con *0% de comisión* por reserva.`;
-
-        const textoReporte = `🌿 *Reporte de Impacto PaDónde* — *${reporteNegocio.nombre}*\n📍 *${destinoNombre}, Magdalena*\n\n¡Hola! Te compartimos el balance de visibilidad y clientes que ha generado tu negocio en la cartelera turística:\n\n• 🗓️ *Fecha de publicación:* ${fechaPub}\n• ⏳ *Permanencia en cartelera:* ${diasActivo} ${diasActivo === 1 ? "día" : "días"} ${
-          reporteNegocio.activo ? "activos en vitrina 🟢" : "(actualmente en pausa ⏸️)"
-        }\n${visitasTexto}${idiomasTexto}${clicsTexto}• 🟢 *Planes y eventos en vitrina:* ${reporteNegocio.eventosActivos} vigentes (${reporteNegocio.totalEventos} en historial)\n• ⭐ *Plan comercial:* ${reporteNegocio.plan.toUpperCase()} (${est.texto})\n• 🏷️ *Categoría:* ${reporteNegocio.categoria}\n\n💡 *Balance comercial:*\n${balancePeriodo}\n\nA partir del 1 de noviembre iniciamos el nuevo ciclo trimestral de visibilidad ($125.000 COP el trimestre, es decir menos de $42.000 al mes) e incluimos la digitalización interactiva de tu menú o catálogo de servicios.\n\n🔗 *Ver cartelera:* ${destinoUrl}\n\n¡Gracias por conectar a viajeros y locales con lo mejor de ${destinoNombre}! 🌿`;
+        const textoReporte = `🌿 *Reporte de Impacto PaDónde* — *${reporteNegocio.nombre}*\n📍 *${destinoNombre}, Magdalena*\n\n¡Hola! Te compartimos el balance de visibilidad y clientes que ha generado tu propuesta en la cartelera turística oficial:\n\n• 🗓️ *Periodo analizado:* ${infoPeriodo.periodoTexto}\n• ⏱️ *Tiempo al aire en este reporte:* ${infoPeriodo.diasEfectivos} ${
+          infoPeriodo.diasEfectivos === 1 ? "día" : "días"
+        } ${
+          reporteNegocio.activo ? "activos en vitrina 🟢" : "(en pausa ⏸️)"
+        }\n${visitasTexto}${idiomasTexto}${clicsTexto}• 🟢 *Planes y eventos en vitrina:* ${reporteNegocio.eventosActivos} vigentes (${reporteNegocio.totalEventos} en historial)\n• ⭐ *Plan comercial:* ${reporteNegocio.plan.toUpperCase()} (${est.texto})\n• 🏷️ *Categoría:* ${reporteNegocio.categoria}\n\n💡 *Balance del periodo:*\n${infoPeriodo.balancePeriodo}\n\nA partir del 1 de noviembre iniciamos el nuevo ciclo trimestral de visibilidad ($125.000 COP el trimestre, es decir menos de $42.000 al mes) e incluimos la digitalización interactiva de tu menú o catálogo de servicios.\n\n🔗 *Ver cartelera:* ${destinoUrl}\n\n¡Gracias por conectar a viajeros y locales con lo mejor de ${destinoNombre}! 🌿`;
 
         const waUrl = `https://wa.me/${cleanWa}?text=${encodeURIComponent(textoReporte)}`;
 
@@ -975,21 +964,23 @@ export function AdminAliadosList({
                   <div className="p-2.5 bg-white/10 rounded-xl">
                     <span className="text-[10px] text-cream/80 block">Visitas Reales</span>
                     <span className="font-serif text-2xl font-bold text-white mt-0.5 block">
-                      {metricas.vistas}
+                      {infoPeriodo.metricas.vistas}
                     </span>
                     <span className="text-[9px] text-emerald-300">
-                      {metricas.usuariosUnicos} turistas
+                      ~{infoPeriodo.promedioDiario}/d ({infoPeriodo.metricas.usuariosUnicos} turistas)
                     </span>
                   </div>
 
-                  {/* Caja 2: Días Activo */}
+                  {/* Caja 2: Días Analizados */}
                   <div className="p-2.5 bg-white/10 rounded-xl">
-                    <span className="text-[10px] text-cream/80 block">Permanencia</span>
-                    <span className="font-serif text-2xl font-bold text-white mt-0.5 block">
-                      {diasActivo}d
+                    <span className="text-[10px] text-cream/80 block">
+                      {infoPeriodo.esEventoPuntual ? "Convocatoria" : "Periodo GA4"}
                     </span>
-                    <span className="text-[9px] text-cream/70 truncate block" title={`Desde ${fechaPub}`}>
-                      Desde {fechaPub}
+                    <span className="font-serif text-2xl font-bold text-white mt-0.5 block">
+                      {infoPeriodo.diasEfectivos}d
+                    </span>
+                    <span className="text-[9px] text-cream/70 truncate block" title={`Del ${infoPeriodo.fechaIniStr} al ${infoPeriodo.fechaFinStr}`}>
+                      {infoPeriodo.fechaIniStr} – {infoPeriodo.fechaFinStr}
                     </span>
                   </div>
 
@@ -1018,17 +1009,23 @@ export function AdminAliadosList({
 
                 <div className="text-[11px] text-cream/90 space-y-1.5 pt-1 font-sans border-t border-cream/15">
                   <div className="flex items-center justify-between">
-                    <span>🗓️ <strong>Publicación:</strong></span>
-                    <span className="font-medium text-white">{fechaPub} ({diasActivo} días {reporteNegocio.activo ? "activa" : "pausada"})</span>
+                    <span>🗓️ <strong>Periodo del informe:</strong></span>
+                    <span className="font-medium text-white">{infoPeriodo.periodoTexto}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>⏱️ <strong>Tiempo al aire analizado:</strong></span>
+                    <span className="font-medium text-emerald-300">
+                      {infoPeriodo.diasEfectivos} {infoPeriodo.diasEfectivos === 1 ? "día" : "días"} (~{infoPeriodo.promedioDiario} vistas/día)
+                    </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span>📍 <strong>Destino:</strong></span>
                     <span>{destinoNombre}, Magdalena</span>
                   </div>
-                  {(metricas.idiomasDetectados?.length || 0) > 0 && (
+                  {(infoPeriodo.metricas.idiomasDetectados?.length || 0) > 0 && (
                     <div className="flex items-center justify-between">
                       <span>🌍 <strong>Idiomas de turistas:</strong></span>
-                      <span className="text-emerald-300 font-medium">{(metricas.idiomasDetectados || []).join(", ")}</span>
+                      <span className="text-emerald-300 font-medium">{(infoPeriodo.metricas.idiomasDetectados || []).join(", ")}</span>
                     </div>
                   )}
                   <div className="flex items-center justify-between">

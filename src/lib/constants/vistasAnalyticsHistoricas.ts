@@ -319,3 +319,161 @@ export function obtenerMetricasGA4Aliado(
     idiomasDetectados: ["Español"],
   };
 }
+
+export const FECHA_CORTE_GA4_DEFECTO = "2026-10-27";
+export const FECHA_CORTE_GA4_LABEL_DEFECTO = "27 de oct de 2026";
+
+export interface PeriodoReporteAliado {
+  metricas: MetricaHistoricaAliado;
+  fechaPubStr: string;
+  fechaCorteLabel: string;
+  fechaIniStr: string;
+  fechaFinStr: string;
+  diasEfectivos: number;
+  esEventoPuntual: boolean;
+  nombreEventoPuntual?: string;
+  promedioDiario: string;
+  periodoTexto: string;
+  balancePeriodo: string;
+}
+
+/**
+ * Calcula con precisión las fechas de inicio, fin y días efectivos al aire de un aliado o publicación.
+ * Evita que las métricas congeladas de Google Analytics pierdan valor a medida que pasan los días,
+ * acotando el periodo a la fecha de corte del reporte de Analytics o a la fecha en que se celebró el evento.
+ */
+export function calcularPeriodoReporteAliado(
+  aliado: {
+    nombre: string;
+    created_at?: string | null;
+    activo: boolean;
+    eventos?: Array<{
+      id: string;
+      titulo: string;
+      fecha_inicio?: string | null;
+      fecha_fin?: string | null;
+      created_at?: string | null;
+    }>;
+  },
+  metricasDinamicas?: Record<string, MetricaHistoricaAliado> | null,
+  fechaCortePersonalizada?: string | null
+): PeriodoReporteAliado {
+  const metricas = obtenerMetricasGA4Aliado(aliado.nombre, metricasDinamicas);
+
+  // 1. Fecha de corte del reporte de Google Analytics (por defecto 27 de octubre de 2026)
+  const fechaCorteGA4 = fechaCortePersonalizada
+    ? new Date(fechaCortePersonalizada)
+    : new Date("2026-10-27T23:59:59-05:00");
+
+  const fechaCorteLabel = fechaCorteGA4.toLocaleDateString("es-CO", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "America/Bogota",
+  });
+
+  // 2. Fecha de creación / publicación del aliado en Colombia (UTC-5)
+  const fechaCreacion = aliado.created_at
+    ? new Date(aliado.created_at)
+    : new Date("2026-10-14T00:57:00Z");
+
+  const fechaPubStr = fechaCreacion.toLocaleDateString("es-CO", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "America/Bogota",
+  });
+
+  // 3. Revisar si el aliado tiene un evento puntual que ya se celebró o con fecha fija
+  // (ejemplo: Pan Artesanal Koko & Chiqui -> Taller de panadería sábado 17 de oct)
+  const eventos = aliado.eventos || [];
+  let eventoPuntual: any = null;
+
+  for (const ev of eventos) {
+    if (ev.fecha_inicio) {
+      const fEv = new Date(ev.fecha_fin || ev.fecha_inicio);
+      // Si la fecha del evento ocurrió antes o hasta la fecha de corte GA4
+      if (fEv.getTime() <= fechaCorteGA4.getTime()) {
+        eventoPuntual = ev;
+        break;
+      }
+    }
+  }
+
+  let fechaInicioEfectiva = fechaCreacion;
+  let fechaFinEfectiva = fechaCorteGA4;
+  let esEventoPuntual = false;
+  let nombreEventoPuntual: string | undefined = undefined;
+
+  if (eventoPuntual && eventoPuntual.fecha_inicio) {
+    esEventoPuntual = true;
+    nombreEventoPuntual = eventoPuntual.titulo;
+    fechaFinEfectiva = new Date(eventoPuntual.fecha_fin || eventoPuntual.fecha_inicio);
+    if (eventoPuntual.created_at) {
+      const fCreaEv = new Date(eventoPuntual.created_at);
+      if (!isNaN(fCreaEv.getTime())) {
+        fechaInicioEfectiva = fCreaEv;
+      }
+    }
+  } else {
+    // Si el negocio se publicó después del corte de GA4, su fecha fin es el día actual
+    if (fechaCreacion.getTime() > fechaCorteGA4.getTime()) {
+      fechaFinEfectiva = new Date();
+    }
+  }
+
+  // Días entre fecha de inicio y fecha fin efectiva
+  const diffMs = fechaFinEfectiva.getTime() - fechaInicioEfectiva.getTime();
+  const diasEfectivos = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+
+  const fechaIniStr = fechaInicioEfectiva.toLocaleDateString("es-CO", {
+    day: "numeric",
+    month: "short",
+    timeZone: "America/Bogota",
+  });
+  const fechaFinStr = fechaFinEfectiva.toLocaleDateString("es-CO", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "America/Bogota",
+  });
+
+  const promedioDiario = (metricas.vistas / (diasEfectivos || 1)).toFixed(1);
+
+  // Texto descriptivo del periodo (Fecha Inicial a Fecha Final)
+  const periodoTexto = esEventoPuntual
+    ? `del ${fechaIniStr} al ${fechaFinStr} (convocatoria de: "${nombreEventoPuntual}")`
+    : `del ${fechaIniStr} al ${fechaFinStr} (corte oficial Google Analytics)`;
+
+  // Balance comercial adaptado
+  let balancePeriodo = "";
+  if (esEventoPuntual) {
+    balancePeriodo = `Durante los ${diasEfectivos} ${
+      diasEfectivos === 1 ? "día" : "días"
+    } de convocatoria activa de tu evento (${periodoTexto}), tu propuesta captó la atención de ${
+      metricas.usuariosUnicos
+    } turistas únicos con un promedio de ~${promedioDiario} visitas diarias al taller/evento, con *0% de comisión* por reserva.`;
+  } else if (diasEfectivos <= 3) {
+    balancePeriodo = `En los primeros ${diasEfectivos} ${
+      diasEfectivos === 1 ? "día" : "días"
+    } de lanzamiento analizados (${periodoTexto}), tu negocio ya empezó a marcar presencia en la región con ${
+      metricas.usuariosUnicos
+    } turistas interesados y *0% de comisión* por reserva.`;
+  } else {
+    balancePeriodo = `Durante los ${diasEfectivos} días analizados en este informe (${periodoTexto}), tu vitrina ha mantenido un alcance constante de ~${promedioDiario} turistas diarios conociendo lo que ofreces, con *0% de comisión* por reserva directa a tu WhatsApp.`;
+  }
+
+  return {
+    metricas,
+    fechaPubStr,
+    fechaCorteLabel,
+    fechaIniStr,
+    fechaFinStr,
+    diasEfectivos,
+    esEventoPuntual,
+    nombreEventoPuntual,
+    promedioDiario,
+    periodoTexto,
+    balancePeriodo,
+  };
+}
