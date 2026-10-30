@@ -64,8 +64,25 @@ export function LuxuryRestaurantMenu({
   // Happy Hour en vivo (Colombia UTC-5)
   const [esHappyHourActivo, setEsHappyHourActivo] = useState<boolean>(false);
 
+  // Botón flotante para volver arriba (menú largo en móvil)
+  const [mostrarScrollArriba, setMostrarScrollArriba] = useState<boolean>(false);
+
   const categoryRefs = useRef<Record<string, HTMLElement | null>>({});
   const originalBgRef = useRef<string | null>(null);
+
+  // Detectar scroll para mostrar el botón de volver arriba
+  useEffect(() => {
+    const handleScroll = () => {
+      setMostrarScrollArriba(window.scrollY > 350);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const irArriba = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   // Pintar el fondo de toda la ventana con el color del tema
   // (sobrescribe el crema global de PaDónde mientras la carta está montada, excepto si está embebido en admin)
@@ -157,6 +174,7 @@ export function LuxuryRestaurantMenu({
       avisoEnMesa: "💡 ¿Estás en la mesa? Muestra este menú al mesero para ordenar rápido en tu idioma.",
       opcion: "opción",
       opciones: "opciones",
+      irArriba: "Subir al inicio",
     },
     en: {
       volver: "← Back to Live Board",
@@ -175,6 +193,7 @@ export function LuxuryRestaurantMenu({
       avisoEnMesa: "💡 At the table? Show this screen to your server to order easily in your language.",
       opcion: "option",
       opciones: "options",
+      irArriba: "Back to top",
     },
     fr: {
       volver: "← Retour à l'Agenda",
@@ -193,6 +212,7 @@ export function LuxuryRestaurantMenu({
       avisoEnMesa: "💡 À table ? Montrez cet écran à votre serveur pour commander facilement dans votre langue.",
       opcion: "option",
       opciones: "options",
+      irArriba: "Haut de page",
     },
     de: {
       volver: "← Zurück zur Übersicht",
@@ -211,6 +231,7 @@ export function LuxuryRestaurantMenu({
       avisoEnMesa: "💡 Am Tisch? Zeigen Sie diese Karte der Bedienung, um entspannt in Ihrer Sprache zu bestellen.",
       opcion: "Option",
       opciones: "Optionen",
+      irArriba: "Nach oben",
     },
   }[idioma];
 
@@ -490,49 +511,24 @@ export function LuxuryRestaurantMenu({
         </div>
       </header>
 
-      {/* ─── CABECERA DEL RESTAURANTE ─── */}
+      {/* ─── CABECERA DEL RESTAURANTE (OPTIMIZADA PARA MÓVIL) ─── */}
       <section
         style={{
           position: "relative",
           zIndex: 10,
-          padding: "1.75rem 1rem 1.25rem",
+          padding: "1.15rem 1rem 0.65rem",
           textAlign: "center",
           maxWidth: "48rem",
           margin: "0 auto",
         }}
       >
-        <div
-          className="luxury-gold-badge"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "0.5rem",
-            padding: "0.3rem 0.85rem",
-            borderRadius: "9999px",
-            marginBottom: "0.85rem",
-          }}
-        >
-          <span style={{ fontSize: "0.75rem" }}>{th.emoji}</span>
-          <span
-            style={{
-              fontSize: "0.65rem",
-              fontFamily: "var(--font-playfair), Georgia, serif",
-              textTransform: "uppercase",
-              letterSpacing: "0.15em",
-              fontWeight: 600,
-            }}
-          >
-            {menu.selloCalidad[idioma]}
-          </span>
-        </div>
-
         <h1
           className="luxury-gold-title"
           style={{
-            fontSize: "clamp(2rem, 5vw, 3.25rem)",
+            fontSize: "clamp(1.5rem, 4.5vw, 2.35rem)",
             fontWeight: 800,
             lineHeight: 1.15,
-            margin: "0 0 0.5rem",
+            margin: "0 0 0.25rem",
           }}
         >
           {menu.negocioNombre}
@@ -541,48 +537,22 @@ export function LuxuryRestaurantMenu({
         <p
           className="luxury-gold-subtitle"
           style={{
-            fontSize: "0.95rem",
-            margin: "0 auto",
-            maxWidth: "34rem",
+            fontSize: "0.85rem",
+            margin: "0 auto 0.65rem",
+            maxWidth: "30rem",
             fontStyle: "italic",
+            lineHeight: 1.35,
           }}
         >
           {menu.subtitulo[idioma]}
         </p>
 
-        {/* Divisor ornamental */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "0.75rem",
-            margin: "1rem 0",
-          }}
-        >
-          <div
-            style={{
-              width: "4rem",
-              height: "1px",
-              background: `linear-gradient(90deg, transparent, ${th.borderStrong})`,
-            }}
-          />
-          <span style={{ color: th.accent, fontSize: "0.7rem" }}>◆</span>
-          <div
-            style={{
-              width: "4rem",
-              height: "1px",
-              background: `linear-gradient(270deg, transparent, ${th.borderStrong})`,
-            }}
-          />
-        </div>
-
-        {/* Happy Hour con horario siempre visible y transparente */}
+        {/* Happy Hour con horario siempre visible y diseño ultra compacto */}
         <div style={{ display: "inline-block" }}>
           <div
             style={{
-              padding: "0.45rem 1.1rem",
-              borderRadius: "1rem",
+              padding: "0.25rem 0.75rem",
+              borderRadius: "9999px",
               border: esHappyHourActivo
                 ? "1px solid rgba(16, 185, 129, 0.6)"
                 : `1px solid ${th.borderStrong}`,
@@ -594,22 +564,21 @@ export function LuxuryRestaurantMenu({
                   ? "#A7F3D0"
                   : "#047857"
                 : th.heading,
-              display: "flex",
+              display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
-              gap: "0.45rem",
+              gap: "0.35rem",
               boxShadow: th.cardShadow,
-              flexWrap: "wrap",
             }}
           >
-            <span style={{ fontSize: "0.85rem" }}>
+            <span style={{ fontSize: "0.75rem" }}>
               {esHappyHourActivo ? "🟢" : "⏰"}
             </span>
             <span
               style={{
-                fontSize: "0.75rem",
+                fontSize: "0.7rem",
                 fontWeight: 700,
-                letterSpacing: "0.06em",
+                letterSpacing: "0.04em",
                 textTransform: "uppercase",
               }}
             >
@@ -618,15 +587,15 @@ export function LuxuryRestaurantMenu({
             {esHappyHourActivo && (
               <span
                 style={{
-                  fontSize: "0.68rem",
+                  fontSize: "0.62rem",
                   fontWeight: 700,
                   backgroundColor: "rgba(16, 185, 129, 0.25)",
                   color: th.isDark ? "#6EE7B7" : "#065F46",
-                  padding: "0.15rem 0.5rem",
+                  padding: "0.08rem 0.4rem",
                   borderRadius: "9999px",
                   border: "1px solid rgba(16, 185, 129, 0.4)",
                   textTransform: "uppercase",
-                  letterSpacing: "0.05em",
+                  letterSpacing: "0.04em",
                 }}
               >
                 ● {t.enCurso}
@@ -634,18 +603,6 @@ export function LuxuryRestaurantMenu({
             )}
           </div>
         </div>
-
-        <p
-          style={{
-            fontSize: "0.72rem",
-            color: th.textMuted,
-            maxWidth: "28rem",
-            margin: "0.75rem auto 0",
-            fontStyle: "italic",
-          }}
-        >
-          {t.avisoEnMesa}
-        </p>
       </section>
 
       {/* ─── BUSCADOR Y FILTROS ─── */}
@@ -946,34 +903,19 @@ export function LuxuryRestaurantMenu({
                   gap: "0.75rem",
                 }}
               >
-                <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                    <span style={{ fontSize: "1.35rem" }}>{cat.icono}</span>
-                    <h2
-                      style={{
-                        fontFamily: th.fontTitle,
-                        fontSize: "clamp(1.2rem, 3vw, 1.6rem)",
-                        fontWeight: 700,
-                        color: th.heading,
-                        margin: 0,
-                      }}
-                    >
-                      {cat.titulos[idioma]}
-                    </h2>
-                  </div>
-                  {cat.subtitulos?.[idioma] && (
-                    <p
-                      style={{
-                        fontSize: "0.75rem",
-                        color: th.textMuted,
-                        margin: "0.25rem 0 0",
-                        fontStyle: "italic",
-                        fontFamily: "var(--font-playfair), Georgia, serif",
-                      }}
-                    >
-                      {cat.subtitulos[idioma]}
-                    </p>
-                  )}
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                  <span style={{ fontSize: "1.35rem" }}>{cat.icono}</span>
+                  <h2
+                    style={{
+                      fontFamily: th.fontTitle,
+                      fontSize: "clamp(1.15rem, 3vw, 1.45rem)",
+                      fontWeight: 700,
+                      color: th.heading,
+                      margin: 0,
+                    }}
+                  >
+                    {cat.titulos[idioma]}
+                  </h2>
                 </div>
                 <span
                   style={{
@@ -994,8 +936,8 @@ export function LuxuryRestaurantMenu({
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(290px, 1fr))",
-                  gap: "1rem",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+                  gap: "0.85rem",
                 }}
               >
                 {itemsFiltrados.map((item) => (
@@ -1003,10 +945,10 @@ export function LuxuryRestaurantMenu({
                     key={item.id}
                     className="luxury-dish-card"
                     style={{
-                      padding: "1rem",
+                      padding: "0.85rem",
                       display: "flex",
                       flexDirection: "column",
-                      gap: "0.65rem",
+                      gap: "0.55rem",
                     }}
                   >
                     {item.imagenUrl && (
@@ -1014,8 +956,8 @@ export function LuxuryRestaurantMenu({
                         style={{
                           position: "relative",
                           width: "100%",
-                          height: "175px",
-                          borderRadius: "0.85rem",
+                          height: "165px",
+                          borderRadius: "0.75rem",
                           overflow: "hidden",
                           border: `1px solid ${th.border}`,
                           backgroundColor: th.imageBg,
@@ -1219,6 +1161,52 @@ export function LuxuryRestaurantMenu({
         </div>
       </main>
 
+      {/* ─── BOTÓN FLOTANTE "VOLVER ARRIBA" (SCROLL TO TOP) ─── */}
+      {mostrarScrollArriba && (
+        <button
+          type="button"
+          onClick={irArriba}
+          aria-label={t.irArriba}
+          title={t.irArriba}
+          className="luxury-scroll-top-btn"
+          style={{
+            position: "fixed",
+            bottom: "5.15rem",
+            right: "1.25rem",
+            zIndex: 45,
+            width: "44px",
+            height: "44px",
+            borderRadius: "9999px",
+            backgroundColor: th.surface,
+            border: `1.5px solid ${th.borderStrong}`,
+            color: th.accent,
+            boxShadow: th.isDark
+              ? "0 6px 20px rgba(0, 0, 0, 0.7), 0 0 14px rgba(52, 211, 153, 0.25)"
+              : "0 6px 18px rgba(0, 0, 0, 0.12)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            transition: "all 0.25s ease",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+          }}
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polyline points="18 15 12 9 6 15" />
+          </svg>
+        </button>
+      )}
+
       {/* ─── BARRA INFERIOR: RESERVAR + CALIFICAR ─── */}
       <footer
         className="luxury-footer-sticky"
@@ -1229,7 +1217,7 @@ export function LuxuryRestaurantMenu({
           right: 0,
           zIndex: 50,
           borderTop: `1px solid ${th.borderStrong}`,
-          padding: "0.75rem 1rem",
+          padding: "0.65rem 1rem max(0.65rem, env(safe-area-inset-bottom))",
           boxShadow: th.isDark
             ? "0 -8px 28px rgba(0, 0, 0, 0.7)"
             : "0 -6px 20px rgba(0, 0, 0, 0.06)",
@@ -1253,18 +1241,19 @@ export function LuxuryRestaurantMenu({
             className="luxury-btn-gold"
             style={{
               flex: 1,
-              padding: "0.75rem 1rem",
-              fontSize: "0.85rem",
+              padding: "0.7rem 0.85rem",
+              fontSize: "0.82rem",
               textDecoration: "none",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              gap: "0.45rem",
+              gap: "0.4rem",
               whiteSpace: "nowrap",
               fontWeight: 700,
+              minHeight: "44px",
             }}
           >
-            <span style={{ fontSize: "1rem" }}>💬</span>
+            <span style={{ fontSize: "0.95rem" }}>💬</span>
             <span>{t.consultarMesa}</span>
           </a>
 
@@ -1274,22 +1263,23 @@ export function LuxuryRestaurantMenu({
             rel="noopener noreferrer"
             style={{
               flex: 1,
-              padding: "0.75rem 1rem",
-              fontSize: "0.85rem",
+              padding: "0.7rem 0.85rem",
+              fontSize: "0.82rem",
               textDecoration: "none",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              gap: "0.45rem",
+              gap: "0.4rem",
               whiteSpace: "nowrap",
               borderRadius: "0.85rem",
               backgroundColor: th.secondaryBg,
               border: `1px solid ${th.secondaryBorder}`,
               color: th.secondaryText,
               fontWeight: 700,
+              minHeight: "44px",
             }}
           >
-            <span style={{ fontSize: "1rem" }}>⭐</span>
+            <span style={{ fontSize: "0.95rem" }}>⭐</span>
             <span>{t.calificarGoogle}</span>
           </a>
         </div>

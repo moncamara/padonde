@@ -305,10 +305,41 @@ body.luxury-menu-active {
   background: var(--lx-nav-bg) !important;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.luxury-nav-sticky::-webkit-scrollbar {
+  display: none;
+  height: 0px;
 }
 
 .luxury-footer-sticky {
   background: var(--lx-nav-bg) !important;
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
+}
+
+/* ─── BOTÓN FLOTANTE "VOLVER ARRIBA" ─── */
+.luxury-scroll-top-btn {
+  animation: luxuryFadeInUp 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.luxury-scroll-top-btn:hover {
+  transform: translateY(-2px) scale(1.04);
+}
+
+.luxury-scroll-top-btn:active {
+  transform: scale(0.94);
+}
+
+@keyframes luxuryFadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
