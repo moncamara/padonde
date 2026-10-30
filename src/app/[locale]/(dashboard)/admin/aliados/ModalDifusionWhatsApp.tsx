@@ -9,7 +9,7 @@ interface ModalDifusionWhatsAppProps {
   aliados: AliadoItem[];
 }
 
-type TipoCampana = "restaurantes" | "hospedajes" | "personalizado";
+type TipoCampana = "redes" | "restaurantes" | "hospedajes" | "personalizado";
 
 export function ModalDifusionWhatsApp({ aliados }: ModalDifusionWhatsAppProps) {
   const [abierto, setAbierto] = useState(false);
@@ -17,7 +17,7 @@ export function ModalDifusionWhatsApp({ aliados }: ModalDifusionWhatsAppProps) {
 
   // Filtros
   const [filtroZona, setFiltroZona] = useState<string>("todas");
-  const [tipoCampana, setTipoCampana] = useState<TipoCampana>("restaurantes");
+  const [tipoCampana, setTipoCampana] = useState<TipoCampana>("redes");
   const [busqueda, setBusqueda] = useState<string>("");
 
   // Registro de aliados contactados en la sesión (IDs)
@@ -64,6 +64,31 @@ export function ModalDifusionWhatsApp({ aliados }: ModalDifusionWhatsAppProps) {
 
   // Plantillas oficiales predefinidas
   const plantillasDefault: Record<TipoCampana, string> = {
+    redes: `🌿 *¡Hola {nombre}! Qué alegría saludarte desde PaDónde {zona}.*
+
+Tu vitrina digital oficial ya está activa en vivo y lista para recibir a viajeros y turistas de la temporada 📲✨
+👉 *Enlace directo:* {enlace}
+
+Queremos ayudarte a sacarle el máximo provecho desde hoy. Cuando los negocios comparten su ficha en sus redes y estados, sus propios clientes y huéspedes empiezan a compartirla con amigos y conocidos que están planeando venir a {zona}.
+
+Te dejamos dos formas súper rápidas de moverlo hoy mismo:
+
+🟢 *1. En tus Estados de WhatsApp:*
+Sube una foto de tu lugar, cabaña o plato favorito y pega este texto en tu estado:
+_«¡Ya tenemos nuestra vitrina oficial en PaDónde {zona}! 🌿 Conoce nuestras fotos, carta y reserva directo a nuestro WhatsApp sin comisiones aquí:_
+👉 {enlace}»_
+
+📸 *2. En tus Historias de Instagram:*
+1. Sube una foto o video de tu lugar.
+2. Agrega el sticker de enlace (🔗) con tu link:
+   • *URL:* {enlace}
+   • *Texto del sticker:* «Ver Vitrina Oficial 🌿» o «Reservar por WhatsApp 📲»
+3. ¡Y menciónanos para repostearte y darte más visibilidad!
+
+Cualquier viajero que toque el enlace podrá ver tus fotos en alta calidad, cambiar el idioma (inglés/francés/alemán) y escribirte directo al WhatsApp.
+
+¡Muchos éxitos y que se llenen esas reservas! 🚀🌊`,
+
     restaurantes: `🌿 *Hola {nombre}, ¡un saludo muy especial desde el equipo de PaDónde!*
 
 Queremos contarte que a partir del *1 de noviembre* iniciamos el nuevo ciclo de suscripción trimestral de visibilidad en la cartelera turística de {zona} por un valor de *$125.000 COP el trimestre* (es decir, menos de $42.000 al mes), manteniendo a tu restaurante visible ante miles de viajeros y turistas que visitan la región buscando dónde comer y pasar un buen rato.
@@ -127,7 +152,7 @@ A partir del 1 de noviembre iniciamos el ciclo de renovación trimestral para la
   };
 
   // Texto editable actual
-  const [textoPlantilla, setTextoPlantilla] = useState<string>(plantillasDefault.restaurantes);
+  const [textoPlantilla, setTextoPlantilla] = useState<string>(plantillasDefault.redes);
 
   // Al cambiar de tipo de campaña, actualizar el texto con la plantilla correspondiente
   const handleCambiarTipoCampana = (nuevoTipo: TipoCampana) => {
@@ -211,9 +236,17 @@ A partir del 1 de noviembre iniciamos el ciclo de renovación trimestral para la
   const compilarMensaje = (aliado: AliadoItem) => {
     const zonaNombre =
       aliado.zonaNombre || (aliado.zonaSlug === "mendihuaca" ? "Mendihuaca" : "Minca");
+    const slug = aliado.zonaSlug || "minca";
+    const ev = aliado.eventos?.find((e) => e.activo) || aliado.eventos?.[0];
+    const enlace = ev
+      ? `https://www.padonde.lat/es/${slug}/${ev.id}`
+      : `https://www.padonde.lat/es/${slug}`;
+
     return textoPlantilla
       .replace(/\{nombre\}/g, aliado.nombre.trim())
       .replace(/\{zona\}/g, zonaNombre)
+      .replace(/\{enlace\}/g, enlace)
+      .replace(/\{link\}/g, enlace)
       .replace(/\{whatsapp\}/g, aliado.whatsapp);
   };
 
@@ -327,9 +360,20 @@ A partir del 1 de noviembre iniciamos el ciclo de renovación trimestral para la
                     {/* Selector de Tipo de Campaña / Categoría */}
                     <div>
                       <label className="block text-[11px] font-bold text-stone mb-1 uppercase tracking-wide">
-                        Tipo de Negocio
+                        Tipo de Negocio / Campaña
                       </label>
-                      <div className="grid grid-cols-3 gap-1.5 bg-white p-1 rounded-xl border border-stone-light">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 bg-white p-1 rounded-xl border border-stone-light">
+                        <button
+                          type="button"
+                          onClick={() => handleCambiarTipoCampana("redes")}
+                          className={`py-1.5 px-2 rounded-lg text-xs font-semibold cursor-pointer transition-all ${
+                            tipoCampana === "redes"
+                              ? "bg-forest text-white shadow-xs"
+                              : "text-stone hover:text-forest"
+                          }`}
+                        >
+                          📲 Difusión Redes
+                        </button>
                         <button
                           type="button"
                           onClick={() => handleCambiarTipoCampana("restaurantes")}
@@ -424,13 +468,13 @@ A partir del 1 de noviembre iniciamos el ciclo de renovación trimestral para la
 
                 {/* Paso 2: Plantilla del Mensaje (Editable con variables automáticas) */}
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-xs font-bold text-forest uppercase tracking-wider">
                         2. Plantilla de Mensaje
                       </span>
                       <span className="text-[10px] bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-full font-medium">
-                        Variables: {"{nombre}"}, {"{zona}"}
+                        Variables: {"{nombre}"}, {"{zona}"}, {"{enlace}"}
                       </span>
                     </div>
                     <button
@@ -441,17 +485,68 @@ A partir del 1 de noviembre iniciamos el ciclo de renovación trimestral para la
                       Restablecer texto original
                     </button>
                   </div>
+
+                  {/* Píldoras de plantillas rápidas */}
+                  <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                    <span className="text-[11px] text-stone font-medium">Plantillas rápidas:</span>
+                    <button
+                      type="button"
+                      onClick={() => setTextoPlantilla(plantillasDefault.redes)}
+                      className={`px-2 py-0.5 rounded-lg text-[11px] font-medium border cursor-pointer transition-all ${
+                        textoPlantilla === plantillasDefault.redes
+                          ? "bg-forest text-white border-forest shadow-2xs"
+                          : "bg-white text-stone-dark border-stone-light hover:border-forest/50"
+                      }`}
+                    >
+                      📲 Paso a Paso Redes
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTextoPlantilla(plantillasDefault.restaurantes)}
+                      className={`px-2 py-0.5 rounded-lg text-[11px] font-medium border cursor-pointer transition-all ${
+                        textoPlantilla === plantillasDefault.restaurantes
+                          ? "bg-forest text-white border-forest shadow-2xs"
+                          : "bg-white text-stone-dark border-stone-light hover:border-forest/50"
+                      }`}
+                    >
+                      🍽️ Menú & QR Restaurantes
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTextoPlantilla(plantillasDefault.hospedajes)}
+                      className={`px-2 py-0.5 rounded-lg text-[11px] font-medium border cursor-pointer transition-all ${
+                        textoPlantilla === plantillasDefault.hospedajes
+                          ? "bg-forest text-white border-forest shadow-2xs"
+                          : "bg-white text-stone-dark border-stone-light hover:border-forest/50"
+                      }`}
+                    >
+                      🏡 Hospedajes 0% Comisiones
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTextoPlantilla(plantillasDefault.personalizado)}
+                      className={`px-2 py-0.5 rounded-lg text-[11px] font-medium border cursor-pointer transition-all ${
+                        textoPlantilla === plantillasDefault.personalizado
+                          ? "bg-forest text-white border-forest shadow-2xs"
+                          : "bg-white text-stone-dark border-stone-light hover:border-forest/50"
+                      }`}
+                    >
+                      📝 Mensaje Corto
+                    </button>
+                  </div>
+
                   <textarea
-                    rows={6}
+                    rows={7}
                     value={textoPlantilla}
                     onChange={(e) => setTextoPlantilla(e.target.value)}
-                    className="w-full p-3 bg-stone-50 text-xs font-sans text-stone-dark rounded-xl border border-stone-light focus:outline-none focus:border-forest/60 focus:bg-white leading-relaxed resize-y"
+                    className="w-full p-3 bg-stone-50 text-xs font-sans text-stone-dark rounded-xl border border-stone-light focus:outline-none focus:border-forest/60 focus:bg-white leading-relaxed resize-y font-mono"
                     placeholder="Escribe el mensaje..."
                   />
                   <p className="text-[11px] text-stone">
                     💡 Cada vez que toques en <strong>Enviar</strong>, el sistema reemplazará{" "}
-                    <code>{"{nombre}"}</code> por el nombre real del negocio (ej: <em>Finca La Frecuencia</em>) y{" "}
-                    <code>{"{zona}"}</code> por su destino.
+                    <code>{"{nombre}"}</code> por el nombre real del negocio,{" "}
+                    <code>{"{zona}"}</code> por su destino y{" "}
+                    <code>{"{enlace}"}</code> por el link directo de su vitrina en PaDónde.
                   </p>
                 </div>
 
