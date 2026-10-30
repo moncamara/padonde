@@ -372,7 +372,7 @@ export function AdminHospedajesList({
             Aún no has registrado ningún hospedaje
           </h3>
           <p className="font-sans text-xs text-stone max-w-sm mx-auto">
-            Registra tu primer hostal o eco-lodge con sus habitaciones para que los turistas puedan pre-cotizar y reservar por WhatsApp.
+            Registra tu primer hostal o eco-lodge con sus habitaciones para que los turistas puedan pre-cotizar y consultar o reservar directo por WhatsApp.
           </p>
           <button
             onClick={abrirNuevo}

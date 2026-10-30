@@ -591,7 +591,7 @@ export function AdminAliadosList({
                   {/* Métrica de Clics a WhatsApp */}
                   <div
                     className="inline-flex items-center gap-1.5 text-xs text-emerald-800 bg-emerald-50 border border-emerald-200/90 px-2.5 py-1 rounded-xl font-medium shrink-0"
-                    title="Personas interesadas que hicieron clic en Reservar por WhatsApp"
+                    title="Personas interesadas que hicieron clic en Consultar Menú - Reservar o contactar por WhatsApp"
                   >
                     <span>📲</span>
                     <span>{aliado.totalClics || 0} clics</span>

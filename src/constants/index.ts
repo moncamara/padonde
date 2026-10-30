@@ -183,14 +183,14 @@ export function getCategoriaCTA(
   const config =
     (categoria && ctas[categoria]) || ctas["default"] || {
       icon: "💬",
-      boton: { es: "Reservar por WhatsApp", en: "Book via WhatsApp" },
+      boton: { es: "Consultar - Reservar", en: "Inquire - Book" },
       mensaje: {
         es: "¡Hola! Vi tu publicación \"{titulo}\" en PaDónde. [Reserva PaDónde 🌿] Me interesa saber disponibilidad y cómo llegar.",
         en: "Hello! I saw your post \"{titulo}\" on PaDónde. [PaDónde Booking 🌿] I am interested in availability and how to get there.",
       },
     };
 
-  const label = config.boton[locale] || config.boton["es"] || "Reservar por WhatsApp";
+  const label = config.boton[locale] || config.boton["es"] || "Consultar - Reservar";
   const icon = config.icon || "💬";
   const mensajeTemplate = config.mensaje[locale] || config.mensaje["es"] || "";
 

@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/Button";
+import { formatearTelefonoVisual, calcularFechaEn15Dias } from "../ModalNotificarAliado";
 import type { AliadoItem } from "./AdminAliadosList";
 
 interface ModalDifusionWhatsAppProps {
@@ -82,38 +83,43 @@ _«¡Ya tenemos nuestra vitrina oficial en PaDónde {zona}! 🌿 Conoce nuestras
 1. Sube una foto o video de tu lugar.
 2. Agrega el sticker de enlace (🔗) con tu link:
    • *URL:* {enlace}
-   • *Texto del sticker:* «Ver Vitrina Oficial 🌿» o «Reservar por WhatsApp 📲»
+   • *Texto del sticker:* «Ver Vitrina Oficial 🌿» o «Consultar Menú - Reservar 📲»
 3. ¡Y menciónanos para repostearte y darte más visibilidad!
 
 Cualquier viajero que toque el enlace podrá ver tus fotos en alta calidad, cambiar el idioma (inglés/francés/alemán) y escribirte directo al WhatsApp.
 
 ¡Muchos éxitos y que se llenen esas reservas! 🚀🌊`,
 
-    restaurantes: `🌿 *Hola {nombre}, ¡un saludo muy especial desde el equipo de PaDónde!*
+    restaurantes: `🌿 *¡Hola {nombre}! Un saludo muy especial desde PaDónde {zona}.*
 
-Queremos contarte que a partir del *1 de noviembre* iniciamos el nuevo ciclo de suscripción trimestral de visibilidad en la cartelera turística de {zona} por un valor de *$125.000 COP el trimestre* (es decir, menos de $42.000 al mes), manteniendo a tu restaurante visible ante miles de viajeros y turistas que visitan la región buscando dónde comer y pasar un buen rato.
+Ya tenemos su propuesta gastronómica activa y verificada en vivo dentro de la cartelera oficial de {zona}:
+👉 *Miren su vitrina aquí:* {enlace}
 
-💡 *Tenemos una súper recomendación para potenciar tus ventas esta temporada:*
+Échale una mirada y fíjate en esto:
+• Puedes ver tus fotos, horarios y descripción detallada.
+• Si deseas agregar un reel y/o el Menú digital e interactivo nos avisas
+• Toca en *"Consultar Menú - Reservar"* para comprobar que te llega directo a tu número ({whatsapp}).
+• La plataforma traduce automáticamente al inglés, alemán y francés para mochileros extranjeros.
 
-Habilitamos la opción de integrar tu *Menú Digital Interactivo* dentro de PaDónde con un beneficio doble:
+🎁 *Por lanzamiento, ya te dejamos la publicación activa y destacada durante 15 días de cortesía 100% libres de costo (hasta el {fecha_limite})* para que compruebes cuántos viajeros te descubren y contactan. 🚀
 
-📲 *1. El turista ve tu carta desde antes:* Los viajeros pueden antojarse y revisar tus platos, cócteles y fotos directamente desde su hostal o casa antes de salir.
-🪑 *2. Menú y Calificaciones directas en mesa:* Te entregamos *stickers con código QR resistentes para tus mesas*. Cuando el comensal llega, solo escanea el QR con su celular y tiene el menú digital al instante.
-⭐ *3. Reseñas 5 Estrellas en Google sin rodeos:* Al final del menú digital dejamos un botón directo que lleva al cliente a calificar tu restaurante en Google Maps en 1 solo clic, aumentando tus estrellas y reputación en internet en tiempo récord.
+---
 
-🔗 *Mira aquí cómo funciona el ejemplo real de Pepe Mojito Bar:*
-👉 https://www.padonde.lat/es/mendihuaca/0274476c-aa64-42d9-9cbc-1e0a41940c2d
-*(Entra al enlace, mira cómo se despliega la carta y prueba el botón que lleva directo a calificar).*
+📋 *Nuestra Propuesta Comercial (para después de tus 15 días):*
+Las apps de delivery o comisionistas descuentan márgenes altos. En PaDónde los clientes y turistas te escriben directo a tu WhatsApp con *0% de comisiones*.
 
-🎁 *¿Cuánto cuesta activar el Menú Digital?*
-Es un único pago de *$50.000 COP* e incluye:
-• Publicación y habilitación de tu carta en la plataforma (solo nos envías las fotos o archivo actual de tu menú por WhatsApp y nosotros te lo dejamos enlazado y visible).
-• El paquete de stickers con código QR listos para colocar en tus mesas.
-• El archivo digital en alta resolución del código QR por si más adelante deseas mandar a hacer habladores en madera, acrílico o piezas especiales para tu barra.
+💰 *Plan Trimestral Restaurantes, Bares & Cafés:*
+• *$150.000 COP el trimestre*.
+Incluye tu ficha activa 24/7, publicación en cartelera turística, 0% comisiones y catálogo en 4 idiomas.
 
-👉 *¿Te gustaría que te incluyamos el Menú Digital con tus stickers para arrancar este 1 de noviembre junto con tu trimestre?*
+💡 *Opción recomendada para mesa: Menú Digital + Reseñas en Google* (Único pago de $100.000 COP):
+• *Stickers con código QR resistentes para tus mesas:* El comensal se sienta, escanea y ve tu menú en su celular al instante.
+• *Reseñas 5 Estrellas en Google sin rodeos:* Al final del menú dejamos un botón directo para que el cliente califique tu negocio en Google Maps en 1 solo clic.
+• Publicación y habilitación de tu carta en la plataforma *(solo nos pasas las fotos o archivo de tu menú y nosotros te lo dejamos listo)* + el archivo del código QR en alta calidad por si deseas mandar a hacer habladores.
 
-¡Quedamos muy atentos al envío del archivo o foto del menú! ✨🍽️`,
+---
+
+¿Pudiste abrir el enlace de *{nombre}*? ¿Te gusta cómo quedó o le afinamos algún horario o detalle? 📲✨`,
 
     hospedajes: `🌿 *Hola {nombre}, ¡un saludo muy especial desde el equipo de PaDónde!*
 
@@ -242,12 +248,16 @@ A partir del 1 de noviembre iniciamos el ciclo de renovación trimestral para la
       ? `https://padonde.lat/es/${slug}/${ev.id}`
       : `https://padonde.lat/es/${slug}`;
 
+    const wpVisual = formatearTelefonoVisual(aliado.whatsapp);
+    const fechaLimite = calcularFechaEn15Dias();
+
     return textoPlantilla
       .replace(/\{nombre\}/g, aliado.nombre.trim())
       .replace(/\{zona\}/g, zonaNombre)
       .replace(/\{enlace\}/g, enlace)
       .replace(/\{link\}/g, enlace)
-      .replace(/\{whatsapp\}/g, aliado.whatsapp);
+      .replace(/\{fecha_limite\}|\{fechaLimite\}/g, fechaLimite)
+      .replace(/\{whatsapp\}/g, wpVisual || aliado.whatsapp);
   };
 
   // Enviar por WhatsApp

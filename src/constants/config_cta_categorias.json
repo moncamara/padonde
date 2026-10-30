@@ -62,10 +62,10 @@
   "hospedaje": {
     "icon": "💬",
     "boton": {
-      "es": "Reservar por WhatsApp",
-      "en": "Book via WhatsApp",
-      "fr": "Réserver via WhatsApp",
-      "de": "Über WhatsApp buchen"
+      "es": "Consultar Disponibilidad - Reservar",
+      "en": "Check Availability - Book",
+      "fr": "Vérifier la disponibilité - Réserver",
+      "de": "Verfügbarkeit prüfen - Buchen"
     },
     "mensaje": {
       "es": "¡Hola! Vi \"{titulo}\" en PaDónde. [Reserva PaDónde 🌿] Me interesa saber disponibilidad y reservar.",
@@ -77,10 +77,10 @@
   "default": {
     "icon": "💬",
     "boton": {
-      "es": "Reservar por WhatsApp",
-      "en": "Book via WhatsApp",
-      "fr": "Réserver via WhatsApp",
-      "de": "Über WhatsApp buchen"
+      "es": "Consultar - Reservar",
+      "en": "Inquire - Book",
+      "fr": "Consulter - Réserver",
+      "de": "Anfragen - Buchen"
     },
     "mensaje": {
       "es": "¡Hola! Vi tu publicación \"{titulo}\" en PaDónde. [Reserva PaDónde 🌿] Me interesa saber disponibilidad y cómo llegar.",

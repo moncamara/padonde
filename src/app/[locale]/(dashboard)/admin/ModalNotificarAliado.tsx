@@ -137,8 +137,8 @@ Ya tenemos su propuesta gastronómica activa y verificada en vivo dentro de la c
 
 Échale una mirada y fíjate en esto:
 • Puedes ver tus fotos, horarios y descripción detallada.
-• Puedes darle play al video/reel vertical.
-• Toca en *"Reservar por WhatsApp"* para comprobar que te llega directo a tu número${textoWhatsapp}.
+• Si deseas agregar un reel y/o el Menú digital e interactivo nos avisas
+• Toca en *"Consultar Menú - Reservar"* para comprobar que te llega directo a tu número${textoWhatsapp}.
 • La plataforma traduce automáticamente al inglés, alemán y francés para mochileros extranjeros.
 
 🎁 *Por lanzamiento, ya te dejamos la publicación activa y destacada durante 15 días de cortesía 100% libres de costo (hasta el ${fechaLimite})* para que compruebes cuántos viajeros te descubren y contactan. 🚀
@@ -149,16 +149,13 @@ Ya tenemos su propuesta gastronómica activa y verificada en vivo dentro de la c
 Las apps de delivery o comisionistas descuentan márgenes altos. En PaDónde los clientes y turistas te escriben directo a tu WhatsApp con *0% de comisiones*.
 
 💰 *Plan Trimestral Restaurantes, Bares & Cafés:*
-• *$125.000 COP el trimestre* (equivale a menos de $42.000 al mes).
+• *$150.000 COP el trimestre*.
 Incluye tu ficha activa 24/7, publicación en cartelera turística, 0% comisiones y catálogo en 4 idiomas.
 
-💡 *Opción recomendada para mesa: Menú Digital + Reseñas en Google* (Único pago de $50.000 COP):
+💡 *Opción recomendada para mesa: Menú Digital + Reseñas en Google* (Único pago de $100.000 COP):
 • *Stickers con código QR resistentes para tus mesas:* El comensal se sienta, escanea y ve tu menú en su celular al instante.
 • *Reseñas 5 Estrellas en Google sin rodeos:* Al final del menú dejamos un botón directo para que el cliente califique tu negocio en Google Maps en 1 solo clic.
 • Publicación y habilitación de tu carta en la plataforma *(solo nos pasas las fotos o archivo de tu menú y nosotros te lo dejamos listo)* + el archivo del código QR en alta calidad por si deseas mandar a hacer habladores.
-
-🔗 *Mira cómo funciona el ejemplo real en Pepe Mojito Bar:*
-👉 https://www.padonde.lat/es/mendihuaca/0274476c-aa64-42d9-9cbc-1e0a41940c2d
 
 ---
 
@@ -391,7 +388,7 @@ _«¡Ya tenemos nuestra vitrina oficial en PaDónde ${destinoNombre}! 🌿 Conoc
 1. Sube una foto o video de tu lugar.
 2. Agrega el sticker de enlace (🔗) con tu link:
    • *URL:* ${urlPublicacion}
-   • *Texto del sticker:* «Ver Vitrina Oficial 🌿» o «Reservar por WhatsApp 📲»
+   • *Texto del sticker:* «Ver Vitrina Oficial 🌿» o «Consultar Menú - Reservar 📲»
 3. ¡Y menciónanos para repostearte y darte más visibilidad!
 
 Cualquier viajero que toque el enlace podrá ver tus fotos en alta calidad, cambiar el idioma (inglés/francés/alemán) y escribirte directo al WhatsApp.
@@ -460,16 +457,13 @@ export function generarMensajePropuestaAliado(
     argumentoComisiones =
       "Las apps de delivery o comisionistas descuentan márgenes altos. En PaDónde los clientes y turistas te escriben directo a tu WhatsApp con 0% de comisiones.";
     bloqueTarifas = `💰 *Plan Trimestral Restaurantes, Bares & Cafés:*
-• $125.000 COP el trimestre *(equivale a menos de $42.000 al mes)*.
+• $150.000 COP el trimestre.
 Incluye tu ficha activa 24/7, publicación en cartelera turística, 0% comisiones y catálogo en 4 idiomas.
 
-💡 *Opción recomendada para mesa: Menú Digital + Reseñas en Google* *(Único pago de $50.000 COP)*:
+💡 *Opción recomendada para mesa: Menú Digital + Reseñas en Google* *(Único pago de $100.000 COP)*:
 • *Stickers con código QR resistentes para tus mesas:* El comensal se sienta, escanea y ve tu menú en su celular al instante.
 • *Reseñas 5 Estrellas en Google sin rodeos:* Al final del menú dejamos un botón directo para que el cliente califique tu negocio en Google Maps en 1 solo clic.
-• Publicación y habilitación de tu carta en la plataforma *(solo nos pasas las fotos o archivo de tu menú y nosotros te lo dejamos listo)* + el archivo del código QR en alta calidad por si deseas mandar a hacer habladores.
-
-🔗 *Mira cómo funciona el ejemplo real en Pepe Mojito Bar:*
-👉 https://www.padonde.lat/es/mendihuaca/0274476c-aa64-42d9-9cbc-1e0a41940c2d`;
+• Publicación y habilitación de tu carta en la plataforma *(solo nos pasas las fotos o archivo de tu menú y nosotros te lo dejamos listo)* + el archivo del código QR en alta calidad por si deseas mandar a hacer habladores.`;
   } else if (esComercio) {
     tipoPlanTexto = "Comercio Local & Servicios Esenciales";
     argumentoComisiones =
@@ -496,8 +490,8 @@ Te comparto la propuesta que preparamos para ustedes. Ya te dejamos montada la f
 
 Échale una mirada y fíjate en esto:
 • Puedes ver tus fotos, horarios y descripción detallada.
-• Puedes darle play al video/reel vertical.
-• Toca en *"Reservar por WhatsApp"* para comprobar que te llega directo a tu número${textoWhatsapp}.
+• Si deseas agregar un reel y/o el Menú digital e interactivo nos avisas
+• Toca en *"Consultar Menú - Reservar"* para comprobar que te llega directo a tu número${textoWhatsapp}.
 • La plataforma traduce automáticamente al inglés, alemán y francés para mochileros extranjeros.
 
 ---
