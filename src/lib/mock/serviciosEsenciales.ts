@@ -29,7 +29,7 @@ export const MOCK_SERVICIOS_ESENCIALES: ServicioEsencial[] = [
     tipo_acuerdo: "canje_afiche",
     orden_prioridad: 1,
     activo: true,
-    created_at: new Date().toISOString(),
+    created_at: new Date(Date.now() - 4 * 86400000).toISOString(),
   },
   {
     id: "transporte-sierra-mar-minca",
@@ -55,7 +55,7 @@ export const MOCK_SERVICIOS_ESENCIALES: ServicioEsencial[] = [
     tipo_acuerdo: "canje_afiche",
     orden_prioridad: 2,
     activo: true,
-    created_at: new Date().toISOString(),
+    created_at: new Date(Date.now() - 3 * 86400000).toISOString(),
   },
   {
     id: "transporte-motos-minca",
@@ -80,7 +80,7 @@ export const MOCK_SERVICIOS_ESENCIALES: ServicioEsencial[] = [
     tipo_acuerdo: "canje_afiche",
     orden_prioridad: 3,
     activo: true,
-    created_at: new Date().toISOString(),
+    created_at: new Date(Date.now() - 2 * 86400000).toISOString(),
   },
   {
     id: "drogueria-minca",
@@ -105,6 +105,6 @@ export const MOCK_SERVICIOS_ESENCIALES: ServicioEsencial[] = [
     tipo_acuerdo: "canje_afiche",
     orden_prioridad: 4,
     activo: true,
-    created_at: new Date().toISOString(),
+    created_at: new Date(Date.now() - 1 * 86400000).toISOString(),
   },
 ];

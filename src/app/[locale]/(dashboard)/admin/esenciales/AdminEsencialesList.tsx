@@ -38,6 +38,10 @@ export function AdminEsencialesList({
   const [modalAbierto, setModalAbierto] = useState(false);
   const [filtroCategoria, setFiltroCategoria] = useState<string>("todas");
   const [filtroZona, setFiltroZona] = useState<string>("todas");
+  const [criterioOrden, setCriterioOrden] = useState<
+    "recientes" | "antiguos" | "prioridad" | "nombre"
+  >("recientes");
+  const [busqueda, setBusqueda] = useState<string>("");
   const [enlaceCopiadoId, setEnlaceCopiadoId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -139,26 +143,53 @@ export function AdminEsencialesList({
     });
   };
 
-  const serviciosFiltrados = servicios.filter((s) => {
-    const pasaCat =
-      filtroCategoria === "todas" || s.categoria === filtroCategoria;
-    const pasaZona =
-      filtroZona === "todas" ||
-      (filtroZona === "minca" && s.zona_id !== "zona-mendihuaca") ||
-      (filtroZona === "mendihuaca" && s.zona_id === "zona-mendihuaca");
-    return pasaCat && pasaZona;
-  });
+  const serviciosFiltrados = servicios
+    .filter((s) => {
+      const pasaCat =
+        filtroCategoria === "todas" || s.categoria === filtroCategoria;
+      const pasaZona =
+        filtroZona === "todas" ||
+        (filtroZona === "minca" && s.zona_id !== "zona-mendihuaca") ||
+        (filtroZona === "mendihuaca" && s.zona_id === "zona-mendihuaca");
+      const q = busqueda.trim().toLowerCase();
+      const pasaBusqueda =
+        !q ||
+        s.nombre_comercial.toLowerCase().includes(q) ||
+        (s.subtitulo && s.subtitulo.toLowerCase().includes(q)) ||
+        (s.whatsapp && s.whatsapp.includes(q)) ||
+        (s.direccion_referencia && s.direccion_referencia.toLowerCase().includes(q));
+      return pasaCat && pasaZona && pasaBusqueda;
+    })
+    .sort((a, b) => {
+      if (criterioOrden === "nombre") {
+        return a.nombre_comercial.localeCompare(b.nombre_comercial, "es", {
+          sensitivity: "base",
+        });
+      }
+      if (criterioOrden === "prioridad") {
+        return (a.orden_prioridad || 0) - (b.orden_prioridad || 0);
+      }
+      if (criterioOrden === "antiguos") {
+        const tA = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const tB = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return tA - tB;
+      }
+      // "recientes" (por defecto): de la más reciente a la más antigua
+      const tA = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const tB = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return tB - tA;
+    });
 
   return (
     <div className="space-y-6">
-      {/* Barra de Filtros y Botón de Crear */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white/70 p-3 sm:p-4 rounded-2xl border border-stone-light/70">
+      {/* Barra de Filtros, Búsqueda, Ordenación y Botón de Crear */}
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-white/70 p-3 sm:p-4 rounded-2xl border border-stone-light/70 shadow-2xs">
         <div className="flex flex-wrap items-center gap-2">
           {/* Filtro Zona */}
           <select
             value={filtroZona}
             onChange={(e) => setFiltroZona(e.target.value)}
-            className="p-2 rounded-xl border border-stone-light bg-stone-light/10 text-forest text-xs font-medium outline-none"
+            className="p-2 rounded-xl border border-stone-light bg-stone-light/10 text-forest text-xs font-medium outline-none cursor-pointer"
           >
             <option value="todas">📍 Todas las Zonas</option>
             {zonas.map((z) => (
@@ -172,7 +203,7 @@ export function AdminEsencialesList({
           <select
             value={filtroCategoria}
             onChange={(e) => setFiltroCategoria(e.target.value)}
-            className="p-2 rounded-xl border border-stone-light bg-stone-light/10 text-forest text-xs font-medium outline-none"
+            className="p-2 rounded-xl border border-stone-light bg-stone-light/10 text-forest text-xs font-medium outline-none cursor-pointer"
           >
             <option value="todas">✨ Todas las Categorías</option>
             <option value="efectivo">🏧 Efectivo & Divisas</option>
@@ -181,6 +212,44 @@ export function AdminEsencialesList({
             <option value="comercio">🛍️ Tiendas & Souvenirs</option>
             <option value="general">ℹ️ General</option>
           </select>
+
+          {/* Selector de Orden (Por defecto: Más recientes primero) */}
+          <div className="relative">
+            <select
+              value={criterioOrden}
+              onChange={(e) => setCriterioOrden(e.target.value as any)}
+              className="p-2 pr-7 rounded-xl border border-stone-light bg-stone-light/10 text-forest text-xs font-medium outline-none cursor-pointer appearance-none"
+              title="Criterio de ordenación"
+            >
+              <option value="recientes">⚡ Más recientes primero</option>
+              <option value="antiguos">🗓️ Más antiguos primero</option>
+              <option value="prioridad">🔢 Por orden de prioridad</option>
+              <option value="nombre">🔤 Nombre (A-Z)</option>
+            </select>
+            <span className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-[10px] text-stone">
+              ▼
+            </span>
+          </div>
+
+          {/* Buscador Rápido */}
+          <div className="relative">
+            <input
+              type="text"
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              placeholder="Buscar servicio..."
+              className="px-3 py-2 text-xs bg-white/90 rounded-xl border border-stone-light text-forest placeholder:text-stone/60 outline-none focus:ring-1 focus:ring-forest w-36 sm:w-48"
+            />
+            {busqueda && (
+              <button
+                type="button"
+                onClick={() => setBusqueda("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone hover:text-forest text-xs cursor-pointer"
+              >
+                ✕
+              </button>
+            )}
+          </div>
         </div>
 
         <button
@@ -188,7 +257,7 @@ export function AdminEsencialesList({
             setServicioEditando(null);
             setModalAbierto(true);
           }}
-          className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-forest hover:bg-forest/90 text-cream font-sans text-xs font-semibold shadow-xs active:scale-95 transition-all cursor-pointer"
+          className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-forest hover:bg-forest/90 text-cream font-sans text-xs font-semibold shadow-xs active:scale-95 transition-all cursor-pointer whitespace-nowrap shrink-0"
         >
           <span>＋</span>
           <span>Nuevo Aliado Fijo</span>
@@ -224,7 +293,7 @@ export function AdminEsencialesList({
                 ].join(" ")}
               >
                 <div>
-                  {/* Fila Superior: Categoría, Prioridad y Estado */}
+                  {/* Fila Superior: Categoría, Prioridad, Fecha y Estado */}
                   <div className="flex items-center justify-between gap-2 mb-2.5">
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-lg">{icon}</span>
@@ -234,6 +303,14 @@ export function AdminEsencialesList({
                       <span className="font-sans text-[10px] text-stone font-mono px-1.5 py-0.5 rounded-md bg-stone-light/30">
                         #{s.orden_prioridad}
                       </span>
+                      {s.created_at && (
+                        <span
+                          className="font-sans text-[10px] text-stone font-mono px-1.5 py-0.5 rounded-md bg-stone-light/30"
+                          title={`Fecha de registro: ${new Date(s.created_at).toLocaleDateString("es-CO")}`}
+                        >
+                          📅 {new Date(s.created_at).toLocaleDateString("es-CO", { day: "numeric", month: "short" })}
+                        </span>
+                      )}
                       {s.destacado_patrocinado && (
                         <span className="font-sans text-[10px] font-semibold px-2 py-0.5 rounded-full bg-terra/10 text-terra border border-terra/20">
                           ★ Patrocinado
@@ -424,9 +501,7 @@ export function AdminEsencialesList({
                   s.id === servicioGuardado.id ? servicioGuardado : s
                 );
               }
-              return [...prev, servicioGuardado].sort(
-                (a, b) => a.orden_prioridad - b.orden_prioridad
-              );
+              return [servicioGuardado, ...prev];
             });
             router.refresh();
           }}

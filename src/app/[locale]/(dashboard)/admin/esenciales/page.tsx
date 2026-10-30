@@ -33,7 +33,7 @@ export default async function AdminEsencialesPage({
     const { data: rawEsenciales, error } = await supabase
       .from("servicios_esenciales")
       .select("*")
-      .order("orden_prioridad", { ascending: true });
+      .order("created_at", { ascending: false });
 
     if (error || !rawEsenciales || rawEsenciales.length === 0) {
       servicios = MOCK_SERVICIOS_ESENCIALES;

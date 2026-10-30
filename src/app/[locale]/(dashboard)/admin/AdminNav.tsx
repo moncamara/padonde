@@ -31,9 +31,9 @@ export function AdminNav({ userEmail }: AdminNavProps) {
   const isRegiones = pathname.includes("/admin/regiones");
 
   return (
-    <header className="sticky top-0 z-20 bg-cream/95 backdrop-blur-md border-b border-stone-light/80 px-3 sm:px-6 py-2.5 sm:py-3 transition-all">
-      <div className="max-w-7xl mx-auto flex flex-col gap-2.5 lg:gap-3 lg:flex-row lg:items-center lg:justify-between">
-        {/* Fila 1 en Mobile / Lado Izquierdo en Desktop: Logo y Acciones Rápidas */}
+    <header className="sticky top-0 z-20 bg-cream/95 backdrop-blur-md border-b border-stone-light/80 px-3 sm:px-6 py-2 sm:py-2.5 transition-all w-full overflow-x-clip">
+      <div className="max-w-7xl mx-auto flex flex-col gap-2 xl:flex-row xl:items-center xl:justify-between">
+        {/* Fila 1 en Mobile/Tablet (< xl): Logo y Acciones Rápidas */}
         <div className="flex items-center justify-between shrink-0">
           <Link href="/admin" className="flex items-center gap-2 group">
             <span className="text-xl group-hover:scale-110 transition-transform">🌿</span>
@@ -42,19 +42,19 @@ export function AdminNav({ userEmail }: AdminNavProps) {
             </span>
           </Link>
 
-          {/* Acciones de Cuenta en Mobile */}
-          <div className="flex items-center gap-1.5 lg:hidden text-xs font-sans">
+          {/* Acciones de Cuenta en Mobile / Tablet (< xl) */}
+          <div className="flex items-center gap-1.5 xl:hidden text-xs font-sans">
             <Link
               href="/minca"
-              className="text-stone hover:text-forest p-1 rounded-lg border border-stone-light/60 bg-white/70 text-[10px]"
-              title="Ver Minca"
+              className="text-stone hover:text-forest px-2 py-1 rounded-lg border border-stone-light/60 bg-white/70 text-[11px] font-medium"
+              title="Ver vitrina de Minca"
             >
               🌿 Minca
             </Link>
             <Link
               href="/mendihuaca"
-              className="text-stone hover:text-forest p-1 rounded-lg border border-stone-light/60 bg-white/70 text-[10px]"
-              title="Ver Mendihuaca"
+              className="text-stone hover:text-forest px-2 py-1 rounded-lg border border-stone-light/60 bg-white/70 text-[11px] font-medium"
+              title="Ver vitrina de Mendihuaca"
             >
               🌊 Mendi.
             </Link>
@@ -62,20 +62,20 @@ export function AdminNav({ userEmail }: AdminNavProps) {
             <form action={logoutAction}>
               <button
                 type="submit"
-                className="text-red-600 font-medium px-2 py-1 rounded-lg border border-red-200 bg-red-50 text-[11px]"
+                className="text-red-600 hover:text-red-700 font-medium px-2.5 py-1 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-[11px] transition-colors cursor-pointer whitespace-nowrap"
               >
-                Salir
+                Cerrar sesión
               </button>
             </form>
           </div>
         </div>
 
-        {/* Fila 2 en Mobile / Centro en Desktop: Pestañas de Navegación Segmentadas */}
-        <nav className="flex items-center gap-1 bg-stone-light/40 p-1 rounded-2xl overflow-x-auto no-scrollbar shrink-0 max-w-full">
+        {/* Fila 2 en Mobile/Tablet / Centro en Desktop (>= xl): Pestañas de Navegación Segmentadas */}
+        <nav className="flex items-center gap-1 bg-stone-light/40 p-1 rounded-2xl overflow-x-auto no-scrollbar min-w-0 xl:flex-1 xl:justify-center">
           <Link
             href="/admin"
             className={[
-              "py-1.5 px-2.5 sm:px-3 rounded-xl font-sans text-[11px] sm:text-xs font-medium transition-all text-center flex items-center justify-center gap-1 shrink-0",
+              "py-1.5 px-2.5 sm:px-3 rounded-xl font-sans text-[11px] sm:text-xs font-medium transition-all text-center flex items-center justify-center gap-1 shrink-0 whitespace-nowrap",
               isCartelera
                 ? "bg-white text-forest shadow-xs font-semibold"
                 : "text-stone hover:text-forest",
@@ -88,7 +88,7 @@ export function AdminNav({ userEmail }: AdminNavProps) {
           <Link
             href="/admin/hospedajes"
             className={[
-              "py-1.5 px-2.5 sm:px-3 rounded-xl font-sans text-[11px] sm:text-xs font-medium transition-all text-center flex items-center justify-center gap-1 shrink-0",
+              "py-1.5 px-2.5 sm:px-3 rounded-xl font-sans text-[11px] sm:text-xs font-medium transition-all text-center flex items-center justify-center gap-1 shrink-0 whitespace-nowrap",
               isHospedajes
                 ? "bg-white text-forest shadow-xs font-semibold"
                 : "text-stone hover:text-forest",
@@ -101,7 +101,7 @@ export function AdminNav({ userEmail }: AdminNavProps) {
           <Link
             href="/admin/aliados"
             className={[
-              "py-1.5 px-2.5 sm:px-3 rounded-xl font-sans text-[11px] sm:text-xs font-medium transition-all text-center flex items-center justify-center gap-1 shrink-0",
+              "py-1.5 px-2.5 sm:px-3 rounded-xl font-sans text-[11px] sm:text-xs font-medium transition-all text-center flex items-center justify-center gap-1 shrink-0 whitespace-nowrap",
               isAliados
                 ? "bg-white text-forest shadow-xs font-semibold"
                 : "text-stone hover:text-forest",
@@ -114,7 +114,7 @@ export function AdminNav({ userEmail }: AdminNavProps) {
           <Link
             href="/admin/tarifas"
             className={[
-              "py-1.5 px-2.5 sm:px-3 rounded-xl font-sans text-[11px] sm:text-xs font-medium transition-all text-center flex items-center justify-center gap-1 shrink-0",
+              "py-1.5 px-2.5 sm:px-3 rounded-xl font-sans text-[11px] sm:text-xs font-medium transition-all text-center flex items-center justify-center gap-1 shrink-0 whitespace-nowrap",
               isTarifas
                 ? "bg-forest text-white shadow-xs font-semibold"
                 : "text-terra hover:text-terra-dark font-semibold bg-terra/5",
@@ -127,7 +127,7 @@ export function AdminNav({ userEmail }: AdminNavProps) {
           <Link
             href="/admin/menus"
             className={[
-              "py-1.5 px-2.5 sm:px-3 rounded-xl font-sans text-[11px] sm:text-xs font-medium transition-all text-center flex items-center justify-center gap-1 shrink-0",
+              "py-1.5 px-2.5 sm:px-3 rounded-xl font-sans text-[11px] sm:text-xs font-medium transition-all text-center flex items-center justify-center gap-1 shrink-0 whitespace-nowrap",
               isMenus
                 ? "bg-white text-forest shadow-xs font-semibold"
                 : "text-stone hover:text-forest",
@@ -140,7 +140,7 @@ export function AdminNav({ userEmail }: AdminNavProps) {
           <Link
             href="/admin/puntos-qr"
             className={[
-              "py-1.5 px-2.5 sm:px-3 rounded-xl font-sans text-[11px] sm:text-xs font-medium transition-all text-center flex items-center justify-center gap-1 shrink-0",
+              "py-1.5 px-2.5 sm:px-3 rounded-xl font-sans text-[11px] sm:text-xs font-medium transition-all text-center flex items-center justify-center gap-1 shrink-0 whitespace-nowrap",
               isPuntosQR
                 ? "bg-white text-forest shadow-xs font-semibold"
                 : "text-stone hover:text-forest",
@@ -153,7 +153,7 @@ export function AdminNav({ userEmail }: AdminNavProps) {
           <Link
             href="/admin/esenciales"
             className={[
-              "py-1.5 px-2.5 sm:px-3 rounded-xl font-sans text-[11px] sm:text-xs font-medium transition-all text-center flex items-center justify-center gap-1 shrink-0",
+              "py-1.5 px-2.5 sm:px-3 rounded-xl font-sans text-[11px] sm:text-xs font-medium transition-all text-center flex items-center justify-center gap-1 shrink-0 whitespace-nowrap",
               isEsenciales
                 ? "bg-white text-forest shadow-xs font-semibold"
                 : "text-stone hover:text-forest",
@@ -166,7 +166,7 @@ export function AdminNav({ userEmail }: AdminNavProps) {
           <Link
             href="/admin/regiones"
             className={[
-              "py-1.5 px-2.5 sm:px-3 rounded-xl font-sans text-[11px] sm:text-xs font-medium transition-all text-center flex items-center justify-center gap-1 shrink-0",
+              "py-1.5 px-2.5 sm:px-3 rounded-xl font-sans text-[11px] sm:text-xs font-medium transition-all text-center flex items-center justify-center gap-1 shrink-0 whitespace-nowrap",
               isRegiones
                 ? "bg-white text-forest shadow-xs font-semibold"
                 : "text-stone hover:text-forest",
@@ -177,27 +177,21 @@ export function AdminNav({ userEmail }: AdminNavProps) {
           </Link>
         </nav>
 
-        {/* Acciones de Cuenta en Desktop */}
-        <div className="hidden lg:flex items-center justify-end gap-3 text-xs font-sans shrink-0">
+        {/* Acciones de Cuenta en Desktop (>= xl) */}
+        <div className="hidden xl:flex items-center justify-end gap-3 text-xs font-sans shrink-0">
           <div className="flex items-center gap-2">
             <Link
-              href="/admin/menus"
-              className="text-forest bg-forest/10 border border-forest/20 px-2.5 py-1 rounded-lg hover:bg-forest/15 flex items-center gap-1 font-semibold text-[11px]"
-              title="Estudio interactivo de temas para cartas digitales"
-            >
-              <span>🍽️ Estudio Cartas</span>
-            </Link>
-            <span className="text-stone-light">|</span>
-            <Link
               href="/minca"
-              className="text-stone hover:text-forest underline underline-offset-2 flex items-center gap-1"
+              className="text-stone hover:text-forest underline underline-offset-2 flex items-center gap-1 font-medium"
+              title="Ver vitrina de Minca"
             >
               <span>🌿 Minca</span>
             </Link>
             <span className="text-stone-light">|</span>
             <Link
               href="/mendihuaca"
-              className="text-stone hover:text-forest underline underline-offset-2 flex items-center gap-1"
+              className="text-stone hover:text-forest underline underline-offset-2 flex items-center gap-1 font-medium"
+              title="Ver vitrina de Mendihuaca"
             >
               <span>🌊 Mendihuaca</span>
             </Link>
@@ -206,7 +200,7 @@ export function AdminNav({ userEmail }: AdminNavProps) {
           <form action={logoutAction}>
             <button
               type="submit"
-              className="text-red-600 hover:text-red-700 font-medium cursor-pointer px-2.5 py-1 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 transition-colors"
+              className="text-red-600 hover:text-red-700 font-medium cursor-pointer px-3 py-1.5 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 transition-colors whitespace-nowrap"
             >
               Cerrar sesión
             </button>
