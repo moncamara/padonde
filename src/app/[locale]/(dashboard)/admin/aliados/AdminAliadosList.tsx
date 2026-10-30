@@ -234,7 +234,7 @@ export function AdminAliadosList({
       mensaje = `🌿 Hola ${aliado.nombre}, te escribimos de PaDónde para saber cómo va la temporada en ${destinoNombre} y si tienes nuevos eventos que quieras publicar esta semana.`;
     }
 
-    return `https://wa.me/${cleanWa}?text=${encodeURIComponent(mensaje)}`;
+    return `https://api.whatsapp.com/send?phone=${cleanWa}&text=${encodeURIComponent(mensaje)}`;
   }
 
   // Copiar reporte al portapapeles
@@ -932,7 +932,7 @@ export function AdminAliadosList({
           infoPeriodo.diasEfectivos === 1 ? "día" : "días"
         } ${estadoTiempo}\n${visitasTexto}${idiomasTexto}${clicsTexto}• 🟢 *Planes y eventos en vitrina:* ${reporteNegocio.eventosActivos} vigentes (${reporteNegocio.totalEventos} en historial)\n• ⭐ *Plan comercial:* ${reporteNegocio.plan.toUpperCase()} (${est.texto})\n• 🏷️ *Categoría:* ${reporteNegocio.categoria}\n\n💡 *Balance del periodo:*\n${infoPeriodo.balancePeriodo}\n\nA partir del 1 de noviembre iniciamos el nuevo ciclo trimestral de visibilidad ($125.000 COP el trimestre, es decir menos de $42.000 al mes) e incluimos la digitalización interactiva de tu menú o catálogo de servicios.\n\n🔗 *Ver cartelera:* ${destinoUrl}\n\n¡Gracias por conectar a viajeros y locales con lo mejor de ${destinoNombre}! 🌿`;
 
-        const waUrl = `https://wa.me/${cleanWa}?text=${encodeURIComponent(textoReporte)}`;
+        const waUrl = `https://api.whatsapp.com/send?phone=${cleanWa}&text=${encodeURIComponent(textoReporte)}`;
 
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">

@@ -239,8 +239,8 @@ A partir del 1 de noviembre iniciamos el ciclo de renovación trimestral para la
     const slug = aliado.zonaSlug || "minca";
     const ev = aliado.eventos?.find((e) => e.activo) || aliado.eventos?.[0];
     const enlace = ev
-      ? `https://www.padonde.lat/es/${slug}/${ev.id}`
-      : `https://www.padonde.lat/es/${slug}`;
+      ? `https://padonde.lat/es/${slug}/${ev.id}`
+      : `https://padonde.lat/es/${slug}`;
 
     return textoPlantilla
       .replace(/\{nombre\}/g, aliado.nombre.trim())
@@ -259,7 +259,15 @@ A partir del 1 de noviembre iniciamos el ciclo de renovación trimestral para la
     }
     const fullWa = cleanWa.startsWith("57") ? cleanWa : `57${cleanWa}`;
     const mensaje = compilarMensaje(aliado);
-    const url = `https://wa.me/${fullWa}?text=${encodeURIComponent(mensaje)}`;
+
+    // 1. Respaldo instantáneo: Copiar texto al portapapeles sin esfuerzo
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(mensaje).catch(() => {});
+    }
+
+    // 2. Usar directamente api.whatsapp.com en vez de wa.me
+    // wa.me tiene un bug documentado de redirección HTTP 302 que corrompe los emojis UTF-8 en %EF%BF%BD
+    const url = `https://api.whatsapp.com/send?phone=${fullWa}&text=${encodeURIComponent(mensaje)}`;
 
     // Marcar como contactado
     const nuevosContactados = { ...contactados, [aliado.id]: true };

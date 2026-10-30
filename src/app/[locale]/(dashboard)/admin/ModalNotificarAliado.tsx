@@ -780,7 +780,7 @@ export function ModalNotificarAliado({
   if (!isOpen || !evento) return null;
 
   const cleanPhone = telefono.replace(/\D/g, "");
-  const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(mensaje)}`;
+  const waUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(mensaje)}`;
 
   const handleCopiar = async () => {
     try {
