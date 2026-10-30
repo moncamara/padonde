@@ -182,8 +182,8 @@ export function RestaurantMenuSection({
                 </div>
                 <p className={`text-xs ${curTheme.subtitleColor} line-clamp-1 mt-0.5 font-serif italic`}>
                   {isEn
-                    ? "Interactive menu in 4 languages & currency converter"
-                    : "Menú interactivo en 4 idiomas y conversor de moneda"}
+                    ? "Interactive digital menu in 4 languages with photos"
+                    : "Menú interactivo en 4 idiomas con fotografías y detalles"}
                 </p>
               </div>
             </div>

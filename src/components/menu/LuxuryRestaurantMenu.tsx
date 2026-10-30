@@ -21,7 +21,6 @@ interface LuxuryRestaurantMenuProps {
   embebido?: boolean;
 }
 
-const TASA_CAMBIO_USD = 4000; // 1 USD = 4,000 COP referencial
 
 export function LuxuryRestaurantMenu({
   initialLocale = "es",
@@ -52,8 +51,6 @@ export function LuxuryRestaurantMenu({
 
   const th = TEMAS_MENU[temaId];
 
-  // Moneda: COP o USD
-  const [moneda, setMoneda] = useState<"COP" | "USD">("COP");
 
   // Categoría activa para scroll suave
   const [categoriaActiva, setCategoriaActiva] = useState<string>(
@@ -111,10 +108,6 @@ export function LuxuryRestaurantMenu({
   }, []);
 
   const formatearPrecio = (valorCop: number) => {
-    if (moneda === "USD") {
-      const usd = valorCop / TASA_CAMBIO_USD;
-      return `$${usd.toFixed(2)} USD`;
-    }
     return `$${valorCop.toLocaleString("es-CO")} COP`;
   };
 
@@ -458,44 +451,40 @@ export function LuxuryRestaurantMenu({
             </Link>
           )}
 
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <div style={chipGroup}>
-              <button
-                type="button"
-                onClick={() => setMoneda("COP")}
-                style={{ ...chip(moneda === "COP"), fontFamily: "monospace" }}
-              >
-                COP
-              </button>
-              <button
-                type="button"
-                onClick={() => setMoneda("USD")}
-                style={{ ...chip(moneda === "USD"), fontFamily: "monospace" }}
-              >
-                USD
-              </button>
-            </div>
-
+          <div style={{ display: "flex", alignItems: "center" }}>
             <div style={chipGroup}>
               {(
                 [
-                  { code: "es", label: "ES", flag: "🇪🇸" },
-                  { code: "en", label: "EN", flag: "🇬🇧" },
-                  { code: "fr", label: "FR", flag: "🇫🇷" },
-                  { code: "de", label: "DE", flag: "🇩🇪" },
+                  { code: "es", label: "ES" },
+                  { code: "en", label: "EN" },
+                  { code: "fr", label: "FR" },
+                  { code: "de", label: "DE" },
                 ] as const
-              ).map((lang) => (
-                <button
-                  key={lang.code}
-                  type="button"
-                  onClick={() => setIdioma(lang.code)}
-                  style={chip(idioma === lang.code)}
-                  title={lang.label}
-                >
-                  <span>{lang.flag}</span>
-                  <span className="hidden sm:inline">{lang.label}</span>
-                </button>
-              ))}
+              ).map((lang) => {
+                const isActive = idioma === lang.code;
+                return (
+                  <button
+                    key={lang.code}
+                    type="button"
+                    onClick={() => setIdioma(lang.code)}
+                    style={{
+                      fontSize: "0.72rem",
+                      fontWeight: isActive ? 700 : 500,
+                      padding: "3px 9px",
+                      borderRadius: "9999px",
+                      cursor: "pointer",
+                      border: "none",
+                      backgroundColor: isActive ? th.chipActiveBg : "transparent",
+                      color: isActive ? th.chipActiveText : th.chipText,
+                      transition: "all 0.15s ease",
+                      letterSpacing: "0.04em",
+                    }}
+                    aria-label={`Cambiar a ${lang.label}`}
+                  >
+                    {lang.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>

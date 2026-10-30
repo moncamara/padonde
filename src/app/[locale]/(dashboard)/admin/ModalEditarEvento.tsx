@@ -1091,7 +1091,7 @@ export function ModalEditarEvento({
                   <div className="min-w-0">
                     <span className="text-xs font-bold text-forest block">Carta Interactiva de Lujo</span>
                     <span className="text-[10px] text-stone leading-tight block mt-0.5">
-                      4 idiomas, fotos de platos, conversor de moneda (COP, USD, EUR) y temas de autor
+                      4 idiomas, fotos de platos y temas visuales de autor
                     </span>
                   </div>
                 </button>
