@@ -6,6 +6,7 @@ import { AdminAliadosList, type AliadoItem } from "./AdminAliadosList";
 import { ModalKitProspeccion } from "./ModalKitProspeccion";
 import { ModalDifusionWhatsApp } from "./ModalDifusionWhatsApp";
 import { ModalActualizarAnalytics } from "./ModalActualizarAnalytics";
+import { ModalSincronizarGoogle } from "./ModalSincronizarGoogle";
 import type { MetricaHistoricaAliado } from "@/lib/constants/vistasAnalyticsHistoricas";
 import type { Metadata } from "next";
 
@@ -255,6 +256,16 @@ export default async function AdminAliadosPage({
     metricasPorAliado?: Record<string, MetricaHistoricaAliado>;
   } | null;
 
+  // 6. Cargar fecha de última sincronización de Google Reputación
+  const { data: googleSyncRow } = await supabase
+    .from("configuraciones")
+    .select("valor, updated_at")
+    .eq("clave", "ultima_sincronizacion_google_reputacion")
+    .maybeSingle();
+
+  const ultimaSyncGoogle =
+    (googleSyncRow?.valor as any)?.fecha || googleSyncRow?.updated_at || null;
+
   return (
     <div className="min-h-screen bg-cream pb-24">
       {/* Header unificado con navegación */}
@@ -278,15 +289,16 @@ export default async function AdminAliadosPage({
             </p>
           </div>
 
-          {/* Cuadrícula balanceada de 2x2 para botones de acción en desktop */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full lg:w-auto lg:min-w-[460px] xl:min-w-[520px]">
+          {/* Cuadrícula balanceada para botones de acción en desktop */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 w-full lg:w-auto lg:min-w-[540px] xl:min-w-[620px]">
             <ModalActualizarAnalytics
               negociosRegistrados={negociosList}
               ultimaActualizacion={ga4Config?.ultimaActualizacion || ga4ConfigRow?.updated_at}
             />
+            <ModalSincronizarGoogle ultimaSincronizacion={ultimaSyncGoogle} />
             <ModalDifusionWhatsApp aliados={aliados} />
             <ModalKitProspeccion />
-            <Link href="/admin/nuevo" className="w-full">
+            <Link href="/admin/nuevo" className="w-full sm:col-span-2 lg:col-span-2">
               <Button size="sm" className="w-full h-full shadow-xs py-2 px-3 text-xs flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap">
                 <span>+</span>
                 <span>Publicar Plan / Nuevo Aliado</span>
