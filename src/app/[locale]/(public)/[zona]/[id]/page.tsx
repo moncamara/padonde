@@ -227,8 +227,8 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
       />
 
       {/* 1. Header flotante sobre la foto con botón atrás, selector de idioma y compartir */}
-      <nav className="fixed top-0 left-0 right-0 z-40 px-4 py-3 bg-gradient-to-b from-black/60 to-transparent">
-        <div className="max-w-lg mx-auto flex items-center justify-between gap-2">
+      <nav className="fixed top-0 left-0 right-0 z-40 px-4 py-3 bg-gradient-to-b from-black/40 via-black/10 to-transparent pointer-events-none">
+        <div className="max-w-lg mx-auto flex items-center justify-between gap-2 pointer-events-auto">
           <DetailBackButton
             fallbackUrl={`/${locale}/${zonaSlug}`}
             ariaLabel={tDetail("back")}

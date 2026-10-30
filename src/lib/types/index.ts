@@ -120,7 +120,7 @@ export type HospedajeMetadata = {
   check_out_hora?: string;    // ej: "11:00"
   google_reputacion?: GoogleReputacion;
   habitaciones?: HabitacionHospedaje[];
-  galeria_fotos?: string[];   // Fotos adicionales de vitrina (hasta 3-4 fotos para restaurantes, tours, o locales)
+  galeria_fotos?: string[];   // Fotos adicionales de vitrina (hasta 5 fotos para restaurantes, tours, o locales)
   menu_url?: string;          // Enlace directo a carta digital (PDF, Canva, link)
   menu_fotos?: string[];      // Fotos de las páginas de la carta
   google_review_url?: string; // Enlace directo para calificar en Google

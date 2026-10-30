@@ -63,7 +63,7 @@ export function EventHeroGallery({
     return (
       <div className="relative w-full h-80 sm:h-96 bg-forest overflow-hidden select-none">
         <div className="absolute inset-0 bg-gradient-to-br from-forest to-stone" />
-        <div className="card-overlay absolute inset-0 pointer-events-none" />
+        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
 
         {/* Badges flotantes */}
         <div className="absolute bottom-4 left-4 right-4 max-w-lg mx-auto flex items-center gap-2 pointer-events-none">
@@ -86,7 +86,8 @@ export function EventHeroGallery({
           sizes="(max-width: 640px) 100vw, 640px"
           className="object-cover"
         />
-        <div className="card-overlay absolute inset-0 pointer-events-none" />
+        {/* Sombra sutil solo en el pie de la foto para contraste de badges sin opacar la comida */}
+        <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/50 via-black/15 to-transparent pointer-events-none" />
 
         {/* Badges flotantes */}
         <div className="absolute bottom-4 left-4 right-4 max-w-lg mx-auto flex items-center gap-2 pointer-events-none">
@@ -97,7 +98,7 @@ export function EventHeroGallery({
     );
   }
 
-  // CASO 3: Múltiples fotografías (Carrusel interactivo ultra fluido)
+  // CASO 3: Múltiples fotografías (Carrusel interactivo ultra fluido hasta 5+ fotos)
   return (
     <div className="relative w-full h-80 sm:h-96 bg-forest overflow-hidden group/gallery select-none">
       {/* Contenedor scroll-snap swipeable nativo */}
@@ -124,8 +125,8 @@ export function EventHeroGallery({
         ))}
       </div>
 
-      {/* Gradiente overlay para contraste de badges y controles */}
-      <div className="card-overlay absolute inset-0 pointer-events-none" />
+      {/* Sombra sutil solo en el pie de la foto para contraste de badges sin opacar la comida */}
+      <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/50 via-black/15 to-transparent pointer-events-none" />
 
       {/* Flechas de navegación (visibles en desktop/hover o tablets) */}
       {canLeft && (

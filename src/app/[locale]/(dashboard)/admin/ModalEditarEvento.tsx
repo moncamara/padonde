@@ -194,8 +194,8 @@ export function ModalEditarEvento({
   async function handleAgregarFotoGaleria(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (galeriaFotos.length >= 3) {
-      alert("Puedes agregar un máximo de 3 fotos adicionales de vitrina para mantener la carga ultra rápida.");
+    if (galeriaFotos.length >= 5) {
+      alert("Puedes agregar un máximo de 5 fotos adicionales de vitrina (total de 6 fotos con la portada) para mantener la carga ultra rápida.");
       return;
     }
     setSubiendoFotoGaleria(true);
@@ -770,7 +770,7 @@ export function ModalEditarEvento({
             <div className="flex items-center justify-between">
               <div>
                 <label className="text-xs font-semibold text-forest font-sans flex items-center gap-1.5">
-                  <span>📸</span> Galería de Vitrina ({galeriaFotos.length}/3 adicionales)
+                  <span>📸</span> Galería de Vitrina ({galeriaFotos.length}/5 adicionales)
                 </label>
                 <p className="text-[10px] text-stone font-sans mt-0.5">
                   Fotos adicionales que crean el carrusel swipeable (carta, platos estrella, ambiente, cócteles).
@@ -807,7 +807,7 @@ export function ModalEditarEvento({
               ))}
 
               {/* Botón para subir nueva foto si aún no llega al límite */}
-              {galeriaFotos.length < 3 && (
+              {galeriaFotos.length < 5 && (
                 <label className="w-20 h-20 rounded-xl border-2 border-dashed border-forest/30 hover:border-forest hover:bg-forest/5 transition-all flex flex-col items-center justify-center gap-1 cursor-pointer text-center p-1 group">
                   <input
                     type="file"
