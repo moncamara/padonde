@@ -23,6 +23,7 @@ import type { AliadoSimple } from "@/lib/eventoParser";
 import { Button } from "@/components/ui/Button";
 import { getCategoria } from "@/constants";
 import type { CategoriaEvento } from "@/lib/types";
+import { calcularTiempoAlAireEvento } from "@/lib/constants/vistasAnalyticsHistoricas";
 
 export interface EventoAdminItem {
   id: string;
@@ -396,6 +397,26 @@ export function AdminEventList({
                   >
                     📲 {ev.clicsCount || 0} clics
                   </span>
+
+                  {/* Tiempo real que el anuncio estuvo / lleva al aire */}
+                  {(() => {
+                    const infoT = calcularTiempoAlAireEvento(ev);
+                    return (
+                      <span
+                        className={[
+                          "text-[10px] px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1",
+                          infoT.esVigente
+                            ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                            : infoT.esPasado
+                            ? "bg-stone-100 text-stone-600 border border-stone-200"
+                            : "bg-amber-50 text-amber-800 border border-amber-200",
+                        ].join(" ")}
+                        title={`Tiempo visible en cartelera: del ${infoT.fechaIniStr} al ${infoT.fechaFinStr}`}
+                      >
+                        {infoT.etiquetaEstado}
+                      </span>
+                    );
+                  })()}
 
                   {(() => {
                     const rating = ev.negocio?.google_rating ?? ev.metadata_hospedaje?.google_reputacion?.rating;

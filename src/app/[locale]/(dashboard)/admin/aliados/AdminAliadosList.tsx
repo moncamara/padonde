@@ -243,10 +243,16 @@ export function AdminAliadosList({
     const destinoNombre = aliado.zonaNombre || (aliado.zonaSlug === "mendihuaca" ? "Mendihuaca" : "Minca");
     const info = calcularPeriodoReporteAliado(aliado, metricasDinamicas, fechaCorteGA4);
 
+    const estadoAlAire = info.esEventoPuntual
+      ? "convocatoria finalizada 🏁"
+      : aliado.activo
+      ? "activo en vitrina 🟢"
+      : "pausado ⏸️";
+
     const texto = `🌿 Reporte PaDónde — ${aliado.nombre}
 📍 ${destinoNombre}, Magdalena
 🗓️ Periodo analizado: ${info.periodoTexto}
-⏱️ Tiempo al aire en este reporte: ${info.diasEfectivos} ${info.diasEfectivos === 1 ? "día" : "días"} (${aliado.activo ? "activo en vitrina" : "pausado"})
+⏱️ Tiempo al aire en este reporte: ${info.diasEfectivos} ${info.diasEfectivos === 1 ? "día" : "días"} (${estadoAlAire})
 👁️ Visitas a tu propuesta: ${info.metricas.vistas} vistas (${info.metricas.usuariosUnicos} turistas únicos ~ prom. ${info.promedioDiario}/día)
 📲 Contactos a WhatsApp: ${aliado.totalClics || 0}
 🟢 Eventos vigentes en cartelera: ${aliado.eventosActivos}
@@ -626,7 +632,7 @@ export function AdminAliadosList({
                       🗓️ Publicada: <strong className="text-forest">{infoPeriodo.fechaPubStr}</strong>{" "}
                       <span className="text-[11px] text-stone">
                         ({infoPeriodo.esEventoPuntual
-                          ? `🎪 ${infoPeriodo.diasEfectivos}d convocatoria`
+                          ? `🎪 ${infoPeriodo.diasEfectivos}d convocatoria concluida`
                           : `📊 ${infoPeriodo.diasEfectivos}d periodo GA4`})
                       </span>
                     </span>
@@ -916,11 +922,15 @@ export function AdminAliadosList({
               }\n`
             : `• 📲 *Contacto WhatsApp directo:* Habilitado sin intermediarios (0% comisión)\n`;
 
+        const estadoTiempo = infoPeriodo.esEventoPuntual
+          ? "(convocatoria finalizada 🏁)"
+          : reporteNegocio.activo
+          ? "activos en vitrina 🟢"
+          : "(en pausa ⏸️)";
+
         const textoReporte = `🌿 *Reporte de Impacto PaDónde* — *${reporteNegocio.nombre}*\n📍 *${destinoNombre}, Magdalena*\n\n¡Hola! Te compartimos el balance de visibilidad y clientes que ha generado tu propuesta en la cartelera turística oficial:\n\n• 🗓️ *Periodo analizado:* ${infoPeriodo.periodoTexto}\n• ⏱️ *Tiempo al aire en este reporte:* ${infoPeriodo.diasEfectivos} ${
           infoPeriodo.diasEfectivos === 1 ? "día" : "días"
-        } ${
-          reporteNegocio.activo ? "activos en vitrina 🟢" : "(en pausa ⏸️)"
-        }\n${visitasTexto}${idiomasTexto}${clicsTexto}• 🟢 *Planes y eventos en vitrina:* ${reporteNegocio.eventosActivos} vigentes (${reporteNegocio.totalEventos} en historial)\n• ⭐ *Plan comercial:* ${reporteNegocio.plan.toUpperCase()} (${est.texto})\n• 🏷️ *Categoría:* ${reporteNegocio.categoria}\n\n💡 *Balance del periodo:*\n${infoPeriodo.balancePeriodo}\n\nA partir del 1 de noviembre iniciamos el nuevo ciclo trimestral de visibilidad ($125.000 COP el trimestre, es decir menos de $42.000 al mes) e incluimos la digitalización interactiva de tu menú o catálogo de servicios.\n\n🔗 *Ver cartelera:* ${destinoUrl}\n\n¡Gracias por conectar a viajeros y locales con lo mejor de ${destinoNombre}! 🌿`;
+        } ${estadoTiempo}\n${visitasTexto}${idiomasTexto}${clicsTexto}• 🟢 *Planes y eventos en vitrina:* ${reporteNegocio.eventosActivos} vigentes (${reporteNegocio.totalEventos} en historial)\n• ⭐ *Plan comercial:* ${reporteNegocio.plan.toUpperCase()} (${est.texto})\n• 🏷️ *Categoría:* ${reporteNegocio.categoria}\n\n💡 *Balance del periodo:*\n${infoPeriodo.balancePeriodo}\n\nA partir del 1 de noviembre iniciamos el nuevo ciclo trimestral de visibilidad ($125.000 COP el trimestre, es decir menos de $42.000 al mes) e incluimos la digitalización interactiva de tu menú o catálogo de servicios.\n\n🔗 *Ver cartelera:* ${destinoUrl}\n\n¡Gracias por conectar a viajeros y locales con lo mejor de ${destinoNombre}! 🌿`;
 
         const waUrl = `https://wa.me/${cleanWa}?text=${encodeURIComponent(textoReporte)}`;
 

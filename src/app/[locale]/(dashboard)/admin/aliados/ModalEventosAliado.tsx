@@ -12,6 +12,7 @@ import {
 import { toggleEventoActivoAction } from "../actions";
 import { ModalEditarEvento } from "../ModalEditarEvento";
 import { ModalNotificarAliado, type EventoNotificarData } from "../ModalNotificarAliado";
+import { calcularTiempoAlAireEvento } from "@/lib/constants/vistasAnalyticsHistoricas";
 import type { AliadoItem } from "./AdminAliadosList";
 import type { EventoAdminItem } from "../AdminEventList";
 
@@ -108,6 +109,7 @@ export function ModalEventosAliado({
                 );
 
                 const horarioBadge = getEtiquetaHorario(ev);
+                const infoTiempo = calcularTiempoAlAireEvento(ev);
 
                 return (
                   <article
@@ -156,6 +158,20 @@ export function ModalEventosAliado({
                           <span className="font-medium text-terra">{precioTexto}</span>
                           <span>·</span>
                           <span className="capitalize text-stone/80">🏷️ {ev.tipo}</span>
+                          <span>·</span>
+                          <span
+                            className={[
+                              "text-[10px] px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1",
+                              infoTiempo.esVigente
+                                ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                                : infoTiempo.esPasado
+                                ? "bg-stone-100 text-stone-600 border border-stone-200"
+                                : "bg-amber-50 text-amber-800 border border-amber-200",
+                            ].join(" ")}
+                            title={`Visible del ${infoTiempo.fechaIniStr} al ${infoTiempo.fechaFinStr}`}
+                          >
+                            {infoTiempo.etiquetaEstado}
+                          </span>
                         </div>
                       </div>
                     </div>

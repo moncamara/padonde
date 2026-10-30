@@ -323,6 +323,12 @@ export function obtenerMetricasGA4Aliado(
 export const FECHA_CORTE_GA4_DEFECTO = "2026-10-27";
 export const FECHA_CORTE_GA4_LABEL_DEFECTO = "27 de oct de 2026";
 
+import {
+  getFechaYMDDesdeISO,
+  getFechaYMDColombia,
+  extraerRecurrencia,
+} from "@/lib/utils";
+
 export interface PeriodoReporteAliado {
   metricas: MetricaHistoricaAliado;
   fechaPubStr: string;
@@ -337,10 +343,109 @@ export interface PeriodoReporteAliado {
   balancePeriodo: string;
 }
 
+export interface InfoTiempoEvento {
+  diasVisibles: number;
+  esPasado: boolean;
+  esVigente: boolean;
+  fechaIniStr: string;
+  fechaFinStr: string;
+  etiquetaEstado: string;
+}
+
+/**
+ * Calcula con precisión el tiempo real que un anuncio / evento individual estuvo o lleva visible en la cartelera.
+ */
+export function calcularTiempoAlAireEvento(
+  evento: {
+    titulo?: string;
+    fecha_inicio: string;
+    fecha_fin?: string | null;
+    created_at?: string | null;
+    activo?: boolean;
+    descripcion?: string | null;
+    tipo?: string | null;
+  },
+  fechaCorteGA4Personalizada?: string | null
+): InfoTiempoEvento {
+  const hoyYMD = getFechaYMDColombia(new Date());
+  const fCorte = fechaCorteGA4Personalizada
+    ? new Date(fechaCorteGA4Personalizada)
+    : new Date("2026-10-27T23:59:59-05:00");
+
+  const ymdInicio = evento.fecha_inicio ? getFechaYMDDesdeISO(evento.fecha_inicio) : "";
+  const ymdFin = evento.fecha_fin ? getFechaYMDDesdeISO(evento.fecha_fin) : null;
+  const rec = extraerRecurrencia(evento.descripcion);
+
+  const esPasado =
+    evento.tipo === "hospedaje"
+      ? false
+      : rec.esRecurrente
+      ? (ymdFin ? ymdFin < hoyYMD : false)
+      : ymdFin
+      ? ymdFin < hoyYMD
+      : ymdInicio < hoyYMD;
+
+  const esVigente = evento.activo !== false && !esPasado;
+
+  const fCrea = evento.created_at ? new Date(evento.created_at) : new Date(evento.fecha_inicio);
+  let fInicio = fCrea;
+  let fFin = fCorte;
+
+  if (esPasado || evento.activo === false) {
+    const fEvento = new Date(evento.fecha_fin || evento.fecha_inicio);
+    if (!isNaN(fEvento.getTime())) {
+      fFin = fEvento;
+    }
+    // Asegurar coherencia cronológica en caso de registros con fecha_inicio retroactiva
+    if (fFin.getTime() < fInicio.getTime()) {
+      fInicio = fFin;
+    }
+  } else {
+    // Evento vigente activo
+    if (fCrea.getTime() > fCorte.getTime()) {
+      fFin = new Date();
+    } else {
+      fFin = fCorte;
+    }
+  }
+
+  const diffMs = Math.max(0, fFin.getTime() - fInicio.getTime());
+  const diasVisibles = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+
+  const fechaIniStr = fInicio.toLocaleDateString("es-CO", {
+    day: "numeric",
+    month: "short",
+    timeZone: "America/Bogota",
+  });
+  const fechaFinStr = fFin.toLocaleDateString("es-CO", {
+    day: "numeric",
+    month: "short",
+    timeZone: "America/Bogota",
+  });
+
+  let etiquetaEstado = "";
+  if (evento.activo === false) {
+    etiquetaEstado = `⏸️ Pausado (${diasVisibles}d visible)`;
+  } else if (esPasado) {
+    etiquetaEstado = `⏱️ Estuvo ${diasVisibles} ${diasVisibles === 1 ? "día" : "días"} al aire (Concluido)`;
+  } else {
+    etiquetaEstado = `🟢 En cartelera (${diasVisibles} ${diasVisibles === 1 ? "día" : "días"} al aire)`;
+  }
+
+  return {
+    diasVisibles,
+    esPasado,
+    esVigente,
+    fechaIniStr,
+    fechaFinStr,
+    etiquetaEstado,
+  };
+}
+
 /**
  * Calcula con precisión las fechas de inicio, fin y días efectivos al aire de un aliado o publicación.
- * Evita que las métricas congeladas de Google Analytics pierdan valor a medida que pasan los días,
- * acotando el periodo a la fecha de corte del reporte de Analytics o a la fecha en que se celebró el evento.
+ * Evita que las métricas congeladas de Google Analytics pierdan valor o se diluyan a medida que pasan los días,
+ * acotando el periodo a la fecha real en que el anuncio estuvo visible (convocatoria del evento o corte GA4).
  */
 export function calcularPeriodoReporteAliado(
   aliado: {
@@ -353,6 +458,9 @@ export function calcularPeriodoReporteAliado(
       fecha_inicio?: string | null;
       fecha_fin?: string | null;
       created_at?: string | null;
+      activo?: boolean;
+      tipo?: string | null;
+      descripcion?: string | null;
     }>;
   },
   metricasDinamicas?: Record<string, MetricaHistoricaAliado> | null,
@@ -384,46 +492,81 @@ export function calcularPeriodoReporteAliado(
     timeZone: "America/Bogota",
   });
 
-  // 3. Revisar si el aliado tiene un evento puntual que ya se celebró o con fecha fija
-  // (ejemplo: Pan Artesanal Koko & Chiqui -> Taller de panadería sábado 17 de oct)
+  // 3. Evaluar vigencia real de los anuncios/eventos del aliado
+  const hoyYMD = getFechaYMDColombia(new Date());
   const eventos = aliado.eventos || [];
-  let eventoPuntual: any = null;
+  const eventosVigentes: typeof eventos = [];
+  const eventosPasados: typeof eventos = [];
 
   for (const ev of eventos) {
-    if (ev.fecha_inicio) {
-      const fEv = new Date(ev.fecha_fin || ev.fecha_inicio);
-      // Si la fecha del evento ocurrió antes o hasta la fecha de corte GA4
-      if (fEv.getTime() <= fechaCorteGA4.getTime()) {
-        eventoPuntual = ev;
-        break;
-      }
+    if (!ev.fecha_inicio) continue;
+    const ymdInicio = getFechaYMDDesdeISO(ev.fecha_inicio);
+    const ymdFin = ev.fecha_fin ? getFechaYMDDesdeISO(ev.fecha_fin) : null;
+    const rec = extraerRecurrencia(ev.descripcion);
+    const yaPaso =
+      ev.tipo === "hospedaje"
+        ? false
+        : rec.esRecurrente
+        ? (ymdFin ? ymdFin < hoyYMD : false)
+        : ymdFin
+        ? ymdFin < hoyYMD
+        : ymdInicio < hoyYMD;
+
+    if (ev.activo !== false && !yaPaso && aliado.activo !== false) {
+      eventosVigentes.push(ev);
+    } else {
+      eventosPasados.push(ev);
     }
   }
 
-  let fechaInicioEfectiva = fechaCreacion;
-  let fechaFinEfectiva = fechaCorteGA4;
+  const tieneEventosVigentes = eventosVigentes.length > 0 && aliado.activo !== false;
   let esEventoPuntual = false;
   let nombreEventoPuntual: string | undefined = undefined;
+  let fechaInicioEfectiva = fechaCreacion;
+  let fechaFinEfectiva = fechaCorteGA4;
 
-  if (eventoPuntual && eventoPuntual.fecha_inicio) {
+  if (!tieneEventosVigentes && eventos.length > 0) {
+    // Todos los eventos ya concluyeron o el negocio está pausado.
+    // La visibilidad se acota estrictamente a los días en que el anuncio estuvo activo al aire.
     esEventoPuntual = true;
-    nombreEventoPuntual = eventoPuntual.titulo;
-    fechaFinEfectiva = new Date(eventoPuntual.fecha_fin || eventoPuntual.fecha_inicio);
-    if (eventoPuntual.created_at) {
-      const fCreaEv = new Date(eventoPuntual.created_at);
-      if (!isNaN(fCreaEv.getTime())) {
-        fechaInicioEfectiva = fCreaEv;
+    let minInicio = fechaCreacion.getTime();
+    let maxFin = 0;
+
+    for (const ev of eventos) {
+      if (ev.created_at) {
+        const tCrea = new Date(ev.created_at).getTime();
+        if (tCrea < minInicio) minInicio = tCrea;
+      }
+      if (ev.fecha_inicio) {
+        const tFin = new Date(ev.fecha_fin || ev.fecha_inicio).getTime();
+        if (tFin > maxFin) maxFin = tFin;
+      }
+    }
+
+    if (maxFin > 0) {
+      // Proteger coherencia si la fecha del evento fue anterior al registro en base de datos
+      if (maxFin < minInicio) minInicio = maxFin;
+      fechaInicioEfectiva = new Date(minInicio);
+      fechaFinEfectiva = new Date(maxFin);
+
+      if (eventos.length === 1) {
+        nombreEventoPuntual = eventos[0].titulo;
+      } else {
+        nombreEventoPuntual = `${eventos.length} convocatorias concluidas`;
       }
     }
   } else {
-    // Si el negocio se publicó después del corte de GA4, su fecha fin es el día actual
+    // El aliado tiene vitrina o eventos vigentes activos en cartelera.
+    // Se acota al corte de Google Analytics para no diluir el promedio diario con días sin analítica importada.
     if (fechaCreacion.getTime() > fechaCorteGA4.getTime()) {
       fechaFinEfectiva = new Date();
+    } else {
+      fechaFinEfectiva = fechaCorteGA4;
     }
   }
 
   // Días entre fecha de inicio y fecha fin efectiva
-  const diffMs = fechaFinEfectiva.getTime() - fechaInicioEfectiva.getTime();
+  const diffMs = Math.max(0, fechaFinEfectiva.getTime() - fechaInicioEfectiva.getTime());
   const diasEfectivos = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
 
   const fechaIniStr = fechaInicioEfectiva.toLocaleDateString("es-CO", {
