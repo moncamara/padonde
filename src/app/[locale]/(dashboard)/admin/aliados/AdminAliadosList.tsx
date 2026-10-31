@@ -15,6 +15,12 @@ import {
   calcularPeriodoReporteAliado,
   type MetricaHistoricaAliado,
 } from "@/lib/constants/vistasAnalyticsHistoricas";
+import { cleanPhoneNumber, buildWhatsAppUrl, copyToClipboard, formatVisualPhone } from "@/lib/whatsapp/url";
+import {
+  generarMensajeCobro,
+  generarMensajeReporteRendimiento,
+  generarMensajeReporteDetallado,
+} from "@/lib/whatsapp/templates";
 import type { PlanNegocio } from "@/lib/types";
 
 export interface EventoAliadoItem {
@@ -219,22 +225,19 @@ export function AdminAliadosList({
 
   // Mensaje para cobrar o contactar por WhatsApp
   function generarEnlaceWhatsAppCobro(aliado: AliadoItem) {
-    const cleanWa = aliado.whatsapp.replace(/\D/g, "");
+    const cleanWa = cleanPhoneNumber(aliado.whatsapp);
     const est = getEstadoExpiracion(aliado);
     const destinoNombre = aliado.zonaNombre || (aliado.zonaSlug === "mendihuaca" ? "Mendihuaca" : "Minca");
 
-    let mensaje = "";
-    if (aliado.plan !== "gratis" && (est.tipo === "por_vencer" || est.tipo === "vencido")) {
-      mensaje = `🌿 Hola ${aliado.nombre}, te escribimos de PaDónde.\n\nTu suscripción Plan ${aliado.plan.toUpperCase()} en la cartelera de ${destinoNombre} ${
-        est.tipo === "vencido" ? "venció recientemente" : "está próxima a vencer"
-      }.\n\nPara mantener tus planes con visibilidad destacada y continuar recibiendo turistas directos a tu WhatsApp, puedes transferir a Nequi/Daviplata.\n\n¿Te gustaría renovar este mes? Quedamos muy atentos.`;
-    } else if (aliado.plan === "gratis") {
-      mensaje = `🌿 Hola ${aliado.nombre}, te escribimos de PaDónde.\n\nVemos que tienes planes de ${aliado.categoria} en ${destinoNombre}. ¿Te gustaría activar el Plan Pro para que aparezcan destacados en las primeras posiciones de la cartelera y recibas más clics de turistas?\n\nCuéntanos y te mostramos cómo funciona.`;
-    } else {
-      mensaje = `🌿 Hola ${aliado.nombre}, te escribimos de PaDónde para saber cómo va la temporada en ${destinoNombre} y si tienes nuevos eventos que quieras publicar esta semana.`;
-    }
+    const mensaje = generarMensajeCobro({
+      nombre: aliado.nombre,
+      plan: aliado.plan,
+      categoria: aliado.categoria,
+      tipoEstado: (est.tipo as "por_vencer" | "vencido" | "gratis" | "activo") || "activo",
+      destinoNombre,
+    });
 
-    return `https://api.whatsapp.com/send?phone=${cleanWa}&text=${encodeURIComponent(mensaje)}`;
+    return buildWhatsAppUrl({ phone: cleanWa, message: mensaje });
   }
 
   // Copiar reporte al portapapeles
@@ -249,21 +252,28 @@ export function AdminAliadosList({
       ? "activo en vitrina 🟢"
       : "pausado ⏸️";
 
-    const texto = `🌿 Reporte PaDónde — ${aliado.nombre}
-📍 ${destinoNombre}, Magdalena
-🗓️ Periodo analizado: ${info.periodoTexto}
-⏱️ Tiempo al aire en este reporte: ${info.diasEfectivos} ${info.diasEfectivos === 1 ? "día" : "días"} (${estadoAlAire})
-👁️ Visitas a tu propuesta: ${info.metricas.vistas} vistas (${info.metricas.usuariosUnicos} turistas únicos ~ prom. ${info.promedioDiario}/día)
-📲 Contactos a WhatsApp: ${aliado.totalClics || 0}
-🟢 Eventos vigentes en cartelera: ${aliado.eventosActivos}
-📅 Total de eventos registrados: ${aliado.totalEventos}
-⭐ Plan: ${aliado.plan.toUpperCase()} (${est.texto})
+    const texto = generarMensajeReporteRendimiento({
+      nombre: aliado.nombre,
+      destinoNombre,
+      periodoTexto: info.periodoTexto,
+      diasEfectivos: info.diasEfectivos,
+      estadoAlAire,
+      vistas: info.metricas.vistas,
+      usuariosUnicos: info.metricas.usuariosUnicos,
+      promedioDiario: info.promedioDiario,
+      totalClics: aliado.totalClics || 0,
+      eventosActivos: aliado.eventosActivos,
+      totalEventos: aliado.totalEventos,
+      plan: aliado.plan,
+      estadoTexto: est.texto,
+    });
 
-¡Gracias por impulsar la cartelera turística de ${destinoNombre}!`;
-
-    navigator.clipboard.writeText(texto);
-    setCopiadoId(aliado.id);
-    setTimeout(() => setCopiadoId(null), 2500);
+    copyToClipboard(texto).then((ok) => {
+      if (ok) {
+        setCopiadoId(aliado.id);
+        setTimeout(() => setCopiadoId(null), 2500);
+      }
+    });
   }
 
   // Alternar estado activo / inactivo de un aliado
@@ -484,7 +494,7 @@ export function AdminAliadosList({
       <div className="grid grid-cols-1 gap-3">
         {aliadosFiltrados.map((aliado) => {
           const est = getEstadoExpiracion(aliado);
-          const cleanWa = aliado.whatsapp.replace(/\D/g, "");
+          const cleanWa = cleanPhoneNumber(aliado.whatsapp);
           const infoPeriodo = calcularPeriodoReporteAliado(aliado, metricasDinamicas, fechaCorteGA4);
 
           return (
@@ -653,13 +663,13 @@ export function AdminAliadosList({
 
                 <span>·</span>
                 <a
-                  href={`https://wa.me/${cleanWa}`}
+                  href={buildWhatsAppUrl({ phone: cleanWa })}
                   target="_blank"
                   rel="noreferrer"
                   className="text-emerald-700 hover:text-emerald-800 font-medium hover:underline flex items-center gap-1"
                 >
                   <span>💬</span>
-                  <span>+{cleanWa}</span>
+                  <span>{formatVisualPhone(aliado.whatsapp) || `+${cleanWa}`}</span>
                 </a>
 
                 {aliado.instagram && (
@@ -887,7 +897,7 @@ export function AdminAliadosList({
       {/* Modal / Diálogo de Reporte de Impacto y Demostración de ROI */}
       {reporteNegocio && (() => {
         const est = getEstadoExpiracion(reporteNegocio);
-        const cleanWa = reporteNegocio.whatsapp.replace(/\D/g, "");
+        const cleanWa = cleanPhoneNumber(reporteNegocio.whatsapp);
         const destinoNombre =
           reporteNegocio.zonaNombre ||
           (reporteNegocio.zonaSlug === "mendihuaca" ? "Mendihuaca" : "Minca");
@@ -928,11 +938,25 @@ export function AdminAliadosList({
           ? "activos en vitrina 🟢"
           : "(en pausa ⏸️)";
 
-        const textoReporte = `🌿 *Reporte de Impacto PaDónde* — *${reporteNegocio.nombre}*\n📍 *${destinoNombre}, Magdalena*\n\n¡Hola! Te compartimos el balance de visibilidad y clientes que ha generado tu propuesta en la cartelera turística oficial:\n\n• 🗓️ *Periodo analizado:* ${infoPeriodo.periodoTexto}\n• ⏱️ *Tiempo al aire en este reporte:* ${infoPeriodo.diasEfectivos} ${
-          infoPeriodo.diasEfectivos === 1 ? "día" : "días"
-        } ${estadoTiempo}\n${visitasTexto}${idiomasTexto}${clicsTexto}• 🟢 *Planes y eventos en vitrina:* ${reporteNegocio.eventosActivos} vigentes (${reporteNegocio.totalEventos} en historial)\n• ⭐ *Plan comercial:* ${reporteNegocio.plan.toUpperCase()} (${est.texto})\n• 🏷️ *Categoría:* ${reporteNegocio.categoria}\n\n💡 *Balance del periodo:*\n${infoPeriodo.balancePeriodo}\n\nA partir del 1 de noviembre iniciamos el nuevo ciclo trimestral de visibilidad ($125.000 COP el trimestre, es decir menos de $42.000 al mes) e incluimos la digitalización interactiva de tu menú o catálogo de servicios.\n\n🔗 *Ver cartelera:* ${destinoUrl}\n\n¡Gracias por conectar a viajeros y locales con lo mejor de ${destinoNombre}! 🌿`;
+        const textoReporte = generarMensajeReporteDetallado({
+          nombre: reporteNegocio.nombre,
+          destinoNombre,
+          destinoUrl,
+          periodoTexto: infoPeriodo.periodoTexto,
+          diasEfectivos: infoPeriodo.diasEfectivos,
+          estadoTiempo,
+          visitasTexto,
+          idiomasTexto,
+          clicsTexto,
+          eventosActivos: reporteNegocio.eventosActivos,
+          totalEventos: reporteNegocio.totalEventos,
+          plan: reporteNegocio.plan,
+          estadoTexto: est.texto,
+          categoria: reporteNegocio.categoria,
+          balancePeriodo: infoPeriodo.balancePeriodo,
+        });
 
-        const waUrl = `https://api.whatsapp.com/send?phone=${cleanWa}&text=${encodeURIComponent(textoReporte)}`;
+        const waUrl = buildWhatsAppUrl({ phone: cleanWa, message: textoReporte });
 
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
@@ -1067,9 +1091,12 @@ export function AdminAliadosList({
                   <button
                     type="button"
                     onClick={() => {
-                      navigator.clipboard.writeText(textoReporte);
-                      setCopiadoId("modal-reporte");
-                      setTimeout(() => setCopiadoId(null), 2500);
+                      copyToClipboard(textoReporte).then((ok) => {
+                        if (ok) {
+                          setCopiadoId("modal-reporte");
+                          setTimeout(() => setCopiadoId(null), 2500);
+                        }
+                      });
                     }}
                     className="flex-1 py-2 px-3 rounded-xl text-xs font-medium text-forest bg-white border border-stone-light hover:bg-stone-50 transition-colors cursor-pointer text-center"
                   >

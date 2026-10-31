@@ -3,7 +3,13 @@
 import { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/Button";
-import { formatearTelefonoVisual, calcularFechaEn15Dias } from "../ModalNotificarAliado";
+import { formatVisualPhone, cleanPhoneNumber, buildWhatsAppUrl, copyToClipboard } from "@/lib/whatsapp/url";
+import { calcularFechaEn15Dias } from "@/lib/whatsapp/dates";
+import {
+  generarMensajeDifusionRedes,
+  generarMensajeRestaurante,
+  generarMensajeHospedaje,
+} from "@/lib/whatsapp/templates";
 import type { AliadoItem } from "./AdminAliadosList";
 
 interface ModalDifusionWhatsAppProps {
@@ -63,93 +69,25 @@ export function ModalDifusionWhatsApp({ aliados }: ModalDifusionWhatsAppProps) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [abierto]);
 
-  // Plantillas oficiales predefinidas
+  // Plantillas oficiales predefinidas canónicas
   const plantillasDefault: Record<TipoCampana, string> = {
-    redes: `🌿 *¡Hola {nombre}! Qué alegría saludarte desde PaDónde {zona}.*
-
-Tu vitrina digital oficial ya está activa en vivo y lista para recibir a viajeros y turistas de la temporada 📲✨
-👉 *Enlace directo:* {enlace}
-
-Queremos ayudarte a sacarle el máximo provecho desde hoy. Cuando los negocios comparten su ficha en sus redes y estados, sus propios clientes y huéspedes empiezan a compartirla con amigos y conocidos que están planeando venir a {zona}.
-
-Te dejamos dos formas súper rápidas de moverlo hoy mismo:
-
-🟢 *1. En tus Estados de WhatsApp:*
-Sube una foto de tu lugar, cabaña o plato favorito y pega este texto en tu estado:
-_«¡Ya tenemos nuestra vitrina oficial en PaDónde {zona}! 🌿 Conoce nuestras fotos, carta y reserva directo a nuestro WhatsApp sin comisiones aquí:_
-👉 {enlace}»_
-
-📸 *2. En tus Historias de Instagram:*
-1. Sube una foto o video de tu lugar.
-2. Agrega el sticker de enlace (🔗) con tu link:
-   • *URL:* {enlace}
-   • *Texto del sticker:* «Ver Vitrina Oficial 🌿» o «Consultar Menú - Reservar 📲»
-3. ¡Y menciónanos para repostearte y darte más visibilidad!
-
-Cualquier viajero que toque el enlace podrá ver tus fotos en alta calidad, cambiar el idioma (inglés/francés/alemán) y escribirte directo al WhatsApp.
-
-¡Muchos éxitos y que se llenen esas reservas! 🚀🌊`,
-
-    restaurantes: `🌿 *¡Hola {nombre}! Un saludo muy especial desde PaDónde {zona}.*
-
-Ya tenemos su propuesta gastronómica activa y verificada en vivo dentro de la cartelera oficial de {zona}:
-👉 *Miren su vitrina aquí:* {enlace}
-
-Échale una mirada y fíjate en esto:
-• Puedes ver tus fotos, horarios y descripción detallada.
-• Si deseas agregar un reel y/o el Menú digital e interactivo nos avisas
-• Toca en *"Consultar Menú - Reservar"* para comprobar que te llega directo a tu número ({whatsapp}).
-• La plataforma traduce automáticamente al inglés, alemán y francés para mochileros extranjeros.
-
-🎁 *Por lanzamiento, ya te dejamos la publicación activa y destacada durante 15 días de cortesía 100% libres de costo (hasta el {fecha_limite})* para que compruebes cuántos viajeros te descubren y contactan. 🚀
-
----
-
-📋 *Nuestra Propuesta Comercial (para después de tus 15 días):*
-Las apps de delivery o comisionistas descuentan márgenes altos. En PaDónde los clientes y turistas te escriben directo a tu WhatsApp con *0% de comisiones*.
-
-💰 *Plan Trimestral Restaurantes, Bares & Cafés:*
-• *$150.000 COP el trimestre*.
-Incluye tu ficha activa 24/7, publicación en cartelera turística, 0% comisiones y catálogo en 4 idiomas.
-
-💡 *Opción recomendada para mesa: Menú Digital + Reseñas en Google* (Único pago de $100.000 COP):
-• *Stickers con código QR resistentes para tus mesas:* El comensal se sienta, escanea y ve tu menú en su celular al instante.
-• *Reseñas 5 Estrellas en Google sin rodeos:* Al final del menú dejamos un botón directo para que el cliente califique tu negocio en Google Maps en 1 solo clic.
-• Publicación y habilitación de tu carta en la plataforma *(solo nos pasas las fotos o archivo de tu menú y nosotros te lo dejamos listo)* + el archivo del código QR en alta calidad por si deseas mandar a hacer habladores.
-
----
-
-¿Pudiste abrir el enlace de *{nombre}*? ¿Te gusta cómo quedó o le afinamos algún horario o detalle? 📲✨`,
-
-    hospedajes: `🌿 *Hola {nombre}, ¡un saludo muy especial desde el equipo de PaDónde!*
-
-Queremos comunicarles que la propuesta de PaDónde ha escalado rápidamente y ya se encuentra abriendo mercado en Mendihuaca y próximamente Tairona. Para poder mantener esta iniciativa y trabajar para favorecer el turismo en el caso de ustedes la prueba *100% gratuita corre libre de costo hasta el 31 de Octubre*.
-
-🌟 *El valor directo para {nombre}:*
-• *0% de comisiones por reserva:* El huésped les escribe y cotiza directo a su WhatsApp (se ahorran el 18% al 20% que descuentan Booking o Airbnb).
-• *Catálogo global en 4 idiomas:* Su hospedaje se presenta automáticamente en Español, Inglés, Francés y Alemán (ES / EN / FR / DE) para captar al viajero extranjero.
-• *Presencia fija 24/7:* Indexados en la vitrina oficial recomendada de alojamientos de {zona}.
-
-🗓️ *Reglas claras de activación:*
-• Su periodo de cortesía corre libre de costo hasta el 31 de Octubre.
-• A partir del 1 de Noviembre, formalizamos su presencia para toda la temporada con nuestro Plan Trimestral (asociado a su capacidad de habitaciones o cabañas):
-
-*Los pagos son trimestrales de la siguiente forma:*
-🏨 1 a 5 habitaciones: $125.000 COP (menos de $1.400 al día)
-🏨 6 a 10 habitaciones: $200.000 COP
-🏨 11 a 20 habitaciones: $300.000 COP
-🏨 Más de 20 habitaciones: $400.000 COP
-
-💡 *Con 1 sola noche de habitación reservada directo a su WhatsApp en los 3 meses, ya se ahorran más comisiones de Booking que el costo total de la plataforma.*
-
-🎉 *Difusión de Eventos y Actividades:*
-Si organizan noches acústicas, yoga, sunsets o eventos abiertos:
-• 1 evento puntual: $30.000 COP (activo toda su semana de promoción).
-• Agenda Semanal Completa (hasta 3 eventos en la semana): $50.000 COP.
-*(Incluye flyer, fecha, horarios, fotos y botón directo a su WhatsApp).*
-
-Por favor confírmanos por aquí el número de habitaciones de {nombre} para coordinar los datos de transferencia y asegurar su presencia destacada para toda la temporada alta. ¡Muchos éxitos en sus reservas! 🏡✨`,
-
+    redes: generarMensajeDifusionRedes({
+      negocioNombre: "{nombre}",
+      zonaNombre: "{zona}",
+      enlacePersonalizado: "{enlace}",
+    }),
+    restaurantes: generarMensajeRestaurante({
+      negocioNombre: "{nombre}",
+      zonaNombre: "{zona}",
+      enlacePersonalizado: "{enlace}",
+      whatsapp: "{whatsapp}",
+      fechaLimite: "{fecha_limite}",
+    }),
+    hospedajes: generarMensajeHospedaje({
+      negocioNombre: "{nombre}",
+      zonaNombre: "{zona}",
+      enlacePersonalizado: "{enlace}",
+    }),
     personalizado: `🌿 *Hola {nombre}, te escribimos del equipo de PaDónde ({zona}).*
 
 A partir del 1 de noviembre iniciamos el ciclo de renovación trimestral para la temporada alta por valor de $125.000 COP.
@@ -248,7 +186,7 @@ A partir del 1 de noviembre iniciamos el ciclo de renovación trimestral para la
       ? `https://padonde.lat/es/${slug}/${ev.id}`
       : `https://padonde.lat/es/${slug}`;
 
-    const wpVisual = formatearTelefonoVisual(aliado.whatsapp);
+    const wpVisual = formatVisualPhone(aliado.whatsapp);
     const fechaLimite = calcularFechaEn15Dias();
 
     return textoPlantilla
@@ -262,22 +200,18 @@ A partir del 1 de noviembre iniciamos el ciclo de renovación trimestral para la
 
   // Enviar por WhatsApp
   const handleEnviarWhatsApp = (aliado: AliadoItem) => {
-    const cleanWa = aliado.whatsapp.replace(/\D/g, "");
+    const cleanWa = cleanPhoneNumber(aliado.whatsapp);
     if (!cleanWa) {
       alert(`El aliado ${aliado.nombre} no tiene un número de WhatsApp válido registrado.`);
       return;
     }
-    const fullWa = cleanWa.startsWith("57") ? cleanWa : `57${cleanWa}`;
     const mensaje = compilarMensaje(aliado);
 
     // 1. Respaldo instantáneo: Copiar texto al portapapeles sin esfuerzo
-    if (typeof navigator !== "undefined" && navigator.clipboard) {
-      navigator.clipboard.writeText(mensaje).catch(() => {});
-    }
+    copyToClipboard(mensaje);
 
     // 2. Usar directamente api.whatsapp.com en vez de wa.me
-    // wa.me tiene un bug documentado de redirección HTTP 302 que corrompe los emojis UTF-8 en %EF%BF%BD
-    const url = `https://api.whatsapp.com/send?phone=${fullWa}&text=${encodeURIComponent(mensaje)}`;
+    const url = buildWhatsAppUrl({ phone: cleanWa, message: mensaje });
 
     // Marcar como contactado
     const nuevosContactados = { ...contactados, [aliado.id]: true };
@@ -295,9 +229,11 @@ A partir del 1 de noviembre iniciamos el ciclo de renovación trimestral para la
   // Copiar mensaje personalizado
   const handleCopiarMensaje = (aliado: AliadoItem) => {
     const mensaje = compilarMensaje(aliado);
-    navigator.clipboard.writeText(mensaje).then(() => {
-      setCopiadoId(aliado.id);
-      setTimeout(() => setCopiadoId(null), 2000);
+    copyToClipboard(mensaje).then((ok) => {
+      if (ok) {
+        setCopiadoId(aliado.id);
+        setTimeout(() => setCopiadoId(null), 2000);
+      }
     });
   };
 

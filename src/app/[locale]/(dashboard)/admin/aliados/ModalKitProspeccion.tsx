@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/Button";
+import { generarMensajeProspeccion } from "@/lib/whatsapp/templates";
+import { buildWhatsAppUrl, copyToClipboard } from "@/lib/whatsapp/url";
 
 interface ModalKitProspeccionProps {
   zonaInicial?: string;
@@ -44,89 +46,68 @@ export function ModalKitProspeccion({ zonaInicial = "minca" }: ModalKitProspecci
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [abierto]);
 
-  const nombreZona = zona === "mendihuaca" ? "Mendihuaca" : "Minca";
+  const zonaNombre = zona === "mendihuaca" ? "Mendihuaca" : "Minca";
   const urlCartelera = `https://www.padonde.lat/es/${zona}`;
 
-  // Plantillas de prospección según audio
+  // Plantillas de prospección canónicas desde templates.ts
   const plantillas: Record<CategoriaMensaje, { titulo: string; icon: string; texto: string }> = {
     hospedajes: {
       titulo: "Hospedajes, Cabañas & Glampings",
       icon: "🏡",
-      texto: `🌿 ¡Hola! Qué gusto saludarte.
-
-Te escribo porque estamos impulsando PaDónde (${urlCartelera}), la cartelera digital turística en vivo de ${nombreZona}. 📲✨
-
-Diseñamos un espacio exclusivo para hospedajes donde los viajeros pueden ver tus fotos, servicios y cotizar tarifas por noche, con una gran ventaja: cuando el turista toca en "Consultar Disponibilidad", el mensaje te llega DIRECTO a tu WhatsApp, sin comisiones ni intermediarios de reservas.
-
-Échale una mirada a cómo luce la vitrina aquí:
-👉 ${urlCartelera}
-
-Si te gustaría que tu hospedaje aparezca visible ante los turistas que están llegando a la zona, avísame y con todo gusto coordinamos una visita o te ayudo a montarlo en 5 minutos. ¡Un abrazo! 🏡🍃`,
+      texto: generarMensajeProspeccion("hospedajes", {
+        negocioNombre: "",
+        zonaSlug: zona,
+        zonaNombre,
+        enlacePersonalizado: urlCartelera,
+      }),
     },
     tiendas: {
       titulo: "Tiendas, Restaurantes & Servicios",
       icon: "🏪",
-      texto: `👋 ¡Hola! ¿Cómo estás? Un saludo especial.
-
-Te contacto rápidamente porque estamos lanzando la sección de "Servicios Esenciales e Info Útil" dentro de PaDónde (${urlCartelera}), la plataforma turística que están consultando los viajeros en ${nombreZona}. 📲
-
-Muchos turistas a diario preguntan dónde retirar efectivo, comprar víveres, conseguir transporte, farmacia o comer rico. Queremos que tu negocio esté mapeado como punto oficial para que los viajeros te encuentren fácil y te escriban directo al WhatsApp cuando necesiten lo que ofreces.
-
-Puedes ver la cartelera aquí:
-👉 ${urlCartelera}
-
-Si quieres que te incluyamos en el directorio comercial de la zona, me avisas y te paso a visitar para dejarte registrado. ¡Muchos éxitos en las ventas! 🛒✨`,
+      texto: generarMensajeProspeccion("tiendas", {
+        negocioNombre: "",
+        zonaSlug: zona,
+        zonaNombre,
+        enlacePersonalizado: urlCartelera,
+      }),
     },
     eventos: {
       titulo: "Eventos, Tours & Actividades",
       icon: "🎭",
-      texto: `✨ ¡Hola! Espero que todo vaya excelente.
-
-Te escribo porque en PaDónde (${urlCartelera}) tenemos la cartelera turística en vivo donde los viajeros y locales consultan qué planes, eventos, talleres, tours o rumba hay hoy y el fin de semana en ${nombreZona}. 🌿🎉
-
-La idea es que puedas publicar tus actividades y fechas para que los turistas se agenden y reserven cupos directamente contigo por WhatsApp.
-
-Mira la agenda aquí:
-👉 ${urlCartelera}
-
-Si tienes planes programados para estos días y quieres promocionarlos en la cartelera, respóndeme este mensaje y te ayudo a publicarlos o paso por tu local y lo revisamos juntos. 📲🚀`,
+      texto: generarMensajeProspeccion("eventos", {
+        negocioNombre: "",
+        zonaSlug: zona,
+        zonaNombre,
+        enlacePersonalizado: urlCartelera,
+      }),
     },
     general: {
       titulo: "Mensaje General / Invitación a la Comunidad",
       icon: "🌿",
-      texto: `Hola, ¿cómo te ha ido? Espero que estés muy bien.
-
-Te comparto un proyecto muy bonito y serio que acabamos de lanzar para fortalecer el turismo local: se llama PaDónde (${urlCartelera}) 🌿
-
-Es una plataforma en vivo donde los turistas que llegan a la estación de busetas y hostales escanean códigos QR y encuentran planes, hospedajes y servicios recomendados sin intermediarios.
-
-Pégale una miradita para que conozcas la iniciativa:
-👉 ${urlCartelera}
-
-Si te interesa hacer parte de la comunidad o crees que a tu negocio le sirve esta visibilidad, me confirmas por acá y con mucho gusto te visito o nos tomamos un café para contarte los detalles. ¡Un abrazo! 🙌`,
+      texto: generarMensajeProspeccion("general", {
+        negocioNombre: "",
+        zonaSlug: zona,
+        zonaNombre,
+        enlacePersonalizado: urlCartelera,
+      }),
     },
   };
 
   const plantillaActual = plantillas[categoria];
 
   const handleCopiar = async () => {
-    try {
-      if (typeof navigator !== "undefined" && navigator.clipboard) {
-        await navigator.clipboard.writeText(plantillaActual.texto);
-        setCopiado(true);
-        setTimeout(() => setCopiado(false), 2500);
-      }
-    } catch {
-      // Fallback
+    const ok = await copyToClipboard(plantillaActual.texto);
+    if (ok) {
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2500);
     }
   };
 
   const getWaLink = () => {
-    const telLimpio = telefono.replace(/\D/g, "");
-    const base = telLimpio
-      ? `https://api.whatsapp.com/send?phone=${telLimpio.startsWith("57") ? telLimpio : `57${telLimpio}`}&text=`
-      : `https://api.whatsapp.com/send?text=`;
-    return `${base}${encodeURIComponent(plantillaActual.texto)}`;
+    return buildWhatsAppUrl({
+      phone: telefono,
+      message: plantillaActual.texto,
+    });
   };
 
   return (
