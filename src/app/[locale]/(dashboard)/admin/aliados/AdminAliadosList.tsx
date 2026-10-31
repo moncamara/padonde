@@ -10,6 +10,7 @@ import {
 } from "../actions";
 import { ModalEditarAliado } from "./ModalEditarAliado";
 import { ModalEventosAliado } from "./ModalEventosAliado";
+import { ModalDifusionWhatsApp } from "./ModalDifusionWhatsApp";
 import {
   obtenerMetricasGA4Aliado,
   calcularPeriodoReporteAliado,
@@ -88,6 +89,10 @@ export function AdminAliadosList({
   const [criterioOrden, setCriterioOrden] = useState<CriterioOrden>("recientes");
   const [busqueda, setBusqueda] = useState("");
   const [copiadoId, setCopiadoId] = useState<string | null>(null);
+
+  // Selección múltiple para mensajes masivos
+  const [aliadosSeleccionados, setAliadosSeleccionados] = useState<Record<string, boolean>>({});
+  const [modalMasivoAbierto, setModalMasivoAbierto] = useState(false);
 
   // Estado para ver eventos del aliado
   const [aliadoParaVerEventos, setAliadoParaVerEventos] = useState<AliadoItem | null>(null);
@@ -222,6 +227,22 @@ export function AdminAliadosList({
       return tB - tA;
     });
   }, [aliados, filtro, busqueda, filtroZona, filtroCategoria, criterioOrden, metricasDinamicas]);
+
+  // Aliados seleccionados para acciones masivas
+  const idsSeleccionados = useMemo(() => {
+    return Object.keys(aliadosSeleccionados).filter((id) => aliadosSeleccionados[id]);
+  }, [aliadosSeleccionados]);
+
+  const toggleSeleccionarTodosVisibles = () => {
+    const todosVisibles =
+      aliadosFiltrados.length > 0 &&
+      aliadosFiltrados.every((a) => aliadosSeleccionados[a.id]);
+    const nueva = { ...aliadosSeleccionados };
+    for (const a of aliadosFiltrados) {
+      nueva[a.id] = !todosVisibles;
+    }
+    setAliadosSeleccionados(nueva);
+  };
 
   // Mensaje para cobrar o contactar por WhatsApp
   function generarEnlaceWhatsAppCobro(aliado: AliadoItem) {
@@ -490,6 +511,51 @@ export function AdminAliadosList({
         </div>
       </div>
 
+      {/* Barra de Selección Masiva y Acción de WhatsApp */}
+      <div className="flex items-center justify-between flex-wrap gap-2 px-1 py-1">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={toggleSeleccionarTodosVisibles}
+            className="text-xs font-semibold text-forest hover:underline cursor-pointer flex items-center gap-1.5"
+          >
+            <span className="text-base">
+              {aliadosFiltrados.length > 0 &&
+              aliadosFiltrados.every((a) => aliadosSeleccionados[a.id])
+                ? "☑"
+                : "☐"}
+            </span>
+            <span>
+              {aliadosFiltrados.length > 0 &&
+              aliadosFiltrados.every((a) => aliadosSeleccionados[a.id])
+                ? "Deseleccionar todos los visibles"
+                : `Seleccionar todos (${aliadosFiltrados.length})`}
+            </span>
+          </button>
+
+          {idsSeleccionados.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setAliadosSeleccionados({})}
+              className="text-xs text-stone hover:text-red-700 underline cursor-pointer"
+            >
+              Limpiar selección ({idsSeleccionados.length})
+            </button>
+          )}
+        </div>
+
+        {idsSeleccionados.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setModalMasivoAbierto(true)}
+            className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs py-1.5 px-3.5 rounded-xl shadow-xs flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 animate-in fade-in"
+          >
+            <span>📢</span>
+            <span>Enviar Mensaje a Seleccionados ({idsSeleccionados.length})</span>
+          </button>
+        )}
+      </div>
+
       {/* Lista de Aliados */}
       <div className="grid grid-cols-1 gap-3">
         {aliadosFiltrados.map((aliado) => {
@@ -502,7 +568,9 @@ export function AdminAliadosList({
               key={aliado.id}
               className={[
                 "rounded-2xl p-4 sm:p-5 border transition-all space-y-3",
-                aliado.activo
+                aliadosSeleccionados[aliado.id]
+                  ? "bg-emerald-50/30 border-emerald-500/60 shadow-sm ring-1 ring-emerald-500/20"
+                  : aliado.activo
                   ? "bg-white/80 border-stone-light/80 shadow-xs hover:border-stone hover:shadow-sm"
                   : "bg-stone-50/70 border-dashed border-stone-300 opacity-90",
               ].join(" ")}
@@ -510,6 +578,18 @@ export function AdminAliadosList({
               {/* Fila 1: Cabecera con Nombre y Badges Principales */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div className="flex flex-wrap items-center gap-2 min-w-0">
+                  <input
+                    type="checkbox"
+                    checked={!!aliadosSeleccionados[aliado.id]}
+                    onChange={(e) => {
+                      setAliadosSeleccionados((prev) => ({
+                        ...prev,
+                        [aliado.id]: e.target.checked,
+                      }));
+                    }}
+                    className="w-4 h-4 rounded text-forest focus:ring-forest cursor-pointer shrink-0 mt-0.5"
+                    title="Seleccionar para mensaje masivo"
+                  />
                   <h3 className="font-serif text-lg sm:text-xl text-forest font-bold tracking-tight">
                     {aliado.nombre}
                   </h3>
@@ -1182,6 +1262,17 @@ export function AdminAliadosList({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal de Mensajes Masivos de WhatsApp con Aliados Seleccionados */}
+      {modalMasivoAbierto && (
+        <ModalDifusionWhatsApp
+          aliados={aliados}
+          abiertoExterno={modalMasivoAbierto}
+          onCerrarExterno={() => setModalMasivoAbierto(false)}
+          idsPreseleccionados={idsSeleccionados}
+          ocultarBotonTrigger={true}
+        />
       )}
     </div>
   );
