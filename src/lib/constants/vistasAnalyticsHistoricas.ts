@@ -327,6 +327,7 @@ import {
   getFechaYMDDesdeISO,
   getFechaYMDColombia,
   extraerRecurrencia,
+  formatearFechaCortaDeterminista,
 } from "@/lib/utils";
 
 export interface PeriodoReporteAliado {
@@ -412,16 +413,8 @@ export function calcularTiempoAlAireEvento(
   const diffMs = Math.max(0, fFin.getTime() - fInicio.getTime());
   const diasVisibles = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
 
-  const fechaIniStr = fInicio.toLocaleDateString("es-CO", {
-    day: "numeric",
-    month: "short",
-    timeZone: "America/Bogota",
-  });
-  const fechaFinStr = fFin.toLocaleDateString("es-CO", {
-    day: "numeric",
-    month: "short",
-    timeZone: "America/Bogota",
-  });
+  const fechaIniStr = formatearFechaCortaDeterminista(fInicio);
+  const fechaFinStr = formatearFechaCortaDeterminista(fFin);
 
   let etiquetaEstado = "";
   if (evento.activo === false) {
@@ -473,24 +466,14 @@ export function calcularPeriodoReporteAliado(
     ? new Date(fechaCortePersonalizada)
     : new Date("2026-10-27T23:59:59-05:00");
 
-  const fechaCorteLabel = fechaCorteGA4.toLocaleDateString("es-CO", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    timeZone: "America/Bogota",
-  });
+  const fechaCorteLabel = formatearFechaCortaDeterminista(fechaCorteGA4, true);
 
   // 2. Fecha de creación / publicación del aliado en Colombia (UTC-5)
   const fechaCreacion = aliado.created_at
     ? new Date(aliado.created_at)
     : new Date("2026-10-14T00:57:00Z");
 
-  const fechaPubStr = fechaCreacion.toLocaleDateString("es-CO", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    timeZone: "America/Bogota",
-  });
+  const fechaPubStr = formatearFechaCortaDeterminista(fechaCreacion, true);
 
   // 3. Evaluar vigencia real de los anuncios/eventos del aliado
   const hoyYMD = getFechaYMDColombia(new Date());
@@ -569,17 +552,8 @@ export function calcularPeriodoReporteAliado(
   const diffMs = Math.max(0, fechaFinEfectiva.getTime() - fechaInicioEfectiva.getTime());
   const diasEfectivos = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
 
-  const fechaIniStr = fechaInicioEfectiva.toLocaleDateString("es-CO", {
-    day: "numeric",
-    month: "short",
-    timeZone: "America/Bogota",
-  });
-  const fechaFinStr = fechaFinEfectiva.toLocaleDateString("es-CO", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    timeZone: "America/Bogota",
-  });
+  const fechaIniStr = formatearFechaCortaDeterminista(fechaInicioEfectiva);
+  const fechaFinStr = formatearFechaCortaDeterminista(fechaFinEfectiva, true);
 
   const promedioDiario = (metricas.vistas / (diasEfectivos || 1)).toFixed(1);
 

@@ -18,6 +18,43 @@ export function getFechaYMDColombia(date: Date = new Date()): string {
 }
 
 /**
+ * Lista de meses abreviados deterministas en español
+ */
+export const MESES_ES_CORTO = [
+  "ene", "feb", "mar", "abr", "may", "jun",
+  "jul", "ago", "sep", "oct", "nov", "dic"
+];
+
+/**
+ * Formatea una fecha de forma 100% determinista sin depender de variaciones de ICU
+ * entre Node.js (SSR) y diferentes navegadores (Chrome/Safari), eliminando errores de hidratación.
+ * Ejemplo: "14 oct" o "14 oct 2026"
+ */
+export function formatearFechaCortaDeterminista(
+  dateOrIso: Date | string | number | null | undefined,
+  incluirAnio = false
+): string {
+  if (!dateOrIso) return "";
+  let d: Date;
+  if (typeof dateOrIso === "number") {
+    d = new Date(dateOrIso);
+  } else if (typeof dateOrIso === "string") {
+    d = new Date(dateOrIso);
+  } else {
+    d = dateOrIso;
+  }
+  if (isNaN(d.getTime())) return "";
+
+  const ymd = getFechaYMDColombia(d);
+  const [y, m, dayStr] = ymd.split("-");
+  const mesIndex = parseInt(m, 10) - 1;
+  const diaNum = parseInt(dayStr, 10);
+  const mes = MESES_ES_CORTO[mesIndex] || m;
+
+  return incluirAnio ? `${diaNum} ${mes} ${y}` : `${diaNum} ${mes}`;
+}
+
+/**
  * Convierte una fecha ISO a YYYY-MM-DD según la hora de Colombia.
  */
 export function getFechaYMDDesdeISO(iso: string): string {

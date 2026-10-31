@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useMemo } from "react";
 import { useRouter } from "@/i18n/routing";
-import { formatFecha } from "@/lib/utils";
+import { formatFecha, formatearFechaCortaDeterminista } from "@/lib/utils";
 import {
   actualizarPlanNegocioAction,
   toggleActivoAliadoAction,
@@ -331,7 +331,7 @@ export function AdminAliadosList({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" suppressHydrationWarning>
       {/* Selector de Región / Zona y Tipo de Negocio */}
       <div className="bg-white/70 p-2.5 sm:p-3 rounded-2xl border border-stone-light/70 shadow-2xs space-y-2.5">
         {/* Fila 1: Regiones */}
@@ -718,6 +718,7 @@ export function AdminAliadosList({
                     <span
                       className="text-stone-600"
                       title={`Ficha publicada el ${infoPeriodo.fechaPubStr}. Periodo analizado en reporte: ${infoPeriodo.periodoTexto}.`}
+                      suppressHydrationWarning
                     >
                       🗓️ Publicada: <strong className="text-forest">{infoPeriodo.fechaPubStr}</strong>{" "}
                       <span className="text-[11px] text-stone">
@@ -734,9 +735,10 @@ export function AdminAliadosList({
                     <span>·</span>
                     <span
                       className="text-stone-500 font-medium"
-                      title={`Última actividad registrada (creación o edición): ${new Date(aliado.ultimaActividad).toLocaleString("es-CO")}`}
+                      title={`Última actividad registrada (creación o edición): ${formatearFechaCortaDeterminista(aliado.ultimaActividad, true)}`}
+                      suppressHydrationWarning
                     >
-                      ⚡ Actividad: <span className="text-forest font-semibold">{new Date(aliado.ultimaActividad).toLocaleDateString("es-CO", { day: "numeric", month: "short" })}</span>
+                      ⚡ Actividad: <span className="text-forest font-semibold" suppressHydrationWarning>{formatearFechaCortaDeterminista(aliado.ultimaActividad)}</span>
                     </span>
                   </>
                 )}
