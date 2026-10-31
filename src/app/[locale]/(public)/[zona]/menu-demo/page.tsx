@@ -44,12 +44,16 @@ export default async function MenuDemoPage({
   const search = searchParams ? await searchParams : {};
   setRequestLocale(locale);
 
-  // 1. Obtener el tema configurado por el admin en la base de datos
+  // 1. Obtener la carta y el tema configurado por el admin en la base de datos
   let temaAsignado: TemaMenuId | undefined = undefined;
+  let menuData = LAZY_CAT_MENU;
 
   // A) Si viene un eventoId específico en el enlace
   if (search.eventoId) {
     const evento = await getEventoById(search.eventoId);
+    if (evento?.metadata_hospedaje?.menu_data) {
+      menuData = evento.metadata_hospedaje.menu_data as any;
+    }
     const metaTema = evento?.metadata_hospedaje?.menu_tema;
     if (metaTema && metaTema in TEMAS_MENU) {
       temaAsignado = metaTema as TemaMenuId;
@@ -64,6 +68,9 @@ export default async function MenuDemoPage({
   // C) Consultar el evento oficial de Lazy Cat Minca en la base de datos
   if (!temaAsignado) {
     const eventoLazy = await getEventoById("a9cb4306-82f5-4784-b6d3-546b6d10f5ec");
+    if (eventoLazy?.metadata_hospedaje?.menu_data) {
+      menuData = eventoLazy.metadata_hospedaje.menu_data as any;
+    }
     const metaTemaLazy = eventoLazy?.metadata_hospedaje?.menu_tema;
     if (metaTemaLazy && metaTemaLazy in TEMAS_MENU) {
       temaAsignado = metaTemaLazy as TemaMenuId;
@@ -84,7 +91,7 @@ export default async function MenuDemoPage({
       <LuxuryRestaurantMenu
         key={temaFinal}
         initialLocale={locale}
-        menu={LAZY_CAT_MENU}
+        menu={menuData}
         tema={temaFinal}
         mostrarSelectorTema={!esEmbebido && mostrarSelector}
         embebido={esEmbebido}

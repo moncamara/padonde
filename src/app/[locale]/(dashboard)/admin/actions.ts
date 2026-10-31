@@ -40,6 +40,7 @@ export interface AdminPublishInput {
   googleReviewUrl?: string;
   menuInteractivo?: boolean;
   menuTema?: "fogon" | "sierra" | "caribe" | "oro";
+  menuData?: any;
 }
 
 export interface AdminPublishResult {
@@ -242,6 +243,14 @@ export async function adminPublishEventAction(
                 : {}),
               ...(input.menuInteractivo !== undefined ? { menu_interactivo: Boolean(input.menuInteractivo) } : {}),
               ...(input.menuTema ? { menu_tema: input.menuTema } : {}),
+              ...(input.menuData
+                ? {
+                    menu_data:
+                      typeof input.menuData === "string"
+                        ? JSON.parse(input.menuData)
+                        : input.menuData,
+                  }
+                : {}),
             }
           : null,
     };
@@ -816,6 +825,7 @@ export interface EditarEventoAdminInput {
   menuUrl?: string | null;
   menuInteractivo?: boolean;
   menuTema?: "fogon" | "sierra" | "caribe" | "oro";
+  menuData?: any;
 }
 
 /**
@@ -956,6 +966,21 @@ export async function editarEventoAdminAction(input: EditarEventoAdminInput) {
           delete currentMeta.menu_tema;
         } else {
           currentMeta.menu_tema = input.menuTema;
+        }
+      }
+
+      if (input.menuData !== undefined) {
+        if (!input.menuData) {
+          delete currentMeta.menu_data;
+        } else {
+          try {
+            currentMeta.menu_data =
+              typeof input.menuData === "string"
+                ? JSON.parse(input.menuData)
+                : input.menuData;
+          } catch {
+            currentMeta.menu_data = input.menuData;
+          }
         }
       }
 

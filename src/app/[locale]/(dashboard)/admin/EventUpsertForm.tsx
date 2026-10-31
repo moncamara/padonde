@@ -352,6 +352,99 @@ export function EventUpsertForm({
   const [subiendoFotoMenu, setSubiendoFotoMenu] = useState(false);
   const [subiendoPdfMenu, setSubiendoPdfMenu] = useState(false);
 
+  // Carta Digital Interactiva JSON (Gemini)
+  const [menuDataJson, setMenuDataJson] = useState<string>(() => {
+    const raw = initialEvento?.metadata_hospedaje?.menu_data;
+    if (raw) {
+      try {
+        return typeof raw === "string" ? raw : JSON.stringify(raw, null, 2);
+      } catch {
+        return "";
+      }
+    }
+    return "";
+  });
+  const [jsonError, setJsonError] = useState<string | null>(null);
+  const [jsonStats, setJsonStats] = useState<{ categorias: number; platos: number } | null>(() => {
+    const raw = initialEvento?.metadata_hospedaje?.menu_data;
+    if (raw && typeof raw === "object") {
+      const cats = Array.isArray(raw.categorias) ? raw.categorias.length : 0;
+      const platos = Array.isArray(raw.categorias)
+        ? raw.categorias.reduce((acc: number, c: any) => acc + (Array.isArray(c.items) ? c.items.length : 0), 0)
+        : 0;
+      return { categorias: cats, platos };
+    }
+    return null;
+  });
+
+  function validarYFormatearJson(str: string) {
+    if (!str.trim()) {
+      setJsonError(null);
+      setJsonStats(null);
+      return;
+    }
+    try {
+      const parsed = JSON.parse(str);
+      const formatted = JSON.stringify(parsed, null, 2);
+      setMenuDataJson(formatted);
+      setJsonError(null);
+      const cats = Array.isArray(parsed.categorias) ? parsed.categorias.length : 0;
+      const platos = Array.isArray(parsed.categorias)
+        ? parsed.categorias.reduce((acc: number, c: any) => acc + (Array.isArray(c.items) ? c.items.length : 0), 0)
+        : 0;
+      setJsonStats({ categorias: cats, platos });
+    } catch (err: any) {
+      setJsonError(err?.message || "JSON inválido. Revisa la sintaxis.");
+      setJsonStats(null);
+    }
+  }
+
+  function handleCargarEjemploJson() {
+    const ejemplo = {
+      id: "menu-restaurante",
+      negocioNombre: eventTitle.trim() || "Restaurante",
+      subtitulo: {
+        es: "Cocina Fusión · Hamburguesas de Autor · Coctelería",
+        en: "Fusion Cuisine · Gourmet Burgers · Cocktails",
+        fr: "Cuisine Fusion · Burgers Gourmets · Cocktails",
+        de: "Fusionsküche · Gourmet-Burger · Cocktails"
+      },
+      categorias: [
+        {
+          id: "entradas",
+          icono: "🥗",
+          titulos: { es: "Entradas", en: "Starters", fr: "Entrées", de: "Vorspeisen" },
+          items: [
+            {
+              id: "ceviche",
+              nombres: { es: "Ceviche Tropical", en: "Tropical Ceviche", fr: "Ceviche Tropical", de: "Tropisches Ceviche" },
+              descripcion: { es: "Pescado fresco con mango, leche de tigre y chips de plátano", en: "Fresh fish with mango, tiger milk and plantain chips", fr: "Poisson frais au lait de tigre...", de: "Frischer Fisch mit Tigermilch..." },
+              precio: 32000,
+              etiquetas: ["chef"]
+            }
+          ]
+        },
+        {
+          id: "platos-fuertes",
+          icono: "🍔",
+          titulos: { es: "Platos Fuertes", en: "Main Courses", fr: "Plats Principaux", de: "Hauptgerichte" },
+          items: [
+            {
+              id: "burger-autor",
+              nombres: { es: "Hamburguesa de Autor", en: "Signature Burger", fr: "Burger Signature", de: "Signature Burger" },
+              descripcion: { es: "Carne Angus 200g, queso artesanal y tocineta crocante", en: "200g Angus beef with artisan cheese and crispy bacon", fr: "Bœuf Angus 200g, fromage artisanal...", de: "200g Angus-Rindfleisch..." },
+              precio: 42000,
+              etiquetas: ["chef", "angus"]
+            }
+          ]
+        }
+      ]
+    };
+    const formatted = JSON.stringify(ejemplo, null, 2);
+    setMenuDataJson(formatted);
+    validarYFormatearJson(formatted);
+  }
+
   async function handleAgregarFotosMenu(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
@@ -504,6 +597,17 @@ export function EventUpsertForm({
             googleReviewUrl.trim() ||
             undefined;
 
+      let parsedMenuData: any = undefined;
+      if (menuInteractivo && menuDataJson.trim()) {
+        try {
+          parsedMenuData = JSON.parse(menuDataJson);
+        } catch (e: any) {
+          setError("El JSON de la carta digital tiene un error de sintaxis: " + (e?.message || ""));
+          setLoading(false);
+          return;
+        }
+      }
+
       if (mode === "crear") {
         // MODO CREAR: INSERT Consolidado con arrays listos
         const res = await adminPublishEventAction({
@@ -528,6 +632,7 @@ export function EventUpsertForm({
           googleReviewUrl: reviewUrlFinal,
           menuInteractivo,
           menuTema,
+          menuData: parsedMenuData,
         });
 
         if (!res.success) {
@@ -568,6 +673,7 @@ export function EventUpsertForm({
           menuUrl: menuUrl.trim() || undefined,
           menuInteractivo,
           menuTema,
+          menuData: parsedMenuData,
         });
 
         if (!res.success) {
@@ -1257,35 +1363,126 @@ export function EventUpsertForm({
 
         <div className="space-y-4 font-sans">
           {/* Toggle Menú Interactivo */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-forest/5 rounded-2xl border border-forest/20">
-            <div>
-              <label className="text-xs font-bold text-forest flex items-center gap-1.5 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={menuInteractivo}
-                  onChange={(e) => setMenuInteractivo(e.target.checked)}
-                  className="rounded text-forest focus:ring-forest w-4 h-4 cursor-pointer"
-                />
-                <span>Habilitar Menú Digital e Interactivo</span>
-              </label>
-              <p className="text-[11px] text-stone mt-0.5 ml-6">
-                Permite a los comensales ver platos con traductor automático y botón de pedido.
-              </p>
+          <div className="p-3.5 bg-forest/5 rounded-2xl border border-forest/20 space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <label className="text-xs font-bold text-forest flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={menuInteractivo}
+                    onChange={(e) => setMenuInteractivo(e.target.checked)}
+                    className="rounded text-forest focus:ring-forest w-4 h-4 cursor-pointer"
+                  />
+                  <span>Habilitar Menú Digital e Interactivo</span>
+                </label>
+                <p className="text-[11px] text-stone mt-0.5 ml-6">
+                  Permite a los comensales ver platos con traductor automático y botón de pedido.
+                </p>
+              </div>
+
+              {menuInteractivo && (
+                <div className="flex items-center gap-1.5 ml-6 sm:ml-0">
+                  <span className="text-[10px] text-stone font-semibold">Tema Visual:</span>
+                  <select
+                    value={menuTema}
+                    onChange={(e) => setMenuTema(e.target.value as any)}
+                    className="text-xs p-1.5 rounded-xl border border-stone-light/80 bg-white text-forest font-medium outline-none cursor-pointer"
+                  >
+                    <option value="fogon">🔥 Fogón & Brasa</option>
+                    <option value="sierra">🌿 Sierra Verde</option>
+                    <option value="caribe">🌊 Caribe Boho</option>
+                    <option value="oro">✨ Oro Colonial</option>
+                  </select>
+                </div>
+              )}
             </div>
 
+            {/* Editor de JSON de la Carta Digital */}
             {menuInteractivo && (
-              <div className="flex items-center gap-1.5 ml-6 sm:ml-0">
-                <span className="text-[10px] text-stone font-semibold">Tema:</span>
-                <select
-                  value={menuTema}
-                  onChange={(e) => setMenuTema(e.target.value as any)}
-                  className="text-xs p-1.5 rounded-xl border border-stone-light/80 bg-white text-forest font-medium outline-none cursor-pointer"
-                >
-                  <option value="fogon">🔥 Fogón</option>
-                  <option value="sierra">🌿 Sierra</option>
-                  <option value="caribe">🌊 Caribe</option>
-                  <option value="oro">✨ Oro</option>
-                </select>
+              <div className="pt-3 border-t border-forest/15 space-y-2.5">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div>
+                    <label className="text-xs font-bold text-forest flex items-center gap-1.5">
+                      <span>📋</span> Estructura de la Carta Digital (JSON de Gemini)
+                    </label>
+                    <p className="text-[11px] text-stone mt-0.5">
+                      Pega aquí el JSON generado por Gemini a partir del PDF o fotos del menú.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleCargarEjemploJson}
+                      className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 px-2.5 py-1 rounded-lg cursor-pointer transition-colors"
+                      title="Cargar estructura de ejemplo para copiar o modificar"
+                    >
+                      Cargar Ejemplo
+                    </button>
+                    {menuDataJson.trim() && (
+                      <button
+                        type="button"
+                        onClick={() => validarYFormatearJson(menuDataJson)}
+                        className="text-[11px] font-semibold text-forest bg-stone-100 hover:bg-stone-200 border border-stone-300 px-2.5 py-1 rounded-lg cursor-pointer transition-colors"
+                        title="Formatear y comprobar que el JSON no tenga errores de sintaxis"
+                      >
+                        Validar Formato
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="relative">
+                  <textarea
+                    rows={8}
+                    value={menuDataJson}
+                    onChange={(e) => {
+                      setMenuDataJson(e.target.value);
+                      if (jsonError) setJsonError(null);
+                    }}
+                    onBlur={() => {
+                      if (menuDataJson.trim()) {
+                        validarYFormatearJson(menuDataJson);
+                      }
+                    }}
+                    placeholder={`{\n  "id": "menu-restaurante",\n  "negocioNombre": "${eventTitle || "Restaurante"}",\n  "categorias": [\n    ...\n  ]\n}`}
+                    className="w-full p-3 font-mono text-[11px] bg-white text-stone-dark rounded-xl border border-stone-light/90 focus:outline-none focus:border-forest/60 focus:ring-1 focus:ring-forest leading-relaxed resize-y"
+                  />
+
+                  {/* Estado de validación */}
+                  <div className="flex items-center justify-between flex-wrap gap-2 mt-1">
+                    {jsonError ? (
+                      <p className="text-[11px] text-red-600 font-medium flex items-center gap-1">
+                        <span>❌</span> <span>{jsonError}</span>
+                      </p>
+                    ) : jsonStats ? (
+                      <p className="text-[11px] text-emerald-700 font-semibold flex items-center gap-1">
+                        <span>✅</span>
+                        <span>
+                          Carta detectada: {jsonStats.categorias} categorías y {jsonStats.platos} platos configurados
+                        </span>
+                      </p>
+                    ) : (
+                      <p className="text-[10px] text-stone italic">
+                        Tip: Si dejas el campo vacío, se usará la demostración interactiva de autor de la plataforma.
+                      </p>
+                    )}
+
+                    {menuDataJson.trim() && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMenuDataJson("");
+                          setJsonError(null);
+                          setJsonStats(null);
+                        }}
+                        className="text-[10px] text-stone hover:text-red-600 underline cursor-pointer ml-auto"
+                      >
+                        Borrar JSON
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
           </div>

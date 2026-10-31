@@ -126,6 +126,7 @@ export type HospedajeMetadata = {
   google_review_url?: string; // Enlace directo para calificar en Google
   menu_interactivo?: boolean; // Carta digital interactiva multilingüe
   menu_tema?: "fogon" | "sierra" | "caribe" | "oro"; // Tema visual de autor para la carta
+  menu_data?: any;            // Estructura JSON de la carta digital (categorías, platos, precios y traducciones)
 };
 
 // ─── Tipos de Servicios Esenciales e Info Útil ────────────────────────────────
