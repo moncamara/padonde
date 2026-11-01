@@ -30,6 +30,7 @@ import {
 import { Button } from "@/components/ui/Button";
 import { ModalAsistenteEvento } from "./ModalAsistenteEvento";
 import { ModalAficheImprimible } from "@/components/admin/ModalAficheImprimible";
+import { LuxuryRestaurantMenu } from "@/components/menu/LuxuryRestaurantMenu";
 import type { EventoExtraido } from "@/lib/eventoParser";
 import type { CategoriaEvento } from "@/lib/types";
 import type { EventoAdminItem } from "./AdminEventList";
@@ -376,6 +377,16 @@ export function EventUpsertForm({
     }
     return null;
   });
+  const [mostrarPreviewModal, setMostrarPreviewModal] = useState(false);
+
+  const menuPreviewObj = useMemo(() => {
+    if (!menuDataJson.trim()) return null;
+    try {
+      return JSON.parse(menuDataJson);
+    } catch {
+      return null;
+    }
+  }, [menuDataJson]);
 
   function validarYFormatearJson(str: string) {
     if (!str.trim()) {
@@ -1482,6 +1493,32 @@ export function EventUpsertForm({
                       </button>
                     )}
                   </div>
+
+                  {/* Acciones de Vista Previa */}
+                  <div className="flex items-center flex-wrap gap-2 pt-2.5 border-t border-forest/10 mt-2">
+                    <button
+                      type="button"
+                      onClick={() => setMostrarPreviewModal(true)}
+                      className="bg-forest hover:bg-forest/90 text-white font-semibold text-xs py-2 px-3.5 rounded-xl shadow-xs flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
+                      title="Abrir simulador para ver cómo se verá la carta con este tema y platos"
+                    >
+                      <span>👁️</span>
+                      <span>Ver Vista Previa Interactiva</span>
+                    </button>
+
+                    {initialEvento?.id && (
+                      <a
+                        href={`/es/${zonaSlug || "minca"}/menu-demo?eventoId=${initialEvento.id}&tema=${menuTema}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="bg-white hover:bg-stone-50 text-forest border border-stone-300 font-semibold text-xs py-2 px-3 rounded-xl shadow-2xs flex items-center gap-1.5 transition-all"
+                        title="Abrir el enlace público real que verán los comensales al escanear el QR"
+                      >
+                        <span>🔗</span>
+                        <span>Abrir Carta Pública en Vivo ↗</span>
+                      </a>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
@@ -1783,6 +1820,47 @@ export function EventUpsertForm({
           urlDestino={`https://www.padonde.lat/es/${zonaSlug}?tab=servicios#evento-${initialEvento.id}`}
           tipoContenido="menu_restaurante"
         />
+      )}
+
+      {/* Modal Simulador de Carta Digital en Vivo */}
+      {mostrarPreviewModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl w-full max-w-lg h-[92vh] flex flex-col overflow-hidden shadow-2xl border border-stone-300">
+            {/* Barra Superior del Simulador */}
+            <div className="flex items-center justify-between px-4 py-3 bg-stone-50 border-b border-stone-200 shrink-0">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-xl shrink-0">🍽️</span>
+                <div className="min-w-0">
+                  <h3 className="font-serif text-sm sm:text-base font-bold text-forest truncate">
+                    Simulador: {eventTitle || businessName || "Carta Digital"}
+                  </h3>
+                  <p className="text-[10px] sm:text-[11px] text-stone truncate">
+                    Tema: <strong className="text-forest capitalize">{menuTema}</strong> · Multilenguaje interactivo
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMostrarPreviewModal(false)}
+                className="text-stone hover:text-forest p-1.5 rounded-full hover:bg-stone-200/70 transition-colors text-sm font-bold cursor-pointer shrink-0 ml-2"
+                title="Cerrar simulador"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Contenedor del Menú con Scroll */}
+            <div className="flex-1 overflow-y-auto bg-stone-900">
+              <LuxuryRestaurantMenu
+                key={`${menuTema}-${menuPreviewObj?.id || "preview"}`}
+                initialLocale="es"
+                menu={menuPreviewObj || undefined}
+                tema={menuTema}
+                embebido={true}
+              />
+            </div>
+          </div>
+        </div>
       )}
     </form>
   );
