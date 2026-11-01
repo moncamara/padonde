@@ -92,32 +92,38 @@ export function EventFilters({
     <>
       {/* Fila Única Unificada de Navegación: Fecha Anclada + Categorías */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
-        {/* 1. BOTÓN ANCLA DE FECHA (Estilo Airbnb / Google Maps) */}
+        {/* 1. BOTÓN ANCLA DE FECHA: TOGGLE PURO (Pulsar para elegir / Despulsar para volver a Hoy) */}
         <button
           id="btn-filtro-fecha"
           type="button"
-          onClick={() => setIsModalOpen(true)}
-          aria-label={`Filtrar fecha: ${fechaActual.titulo}`}
+          onClick={() => {
+            if (esFechaFiltrada) {
+              // Despulsar: con 1 solo toque se desactiva y vuelve a Hoy sin abrir nada extra
+              handleSelectFecha("hoy");
+            } else {
+              // Pulsar: abre las opciones para elegir fecha
+              setIsModalOpen(true);
+            }
+          }}
+          aria-label={esFechaFiltrada ? `Quitar filtro de ${fechaActual.titulo} y volver a Hoy` : `Filtrar fecha: ${fechaActual.titulo}`}
           aria-haspopup="dialog"
           aria-expanded={isModalOpen}
           className={[
-            "flex-shrink-0 flex flex-col items-center justify-center gap-1 min-w-[76px] px-3 py-2 rounded-2xl text-xs font-sans transition-all duration-150 cursor-pointer shadow-xs border relative",
+            "flex-shrink-0 flex flex-col items-center justify-center gap-1 min-w-[76px] px-3 py-2 rounded-2xl text-xs font-sans transition-all duration-150 cursor-pointer shadow-xs border relative active:scale-95",
             esFechaFiltrada
-              ? "bg-terra/10 border-terra text-terra-dark font-bold shadow-2xs scale-[1.02]"
+              ? "bg-terra/15 border-terra text-terra-dark font-bold shadow-2xs ring-1 ring-terra/30"
               : "bg-white/80 hover:bg-white border-stone-light/80 text-forest hover:border-forest/40",
           ].join(" ")}
         >
           <div className="flex items-center gap-1">
             <span className="text-lg leading-none">{fechaActual.emoji}</span>
-            <span className="text-[10px] text-stone-dark opacity-70">▾</span>
+            <span className="text-[10px] font-bold text-stone-dark">
+              {esFechaFiltrada ? "✕" : "▾"}
+            </span>
           </div>
           <span className="font-bold tracking-tight text-[11px] truncate max-w-[74px]">
             {fechaActual.titulo}
           </span>
-
-          {esFechaFiltrada && (
-            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-terra rounded-full border-2 border-white ring-1 ring-terra/30 animate-pulse" />
-          )}
         </button>
 
         {/* Separador vertical limpio */}

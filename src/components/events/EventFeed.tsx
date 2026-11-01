@@ -297,35 +297,7 @@ export function EventFeed({ eventos, zona, configTerritorial }: EventFeedProps) 
         onCategoriaChange={setFiltroCategoria}
       />
 
-      {/* Chip sutil informativo cuando el usuario filtra por una fecha distinta a Hoy */}
-      {filtroTiempo !== "hoy" && (
-        <div className="flex items-center justify-between px-3.5 py-2 rounded-2xl bg-forest/8 border border-forest/15 text-xs font-sans animate-in fade-in duration-150 -mt-2 shadow-2xs">
-          <div className="flex items-center gap-1.5 text-forest">
-            <span className="text-sm select-none">
-              {filtroTiempo === "manana" ? "🌅" : filtroTiempo === "fin_de_semana" ? "🎉" : "✨"}
-            </span>
-            <span>
-              {locale === "en" ? "Date:" : locale === "fr" ? "Date :" : locale === "de" ? "Datum:" : "Fecha:"}{" "}
-              <strong className="capitalize">
-                {filtroTiempo === "manana"
-                  ? (locale === "en" ? "Tomorrow" : "Mañana")
-                  : filtroTiempo === "fin_de_semana"
-                  ? (locale === "en" ? "Weekend" : "Fin de semana")
-                  : (locale === "en" ? "All plans" : "Todos los planes")}
-              </strong>
-            </span>
-          </div>
-          <button
-            type="button"
-            onClick={() => setFiltroTiempo("hoy")}
-            title="Volver a planes de hoy"
-            aria-label="Volver a planes de hoy"
-            className="px-2.5 py-1 rounded-full bg-forest/10 hover:bg-forest/20 text-forest text-[11px] font-semibold cursor-pointer"
-          >
-            {locale === "en" ? "Today" : "Hoy"} ✕
-          </button>
-        </div>
-      )}
+
 
       {/* Indicador de resultados de búsqueda si hay texto activo */}
       {busqueda.trim() && eventosFiltrados.length > 0 && (
