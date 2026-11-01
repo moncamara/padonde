@@ -17,7 +17,6 @@ interface DestinoTabConfig {
   emoji: string;
   activa: boolean;
   badge?: string;
-  colorActive?: string;
 }
 
 const DESTINOS_TABS: DestinoTabConfig[] = [
@@ -26,14 +25,12 @@ const DESTINOS_TABS: DestinoTabConfig[] = [
     nombre: "Minca",
     emoji: "🌿",
     activa: true,
-    colorActive: "bg-forest text-cream",
   },
   {
     slug: "mendihuaca",
     nombre: "Mendihuaca",
     emoji: "🌊",
     activa: true,
-    colorActive: "bg-[#0B4F6C] text-white",
   },
   {
     slug: "tayrona",
@@ -111,8 +108,8 @@ export function TabsDestinos({ zonaActiva, locale, className = "" }: TabsDestino
               className={[
                 "shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl text-xs font-sans transition-all duration-200 cursor-pointer shadow-2xs active:scale-95",
                 isSelected
-                  ? `${destino.colorActive || "bg-forest text-cream"} font-bold shadow-xs ring-2 ring-forest/20 scale-[1.02]`
-                  : "bg-white hover:bg-stone-50 border border-stone-light/80 text-stone hover:text-forest",
+                  ? "bg-forest text-white font-bold shadow-xs ring-2 ring-forest/25 scale-[1.02]"
+                  : "bg-white/80 hover:bg-white border border-stone-light/80 text-stone-dark hover:text-forest",
               ].join(" ")}
               aria-current={isSelected ? "page" : undefined}
             >
@@ -121,7 +118,7 @@ export function TabsDestinos({ zonaActiva, locale, className = "" }: TabsDestino
                 {destino.nombre}
               </span>
               {isSelected && (
-                <span className="w-1.5 h-1.5 rounded-full bg-cream animate-pulse ml-0.5" />
+                <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse ml-0.5" />
               )}
             </Link>
           );

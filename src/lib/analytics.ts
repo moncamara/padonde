@@ -239,6 +239,21 @@ export function trackDestinationSwitch(fromZona: string, toZona: string) {
     from_zona: fromZona,
     to_zona: toZona,
   });
+  // Evento estándar GA4: cambio_region
+  trackEvent("cambio_region", {
+    nueva_region: toZona,
+    region_anterior: fromZona,
+  });
+}
+
+/**
+ * Evento formal de GA4 para cambio de región activa
+ */
+export function trackCambioRegion(nuevaRegion: string, regionAnterior?: string) {
+  trackEvent("cambio_region", {
+    nueva_region: nuevaRegion,
+    region_anterior: regionAnterior || "n/a",
+  });
 }
 
 /**
