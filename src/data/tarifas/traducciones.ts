@@ -60,9 +60,9 @@ export const TEXTOS_TARIFARIO: Record<string, TextosTarifario> = {
     botonCotizarCustom: "Request custom quote on WhatsApp",
     disclaimerClima: "Rates subject to weather and mountain road conditions. Service is private point-to-point for your group (1-4 people).",
     mensajeWhatsApp: (nombre, destino, personas, precioStr) =>
-      `Hello ${nombre}, I saw your official rates on PaDónde and would like to request 4x4 transport to ${destino} for ${personas} passenger${personas === 1 ? "" : "s"}. (Official rate: $${precioStr} COP)`,
+      `Hola / Hello ${nombre}, vi sus tarifas en PaDónde y solicito transporte hacia ${destino} para ${personas} persona${personas === 1 ? "" : "s"} (Rate: $${precioStr} COP).`,
     mensajeWhatsAppCustom: (nombre, destino, personas) =>
-      `Hello ${nombre}, I saw your rates on PaDónde and would like to request a quote and availability for ${personas} passenger${personas === 1 ? "" : "s"} to: ${destino || "my destination"}.`,
+      `Hola / Hello ${nombre}, vi sus tarifas en PaDónde y solicito cotización para ${personas} persona${personas === 1 ? "" : "s"} hacia: ${destino || "mi destino"}.`,
   },
   fr: {
     tituloBadge: "Grille Tarifaire Officielle 4x4",
@@ -82,9 +82,9 @@ export const TEXTOS_TARIFARIO: Record<string, TextosTarifario> = {
     botonCotizarCustom: "Demander un tarif sur mesure via WhatsApp",
     disclaimerClima: "Tarifs soumis aux conditions météo et de piste en haute montagne. Service privé de point à point pour votre groupe (1 à 4 personnes).",
     mensajeWhatsApp: (nombre, destino, personas, precioStr) =>
-      `Bonjour ${nombre}, j'ai vu vos tarifs officiels sur PaDónde et je souhaite réserver un transport 4x4 vers ${destino} pour ${personas} personne${personas === 1 ? "" : "s"}. (Tarif officiel : $${precioStr} COP)`,
+      `Hola / Bonjour ${nombre}, vi sus tarifas en PaDónde y solicito transporte hacia ${destino} para ${personas} persona${personas === 1 ? "" : "s"} (Tarif: $${precioStr} COP).`,
     mensajeWhatsAppCustom: (nombre, destino, personas) =>
-      `Bonjour ${nombre}, j'ai vu vos tarifs sur PaDónde et je souhaite obtenir un devis personnalisé pour ${personas} personne${personas === 1 ? "" : "s"} vers : ${destino || "ma destination"}.`,
+      `Hola / Bonjour ${nombre}, vi sus tarifas en PaDónde y solicito cotización para ${personas} persona${personas === 1 ? "" : "s"} vers: ${destino || "mi destino"}.`,
   },
   de: {
     tituloBadge: "Offizielle 4x4-Tariftabelle",
@@ -104,9 +104,9 @@ export const TEXTOS_TARIFARIO: Record<string, TextosTarifario> = {
     botonCotizarCustom: "Individuelles Angebot via WhatsApp anfragen",
     disclaimerClima: "Preise abhängig von Wetter- und Pistenbedingungen im Hochgebirge. Privater Punkt-zu-Punkt-Transfer für Ihre Gruppe (1-4 Personen).",
     mensajeWhatsApp: (nombre, destino, personas, precioStr) =>
-      `Hallo ${nombre}, ich habe Ihre offiziellen Tarife auf PaDónde gesehen und möchte einen 4x4-Transport nach ${destino} für ${personas} Person${personas === 1 ? "" : "en"} buchen. (Offizieller Tarif: $${precioStr} COP)`,
+      `Hola / Hallo ${nombre}, vi sus tarifas en PaDónde y solicito transporte hacia ${destino} para ${personas} persona${personas === 1 ? "" : "s"} (Tarif: $${precioStr} COP).`,
     mensajeWhatsAppCustom: (nombre, destino, personas) =>
-      `Hallo ${nombre}, ich habe Ihre Tarife auf PaDónde gesehen und möchte ein Angebot und Verfügbarkeit für ${personas} Person${personas === 1 ? "" : "en"} nach: ${destino || "mein Ziel"} anfragen.`,
+      `Hola / Hallo ${nombre}, vi sus tarifas en PaDónde y solicito cotización para ${personas} persona${personas === 1 ? "" : "s"} nach: ${destino || "mi destino"}.`,
   },
 };
 
