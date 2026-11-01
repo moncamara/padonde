@@ -3,6 +3,8 @@
 import { createContext, useContext, useState, useRef, useEffect } from "react";
 import { useSearchParams, usePathname } from "next/navigation";
 
+export type CriterioOrden = "recomendados" | "hora" | "precio";
+
 interface SearchContextType {
   busqueda: string;
   setBusqueda: (q: string) => void;
@@ -10,6 +12,13 @@ interface SearchContextType {
   setIsSearchOpen: (open: boolean) => void;
   toggleSearch: () => void;
   inputRef: React.RefObject<HTMLInputElement | null>;
+  filtroTiempo: string;
+  setFiltroTiempo: (t: string) => void;
+  criterioOrden: CriterioOrden;
+  setCriterioOrden: (o: CriterioOrden) => void;
+  isFilterMenuOpen: boolean;
+  setIsFilterMenuOpen: (open: boolean) => void;
+  toggleFilterMenu: () => void;
 }
 
 const SearchContext = createContext<SearchContextType | null>(null);
@@ -26,6 +35,37 @@ export function SearchProvider({ children }: { children: React.ReactNode }) {
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(() => {
     return !!searchParams.get("q");
   });
+
+  const [filtroTiempo, setFiltroTiempoState] = useState<string>("hoy");
+  const [criterioOrden, setCriterioOrdenState] = useState<CriterioOrden>("recomendados");
+  const [isFilterMenuOpen, setIsFilterMenuOpen] = useState<boolean>(false);
+
+  useEffect(() => {
+    try {
+      const savedTiempo = sessionStorage.getItem("padonde_filtro_tiempo");
+      if (savedTiempo) setFiltroTiempoState(savedTiempo);
+      const savedOrden = sessionStorage.getItem("padonde_criterio_orden") as CriterioOrden;
+      if (savedOrden) setCriterioOrdenState(savedOrden);
+    } catch {}
+  }, []);
+
+  const setFiltroTiempo = (t: string) => {
+    setFiltroTiempoState(t);
+    try {
+      sessionStorage.setItem("padonde_filtro_tiempo", t);
+    } catch {}
+  };
+
+  const setCriterioOrden = (o: CriterioOrden) => {
+    setCriterioOrdenState(o);
+    try {
+      sessionStorage.setItem("padonde_criterio_orden", o);
+    } catch {}
+  };
+
+  const toggleFilterMenu = () => {
+    setIsFilterMenuOpen((prev) => !prev);
+  };
 
   const setBusqueda = (q: string) => {
     setBusquedaState(q);
@@ -68,6 +108,13 @@ export function SearchProvider({ children }: { children: React.ReactNode }) {
         setIsSearchOpen,
         toggleSearch,
         inputRef,
+        filtroTiempo,
+        setFiltroTiempo,
+        criterioOrden,
+        setCriterioOrden,
+        isFilterMenuOpen,
+        setIsFilterMenuOpen,
+        toggleFilterMenu,
       }}
     >
       {children}
@@ -85,6 +132,13 @@ export function useZonaSearch() {
       setIsSearchOpen: () => {},
       toggleSearch: () => {},
       inputRef: { current: null },
+      filtroTiempo: "hoy",
+      setFiltroTiempo: () => {},
+      criterioOrden: "recomendados" as CriterioOrden,
+      setCriterioOrden: () => {},
+      isFilterMenuOpen: false,
+      setIsFilterMenuOpen: () => {},
+      toggleFilterMenu: () => {},
     };
   }
   return ctx;

@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { AdminSecretTrigger } from "@/components/layout/AdminSecretTrigger";
 import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 import { ShareButton } from "@/components/events/ShareButton";
+import { FiltrosModal } from "@/components/layout/FiltrosModal";
 import { useZonaSearch } from "@/context/SearchContext";
 
 interface ZonaHeaderProps {
@@ -15,54 +16,87 @@ interface ZonaHeaderProps {
 export function ZonaHeader({ zonaNombre, zonaSlug, locale }: ZonaHeaderProps) {
   const tHeader = useTranslations("header");
   const tFilters = useTranslations("filters");
-  const { busqueda, setBusqueda, isSearchOpen, toggleSearch, inputRef } = useZonaSearch();
+  const {
+    busqueda,
+    setBusqueda,
+    isSearchOpen,
+    toggleSearch,
+    inputRef,
+    filtroTiempo,
+    setFiltroTiempo,
+    criterioOrden,
+    setCriterioOrden,
+    isFilterMenuOpen,
+    setIsFilterMenuOpen,
+    toggleFilterMenu,
+  } = useZonaSearch();
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-40 bg-cream/95 backdrop-blur-md border-b border-stone-light/80 px-4 py-2.5 sm:py-3 shadow-xs transition-all">
-      <div className="max-w-lg mx-auto">
-        {/* Fila principal del Header */}
-        <div className="flex items-center justify-between gap-3">
-          {/* Marca limpia + Subtítulo con el destino actual */}
-          <div className="space-y-0.5 min-w-0">
-            <AdminSecretTrigger>
-              <h1 className="font-serif text-2xl sm:text-3xl text-forest tracking-tight leading-none">
-                PaDónde
-              </h1>
-            </AdminSecretTrigger>
-            <p className="font-sans text-[11px] sm:text-xs text-stone mt-0.5 truncate">
-              {tHeader("subtitle", { zona: zonaNombre })}
-            </p>
-          </div>
+    <>
+      <header className="fixed top-0 left-0 right-0 z-40 bg-cream/95 backdrop-blur-md border-b border-stone-light/80 px-4 py-2.5 sm:py-3 shadow-xs transition-all">
+        <div className="max-w-lg mx-auto">
+          {/* Fila principal del Header */}
+          <div className="flex items-center justify-between gap-3">
+            {/* Marca limpia + Subtítulo con el destino actual */}
+            <div className="space-y-0.5 min-w-0">
+              <AdminSecretTrigger>
+                <h1 className="font-serif text-2xl sm:text-3xl text-forest tracking-tight leading-none">
+                  PaDónde
+                </h1>
+              </AdminSecretTrigger>
+              <p className="font-sans text-[11px] sm:text-xs text-stone mt-0.5 truncate">
+                {tHeader("subtitle", { zona: zonaNombre })}
+              </p>
+            </div>
 
-          {/* Columna derecha: Idiomas arriba, Acciones abajo (Buscador y Compartir) */}
-          <div className="flex flex-col items-end gap-1.5 shrink-0">
-            <LanguageSwitcher />
-            <div className="flex items-center gap-1.5">
-              {/* Botón Lupa elegante para búsqueda móvil */}
-              <button
-                id="btn-header-search"
-                type="button"
-                onClick={toggleSearch}
-                aria-label={tFilters("searchPlaceholder")}
-                className={`p-1.5 sm:p-2 rounded-xl transition-all duration-150 cursor-pointer flex items-center justify-center ${
-                  isSearchOpen || busqueda
-                    ? "bg-forest text-white shadow-xs scale-105"
-                    : "bg-white/70 hover:bg-white text-forest border border-stone-light/80 hover:border-forest/40 shadow-2xs"
-                }`}
-              >
-                <span className="text-xs sm:text-sm select-none">🔍</span>
-              </button>
+            {/* Columna derecha: Idiomas arriba, Acciones abajo (Buscador, Filtros/Ordenar, Compartir) */}
+            <div className="flex flex-col items-end gap-1.5 shrink-0">
+              <LanguageSwitcher />
+              <div className="flex items-center gap-1.5">
+                {/* Botón Lupa elegante para búsqueda móvil */}
+                <button
+                  id="btn-header-search"
+                  type="button"
+                  onClick={toggleSearch}
+                  aria-label={tFilters("searchPlaceholder")}
+                  className={`p-1.5 sm:p-2 rounded-xl transition-all duration-150 cursor-pointer flex items-center justify-center ${
+                    isSearchOpen || busqueda
+                      ? "bg-forest text-white shadow-xs scale-105"
+                      : "bg-white/70 hover:bg-white text-forest border border-stone-light/80 hover:border-forest/40 shadow-2xs"
+                  }`}
+                >
+                  <span className="text-xs sm:text-sm select-none">🔍</span>
+                </button>
 
-              <ShareButton
-                title={`PaDónde ${zonaSlug === "mendihuaca" ? "🌊" : "🌿"} Cartelera de ${zonaNombre}`}
-                text={`Descubre planes, eventos, rumba, hospedajes en ${zonaNombre} - PaDónde`}
-                url={`https://www.padonde.lat/${locale}/${zonaSlug}`}
-                zonaNombre={zonaNombre}
-                variant="header"
-              />
+                {/* Botón Filtros / Fechas / Ordenamiento (...) */}
+                <button
+                  id="btn-header-filtros"
+                  type="button"
+                  onClick={toggleFilterMenu}
+                  aria-label="Filtros y ordenamiento"
+                  title="Fecha y ordenamiento"
+                  className={`relative p-1.5 sm:p-2 rounded-xl transition-all duration-150 cursor-pointer flex items-center justify-center ${
+                    isFilterMenuOpen || filtroTiempo !== "hoy" || criterioOrden !== "recomendados"
+                      ? "bg-forest text-white shadow-xs scale-105"
+                      : "bg-white/70 hover:bg-white text-forest border border-stone-light/80 hover:border-forest/40 shadow-2xs"
+                  }`}
+                >
+                  <span className="text-xs sm:text-sm font-bold tracking-widest leading-none select-none px-0.5">•••</span>
+                  {(filtroTiempo !== "hoy" || criterioOrden !== "recomendados") && (
+                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-terra rounded-full border-2 border-white ring-1 ring-terra/30" />
+                  )}
+                </button>
+
+                <ShareButton
+                  title={`PaDónde ${zonaSlug === "mendihuaca" ? "🌊" : "🌿"} Cartelera de ${zonaNombre}`}
+                  text={`Descubre planes, eventos, rumba, hospedajes en ${zonaNombre} - PaDónde`}
+                  url={`https://www.padonde.lat/${locale}/${zonaSlug}`}
+                  zonaNombre={zonaNombre}
+                  variant="header"
+                />
+              </div>
             </div>
           </div>
-        </div>
 
         {/* Buscador deslizable y colapsable */}
         {isSearchOpen && (
@@ -115,5 +149,16 @@ export function ZonaHeader({ zonaNombre, zonaSlug, locale }: ZonaHeaderProps) {
         )}
       </div>
     </header>
-  );
+
+    <FiltrosModal
+      isOpen={isFilterMenuOpen}
+      onClose={() => setIsFilterMenuOpen(false)}
+      filtroTiempo={filtroTiempo}
+      setFiltroTiempo={setFiltroTiempo}
+      criterioOrden={criterioOrden}
+      setCriterioOrden={setCriterioOrden}
+      locale={locale}
+    />
+  </>
+);
 }

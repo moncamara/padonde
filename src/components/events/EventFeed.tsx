@@ -61,16 +61,20 @@ export function EventFeed({ eventos, zona, configTerritorial }: EventFeedProps) 
   const tFilters = useTranslations("filters");
   const locale = useLocale();
 
-  const [filtroTiempo, setFiltroTiempoState] = useState<FiltroTiempo>("hoy");
+  const {
+    busqueda,
+    setBusqueda,
+    filtroTiempo,
+    setFiltroTiempo,
+    criterioOrden,
+    toggleFilterMenu,
+  } = useZonaSearch();
+
   const [filtroCategoria, setFiltroCategoriaState] = useState<CategoriaEvento | null>(null);
 
-  // Restaurar filtros previamente seleccionados solo tras la hidratación en el cliente
+  // Restaurar categoría previamente seleccionada tras la hidratación en el cliente
   useEffect(() => {
     try {
-      const savedTiempo = sessionStorage.getItem("padonde_filtro_tiempo");
-      if (savedTiempo && (savedTiempo === "hoy" || savedTiempo === "fin_de_semana" || savedTiempo === "proximos" || savedTiempo.startsWith("20"))) {
-        setFiltroTiempoState(savedTiempo as FiltroTiempo);
-      }
       const savedCat = sessionStorage.getItem("padonde_filtro_categoria");
       if (savedCat) {
         setFiltroCategoriaState(savedCat as CategoriaEvento);
@@ -86,15 +90,6 @@ export function EventFeed({ eventos, zona, configTerritorial }: EventFeedProps) 
     } catch {}
   }, [zona]);
 
-  const setFiltroTiempo = (t: FiltroTiempo) => {
-    setFiltroTiempoState(t);
-    if (typeof window !== "undefined") {
-      try {
-        sessionStorage.setItem("padonde_filtro_tiempo", t);
-      } catch {}
-    }
-  };
-
   const setFiltroCategoria = (c: CategoriaEvento | null) => {
     setFiltroCategoriaState(c);
     if (typeof window !== "undefined") {
@@ -104,8 +99,6 @@ export function EventFeed({ eventos, zona, configTerritorial }: EventFeedProps) 
       } catch {}
     }
   };
-
-  const { busqueda, setBusqueda } = useZonaSearch();
 
   // Restauración de scroll precisa al volver atrás desde un detalle
   useEffect(() => {
@@ -233,8 +226,23 @@ export function EventFeed({ eventos, zona, configTerritorial }: EventFeedProps) 
     const territorialConfig = getTerritorialConfig(zona, configTerritorial);
 
     const ordenados = [...listaAFiltrar].sort((a, b) => {
-      // Si estamos mostrando otras fechas o es filtro "proximos", orden cronológico por día
-      if (fallbackOtrasFechas || filtroTiempo === "proximos") {
+      // 1. Criterio por PRECIO (si fue seleccionado expresamente en el menú)
+      if (criterioOrden === "precio") {
+        const precioA = a.precio !== null && a.precio !== undefined ? a.precio : 0;
+        const precioB = b.precio !== null && b.precio !== undefined ? b.precio : 0;
+        if (precioA !== precioB) return precioA - precioB;
+      }
+
+      // 2. Criterio por HORARIO (de más temprano a más tarde en el día)
+      if (criterioOrden === "hora") {
+        const minA = getMinutosDelDiaColombia(a.fecha_inicio);
+        const minB = getMinutosDelDiaColombia(b.fecha_inicio);
+        if (minA !== minB) return minA - minB;
+      }
+
+      // 3. Criterio por defecto: "recomendados"
+      // Si estamos mostrando otras fechas o es filtro "proximos" o "todos", orden cronológico por día
+      if (fallbackOtrasFechas || filtroTiempo === "proximos" || filtroTiempo === "todos") {
         const ymdA = getFechaYMDDesdeISO(a.fecha_inicio);
         const ymdB = getFechaYMDDesdeISO(b.fecha_inicio);
         if (ymdA !== ymdB) {
@@ -269,7 +277,7 @@ export function EventFeed({ eventos, zona, configTerritorial }: EventFeedProps) 
     });
 
     return { eventosFiltrados: ordenados, esEnOtrasFechas: fallbackOtrasFechas };
-  }, [eventos, filtroTiempo, filtroCategoria, zona, configTerritorial, queryNorm]);
+  }, [eventos, filtroTiempo, filtroCategoria, zona, configTerritorial, queryNorm, criterioOrden]);
 
   // Telemetría debounced en Google Analytics para registrar intenciones de búsqueda
   useEffect(() => {
@@ -310,6 +318,54 @@ export function EventFeed({ eventos, zona, configTerritorial }: EventFeedProps) 
         onTiempoChange={setFiltroTiempo}
         onCategoriaChange={setFiltroCategoria}
       />
+
+      {/* Chip sutil informativo cuando el usuario filtra por fecha u orden distinto a Hoy */}
+      {(filtroTiempo !== "hoy" || criterioOrden !== "recomendados") && (
+        <div className="flex items-center justify-between px-3.5 py-2 rounded-2xl bg-forest/8 border border-forest/15 text-xs font-sans animate-in fade-in duration-150 -mt-2 shadow-2xs">
+          <div className="flex items-center gap-1.5 text-forest">
+            <span className="text-sm select-none">
+              {filtroTiempo === "manana" ? "🌅" : filtroTiempo === "fin_de_semana" ? "🎉" : filtroTiempo === "todos" ? "✨" : "📅"}
+            </span>
+            <span>
+              {locale === "en" ? "Date:" : locale === "fr" ? "Date :" : locale === "de" ? "Datum:" : "Fecha:"}{" "}
+              <strong className="capitalize">
+                {filtroTiempo === "manana"
+                  ? (locale === "en" ? "Tomorrow" : "Mañana")
+                  : filtroTiempo === "fin_de_semana"
+                  ? (locale === "en" ? "Weekend" : "Fin de semana")
+                  : filtroTiempo === "todos"
+                  ? (locale === "en" ? "All plans" : "Todos los planes")
+                  : filtroTiempo}
+              </strong>
+              {criterioOrden !== "recomendados" && (
+                <span className="text-stone">
+                  {" "}· {criterioOrden === "hora" ? (locale === "en" ? "Earliest" : "Por hora") : (locale === "en" ? "By price" : "Por precio")}
+                </span>
+              )}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={toggleFilterMenu}
+              className="text-stone hover:text-forest underline text-[11px] font-medium cursor-pointer"
+            >
+              {locale === "en" ? "Change" : locale === "fr" ? "Modifier" : locale === "de" ? "Ändern" : "Cambiar"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setFiltroTiempo("hoy");
+              }}
+              title="Volver a planes de hoy"
+              aria-label="Volver a planes de hoy"
+              className="px-2 py-0.5 rounded-full bg-forest/10 hover:bg-forest/20 text-forest text-[11px] font-semibold cursor-pointer"
+            >
+              {locale === "en" ? "Today" : "Hoy"} ✕
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Indicador de resultados de búsqueda si hay texto activo */}
       {busqueda.trim() && eventosFiltrados.length > 0 && (
