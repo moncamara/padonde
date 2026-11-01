@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { EventFeed } from "@/components/events/EventFeed";
 import { ServiciosList } from "@/components/services/ServiciosList";
+import { TabsDestinos } from "@/components/layout/TabsDestinos";
 import type { EventoConNegocio, ServicioEsencial } from "@/lib/types";
 import type { TerritorialUXConfig } from "@/constants";
 import { trackTabChange } from "@/lib/analytics";
@@ -25,6 +26,7 @@ export function FeedTabsContainer({
   configTerritorial,
 }: FeedTabsContainerProps) {
   const t = useTranslations("essentialServices");
+  const locale = useLocale();
   const searchParams = useSearchParams();
   const [tabActiva, setTabActiva] = useState<"eventos" | "servicios">("eventos");
 
@@ -74,8 +76,11 @@ export function FeedTabsContainer({
   };
 
   return (
-    <div className="space-y-6">
-      {/* Switcher Superior de Pestañas (Cartelera vs. Info Útil) */}
+    <div className="space-y-4 sm:space-y-5">
+      {/* 1. Selector Multizona Horizontal (Minca, Mendihuaca, etc.) */}
+      <TabsDestinos zonaActiva={zona} locale={locale} />
+
+      {/* 2. Switcher Superior de Pestañas (Cartelera vs. Info Útil) */}
       <div className="flex items-center p-1 bg-stone-light/40 rounded-2xl max-w-sm mx-auto shadow-2xs">
         <button
           onClick={() => handleSwitchTab("eventos")}

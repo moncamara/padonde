@@ -442,6 +442,24 @@ export function eventoCoincideConFiltroTiempo(
     return ymdFin ? ymdFin >= hoyYMD : ymdInicio >= hoyYMD;
   }
 
+  if (filtro === "fin_de_semana") {
+    // Sábado y Domingo del fin de semana más próximo en Colombia
+    const sabado = new Date(now);
+    const diaHoy = sabado.getDay(); // 0 domingo, 6 sábado
+    const diasHastaSabado = (6 - diaHoy + 7) % 7;
+    sabado.setDate(sabado.getDate() + diasHastaSabado);
+    const domingo = new Date(sabado);
+    domingo.setDate(domingo.getDate() + 1);
+
+    const ymdSabado = getFechaYMDColombia(sabado);
+    const ymdDomingo = getFechaYMDColombia(domingo);
+
+    return (
+      eventoCoincideConFiltroTiempo(fechaInicioIso, ymdSabado, now, fechaFinIso, descripcion, tipo) ||
+      eventoCoincideConFiltroTiempo(fechaInicioIso, ymdDomingo, now, fechaFinIso, descripcion, tipo)
+    );
+  }
+
   let ymdTarget = filtro;
   if (filtro === "hoy") {
     ymdTarget = getFechaYMDColombia(now);

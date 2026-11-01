@@ -83,22 +83,31 @@ export function EventFilters({
 
   return (
     <div className="space-y-4">
-      {/* 1. SELECTOR DE TIEMPO DESLIZABLE (Sin flechas, scroll táctil fluido) */}
-      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
-        {opcionesTiempo.map(({ id, label }) => (
-          <button
-            key={id}
-            onClick={() => handleTiempo(id)}
-            className={[
-              "flex-shrink-0 px-4 py-2 rounded-full text-sm font-sans font-medium transition-all duration-150 cursor-pointer",
-              tiempoActivo === id
-                ? "bg-forest text-cream shadow-xs font-semibold"
-                : "border border-stone-light/80 bg-white/40 text-stone hover:border-forest hover:text-forest",
-            ].join(" ")}
-          >
-            {label}
-          </button>
-        ))}
+      {/* 1. SELECTOR COMPACTO DE FECHA / CUÁNDO (Hoy, Mañana, Fin de Semana, Todos) */}
+      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5 -mx-4 px-4 sm:mx-0 sm:px-0">
+        {[
+          { id: "hoy", label: tFilters("today"), emoji: "📅" },
+          { id: "manana", label: tFilters("tomorrow"), emoji: "🌅" },
+          { id: "fin_de_semana", label: locale === "en" ? "Weekend" : locale === "fr" ? "Week-end" : locale === "de" ? "Wochenende" : "Fin de semana", emoji: "🎉" },
+          { id: "todos", label: locale === "en" ? "All upcoming" : locale === "fr" ? "Tous les plans" : locale === "de" ? "Alle Termine" : "Todos los planes", emoji: "✨" },
+        ].map(({ id, label, emoji }) => {
+          const isSelected = tiempoActivo === id;
+          return (
+            <button
+              key={id}
+              onClick={() => handleTiempo(id)}
+              className={[
+                "shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-sans transition-all duration-150 cursor-pointer shadow-2xs active:scale-95",
+                isSelected
+                  ? "bg-forest text-cream font-bold shadow-xs scale-[1.02]"
+                  : "bg-white/80 border border-stone-light/80 text-stone hover:text-forest hover:bg-white",
+              ].join(" ")}
+            >
+              <span className="text-xs select-none">{emoji}</span>
+              <span className="whitespace-nowrap">{label}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* 2. FILTROS DE CATEGORÍA (Sin flechas, scroll táctil fluido) */}
