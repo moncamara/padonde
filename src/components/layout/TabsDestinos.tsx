@@ -27,13 +27,6 @@ const DESTINOS_TABS: DestinoTabConfig[] = [
     activa: true,
   },
   {
-    slug: "taganga",
-    nombre: "Taganga",
-    emoji: "🤿",
-    activa: false,
-    badge: "Pronto",
-  },
-  {
     slug: "mendihuaca",
     nombre: "Mendihuaca",
     emoji: "🌊",
@@ -43,6 +36,13 @@ const DESTINOS_TABS: DestinoTabConfig[] = [
     slug: "tayrona",
     nombre: "Tayrona",
     emoji: "🌴",
+    activa: false,
+    badge: "Pronto",
+  },
+  {
+    slug: "taganga",
+    nombre: "Taganga",
+    emoji: "🤿",
     activa: false,
     badge: "Pronto",
   },

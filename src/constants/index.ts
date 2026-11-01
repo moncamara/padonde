@@ -27,18 +27,18 @@ export const ZONAS: ZonaConfig[] = [
     activa: true,
   },
   {
-    slug: "taganga",
-    nombre: "Taganga",
-    nombreCorto: "Taganga",
-    descripcion: "Bahía de pescadores, buceo en arrecifes y atardeceres mágicos en el Caribe",
-    activa: false, // Fase 2
-  },
-  {
     slug: "tairona",
     nombre: "Parque Tairona",
     nombreCorto: "Tairona",
     descripcion: "Parque Nacional Natural Tayrona",
     activa: false, // Se activa en Fase 2
+  },
+  {
+    slug: "taganga",
+    nombre: "Taganga",
+    nombreCorto: "Taganga",
+    descripcion: "Bahía de pescadores, buceo en arrecifes y atardeceres mágicos en el Caribe",
+    activa: false, // Fase 2
   },
   {
     slug: "palomino",
