@@ -117,7 +117,16 @@ export function EventFilters({
 
   // Resolver emoji y label para el botón de fecha visible
   const fechaActual = opcionesFecha.find((op) => op.id === tiempoActivo) || opcionesFecha[0];
-  const esFechaFiltrada = tiempoActivo !== "hoy";
+  const esFechaFiltrada = Boolean(tiempoActivo && tiempoActivo !== "hoy" && opcionesFecha.some((op) => op.id === tiempoActivo));
+
+  // Si había una fecha en sessionStorage que ya pasó y no está en las opciones válidas, resetear limpiamente a Hoy
+  useEffect(() => {
+    if (tiempoActivo !== "hoy" && !opcionesFecha.some((op) => op.id === tiempoActivo)) {
+      if (onTiempoChange) {
+        onTiempoChange("hoy");
+      }
+    }
+  }, [tiempoActivo, opcionesFecha, onTiempoChange]);
 
   const handleSelectFecha = (id: string) => {
     if (onTiempoChange) {

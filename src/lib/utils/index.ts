@@ -443,16 +443,35 @@ export function eventoCoincideConFiltroTiempo(
   }
 
   if (filtro === "fin_de_semana") {
-    // Sábado y Domingo del fin de semana más próximo en Colombia
-    const sabado = new Date(now);
-    const diaHoy = sabado.getDay(); // 0 domingo, 6 sábado
-    const diasHastaSabado = (6 - diaHoy + 7) % 7;
-    sabado.setDate(sabado.getDate() + diasHastaSabado);
-    const domingo = new Date(sabado);
-    domingo.setDate(domingo.getDate() + 1);
+    // Sábado y Domingo del fin de semana actual o más próximo evaluado en Colombia (UTC-5)
+    const ymdHoy = getFechaYMDColombia(now);
+    const diaHoy = getDayOfWeekColombia(ymdHoy); // 0=Dom, 1=Lun, ..., 6=Sáb
 
-    const ymdSabado = getFechaYMDColombia(sabado);
-    const ymdDomingo = getFechaYMDColombia(domingo);
+    let ymdSabado: string;
+    let ymdDomingo: string;
+
+    if (diaHoy === 0) {
+      // Hoy es domingo (estamos en el fin de semana actual)
+      const sabado = new Date(now);
+      sabado.setDate(sabado.getDate() - 1);
+      ymdSabado = getFechaYMDColombia(sabado);
+      ymdDomingo = ymdHoy;
+    } else if (diaHoy === 6) {
+      // Hoy es sábado (estamos en el fin de semana actual)
+      const domingo = new Date(now);
+      domingo.setDate(domingo.getDate() + 1);
+      ymdSabado = ymdHoy;
+      ymdDomingo = getFechaYMDColombia(domingo);
+    } else {
+      // Lunes a Viernes: próximo fin de semana
+      const diasHastaSabado = 6 - diaHoy;
+      const sabado = new Date(now);
+      sabado.setDate(sabado.getDate() + diasHastaSabado);
+      const domingo = new Date(sabado);
+      domingo.setDate(domingo.getDate() + 1);
+      ymdSabado = getFechaYMDColombia(sabado);
+      ymdDomingo = getFechaYMDColombia(domingo);
+    }
 
     return (
       eventoCoincideConFiltroTiempo(fechaInicioIso, ymdSabado, now, fechaFinIso, descripcion, tipo) ||
