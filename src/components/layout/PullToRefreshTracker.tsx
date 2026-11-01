@@ -104,28 +104,7 @@ export function PullToRefreshTracker() {
     }, 650);
   }
 
-  // 2. Auto-recarga silenciosa al volver a enfocar la app (cuando el usuario regresa de WhatsApp u otra app)
-  useEffect(() => {
-    function handleVisibilityChange() {
-      if (document.visibilityState === "visible") {
-        const now = Date.now();
-        if (now - lastRefreshRef.current > 60000 && !isRefreshing) {
-          lastRefreshRef.current = now;
-          startTransition(() => {
-            router.refresh();
-          });
-        }
-      }
-    }
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    window.addEventListener("focus", handleVisibilityChange);
-
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      window.removeEventListener("focus", handleVisibilityChange);
-    };
-  }, [isRefreshing]);
+  // Auto-recarga automática en segundo plano eliminada para evitar consumo de Serverless CPU al alternar pestañas
 
   // Cero renderizado si no hay arrastre intencional ni recarga
   if (pullDist < 12 && !isRefreshing) return null;

@@ -46,7 +46,7 @@ export function PuntosQRMetricas() {
   // Calculadora de pago dinámico
   const [tarifaPorEscaneo, setTarifaPorEscaneo] = useState<number>(500);
   const [baseFijo, setBaseFijo] = useState<number>(0);
-  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [autoRefresh, setAutoRefresh] = useState(false);
   const [filtroBitacora, setFiltroBitacora] = useState<"todos" | "validos" | "repetidos">("validos");
 
   const cargarMetricas = useCallback(async () => {
@@ -70,12 +70,12 @@ export function PuntosQRMetricas() {
     cargarMetricas();
   }, [cargarMetricas]);
 
-  // Auto-refresco cada 25 segundos para monitoreo en vivo durante el turno del promotor
+  // Auto-refresco opcional cada 60 segundos si el admin lo activa explícitamente
   useEffect(() => {
     if (!autoRefresh) return;
     const interval = setInterval(() => {
       cargarMetricas();
-    }, 25000);
+    }, 60000);
     return () => clearInterval(interval);
   }, [autoRefresh, cargarMetricas]);
 

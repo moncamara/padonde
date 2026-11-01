@@ -15,7 +15,11 @@ interface MenuDemoPageProps {
   }>;
 }
 
-export const revalidate = 60;
+export const revalidate = 600;
+
+export function generateStaticParams() {
+  return [{ zona: "minca" }, { zona: "mendihuaca" }];
+}
 
 export async function generateMetadata({
   params,

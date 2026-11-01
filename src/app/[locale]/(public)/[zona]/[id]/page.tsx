@@ -37,8 +37,30 @@ interface EventoDetailPageProps {
   params: Promise<{ locale: string; zona: ZonaSlug; id: string }>;
 }
 
-// Revalidación cada 60 segundos en el Edge CDN de Vercel para soportar tráfico viral sin cargar la BD
-export const revalidate = 60;
+// Revalidación cada 10 minutos (600s) en el Edge CDN de Vercel con purga on-demand al editar
+export const revalidate = 600;
+export const dynamicParams = true;
+
+export async function generateStaticParams() {
+  try {
+    const { getPublicSupabaseClient } = await import("@/lib/supabase/public");
+    const supabase = getPublicSupabaseClient();
+    const { data: eventos } = await supabase
+      .from("eventos")
+      .select("id, zona_id, zonas(slug)")
+      .eq("activo", true)
+      .limit(60);
+
+    if (!eventos || eventos.length === 0) return [];
+
+    return eventos.map((ev: any) => ({
+      zona: ev.zonas?.slug || (ev.zona_id === "zona-mendihuaca" ? "mendihuaca" : "minca"),
+      id: ev.id,
+    }));
+  } catch {
+    return [];
+  }
+}
 
 export async function generateMetadata({ params }: EventoDetailPageProps): Promise<Metadata> {
   const { locale, zona: zonaSlug, id } = await params;

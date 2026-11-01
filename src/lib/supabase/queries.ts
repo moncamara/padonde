@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { getPublicSupabaseClient } from "@/lib/supabase/public";
 import { getMockEventos } from "@/lib/mock/eventos";
 import { MOCK_SERVICIOS_ESENCIALES } from "@/lib/mock/serviciosEsenciales";
 import { getZona } from "@/constants";
@@ -100,7 +100,7 @@ const COLUMNAS_CON_REPUTACION_Y_TRADUCCIONES = `
  */
 export async function getEventosByZona(zonaSlug: ZonaSlug): Promise<EventoConNegocio[]> {
   try {
-    const supabase = await createClient();
+    const supabase = getPublicSupabaseClient();
 
     // 1. Obtener ID de la zona por su slug
     const { data: zona, error: zonaError } = await supabase
@@ -177,7 +177,7 @@ export async function getEventosByZona(zonaSlug: ZonaSlug): Promise<EventoConNeg
  */
 export async function getEventoById(id: string): Promise<EventoConNegocio | null> {
   try {
-    const supabase = await createClient();
+    const supabase = getPublicSupabaseClient();
 
     let eventoData: any = null;
     const resInicial = await supabase
@@ -235,7 +235,7 @@ export async function getServiciosEsencialesByZona(
   zonaSlug: ZonaSlug
 ): Promise<ServicioEsencial[]> {
   try {
-    const supabase = await createClient();
+    const supabase = getPublicSupabaseClient();
 
     // 1. Obtener ID de la zona por su slug
     const { data: zona } = await supabase
@@ -283,7 +283,7 @@ export async function getServiciosEsencialesByZona(
  */
 export async function getConfigTerritorialAsync(): Promise<Record<string, any>> {
   try {
-    const supabase = await createClient();
+    const supabase = getPublicSupabaseClient();
     const { data } = await supabase
       .from("configuraciones")
       .select("valor")

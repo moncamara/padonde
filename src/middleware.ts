@@ -97,29 +97,34 @@ export default async function middleware(request: NextRequest) {
     }
   }
 
-  // 2. Refrescar sesión de Supabase Auth en las cookies
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          );
-        },
-      },
-    }
-  );
+  // 2. Refrescar sesión de Supabase Auth SOLO en rutas administrativas (/admin)
+  // Las rutas públicas (/minca, /mendihuaca, carteleras) se sirven desde Edge CDN sin latencia ni CPU de servidor
+  const isAdminRoute = request.nextUrl.pathname.includes("/admin");
 
-  // Esto refresca el token JWT del usuario si está por expirar
-  await supabase.auth.getUser();
+  if (isAdminRoute) {
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value }) =>
+              request.cookies.set(name, value)
+            );
+            cookiesToSet.forEach(({ name, value, options }) =>
+              response.cookies.set(name, value, options)
+            );
+          },
+        },
+      }
+    );
+
+    // Esto refresca el token JWT del administrador solo si visita el panel
+    await supabase.auth.getUser();
+  }
 
   return response;
 }

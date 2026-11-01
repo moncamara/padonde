@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/routing";
@@ -24,8 +25,13 @@ interface ZonaPageProps {
   params: Promise<{ locale: string; zona: ZonaSlug }>;
 }
 
-// Revalidación cada 60 segundos en el Edge CDN de Vercel para máxima velocidad y protección de la BD
-export const revalidate = 60;
+// Revalidación ISR cada 5 minutos (300s) en el Edge CDN de Vercel con purga instantánea en publicaciones
+export const revalidate = 300;
+
+export function generateStaticParams() {
+  const zonas: ZonaSlug[] = ["minca", "mendihuaca"];
+  return zonas.map((zona) => ({ zona }));
+}
 
 /** Metadata dinámica por zona e idioma — optimizada para búsquedas turísticas en Google */
 export async function generateMetadata({ params }: ZonaPageProps): Promise<Metadata> {
@@ -166,25 +172,27 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
       {/* Persistencia silenciosa de la última zona visitada para acceso directo PWA y retorno */}
       <ZonaPersistence zonaSlug={zonaSlug} />
 
-      <SearchProvider>
-        {/* Header fijo superior interactivo con selector de destino Minca/Mendihuaca, buscador colapsable, selector de idioma y compartir */}
-        <ZonaHeader
-          zonaNombre={zona.nombre}
-          zonaSlug={zonaSlug}
-          locale={locale}
-        />
-
-        {/* Feed principal y Servicios Esenciales con padding-top generoso para que el header fijo no monte las pestañas */}
-        <div className="max-w-lg mx-auto px-4 pt-24 sm:pt-28 pb-6">
-          <FeedTabsContainer
-            eventos={eventos}
-            servicios={servicios}
-            zona={zonaSlug}
+      <Suspense fallback={null}>
+        <SearchProvider>
+          {/* Header fijo superior interactivo con selector de destino Minca/Mendihuaca, buscador colapsable, selector de idioma y compartir */}
+          <ZonaHeader
             zonaNombre={zona.nombre}
-            configTerritorial={configTerritorial}
+            zonaSlug={zonaSlug}
+            locale={locale}
           />
-        </div>
-      </SearchProvider>
+
+          {/* Feed principal y Servicios Esenciales con padding-top generoso para que el header fijo no monte las pestañas */}
+          <div className="max-w-lg mx-auto px-4 pt-24 sm:pt-28 pb-6">
+            <FeedTabsContainer
+              eventos={eventos}
+              servicios={servicios}
+              zona={zonaSlug}
+              zonaNombre={zona.nombre}
+              configTerritorial={configTerritorial}
+            />
+          </div>
+        </SearchProvider>
+      </Suspense>
 
       {/* Footer — Módulo fijo de tránsito entre destinos + invitación a negocios */}
       <footer className="text-center py-6 px-4 pb-24 max-w-lg mx-auto">
@@ -221,7 +229,9 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
       <PullToRefreshTracker />
 
       {/* Rastreador de escaneo físico QR con antifraude */}
-      <QRScanTracker zonaSlug={zonaSlug} />
+      <Suspense fallback={null}>
+        <QRScanTracker zonaSlug={zonaSlug} />
+      </Suspense>
     </main>
   );
 }
