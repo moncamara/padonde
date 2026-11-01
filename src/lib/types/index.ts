@@ -7,7 +7,7 @@
 // ─── Enumeraciones ────────────────────────────────────────────────────────────
 
 /** Slugs de las zonas geográficas soportadas */
-export type ZonaSlug = "minca" | "tairona" | "santa-marta" | "mendihuaca";
+export type ZonaSlug = "minca" | "tairona" | "santa-marta" | "mendihuaca" | "taganga" | "tayrona" | "palomino";
 
 /** Categorías de eventos — usadas para filtros y badges */
 export type CategoriaEvento =

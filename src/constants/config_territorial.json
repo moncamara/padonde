@@ -82,5 +82,26 @@
       "poster_url": "",
       "duracion_segundos": 15
     }
+  },
+  "taganga": {
+    "ordenCategorias": [
+      "tours",
+      "hospedaje",
+      "comida",
+      "rumba",
+      "bienestar",
+      "arte",
+      "artesanias"
+    ],
+    "criterioOrdenFeed": "agenda_primero",
+    "capsula": {
+      "activa": false,
+      "etiqueta": "Visítanos",
+      "titulo": "Taganga • Buceo, Bahía & Atardeceres",
+      "descripcion": "Aguas cristalinas, arrecifes de coral y la mejor vibra pesquera del Caribe.",
+      "video_url": "",
+      "poster_url": "",
+      "duracion_segundos": 15
+    }
   }
 }

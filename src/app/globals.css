@@ -58,6 +58,13 @@ html[data-zona="tairona"] {
   --color-region-soft: #EAF2EC;
 }
 
+[data-zona="taganga"],
+html[data-zona="taganga"] {
+  --color-forest: #0B5B75;
+  --color-forest-dark: #063A4B;
+  --color-region-soft: #E1F2F7;
+}
+
 [data-zona="palomino"],
 html[data-zona="palomino"] {
   --color-forest: #9E4B27;
