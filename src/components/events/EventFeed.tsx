@@ -40,6 +40,7 @@ function eventoCoincideConBusqueda(e: EventoConNegocio, queryNorm: string): bool
   if (e.descripcion && normalizarTexto(e.descripcion).includes(queryNorm)) return true;
   if (e.negocio?.nombre && normalizarTexto(e.negocio.nombre).includes(queryNorm)) return true;
   if (normalizarTexto(e.tipo).includes(queryNorm)) return true;
+  if (e.categorias?.some((c) => normalizarTexto(c).includes(queryNorm))) return true;
   if (
     e.metadata_hospedaje?.habitaciones?.some(
       (h) =>
@@ -186,9 +187,14 @@ export function EventFeed({ eventos, zona, configTerritorial }: EventFeedProps) 
     const now = nowRef.current;
 
     // 1. Filtrar por categoría seleccionada
-    const porCategoria = filtroCategoria === null
-      ? eventos
-      : eventos.filter((e) => e.tipo === filtroCategoria);
+    const porCategoria =
+      filtroCategoria === null
+        ? eventos
+        : eventos.filter((e) =>
+            e.categorias?.length
+              ? e.categorias.includes(filtroCategoria)
+              : e.tipo === filtroCategoria
+          );
 
     // 2. Filtrar por texto de búsqueda
     const coincidentesBusqueda = !queryNorm
@@ -197,7 +203,9 @@ export function EventFeed({ eventos, zona, configTerritorial }: EventFeedProps) 
 
     // 3. Filtrar por fecha
     const coincidentesEnFecha = coincidentesBusqueda.filter((e) => {
-      if (filtroCategoria === "hospedaje") return e.tipo === "hospedaje";
+      if (filtroCategoria === "hospedaje") {
+        return e.categorias?.length ? e.categorias.includes("hospedaje") : e.tipo === "hospedaje";
+      }
 
       return eventoCoincideConFiltroTiempo(
         e.fecha_inicio,

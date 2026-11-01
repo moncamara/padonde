@@ -255,11 +255,27 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
         titulo={evento.titulo}
         galeriaFotos={evento.metadata_hospedaje?.galeria_fotos}
         categoriaBadge={
-          categoria ? (
-            <span className="bg-white/20 backdrop-blur-md text-white text-xs font-sans font-medium px-3 py-1 rounded-full">
-              {categoria.emoji} {tCat(evento.tipo)}
-            </span>
-          ) : null
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {categoria ? (
+              <span className="bg-white/20 backdrop-blur-md text-white text-xs font-sans font-medium px-3 py-1 rounded-full border border-white/20">
+                {categoria.emoji} {tCat(evento.tipo)}
+              </span>
+            ) : null}
+            {(evento.categorias || [])
+              .filter((c) => c !== evento.tipo)
+              .map((secCatKey) => {
+                const secCat = getCategoria(secCatKey);
+                if (!secCat) return null;
+                return (
+                  <span
+                    key={secCatKey}
+                    className="bg-black/30 backdrop-blur-md text-white/95 text-xs font-sans font-normal px-2.5 py-1 rounded-full border border-white/15"
+                  >
+                    {secCat.emoji} {tCat(secCatKey)}
+                  </span>
+                );
+              })}
+          </div>
         }
         destacadoBadge={
           evento.destacado ? (

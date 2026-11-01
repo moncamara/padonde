@@ -29,6 +29,7 @@ export interface EventoAdminItem {
   id: string;
   titulo: string;
   tipo: string;
+  categorias?: string[] | null;
   precio: number | null;
   precio_moneda: string;
   fecha_inicio: string;
@@ -171,7 +172,9 @@ export function AdminEventList({
     return listaBase.filter((ev) => {
       const tituloMatch = ev.titulo.toLowerCase().includes(q);
       const negocioMatch = ev.negocio?.nombre.toLowerCase().includes(q) ?? false;
-      const tipoMatch = ev.tipo.toLowerCase().includes(q);
+      const tipoMatch =
+        ev.tipo.toLowerCase().includes(q) ||
+        (ev.categorias && ev.categorias.some((c) => c.toLowerCase().includes(q)));
       return tituloMatch || negocioMatch || tipoMatch;
     });
   }, [listaBase, busqueda]);
@@ -383,11 +386,28 @@ export function AdminEventList({
 
                   {(() => {
                     const catObj = getCategoria(ev.tipo as CategoriaEvento);
-                    return catObj ? (
-                      <span className="text-[10px] bg-stone-100 text-stone-700 border border-stone-200 px-2 py-0.5 rounded-full font-medium">
-                        {catObj.emoji} {catObj.label}
-                      </span>
-                    ) : null;
+                    const secundarias = (ev.categorias || []).filter((c) => c !== ev.tipo);
+                    return (
+                      <div className="flex items-center gap-1 flex-wrap">
+                        {catObj ? (
+                          <span className="text-[10px] bg-stone-100 text-stone-700 border border-stone-200 px-2 py-0.5 rounded-full font-medium">
+                            {catObj.emoji} {catObj.label}
+                          </span>
+                        ) : null}
+                        {secundarias.map((c) => {
+                          const sObj = getCategoria(c as CategoriaEvento);
+                          if (!sObj) return null;
+                          return (
+                            <span
+                              key={c}
+                              className="text-[10px] bg-stone-50 text-stone-500 border border-stone-200/60 px-1.5 py-0.5 rounded-full font-normal"
+                            >
+                              {sObj.emoji} {sObj.label}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    );
                   })()}
 
                   {/* Métrica de Clics a WhatsApp */}

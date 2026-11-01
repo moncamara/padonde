@@ -93,6 +93,25 @@ export function EventCard({ evento: rawEvento, zona, priority = false }: EventCa
               </span>
             ) : null}
 
+            {/* Badges secundarios sutiles */}
+            {evento.categorias &&
+              evento.categorias
+                .filter((c) => c !== evento.tipo)
+                .slice(0, 2)
+                .map((secCatKey) => {
+                  const secObj = getCategoria(secCatKey);
+                  if (!secObj) return null;
+                  return (
+                    <span
+                      key={secCatKey}
+                      className="bg-black/35 backdrop-blur-md text-white/90 text-[11px] font-sans font-normal px-2 py-0.5 rounded-full border border-white/10 shadow-2xs inline-flex items-center gap-1"
+                    >
+                      <span>{secObj.emoji}</span>
+                      <span className="hidden sm:inline">{tCat(secCatKey)}</span>
+                    </span>
+                  );
+                })}
+
             {evento.video_url && (
               <span className="bg-black/60 backdrop-blur-md text-white text-xs font-sans font-semibold px-2.5 py-1 rounded-full border border-amber-400/40 shadow-xs flex items-center gap-1 text-amber-300">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />

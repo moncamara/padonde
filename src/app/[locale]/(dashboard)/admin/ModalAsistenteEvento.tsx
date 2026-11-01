@@ -302,6 +302,7 @@ export function ModalAsistenteEvento({
         instagram: finalInstagram,
         eventTitle: evento.titulo.trim(),
         category: evento.categoria,
+        categories: [evento.categoria],
         dateTime: evento.dateTime,
         fechaFin: evento.fechaFin || null,
         price: Number(evento.precio) || 0,

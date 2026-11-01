@@ -172,9 +172,9 @@ export function EventUpsertForm({
     setInstagram(aliado.instagram || "");
     if (aliado.categoria) {
       if (aliado.categoria === "hospedaje") {
-        setCategory("comida");
+        setSelectedCategories(["comida"]);
       } else {
-        setCategory(aliado.categoria as CategoriaEvento);
+        setSelectedCategories([aliado.categoria as CategoriaEvento]);
       }
     }
     if (aliado.zonaSlug) {
@@ -197,11 +197,24 @@ export function EventUpsertForm({
 
   // 2. Información Básica del Evento
   const [eventTitle, setEventTitle] = useState(initialEvento?.titulo || "");
-  const [category, setCategory] = useState<CategoriaEvento>(
-    (initialEvento?.tipo as CategoriaEvento) ||
-      (initialNegocio?.categoria as CategoriaEvento) ||
-      "comida"
-  );
+  const [selectedCategories, setSelectedCategories] = useState<CategoriaEvento[]>(() => {
+    if (initialEvento && (initialEvento as any).categorias && (initialEvento as any).categorias.length > 0) {
+      return (initialEvento as any).categorias as CategoriaEvento[];
+    }
+    if (initialEvento?.tipo) return [initialEvento.tipo as CategoriaEvento];
+    if (initialNegocio?.categoria) return [initialNegocio.categoria as CategoriaEvento];
+    return ["comida"];
+  });
+  const category = selectedCategories[0] || "comida";
+
+  function toggleCategory(catId: CategoriaEvento) {
+    setSelectedCategories((prev) => {
+      if (prev.includes(catId)) {
+        return prev.filter((c) => c !== catId);
+      }
+      return [...prev, catId];
+    });
+  }
   const [price, setPrice] = useState(() => {
     if (initialEvento && initialEvento.precio !== null && initialEvento.precio !== undefined) {
       return initialEvento.precio.toString();
@@ -594,7 +607,12 @@ export function EventUpsertForm({
   // Callback del Asistente IA
   function handleDatosAsistenteExtraidos(datos: EventoExtraido) {
     if (datos.titulo) setEventTitle(datos.titulo);
-    if (datos.categoria) setCategory(datos.categoria);
+    if (datos.categoria) {
+      setSelectedCategories((prev) => {
+        const sinNueva = prev.filter((c) => c !== datos.categoria);
+        return [datos.categoria!, ...sinNueva];
+      });
+    }
     if (datos.dateTime) setDateTime(datos.dateTime);
     if (datos.fechaFin) {
       setFechaFin(datos.fechaFin);
@@ -616,6 +634,10 @@ export function EventUpsertForm({
   // Submit Handler Unificado (Upsert Canónico)
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (selectedCategories.length === 0) {
+      setError("Debes seleccionar al menos una categoría para el evento.");
+      return;
+    }
     setLoading(true);
     setError(null);
 
@@ -687,6 +709,7 @@ export function EventUpsertForm({
           instagram: instagram.trim() || null,
           eventTitle: eventTitle.trim(),
           category,
+          categories: selectedCategories,
           dateTime: dateTime || new Date().toISOString(),
           fechaFin: tieneFechaFin && fechaFin ? fechaFin : null,
           price: parseFloat(price) || 0,
@@ -729,6 +752,7 @@ export function EventUpsertForm({
           titulo: eventTitle.trim(),
           descripcion: descripcionFinal || null,
           tipo: category,
+          categories: selectedCategories,
           precio: parseFloat(price) || 0,
           dateTime: dateTime || initialEvento.fecha_inicio,
           fechaFin: tieneFechaFin && fechaFin ? fechaFin : null,
@@ -767,6 +791,7 @@ export function EventUpsertForm({
               titulo: eventTitle.trim(),
               descripcion: descripcionFinal || null,
               tipo: category,
+              categorias: selectedCategories,
               precio: parseFloat(price) || 0,
               fecha_inicio: parseLocalColombiaAISO(dateTime || initialEvento.fecha_inicio),
               fecha_fin: tieneFechaFin && fechaFin ? parseLocalColombiaAISO(fechaFin) : null,
@@ -1073,39 +1098,63 @@ export function EventUpsertForm({
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            {/* Categoría */}
-            <div>
-              <label className="block text-xs font-semibold text-forest mb-1">Categoría *</label>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value as CategoriaEvento)}
-                className="w-full p-2.5 text-xs bg-white rounded-xl border border-stone-light/80 text-forest font-medium outline-none cursor-pointer"
-              >
-                {CATEGORIAS_EVENTOS.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.emoji} {c.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+          {/* Selector de Categorías (Multicategoría) */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold text-forest">
+              Categorías del Evento *
+            </label>
+            <p className="text-[11px] text-stone">
+              Toca para marcar o desmarcar. Puedes elegir una o varias (ej. Gastronomía + Música).
+            </p>
 
-            {/* Precio */}
-            <div>
-              <label className="block text-xs font-semibold text-forest mb-1">
-                Precio (COP) — 0 para Entrada Libre
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone text-xs">$</span>
-                <input
-                  type="number"
-                  min="0"
-                  step="1000"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  className="w-full pl-7 pr-3 py-2.5 text-xs bg-white rounded-xl border border-stone-light/80 text-forest font-mono outline-none focus:ring-1 focus:ring-forest"
-                />
-              </div>
+            <div className="flex flex-wrap gap-2 pt-1">
+              {CATEGORIAS_EVENTOS.map((c) => {
+                const isSelected = selectedCategories.includes(c.id);
+
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => toggleCategory(c.id)}
+                    className={`min-h-[44px] px-4 py-2 rounded-2xl text-xs font-sans transition-all duration-150 cursor-pointer flex items-center gap-2 select-none active:scale-95 ${
+                      isSelected
+                        ? "bg-forest text-white font-bold shadow-xs ring-2 ring-forest/25 scale-[1.02]"
+                        : "bg-white text-stone-dark border border-stone-light hover:bg-stone-50 hover:border-stone/60 font-medium"
+                    }`}
+                  >
+                    <span className="text-base">{c.emoji}</span>
+                    <span>{c.label}</span>
+                    {isSelected ? (
+                      <span className="w-4 h-4 rounded-full bg-white/25 text-white flex items-center justify-center text-[10px] font-bold ml-1">
+                        ✓
+                      </span>
+                    ) : null}
+                  </button>
+                );
+              })}
+            </div>
+            {selectedCategories.length === 0 && (
+              <p className="text-xs text-red-600 font-medium pt-1">
+                Debes seleccionar al menos una categoría para el evento.
+              </p>
+            )}
+          </div>
+
+          {/* Precio */}
+          <div>
+            <label className="block text-xs font-semibold text-forest mb-1">
+              Precio (COP) — 0 para Entrada Libre
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone text-xs">$</span>
+              <input
+                type="number"
+                min="0"
+                step="1000"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                className="w-full pl-7 pr-3 py-2.5 text-xs bg-white rounded-xl border border-stone-light/80 text-forest font-mono outline-none focus:ring-1 focus:ring-forest"
+              />
             </div>
           </div>
 

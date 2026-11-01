@@ -21,6 +21,7 @@ export interface AdminPublishInput {
   instagram?: string;
   eventTitle: string;
   category: CategoriaEvento;
+  categories?: CategoriaEvento[];
   dateTime: string;
   fechaFin?: string | null;
   price: number;
@@ -202,13 +203,19 @@ export async function adminPublishEventAction(
       console.warn("No se pudieron generar traducciones automáticas al publicar:", e);
     }
 
-    // 5. Crear evento con soporte de columna traducciones
-    const basePayload = {
+    // 5. Crear evento con soporte de columna traducciones y categorias multicategoria
+    const listaCategorias: string[] = input.categories && input.categories.length > 0
+      ? input.categories
+      : [input.category];
+    const categoriaPrincipal = (listaCategorias[0] || input.category) as CategoriaEvento;
+
+    const basePayload: Record<string, any> = {
       negocio_id: negocioId,
       zona_id: zona.id,
       titulo: input.eventTitle.trim(),
       descripcion: input.description.trim() || null,
-      tipo: input.category,
+      tipo: categoriaPrincipal,
+      categorias: listaCategorias,
       precio: input.price > 0 ? input.price : 0,
       precio_moneda: "COP",
       fecha_inicio: parseLocalColombiaAISO(input.dateTime),
@@ -809,6 +816,7 @@ export interface EditarEventoAdminInput {
   titulo: string;
   descripcion?: string | null;
   tipo: CategoriaEvento;
+  categories?: CategoriaEvento[];
   precio: number;
   dateTime: string;
   fechaFin?: string | null;
@@ -846,10 +854,16 @@ export async function editarEventoAdminAction(input: EditarEventoAdminInput) {
       return { success: false, error: "Debes iniciar sesión para editar." };
     }
 
+    const listaCategorias: string[] = input.categories && input.categories.length > 0
+      ? input.categories
+      : [input.tipo];
+    const categoriaPrincipal = (listaCategorias[0] || input.tipo) as CategoriaEvento;
+
     const updatePayload: Record<string, any> = {
       titulo: input.titulo.trim(),
       descripcion: input.descripcion?.trim() || null,
-      tipo: input.tipo,
+      tipo: categoriaPrincipal,
+      categorias: listaCategorias,
       precio: input.precio >= 0 ? input.precio : 0,
       fecha_inicio: parseLocalColombiaAISO(input.dateTime),
       fecha_fin: input.fechaFin ? parseLocalColombiaAISO(input.fechaFin) : null,

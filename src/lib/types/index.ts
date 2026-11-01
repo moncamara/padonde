@@ -65,6 +65,7 @@ export type Evento = {
   titulo: string;
   descripcion: string | null;
   tipo: CategoriaEvento;
+  categorias?: CategoriaEvento[];
   precio: number | null;           // null = gratis o precio a consultar
   precio_moneda: "COP" | "USD";
   fecha_inicio: string;            // ISO 8601
