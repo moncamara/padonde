@@ -80,22 +80,22 @@ export function FeedTabsContainer({
       {/* 1. Selector Multizona Horizontal (Minca, Mendihuaca, etc.) */}
       <TabsDestinos zonaActiva={zona} locale={locale} />
 
-      {/* 2. Switcher de Pestañas: Activa con color primario sólido, Inactiva con fondo blanco */}
-      <div className="flex items-center gap-2 max-w-sm mx-auto">
+      {/* 2. Switcher Superior de Pestañas (Cartelera vs. Info Útil) */}
+      <div className="flex items-center p-1 bg-stone-light/40 rounded-2xl max-w-sm mx-auto shadow-2xs">
         <button
           id="tab-btn-cartelera"
           type="button"
           onClick={() => handleSwitchTab("eventos")}
           className={[
-            "flex-1 py-2.5 px-3.5 rounded-2xl font-sans text-xs transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 select-none shadow-2xs active:scale-95",
+            "flex-1 py-2 px-3 rounded-xl font-sans text-xs font-semibold transition-all duration-150 cursor-pointer flex items-center justify-center gap-1.5",
             tabActiva === "eventos"
-              ? "bg-forest text-white font-bold shadow-xs scale-[1.01]"
-              : "bg-white hover:bg-stone-50 text-stone-dark border border-stone-light/80 font-medium",
+              ? "bg-white text-forest shadow-xs font-bold"
+              : "text-stone hover:text-forest",
           ].join(" ")}
           aria-selected={tabActiva === "eventos"}
           role="tab"
         >
-          <span className="text-sm">{zona === "mendihuaca" ? "🌊" : "🌿"}</span>
+          <span>{zona === "mendihuaca" ? "🌊" : "🌿"}</span>
           <span className="truncate">{t("tabCartelera")}</span>
         </button>
 
@@ -104,15 +104,15 @@ export function FeedTabsContainer({
           type="button"
           onClick={() => handleSwitchTab("servicios")}
           className={[
-            "flex-1 py-2.5 px-3.5 rounded-2xl font-sans text-xs transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 select-none shadow-2xs active:scale-95",
+            "flex-1 py-2 px-3 rounded-xl font-sans text-xs font-semibold transition-all duration-150 cursor-pointer flex items-center justify-center gap-1.5",
             tabActiva === "servicios"
-              ? "bg-forest text-white font-bold shadow-xs scale-[1.01]"
-              : "bg-white hover:bg-stone-50 text-stone-dark border border-stone-light/80 font-medium",
+              ? "bg-white text-forest shadow-xs font-bold"
+              : "text-stone hover:text-forest",
           ].join(" ")}
           aria-selected={tabActiva === "servicios"}
           role="tab"
         >
-          <span className="text-sm">💡</span>
+          <span>💡</span>
           <span className="truncate">{t("tabServicios")}</span>
         </button>
       </div>
