@@ -81,7 +81,7 @@ export function FeedTabsContainer({
       <TabsDestinos zonaActiva={zona} locale={locale} />
 
       {/* 2. Switcher Superior de Pestañas (Cartelera vs. Info Útil) */}
-      <div className="flex items-center p-1 bg-stone-light/40 rounded-2xl max-w-sm mx-auto shadow-2xs">
+      <div className="flex items-center gap-1 p-1 bg-stone-light/50 rounded-2xl border border-stone-light/70 max-w-sm mx-auto shadow-2xs">
         <button
           id="tab-btn-cartelera"
           type="button"
@@ -89,8 +89,8 @@ export function FeedTabsContainer({
           className={[
             "flex-1 py-2 px-3 rounded-xl font-sans text-xs font-semibold transition-all duration-150 cursor-pointer flex items-center justify-center gap-1.5",
             tabActiva === "eventos"
-              ? "bg-white text-forest shadow-xs font-bold"
-              : "text-stone hover:text-forest",
+              ? "bg-forest text-white font-bold shadow-xs"
+              : "bg-white text-stone-dark hover:text-forest font-medium shadow-2xs",
           ].join(" ")}
           aria-selected={tabActiva === "eventos"}
           role="tab"
@@ -106,8 +106,8 @@ export function FeedTabsContainer({
           className={[
             "flex-1 py-2 px-3 rounded-xl font-sans text-xs font-semibold transition-all duration-150 cursor-pointer flex items-center justify-center gap-1.5",
             tabActiva === "servicios"
-              ? "bg-white text-forest shadow-xs font-bold"
-              : "text-stone hover:text-forest",
+              ? "bg-forest text-white font-bold shadow-xs"
+              : "bg-white text-stone-dark hover:text-forest font-medium shadow-2xs",
           ].join(" ")}
           aria-selected={tabActiva === "servicios"}
           role="tab"
