@@ -78,7 +78,7 @@ Contamos con tarifario oficial unificado de 69 rutas. Consulta destinos, hostale
             precio = 0,
             precio_moneda = 'COP',
             activo = true,
-            destacado = true,
+            destacado = false,
             metadata_hospedaje = jsonb_build_object(
                 'tarifario_id', 'transporte-aventura-4x4-minca'
             )
@@ -124,7 +124,7 @@ Contamos con tarifario oficial unificado de 69 rutas. Consulta destinos, hostale
             NOW() + INTERVAL '365 days',
             'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=1200&q=80',
             true,
-            true,
+            false,
             jsonb_build_object(
                 'tarifario_id', 'transporte-aventura-4x4-minca'
             )

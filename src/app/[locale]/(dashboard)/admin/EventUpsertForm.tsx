@@ -1770,18 +1770,29 @@ export function EventUpsertForm({
 
       {/* 7. OPCIONES DE VISIBILIDAD */}
       <div className="bg-white/80 p-4 sm:p-5 rounded-3xl border border-stone-light/70 shadow-2xs space-y-3 font-sans">
-        <div className="flex items-center justify-between">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={isFeatured}
-              onChange={(e) => setIsFeatured(e.target.checked)}
-              className="rounded text-terra focus:ring-terra w-4 h-4 cursor-pointer"
-            />
-            <span className="text-xs font-bold text-forest">
-              ★ Destacar en la cartelera (Posición prioritaria)
+        <div className="flex items-center justify-between gap-3">
+          <div className="space-y-0.5">
+            <span className="text-xs font-bold text-forest block">
+              ★ Posición en Cartelera
             </span>
-          </label>
+            <span className="text-[11px] text-stone block">
+              {isFeatured
+                ? "⭐ Destacado: Aparece al inicio del feed (Posición prioritaria)"
+                : "⚪ Estándar: Orden natural en Tours (no desplaza los eventos de hoy)"}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setIsFeatured(!isFeatured)}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 select-none ${
+              isFeatured
+                ? "bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs font-bold hover:bg-amber-200"
+                : "bg-stone-light/60 text-stone hover:bg-stone-light"
+            }`}
+          >
+            <span>{isFeatured ? "⭐ Destacado" : "⚪ Normal (Estándar)"}</span>
+          </button>
         </div>
 
         {mode === "editar" && (
