@@ -138,7 +138,14 @@ export function ServiciosList({ servicios, zonaNombre, zonaSlug }: ServiciosList
             const shareTitle = `${servicio.nombre_comercial} - PaDónde`;
             const shareText = `${servicio.nombre_comercial} (${t(`categories.${servicio.categoria}`)}): ${servicio.subtitulo || ""} en ${zonaNombre}. Consúltalo en PaDónde:`;
 
-            const tarifarioId = (servicio.metadata_comercial as Record<string, any>)?.tarifario_id || servicio.id;
+            const rawTarifarioId =
+              (servicio.metadata_comercial as Record<string, any>)?.tarifario_id ||
+              servicio.id;
+            const tarifarioId =
+              rawTarifarioId === "transporte-aventura-4x4-minca" ||
+              servicio.nombre_comercial?.toLowerCase().includes("aventura 4x4")
+                ? "transporte-aventura-4x4-minca"
+                : rawTarifarioId;
             const tarifario = getTarifarioPorId(tarifarioId);
 
             return (

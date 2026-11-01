@@ -71,6 +71,9 @@ export function ModalEditarEsencial({
   const [botonWhatsappActivo, setBotonWhatsappActivo] = useState(
     servicio?.boton_whatsapp_activo ?? true
   );
+  const [tarifarioId, setTarifarioId] = useState<string>(
+    (servicio?.metadata_comercial as any)?.tarifario_id || ""
+  );
 
   // Estados de Fotos y Video/Reel
   const [imagenLugarUrl, setImagenLugarUrl] = useState(
@@ -110,6 +113,14 @@ export function ModalEditarEsencial({
       setActivo(servicio.activo ?? true);
       setBotonWhatsappActivo(servicio.boton_whatsapp_activo ?? true);
 
+      const initialTarifarioId =
+        (servicio.metadata_comercial as any)?.tarifario_id ||
+        (servicio.id === "transporte-aventura-4x4-minca" ||
+        servicio.nombre_comercial?.toLowerCase().includes("aventura 4x4")
+          ? "transporte-aventura-4x4-minca"
+          : "");
+      setTarifarioId(initialTarifarioId);
+
       const mainImg = servicio.imagen_lugar_url || servicio.metadata_comercial?.imagenes?.[0] || "";
       setImagenLugarUrl(mainImg);
       setPreviewFoto(mainImg || null);
@@ -134,6 +145,7 @@ export function ModalEditarEsencial({
       setOrden(10);
       setActivo(true);
       setBotonWhatsappActivo(true);
+      setTarifarioId("");
       setImagenLugarUrl("");
       setPreviewFoto(null);
       setImagenes([]);
@@ -239,6 +251,7 @@ export function ModalEditarEsencial({
           ordenPrioridad: orden,
           activo,
           botonWhatsappActivo,
+          tarifarioId: tarifarioId || null,
         });
 
         setSubiendoArchivos(false);
@@ -449,6 +462,31 @@ export function ModalEditarEsencial({
               placeholder="🏧 Retiro Efectivo, 💶 Cambio EUR & USD, 💳 Datáfono"
               className="w-full p-2.5 rounded-xl border border-stone-light bg-stone-light/10 text-forest text-xs focus:ring-2 focus:ring-forest/20 outline-none"
             />
+          </div>
+
+          {/* Tarifario Oficial de Rutas (Especial para Transporte) */}
+          <div className="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200/90 space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="font-semibold text-amber-950 text-xs flex items-center gap-1.5">
+                <span>📋</span> Tarifario Oficial Asociado (Opcional):
+              </label>
+              <span className="text-[10px] text-amber-800 font-medium bg-amber-100 px-2 py-0.5 rounded-full">
+                Módulo 4x4 & Rutas
+              </span>
+            </div>
+            <select
+              value={tarifarioId}
+              onChange={(e) => setTarifarioId(e.target.value)}
+              className="w-full p-2.5 rounded-xl border border-amber-200 bg-white text-forest text-xs focus:ring-2 focus:ring-amber-400 outline-none"
+            >
+              <option value="">Ninguno (Ficha estándar de servicio)</option>
+              <option value="transporte-aventura-4x4-minca">
+                🚙 Aventura 4X4 Minca (69 Rutas • Expresos, Pozo Azul, Marinka, Sierra Alta y Kennedy)
+              </option>
+            </select>
+            <p className="text-[10px] text-amber-900/80 leading-relaxed">
+              Al vincularlo, la ficha en PaDónde mostrará el botón destacado &ldquo;Ver Tarifas&rdquo; y abrirá el buscador interactivo para cotizar y pedir el servicio por WhatsApp.
+            </p>
           </div>
 
           {/* Fila Multimedia: Foto Principal, Galería y Reel Vertical */}

@@ -1560,6 +1560,7 @@ export interface GuardarServicioEsencialInput {
   ordenPrioridad?: number;
   activo?: boolean;
   botonWhatsappActivo?: boolean;
+  tarifarioId?: string | null;
 }
 
 export async function guardarServicioEsencialAction(
@@ -1615,6 +1616,7 @@ export async function guardarServicioEsencialAction(
       metadata_comercial: {
         imagenes: imagenesValidas,
         video_url: input.videoUrl?.trim() || null,
+        ...(input.tarifarioId?.trim() ? { tarifario_id: input.tarifarioId.trim() } : {}),
       },
     };
 
