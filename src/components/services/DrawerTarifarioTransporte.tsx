@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useLocale } from "next-intl";
 import type { TarifarioTransporte, ItemTarifaTransporte } from "@/data/tarifas/types";
 import { TEXTOS_TARIFARIO } from "@/data/tarifas/traducciones";
@@ -23,9 +24,14 @@ export function DrawerTarifarioTransporte({
   const locale = useLocale();
   const t = TEXTOS_TARIFARIO[locale] || TEXTOS_TARIFARIO.es;
 
+  const [mounted, setMounted] = useState(false);
   const [busqueda, setBusqueda] = useState("");
   const [categoriaActiva, setCategoriaActiva] = useState<TabCategoria>("todas");
   const [numPersonas, setNumPersonas] = useState<number>(4);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Mantener persistencia del drawer abierto durante navegación y bloquear scroll de fondo
   useEffect(() => {
@@ -124,17 +130,17 @@ export function DrawerTarifarioTransporte({
     window.open(`https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(textoMensaje)}`, "_blank");
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-[60] flex flex-col justify-end sm:justify-center sm:items-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-[100] flex flex-col justify-end sm:justify-center sm:items-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
       onClick={handleCerrar}
       role="dialog"
       aria-modal="true"
     >
       <div
-        className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-lg max-h-[92vh] flex flex-col shadow-2xl border border-stone-200 overflow-hidden animate-in slide-in-from-bottom-5 duration-200"
+        className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-lg max-h-[86dvh] sm:max-h-[90vh] flex flex-col shadow-2xl border border-stone-200 overflow-hidden animate-in slide-in-from-bottom-5 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Manija táctil móvil */}
@@ -321,13 +327,14 @@ export function DrawerTarifarioTransporte({
           )}
         </div>
 
-        {/* Footer del Drawer con advertencia de clima */}
-        <div className="p-3 bg-stone-50 border-t border-stone-150 shrink-0 text-center space-y-1">
+        {/* Footer del Drawer con advertencia de clima y margen inferior seguro para barra de inicio móvil */}
+        <div className="p-3 pb-8 sm:pb-3 bg-stone-50 border-t border-stone-150 shrink-0 text-center space-y-1">
           <p className="text-[10px] text-stone-500 font-sans">
             🛡️ {t.disclaimerClima}
           </p>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
