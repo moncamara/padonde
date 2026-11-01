@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { getCategoriasParaZona, type TerritorialUXConfig } from "@/constants";
+import { getFechaYMDColombia, TIMEZONE_COLOMBIA } from "@/lib/utils";
 import type { CategoriaEvento } from "@/lib/types";
 
 interface EventFiltersProps {
@@ -49,33 +50,70 @@ export function EventFilters({
     };
   }, [isModalOpen]);
 
-  // Configuración de las 4 opciones de fecha
-  const opcionesFecha = [
-    {
+  // Lista dinámica de fechas: Hoy, Mañana, días de la semana (Martes, Miércoles, Jueves...), Fin de semana
+  const opcionesFecha = useMemo(() => {
+    const hoyColombia = new Date();
+    const lista: { id: string; emoji: string; titulo: string; subtitulo: string }[] = [];
+
+    // 1. Hoy
+    lista.push({
       id: "hoy",
       emoji: "📅",
       titulo: tFilters("today"),
       subtitulo: locale === "en" ? "Plans happening today" : locale === "fr" ? "Plans prévus aujourd'hui" : locale === "de" ? "Pläne für heute" : "Planes que ocurren hoy",
-    },
-    {
+    });
+
+    // 2. Mañana
+    const manana = new Date(hoyColombia);
+    manana.setDate(manana.getDate() + 1);
+    const mananaDiaNombre = new Intl.DateTimeFormat(locale === "en" ? "en-US" : "es-CO", {
+      timeZone: TIMEZONE_COLOMBIA,
+      weekday: "long",
+    }).format(manana);
+
+    lista.push({
       id: "manana",
       emoji: "🌅",
       titulo: tFilters("tomorrow"),
-      subtitulo: locale === "en" ? "Plans for tomorrow" : locale === "fr" ? "Plans pour demain" : locale === "de" ? "Pläne für morgen" : "Planes programados para mañana",
-    },
-    {
+      subtitulo: mananaDiaNombre.charAt(0).toUpperCase() + mananaDiaNombre.slice(1),
+    });
+
+    // 3. Días específicos siguientes de la semana (ej: Martes, Miércoles, Jueves...)
+    for (let i = 2; i <= 5; i++) {
+      const dia = new Date(hoyColombia);
+      dia.setDate(dia.getDate() + i);
+      const ymd = getFechaYMDColombia(dia);
+
+      const diaNombre = new Intl.DateTimeFormat(locale === "en" ? "en-US" : "es-CO", {
+        timeZone: TIMEZONE_COLOMBIA,
+        weekday: "long",
+      }).format(dia);
+      const diaCap = diaNombre.charAt(0).toUpperCase() + diaNombre.slice(1);
+
+      const fechaCorta = new Intl.DateTimeFormat(locale === "en" ? "en-US" : "es-CO", {
+        timeZone: TIMEZONE_COLOMBIA,
+        day: "numeric",
+        month: "short",
+      }).format(dia);
+
+      lista.push({
+        id: ymd,
+        emoji: "🗓️",
+        titulo: diaCap,
+        subtitulo: fechaCorta,
+      });
+    }
+
+    // 4. Fin de semana (Sábado y domingo)
+    lista.push({
       id: "fin_de_semana",
       emoji: "🎉",
       titulo: tFilters("weekend"),
       subtitulo: locale === "en" ? "Saturday & Sunday" : locale === "fr" ? "Samedi et dimanche" : locale === "de" ? "Samstag & Sonntag" : "Sábado y domingo",
-    },
-    {
-      id: "todos",
-      emoji: "✨",
-      titulo: tFilters("all"),
-      subtitulo: locale === "en" ? "All upcoming plans" : locale === "fr" ? "Tous les plans à venir" : locale === "de" ? "Alle kommenden Termine" : "Toda la programación disponible",
-    },
-  ];
+    });
+
+    return lista;
+  }, [tFilters, locale]);
 
   // Resolver emoji y label para el botón de fecha visible
   const fechaActual = opcionesFecha.find((op) => op.id === tiempoActivo) || opcionesFecha[0];
@@ -211,7 +249,7 @@ export function EventFilters({
             </div>
 
             {/* Opciones interactivas de fecha */}
-            <div className="py-3 space-y-2">
+            <div className="py-3 space-y-2 overflow-y-auto max-h-[60vh] pr-0.5 scrollbar-thin">
               {opcionesFecha.map((op) => {
                 const isSelected = tiempoActivo === op.id;
                 return (
