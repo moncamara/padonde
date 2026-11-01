@@ -323,6 +323,40 @@ export function LuxuryRestaurantMenu({
       .replace(/[\u0300-\u036f]/g, "")
       .trim();
 
+  // Obtener descripción de un plato soportando descripcion / descripciones / ingredientes
+  const getDescripcionPlato = (item: any, idm: IdiomaCodigo): string | null => {
+    const d = item.descripcion ?? item.descripciones ?? item.ingredientes;
+    if (!d) return null;
+    if (typeof d === "string") return d;
+    return d[idm] || d.es || d.en || Object.values(d)[0] || null;
+  };
+
+  // Obtener nombre de un plato soportando nombres / nombre / titulo
+  const getNombrePlato = (item: any, idm: IdiomaCodigo): string => {
+    const n = item.nombres ?? item.nombre ?? item.titulo;
+    if (!n) return "Plato";
+    if (typeof n === "string") return n;
+    return n[idm] || n.es || n.en || Object.values(n)[0] || "Plato";
+  };
+
+  const tienePlatosVeggie = useMemo(() => {
+    return menu.categorias.some((cat) =>
+      cat.items?.some((i) => {
+        const et = (i.etiquetas as string[]) || [];
+        return et.includes("vegetariano") || et.includes("veggie") || et.includes("vegano");
+      })
+    );
+  }, [menu]);
+
+  const tienePlatosChef = useMemo(() => {
+    return menu.categorias.some((cat) =>
+      cat.items?.some((i) => {
+        const et = (i.etiquetas as string[]) || [];
+        return et.includes("chef") || et.includes("favorito") || et.includes("recomendado");
+      })
+    );
+  }, [menu]);
+
   // Filtrado de platos con búsqueda inteligente multilingüe y sin tildes
   const categoriasConPlatos = useMemo(() => {
     const q = normalizar(busqueda);
@@ -336,37 +370,48 @@ export function LuxuryRestaurantMenu({
         : false;
 
       const itemsFiltrados = cat.items.filter((item) => {
+        const itemEts = (item.etiquetas as string[]) || [];
         // Filtro especial dietario o de recomendación
-        if (filtroEspecial === "veggie" && !item.etiquetas?.includes("vegetariano")) {
+        if (
+          filtroEspecial === "veggie" &&
+          !itemEts.includes("vegetariano") &&
+          !itemEts.includes("veggie") &&
+          !itemEts.includes("vegano")
+        ) {
           return false;
         }
-        if (filtroEspecial === "chef" && !item.etiquetas?.includes("chef")) {
+        if (
+          filtroEspecial === "chef" &&
+          !itemEts.includes("chef") &&
+          !itemEts.includes("favorito") &&
+          !itemEts.includes("recomendado")
+        ) {
           return false;
         }
 
         if (!q) return true;
         if (catCoincide) return true;
 
-        // Búsqueda en nombre (idioma actual, español e inglés)
-        const nomActual = normalizar(item.nombres[idioma] || "");
-        const nomEs = normalizar(item.nombres.es || "");
-        const nomEn = normalizar(item.nombres.en || "");
+        // Búsqueda en nombre
+        const nomActual = normalizar(getNombrePlato(item, idioma));
+        const nomEs = normalizar(getNombrePlato(item, "es"));
+        const nomEn = normalizar(getNombrePlato(item, "en"));
 
-        // Búsqueda en ingredientes
-        const ingActual = normalizar(item.ingredientes?.[idioma] || "");
-        const ingEs = normalizar(item.ingredientes?.es || "");
-        const ingEn = normalizar(item.ingredientes?.en || "");
+        // Búsqueda en descripción o ingredientes
+        const descActual = normalizar(getDescripcionPlato(item, idioma) || "");
+        const descEs = normalizar(getDescripcionPlato(item, "es") || "");
+        const descEn = normalizar(getDescripcionPlato(item, "en") || "");
 
         // Búsqueda en insignias o notas
-        const insignia = normalizar(item.insignia?.[idioma] || "");
+        const insignia = normalizar(item.insignia?.[idioma] || item.insignia?.es || "");
 
         return (
           nomActual.includes(q) ||
           nomEs.includes(q) ||
           nomEn.includes(q) ||
-          ingActual.includes(q) ||
-          ingEs.includes(q) ||
-          ingEn.includes(q) ||
+          descActual.includes(q) ||
+          descEs.includes(q) ||
+          descEn.includes(q) ||
           insignia.includes(q)
         );
       });
@@ -551,62 +596,64 @@ export function LuxuryRestaurantMenu({
           {menu.subtitulo[idioma]}
         </p>
 
-        {/* Happy Hour con horario siempre visible y diseño ultra compacto */}
-        <div style={{ display: "inline-block" }}>
-          <div
-            style={{
-              padding: "0.25rem 0.75rem",
-              borderRadius: "9999px",
-              border: esHappyHourActivo
-                ? "1px solid rgba(16, 185, 129, 0.6)"
-                : `1px solid ${th.borderStrong}`,
-              backgroundColor: esHappyHourActivo
-                ? "rgba(16, 185, 129, 0.12)"
-                : th.surface,
-              color: esHappyHourActivo
-                ? th.isDark
-                  ? "#A7F3D0"
-                  : "#047857"
-                : th.heading,
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "0.35rem",
-              boxShadow: th.cardShadow,
-            }}
-          >
-            <span style={{ fontSize: "0.75rem" }}>
-              {esHappyHourActivo ? "🟢" : "⏰"}
-            </span>
-            <span
+        {/* Happy Hour: ÚNICAMENTE si el restaurante lo tiene configurado en su JSON */}
+        {Boolean((menu as any).happyHour) && (
+          <div style={{ display: "inline-block" }}>
+            <div
               style={{
-                fontSize: "0.7rem",
-                fontWeight: 700,
-                letterSpacing: "0.04em",
-                textTransform: "uppercase",
+                padding: "0.25rem 0.75rem",
+                borderRadius: "9999px",
+                border: esHappyHourActivo
+                  ? "1px solid rgba(16, 185, 129, 0.6)"
+                  : `1px solid ${th.borderStrong}`,
+                backgroundColor: esHappyHourActivo
+                  ? "rgba(16, 185, 129, 0.12)"
+                  : th.surface,
+                color: esHappyHourActivo
+                  ? th.isDark
+                    ? "#A7F3D0"
+                    : "#047857"
+                  : th.heading,
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "0.35rem",
+                boxShadow: th.cardShadow,
               }}
             >
-              {t.happyHourTitulo} · {t.happyHourHorario}
-            </span>
-            {esHappyHourActivo && (
+              <span style={{ fontSize: "0.75rem" }}>
+                {esHappyHourActivo ? "🟢" : "⏰"}
+              </span>
               <span
                 style={{
-                  fontSize: "0.62rem",
+                  fontSize: "0.7rem",
                   fontWeight: 700,
-                  backgroundColor: "rgba(16, 185, 129, 0.25)",
-                  color: th.isDark ? "#6EE7B7" : "#065F46",
-                  padding: "0.08rem 0.4rem",
-                  borderRadius: "9999px",
-                  border: "1px solid rgba(16, 185, 129, 0.4)",
-                  textTransform: "uppercase",
                   letterSpacing: "0.04em",
+                  textTransform: "uppercase",
                 }}
               >
-                ● {t.enCurso}
+                {t.happyHourTitulo} · {t.happyHourHorario}
               </span>
-            )}
+              {esHappyHourActivo && (
+                <span
+                  style={{
+                    fontSize: "0.62rem",
+                    fontWeight: 700,
+                    backgroundColor: "rgba(16, 185, 129, 0.25)",
+                    color: th.isDark ? "#6EE7B7" : "#065F46",
+                    padding: "0.08rem 0.4rem",
+                    borderRadius: "9999px",
+                    border: "1px solid rgba(16, 185, 129, 0.4)",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.04em",
+                  }}
+                >
+                  ● {t.enCurso}
+                </span>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </section>
 
       {/* ─── BUSCADOR Y FILTROS ─── */}
@@ -677,38 +724,44 @@ export function LuxuryRestaurantMenu({
             )}
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <button
-              type="button"
-              onClick={() =>
-                setFiltroEspecial(filtroEspecial === "veggie" ? "ninguno" : "veggie")
-              }
-              style={filtroBtn(
-                filtroEspecial === "veggie",
-                "#10B981",
-                "rgba(16, 185, 129, 0.16)",
-                "#34D399"
+          {(tienePlatosVeggie || tienePlatosChef) && (
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              {tienePlatosVeggie && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setFiltroEspecial(filtroEspecial === "veggie" ? "ninguno" : "veggie")
+                  }
+                  style={filtroBtn(
+                    filtroEspecial === "veggie",
+                    "#10B981",
+                    "rgba(16, 185, 129, 0.16)",
+                    "#34D399"
+                  )}
+                >
+                  <span>{filtroEspecial === "veggie" ? "✓" : "🌱"}</span>
+                  <span>{t.soloVeggie.replace(/^🌱\s*/, "")}</span>
+                </button>
               )}
-            >
-              <span>{filtroEspecial === "veggie" ? "✓" : "🌱"}</span>
-              <span>{t.soloVeggie.replace(/^🌱\s*/, "")}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() =>
-                setFiltroEspecial(filtroEspecial === "chef" ? "ninguno" : "chef")
-              }
-              style={filtroBtn(
-                filtroEspecial === "chef",
-                "#F59E0B",
-                "rgba(245, 158, 11, 0.16)",
-                "#FBBF24"
+              {tienePlatosChef && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setFiltroEspecial(filtroEspecial === "chef" ? "ninguno" : "chef")
+                  }
+                  style={filtroBtn(
+                    filtroEspecial === "chef",
+                    "#F59E0B",
+                    "rgba(245, 158, 11, 0.16)",
+                    "#FBBF24"
+                  )}
+                >
+                  <span>{filtroEspecial === "chef" ? "✓" : "⭐"}</span>
+                  <span>{t.soloChef.replace(/^⭐\s*/, "")}</span>
+                </button>
               )}
-            >
-              <span>{filtroEspecial === "chef" ? "✓" : "⭐"}</span>
-              <span>{t.soloChef.replace(/^⭐\s*/, "")}</span>
-            </button>
-          </div>
+            </div>
+          )}
 
           {/* Indicador de resultados activos cuando hay búsqueda o filtro */}
           {(busqueda.trim() || filtroEspecial !== "ninguno") && (
@@ -982,7 +1035,7 @@ export function LuxuryRestaurantMenu({
                       >
                         <img
                           src={item.imagenUrl}
-                          alt={item.nombres[idioma]}
+                          alt={getNombrePlato(item, idioma)}
                           style={{ width: "100%", height: "100%", objectFit: "cover" }}
                           loading="lazy"
                         />
@@ -1049,14 +1102,14 @@ export function LuxuryRestaurantMenu({
                             margin: 0,
                           }}
                         >
-                          {item.nombres[idioma]}
+                          {getNombrePlato(item, idioma)}
                         </h3>
                         <span className="luxury-price-gold">
                           {formatearPrecio(item.precio)}
                         </span>
                       </div>
 
-                      {item.ingredientes?.[idioma] && (
+                      {getDescripcionPlato(item, idioma) && (
                         <p
                           style={{
                             fontSize: "0.78rem",
@@ -1065,7 +1118,7 @@ export function LuxuryRestaurantMenu({
                             lineHeight: 1.5,
                           }}
                         >
-                          {item.ingredientes[idioma]}
+                          {getDescripcionPlato(item, idioma)}
                         </p>
                       )}
 
