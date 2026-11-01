@@ -80,32 +80,49 @@ export function FeedTabsContainer({
       {/* 1. Selector Multizona Horizontal (Minca, Mendihuaca, etc.) */}
       <TabsDestinos zonaActiva={zona} locale={locale} />
 
-      {/* 2. Switcher Superior de Pestañas (Cartelera vs. Info Útil) */}
-      <div className="flex items-center p-1 bg-stone-light/40 rounded-2xl max-w-sm mx-auto shadow-2xs">
+      {/* 2. Switcher Superior de Pestañas (Cartelera vs. Info Útil) con borde definido y alto contraste */}
+      <div className="flex items-center p-1.5 bg-white/75 backdrop-blur-md rounded-2xl border border-stone-light/90 shadow-2xs max-w-sm mx-auto">
         <button
+          id="tab-btn-cartelera"
+          type="button"
           onClick={() => handleSwitchTab("eventos")}
           className={[
-            "flex-1 py-2 px-3 rounded-xl font-sans text-xs font-semibold transition-all duration-150 cursor-pointer flex items-center justify-center gap-1.5",
+            "flex-1 py-2 px-3 rounded-xl font-sans text-xs transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 select-none",
             tabActiva === "eventos"
-              ? "bg-white text-forest shadow-xs font-bold"
-              : "text-stone hover:text-forest",
+              ? "bg-white text-forest shadow-xs font-bold border border-stone-200/90 scale-[1.01]"
+              : "text-stone-dark/70 hover:text-forest hover:bg-white/50 font-medium",
           ].join(" ")}
+          aria-selected={tabActiva === "eventos"}
+          role="tab"
         >
-          <span>{zona === "mendihuaca" ? "🌊" : "🌿"}</span>
+          <span className="text-sm">{zona === "mendihuaca" ? "🌊" : "🌿"}</span>
           <span className="truncate">{t("tabCartelera")}</span>
         </button>
 
         <button
+          id="tab-btn-servicios"
+          type="button"
           onClick={() => handleSwitchTab("servicios")}
           className={[
-            "flex-1 py-2 px-3 rounded-xl font-sans text-xs font-semibold transition-all duration-150 cursor-pointer flex items-center justify-center gap-1.5",
+            "flex-1 py-2 px-3 rounded-xl font-sans text-xs transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 select-none",
             tabActiva === "servicios"
-              ? "bg-white text-forest shadow-xs font-bold"
-              : "text-stone hover:text-forest",
+              ? "bg-white text-forest shadow-xs font-bold border border-stone-200/90 scale-[1.01]"
+              : "text-stone-dark/70 hover:text-forest hover:bg-white/50 font-medium",
           ].join(" ")}
+          aria-selected={tabActiva === "servicios"}
+          role="tab"
         >
-          <span>💡</span>
+          <span className="text-sm">💡</span>
           <span className="truncate">{t("tabServicios")}</span>
+          <span
+            className={`text-[9px] font-bold px-1.5 py-0.2 rounded-full border transition-colors ${
+              tabActiva === "servicios"
+                ? "bg-amber-100 text-amber-900 border-amber-300/80"
+                : "bg-amber-50 text-amber-800 border-amber-200/70"
+            }`}
+          >
+            {locale === "en" ? "Guide" : "Guía"}
+          </span>
         </button>
       </div>
 
