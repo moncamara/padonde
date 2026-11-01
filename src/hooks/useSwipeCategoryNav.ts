@@ -152,7 +152,12 @@ export function useSwipeCategoryNav({
       }
     }
 
-    // ─── 2. MANEJO CON MOUSE / ESCRITORIO (Click sostenido y arrastre) ─────────
+    function cleanupWindowMouse() {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    }
+
+    // ─── 2. MANEJO CON MOUSE / ESCRITORIO (Click sostenido y arrastre bajo demanda) ─────────
     function handleMouseDown(e: MouseEvent) {
       if (e.button !== 0) return; // Solo click izquierdo
 
@@ -165,6 +170,10 @@ export function useSwipeCategoryNav({
       isTrackingRef.current = true;
       hasDeterminedAxisRef.current = false;
       isHorizontalSwipeRef.current = false;
+
+      // Adjuntar listeners de movimiento y soltado solo mientras se arrastra
+      window.addEventListener("mousemove", handleMouseMove, { passive: true });
+      window.addEventListener("mouseup", handleMouseUp);
     }
 
     function handleMouseMove(e: MouseEvent) {
@@ -181,6 +190,7 @@ export function useSwipeCategoryNav({
           if (absY >= absX) {
             isTrackingRef.current = false;
             isHorizontalSwipeRef.current = false;
+            cleanupWindowMouse();
             return;
           } else {
             isHorizontalSwipeRef.current = true;
@@ -190,6 +200,8 @@ export function useSwipeCategoryNav({
     }
 
     function handleMouseUp(e: MouseEvent) {
+      cleanupWindowMouse();
+
       if (!isTrackingRef.current || !startCoordRef.current || !isHorizontalSwipeRef.current) {
         isTrackingRef.current = false;
         startCoordRef.current = null;
@@ -223,26 +235,23 @@ export function useSwipeCategoryNav({
       }
     }
 
-    // Registrar listeners táctiles
+    // Registrar listeners táctiles nativos pasivos
     el.addEventListener("touchstart", handleTouchStart, { passive: true });
     el.addEventListener("touchmove", handleTouchMove, { passive: true });
     el.addEventListener("touchend", handleTouchEnd, { passive: true });
 
-    // Registrar listeners de mouse
+    // Registrar inicio de mouse
     el.addEventListener("mousedown", handleMouseDown);
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
 
     // Interceptor de click en fase de captura
     el.addEventListener("click", handleClickCapture, { capture: true });
 
     return () => {
+      cleanupWindowMouse();
       el.removeEventListener("touchstart", handleTouchStart);
       el.removeEventListener("touchmove", handleTouchMove);
       el.removeEventListener("touchend", handleTouchEnd);
       el.removeEventListener("mousedown", handleMouseDown);
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
       el.removeEventListener("click", handleClickCapture, { capture: true });
     };
   }, []);

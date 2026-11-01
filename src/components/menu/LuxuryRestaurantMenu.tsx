@@ -1036,8 +1036,11 @@ export function LuxuryRestaurantMenu({
                         <img
                           src={item.imagenUrl}
                           alt={getNombrePlato(item, idioma)}
+                          width={320}
+                          height={165}
                           style={{ width: "100%", height: "100%", objectFit: "cover" }}
                           loading="lazy"
+                          decoding="async"
                         />
                         {item.insignia && (
                           <span

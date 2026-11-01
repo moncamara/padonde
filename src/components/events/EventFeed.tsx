@@ -149,9 +149,12 @@ export function EventFeed({ eventos, zona, configTerritorial }: EventFeedProps) 
   useEffect(() => {
     if (typeof window === "undefined" || !("caches" in window) || !navigator.onLine) return;
 
+    // En desarrollo local, NO ejecutar pre-calentamiento para no saturar Turbopack con compilaciones SSR en segundo plano
+    if (process.env.NODE_ENV === "development") return;
+
     const warmUp = () => {
-      // Pre-calentar hasta 20 tarjetas visibles con su URL canónica y payload RSC
-      const toWarm = eventos.slice(0, 20);
+      // Pre-calentar únicamente las 3 tarjetas superiores con cadencia espaciada
+      const toWarm = eventos.slice(0, 3);
       toWarm.forEach((evento, i) => {
         setTimeout(() => {
           if (navigator.onLine) {
@@ -164,14 +167,14 @@ export function EventFeed({ eventos, zona, configTerritorial }: EventFeedProps) 
               priority: "low" as any,
             }).catch(() => {});
           }
-        }, 600 + i * 150);
+        }, 1500 + i * 500);
       });
     };
 
     if ("requestIdleCallback" in window) {
-      (window as any).requestIdleCallback(warmUp);
+      (window as any).requestIdleCallback(warmUp, { timeout: 4000 });
     } else {
-      setTimeout(warmUp, 1500);
+      setTimeout(warmUp, 3000);
     }
   }, [eventos, zona, locale]);
 

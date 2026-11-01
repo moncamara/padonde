@@ -391,12 +391,12 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
               evento.metadata_hospedaje.menu_fotos.length > 0
                 ? evento.metadata_hospedaje.menu_fotos
                 : isPepeMojito
-                ? ["/menus/menupepe1.jpeg", "/menus/menupepe2.jpeg"]
+                ? ["/menus/menupepe1.webp", "/menus/menupepe2.webp"]
                 : undefined;
 
             const menuUrl =
               evento.metadata_hospedaje?.menu_url ||
-              (isPepeMojito ? "/menus/menupepe1.jpeg" : undefined);
+              (isPepeMojito ? "/menus/menupepe1.webp" : undefined);
 
             const isJungleJoe =
               evento.id === "6817d5de-d00a-4514-b505-fa2c10608749" ||

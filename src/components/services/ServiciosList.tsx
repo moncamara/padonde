@@ -208,8 +208,11 @@ export function ServiciosList({ servicios, zonaNombre, zonaSlug }: ServiciosList
                         <img
                           src={servicio.logo_url}
                           alt={servicio.nombre_comercial}
+                          width={80}
+                          height={80}
                           className="w-full h-full object-contain"
                           loading="lazy"
+                          decoding="async"
                         />
                       </div>
                     )}
@@ -246,8 +249,11 @@ export function ServiciosList({ servicios, zonaNombre, zonaSlug }: ServiciosList
                           <img
                             src={mainPhoto}
                             alt={servicio.nombre_comercial}
+                            width={640}
+                            height={400}
                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                             loading="lazy"
+                            decoding="async"
                           />
                         ) : (
                           <div className="w-full h-full bg-gradient-to-br from-forest/80 to-stone/80 flex items-center justify-center text-4xl">
@@ -300,8 +306,11 @@ export function ServiciosList({ servicios, zonaNombre, zonaSlug }: ServiciosList
                             <img
                               src={foto}
                               alt=""
+                              width={56}
+                              height={44}
                               className="w-full h-full object-cover"
                               loading="lazy"
+                              decoding="async"
                             />
                           </button>
                         ))}

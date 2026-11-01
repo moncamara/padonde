@@ -325,7 +325,7 @@ Buena vibra, buena comida y buenos momentos a orillas del mar. Consulta nuestra 
       precio_moneda: "COP",
       fecha_inicio: toISO(hoy, 12, 0),
       fecha_fin: toISO(hoy, 23, 0),
-      imagen_url: "/menus/menupepe1.jpeg",
+      imagen_url: "/menus/menupepe1.webp",
       destacado: true,
       tiene_boleteria: false,
       activo: true,
@@ -337,10 +337,10 @@ Buena vibra, buena comida y buenos momentos a orillas del mar. Consulta nuestra 
           maps_url: "https://maps.google.com/?cid=12401671911910625244",
         },
         google_review_url: "https://search.google.com/local/writereview?placeid=ChIJiQTfKLuV9I4R3E86eG2jG6w",
-        menu_url: "/menus/menupepe1.jpeg",
+        menu_url: "/menus/menupepe1.webp",
         menu_fotos: [
-          "/menus/menupepe1.jpeg",
-          "/menus/menupepe2.jpeg",
+          "/menus/menupepe1.webp",
+          "/menus/menupepe2.webp",
         ],
       },
       negocio: {

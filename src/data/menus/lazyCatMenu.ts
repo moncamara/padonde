@@ -149,7 +149,7 @@ export const LAZY_CAT_MENU: MenuRestaurante = {
             de: "👑 Aushängeschild des Hauses",
           },
           etiquetas: ["chef"],
-          imagenUrl: "/menus/dishes/lazy_cat_burger.png",
+          imagenUrl: "/menus/dishes/lazy_cat_burger.webp",
         },
         {
           id: "maxi-burguer",
@@ -243,7 +243,7 @@ export const LAZY_CAT_MENU: MenuRestaurante = {
             de: "Hausgemachtes Rindfleisch, frische Guacamole, karibischer Sauerrahm, Pico de Gallo, Jalapeños und Tortilla-Chips.",
           },
           precio: 22000,
-          imagenUrl: "/menus/dishes/mexicana_burger.png",
+          imagenUrl: "/menus/dishes/mexicana_burger.webp",
         },
         {
           id: "criolla-burger",
@@ -310,7 +310,7 @@ export const LAZY_CAT_MENU: MenuRestaurante = {
             de: "Frankfurter Würstchen, geschmolzener Käse, knuspriger Speck, Champignons und Kartoffelsticks.",
           },
           precio: 15000,
-          imagenUrl: "/menus/dishes/lazy_dog.png",
+          imagenUrl: "/menus/dishes/lazy_dog.webp",
         },
         {
           id: "blue-dog",
@@ -439,7 +439,7 @@ export const LAZY_CAT_MENU: MenuRestaurante = {
             de: "⭐ Lazy Cat Spezialität",
           },
           etiquetas: ["chef"],
-          imagenUrl: "/menus/dishes/filet_mignon.png",
+          imagenUrl: "/menus/dishes/filet_mignon.webp",
         },
         {
           id: "baby-beef",
@@ -479,7 +479,7 @@ export const LAZY_CAT_MENU: MenuRestaurante = {
             de: "🔥 Nur am Wochenende",
           },
           etiquetas: ["fines_de_semana", "chef"],
-          imagenUrl: "/menus/dishes/costillas_ahumadas.png",
+          imagenUrl: "/menus/dishes/costillas_ahumadas.webp",
         },
         {
           id: "lomo-cerdo-tamarindo",
@@ -567,7 +567,7 @@ export const LAZY_CAT_MENU: MenuRestaurante = {
             de: "Zarte Rindfleischstreifen, Brokkoli, Karotte, Paprika, Zwiebel, Champignons, Reisnudeln, Erdnüsse und Limette.",
           },
           precio: 22000,
-          imagenUrl: "/menus/dishes/wok_arroz.png",
+          imagenUrl: "/menus/dishes/wok_arroz.webp",
         },
         {
           id: "wok-vegetariano",
@@ -673,7 +673,7 @@ export const LAZY_CAT_MENU: MenuRestaurante = {
             de: "Getoastete Weizentortilla, gegrilltes Rinderfilet, Champignons, karamellisierte Zwiebeln und geschmolzener Käse.",
           },
           precio: 20000,
-          imagenUrl: "/menus/dishes/quesadilla.png",
+          imagenUrl: "/menus/dishes/quesadilla.webp",
         },
         {
           id: "quesadilla-pollo-tocineta",
@@ -818,7 +818,7 @@ export const LAZY_CAT_MENU: MenuRestaurante = {
             de: "Frische Minze, weißer Rum, Rohrzucker und Limettensaft.",
           },
           precio: 8000,
-          imagenUrl: "/menus/dishes/mojito.png",
+          imagenUrl: "/menus/dishes/mojito.webp",
           etiquetas: ["happy_hour"],
         },
         {
@@ -996,7 +996,7 @@ export const LAZY_CAT_MENU: MenuRestaurante = {
             de: "Cremiger gebackener Käsekuchen auf knusprigem Boden mit Beeren-Coulis.",
           },
           precio: 6000,
-          imagenUrl: "/menus/dishes/cheesecake.png",
+          imagenUrl: "/menus/dishes/cheesecake.webp",
           insignia: {
             es: "⭐ Receta Original",
             en: "⭐ Original Recipe",
@@ -1019,7 +1019,7 @@ export const LAZY_CAT_MENU: MenuRestaurante = {
             de: "Baileys Irish Cream, Kaffeelikör, Wodka, Vanilleeis und geschmolzene Schokoladensauce.",
           },
           precio: 18000,
-          imagenUrl: "/menus/dishes/mudslide.png",
+          imagenUrl: "/menus/dishes/mudslide.webp",
         },
         {
           id: "malteada-oreo",
