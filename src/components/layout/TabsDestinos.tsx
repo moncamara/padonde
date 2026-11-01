@@ -87,7 +87,7 @@ export function TabsDestinos({ zonaActiva, locale, className = "" }: TabsDestino
         </span>
       </div>
 
-      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 px-0.5 -mx-1 sm:mx-0">
+      <div className="flex items-center gap-2 overflow-x-auto scrollbar-none no-scrollbar pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
         {DESTINOS_TABS.map((destino) => {
           const isSelected = zonaActiva === destino.slug;
 
