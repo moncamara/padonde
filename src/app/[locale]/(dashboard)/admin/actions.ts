@@ -41,6 +41,7 @@ export interface AdminPublishInput {
   menuInteractivo?: boolean;
   menuTema?: "fogon" | "sierra" | "caribe" | "oro";
   menuData?: any;
+  tarifarioId?: string | null;
 }
 
 export interface AdminPublishResult {
@@ -226,7 +227,8 @@ export async function adminPublishEventAction(
         (input.menuFotos && input.menuFotos.length > 0) ||
         input.googleReviewUrl ||
         input.menuInteractivo !== undefined ||
-        input.menuTema
+        input.menuTema ||
+        input.tarifarioId
           ? {
               ...(input.googleReputacion ? { google_reputacion: input.googleReputacion } : {}),
               ...(input.galeriaFotos && input.galeriaFotos.length > 0
@@ -243,6 +245,7 @@ export async function adminPublishEventAction(
                 : {}),
               ...(input.menuInteractivo !== undefined ? { menu_interactivo: Boolean(input.menuInteractivo) } : {}),
               ...(input.menuTema ? { menu_tema: input.menuTema } : {}),
+              ...(input.tarifarioId ? { tarifario_id: input.tarifarioId.trim() } : {}),
               ...(input.menuData
                 ? {
                     menu_data:
@@ -826,6 +829,7 @@ export interface EditarEventoAdminInput {
   menuInteractivo?: boolean;
   menuTema?: "fogon" | "sierra" | "caribe" | "oro";
   menuData?: any;
+  tarifarioId?: string | null;
 }
 
 /**
@@ -981,6 +985,14 @@ export async function editarEventoAdminAction(input: EditarEventoAdminInput) {
           } catch {
             currentMeta.menu_data = input.menuData;
           }
+        }
+      }
+
+      if (input.tarifarioId !== undefined) {
+        if (!input.tarifarioId?.trim()) {
+          delete currentMeta.tarifario_id;
+        } else {
+          currentMeta.tarifario_id = input.tarifarioId.trim();
         }
       }
 

@@ -99,6 +99,16 @@ export function EventCard({ evento: rawEvento, zona, priority = false }: EventCa
                 🎬 Reel
               </span>
             )}
+
+            {Boolean(
+              (evento.metadata_hospedaje as Record<string, any>)?.tarifario_id ||
+              evento.negocio?.nombre?.toLowerCase().includes("aventura 4x4") ||
+              evento.titulo?.toLowerCase().includes("aventura 4x4")
+            ) && (
+              <span className="bg-amber-400 text-amber-950 text-xs font-sans font-bold px-2.5 py-1 rounded-full border border-amber-300 shadow-xs flex items-center gap-1">
+                📋 Tarifas 4x4
+              </span>
+            )}
           </div>
 
           {evento.destacado && (
@@ -147,20 +157,37 @@ export function EventCard({ evento: rawEvento, zona, priority = false }: EventCa
         {/* Fila inferior: Precio a la izquierda, Botón de WhatsApp a la derecha */}
         <div className="flex items-center justify-between gap-3 pt-2.5 border-t border-stone-light/60">
           <div className="flex flex-col">
-            <span className="text-forest font-sans font-bold text-base tracking-tight">
-              {evento.tipo === "hospedaje" && evento.precio ? `Desde ${precioDisplay}` : precioDisplay}
-              {evento.precio !== null && evento.precio > 0 && (
-                <span className="text-[10px] font-normal text-stone ml-1">COP</span>
-              )}
-            </span>
-            {evento.precio !== null && evento.precio > 0 && (
-              <span className="text-stone text-[10px] font-sans">
-                {evento.tipo === "hospedaje"
-                  ? locale === "en"
-                    ? "per night"
-                    : "por noche"
-                  : tCard("perPerson")}
-              </span>
+            {Boolean(
+              (evento.metadata_hospedaje as Record<string, any>)?.tarifario_id ||
+              evento.negocio?.nombre?.toLowerCase().includes("aventura 4x4") ||
+              evento.titulo?.toLowerCase().includes("aventura 4x4")
+            ) && (!evento.precio || evento.precio === 0) ? (
+              <>
+                <span className="text-forest font-sans font-bold text-base tracking-tight">
+                  Tarifario Oficial
+                </span>
+                <span className="text-stone text-[10px] font-sans">
+                  69 rutas • 1 a 4 personas
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="text-forest font-sans font-bold text-base tracking-tight">
+                  {evento.tipo === "hospedaje" && evento.precio ? `Desde ${precioDisplay}` : precioDisplay}
+                  {evento.precio !== null && evento.precio > 0 && (
+                    <span className="text-[10px] font-normal text-stone ml-1">COP</span>
+                  )}
+                </span>
+                {evento.precio !== null && evento.precio > 0 && (
+                  <span className="text-stone text-[10px] font-sans">
+                    {evento.tipo === "hospedaje"
+                      ? locale === "en"
+                        ? "per night"
+                        : "por noche"
+                      : tCard("perPerson")}
+                  </span>
+                )}
+              </>
             )}
           </div>
 

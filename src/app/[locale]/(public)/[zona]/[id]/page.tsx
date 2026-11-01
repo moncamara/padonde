@@ -28,6 +28,8 @@ import { DetailSlideWrapper } from "@/components/events/DetailSlideWrapper";
 import { EventVideoPlayer } from "@/components/events/EventVideoPlayer";
 import { EventHeroGallery } from "@/components/events/EventHeroGallery";
 import { RestaurantMenuSection } from "@/components/events/RestaurantMenuSection";
+import { SeccionTarifarioEvento } from "@/components/events/SeccionTarifarioEvento";
+import { getTarifarioPorId } from "@/data/tarifas";
 import type { ZonaSlug } from "@/lib/types";
 import type { Metadata } from "next";
 
@@ -445,6 +447,25 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
                 whatsappNumber={evento.negocio.whatsapp}
                 luxuryMenuUrl={luxuryMenuUrl}
                 menuTema={menuTema}
+              />
+            );
+          })()}
+
+          {/* Tarifario Oficial de Rutas y Excursiones (ej. Aventura 4X4) */}
+          {(() => {
+            const tarifarioId =
+              (evento.metadata_hospedaje as Record<string, any>)?.tarifario_id ||
+              (evento.negocio?.nombre?.toLowerCase().includes("aventura 4x4") ||
+               evento.titulo?.toLowerCase().includes("aventura 4x4")
+                ? "transporte-aventura-4x4-minca"
+                : undefined);
+            const tarifario = tarifarioId ? getTarifarioPorId(tarifarioId) : null;
+            if (!tarifario) return null;
+
+            return (
+              <SeccionTarifarioEvento
+                tarifario={tarifario}
+                zonaNombre={zona.nombre}
               />
             );
           })()}

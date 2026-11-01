@@ -354,6 +354,16 @@ export function EventUpsertForm({
   const [subiendoFotoMenu, setSubiendoFotoMenu] = useState(false);
   const [subiendoPdfMenu, setSubiendoPdfMenu] = useState(false);
 
+  const [tarifarioId, setTarifarioId] = useState<string>(() => {
+    return (
+      (initialEvento?.metadata_hospedaje as any)?.tarifario_id ||
+      (businessName?.toLowerCase().includes("aventura 4x4") ||
+       eventTitle?.toLowerCase().includes("aventura 4x4")
+        ? "transporte-aventura-4x4-minca"
+        : "")
+    );
+  });
+
   // Carta Digital Interactiva JSON (Gemini)
   const [menuDataJson, setMenuDataJson] = useState<string>(() => {
     const raw = initialEvento?.metadata_hospedaje?.menu_data;
@@ -693,6 +703,7 @@ export function EventUpsertForm({
           menuInteractivo,
           menuTema,
           menuData: parsedMenuData,
+          tarifarioId: tarifarioId || undefined,
         });
 
         if (!res.success) {
@@ -734,6 +745,7 @@ export function EventUpsertForm({
           menuInteractivo,
           menuTema,
           menuData: parsedMenuData,
+          tarifarioId: tarifarioId || undefined,
         });
 
         if (!res.success) {
@@ -772,6 +784,7 @@ export function EventUpsertForm({
                 google_review_url: reviewUrlFinal,
                 menu_interactivo: menuInteractivo,
                 menu_tema: menuTema,
+                tarifario_id: tarifarioId || undefined,
               },
               negocio: negocioSeleccionado
                 ? {
@@ -1655,6 +1668,38 @@ export function EventUpsertForm({
               </label>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* 5B. TARIFARIO OFICIAL DE RUTAS & 4X4 (ESPECIAL PARA TOURS / TRANSPORTE) */}
+      <div className="bg-amber-50/70 p-4 sm:p-5 rounded-3xl border border-amber-200/90 shadow-2xs space-y-3">
+        <div className="flex items-center justify-between border-b border-amber-200/70 pb-2.5">
+          <h3 className="font-serif text-sm font-bold text-amber-950 uppercase tracking-wider flex items-center gap-1.5">
+            <span>📋</span> Tarifario Oficial Asociado (Rutas & Excursiones)
+          </h3>
+          <span className="text-[10px] text-amber-900 bg-amber-100 font-bold px-2 py-0.5 rounded-full border border-amber-300">
+            69 Rutas
+          </span>
+        </div>
+
+        <p className="text-xs text-amber-900/90 leading-relaxed font-sans">
+          Si este aliado ofrece servicio de camperos 4x4, excursiones a Cerro Kennedy, cascadas o expresos, vincula su tarifario oficial para activar el buscador interactivo móvil en su ficha.
+        </p>
+
+        <div>
+          <label className="block text-xs font-semibold text-amber-950 mb-1">
+            Seleccionar Tarifario Oficial:
+          </label>
+          <select
+            value={tarifarioId}
+            onChange={(e) => setTarifarioId(e.target.value)}
+            className="w-full p-2.5 text-xs bg-white rounded-xl border border-amber-300 text-forest outline-none focus:ring-1 focus:ring-amber-500"
+          >
+            <option value="">Ninguno (Ficha estándar sin tarifario)</option>
+            <option value="transporte-aventura-4x4-minca">
+              🚙 Aventura 4X4 Minca (69 Rutas • Expresos, Cerro Kennedy, Cascadas y Sierra Alta)
+            </option>
+          </select>
         </div>
       </div>
 
