@@ -547,6 +547,51 @@ Profitez de chambres privées en bord de mer avec balcon et hamacs, jardin tropi
 📲 Calculez votre séjour sur notre simulateur interactif ci-dessous ou écrivez-nous directement sur WhatsApp pour réserver sans commission d'intermédiaire.`,
     },
   },
+  // 🚙 11. Aventura 4X4 Minca (Expediciones & Rutas Sierra Alta)
+  "aventura-4x4": {
+    en: {
+      titulo: "🚙 4x4 Mountain Expeditions, Cerro Kennedy & Sierra Alta Routes — Aventura 4X4",
+      descripcion: `Explore the most spectacular corners of the Sierra Nevada de Santa Marta with the official fleet of enclosed 4x4 vehicles (capacity 1 to 4 passengers).
+
+⛰️ HIGHLIGHTED EXPEDITIONS & TOURS:
+• Sunrise at Cerro Kennedy & San Rafael: 360° views of the snow-capped peaks Colón and Bolívar.
+• Waterfall Circuit: Marinka, Pozo Azul, Oído del Mundo, and Hidden Waterfall.
+• El Dorado Nature Reserve (ProAves): World-class paradise for endemic birdwatching.
+• Cloud Circuit (Circuito Nubes): High mountain hostels, coffee trails, and cloud forest.
+• Direct Express Transfers: Santa Marta, El Rodadero, Simón Bolívar Airport, and Tayrona National Park.
+
+📋 TRANSPARENT UNIFIED RATES:
+We provide an official unified rate card covering 69 mountain and coastal routes. Check your destination, hostel, and book directly via WhatsApp.`,
+    },
+    de: {
+      titulo: "🚙 4x4-Bergexpeditionen, Cerro Kennedy & Sierra Alta Routen — Aventura 4X4",
+      descripcion: `Entdecke die spektakulärsten Ecken der Sierra Nevada de Santa Marta mit der offiziellen Flotte geschlossener 4x4-Geländewagen (Kapazität 1 bis 4 Personen).
+
+⛰️ EXPEDITIONEN & HIGHLIGHT-TOUREN:
+• Sonnenaufgang am Cerro Kennedy & San Rafael: 360°-Blick auf die schneebedeckten Gipfel Colón und Bolívar.
+• Wasserfall-Rundweg: Marinka, Pozo Azul, Oído del Mundo und Versteckter Wasserfall.
+• Naturreservat El Dorado (ProAves): Weltweit renommierter Hotspot für endemische Vogelbeobachtung.
+• Circuito Nubes: Höhen-Hostels, Kaffeepfade und mystischer Nebelwald.
+• Direkte Express-Transfers: Santa Marta, El Rodadero, Flughafen Simón Bolívar und Tayrona-Nationalpark.
+
+📋 TRANSPARENTE OFFIZIELLE PREISE:
+Einheitliche offizielle Tariftabelle mit 69 Berg- und Fernstrecken. Finde dein Ziel, Hostel und buche direkt via WhatsApp.`,
+    },
+    fr: {
+      titulo: "🚙 Expéditions 4x4, Cerro Kennedy & Pistes de la Haute Sierra — Aventura 4X4",
+      descripcion: `Découvrez les panoramas les plus spectaculaires de la Sierra Nevada de Santa Marta avec la flotte officielle de 4x4 fermés (capacité 1 à 4 personnes).
+
+⛰️ EXPÉDITIONS & CIRCUITS INCONTOURNABLES :
+• Lever de soleil au Cerro Kennedy & San Rafael : Vue panoramique 360° sur les pics enneigés Colón et Bolívar.
+• Circuit des Cascades : Marinka, Pozo Azul, Oído del Mundo et Cascade Cachée.
+• Réserve Naturelle El Dorado (ProAves) : Sanctuaire mondial pour l'observation des oiseaux endémiques.
+• Circuit des Nuages (Circuito Nubes) : Auberges d'altitude, sentiers de café et forêt de brume.
+• Transferts Express directs : Santa Marta, El Rodadero, Aéroport Simón Bolívar et Parc Tayrona.
+
+📋 TARIFS OFFICIELS TRANSPARENTS :
+Grille tarifaire officielle unifiée couvrant 69 destinations et auberges. Consultez votre destination et réservez directement via WhatsApp.`,
+    },
+  },
 };
 
 /**
@@ -560,6 +605,14 @@ function identificarClaveEvento(evento: {
   const t = (evento.titulo || "").toLowerCase();
   const d = (evento.descripcion || "").toLowerCase();
 
+  if (
+    t.includes("aventura 4x4") ||
+    d.includes("aventura 4x4") ||
+    t.includes("expediciones 4x4") ||
+    t.includes("cerro kennedy & rutas sierra alta")
+  ) {
+    return "aventura-4x4";
+  }
   if (t.includes("amora") || d.includes("amora")) {
     return "amora";
   }

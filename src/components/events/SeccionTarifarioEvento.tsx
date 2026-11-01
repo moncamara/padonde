@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocale } from "next-intl";
 import type { TarifarioTransporte } from "@/data/tarifas/types";
 import { DrawerTarifarioTransporte } from "@/components/services/DrawerTarifarioTransporte";
 
@@ -9,11 +10,105 @@ interface SeccionTarifarioEventoProps {
   zonaNombre: string;
 }
 
+const TEXTOS_SECCION: Record<
+  string,
+  {
+    badge: string;
+    destinosYExcursiones: string;
+    descripcion: string;
+    capacidad: string;
+    tipoVehiculo: string;
+    preciosFijos: string;
+    boton: string;
+  }
+> = {
+  es: {
+    badge: "Tarifas Oficiales",
+    destinosYExcursiones: "Destinos y Excursiones",
+    descripcion:
+      "Consulta las tarifas oficiales fijadas para traslados y tours en camperos 4x4 encapsulados. Incluye rutas a Cerro Kennedy, San Rafael, cascadas Marinka, Sierra Alta y expresos directos a Santa Marta o Aeropuerto.",
+    capacidad: "Solo ida • De 1 a 4 personas",
+    tipoVehiculo: "Camperos 4x4 encapsulados",
+    preciosFijos: "Precios fijos en COP",
+    boton: "Ver Tarifario Completo y Cotizar por WhatsApp",
+  },
+  en: {
+    badge: "Official Rates",
+    destinosYExcursiones: "Destinations & Tours",
+    descripcion:
+      "Check official fixed rates for private transfers and mountain tours in enclosed 4x4 vehicles. Includes routes to Cerro Kennedy, San Rafael, Marinka waterfalls, High Sierra, and direct expresses to Santa Marta or Airport.",
+    capacidad: "One way • 1 to 4 passengers",
+    tipoVehiculo: "Enclosed 4x4 vehicles",
+    preciosFijos: "Fixed rates in COP",
+    boton: "View Full Rate Card & Inquire via WhatsApp",
+  },
+  fr: {
+    badge: "Tarifs Officiels",
+    destinosYExcursiones: "Destinations & Circuits",
+    descripcion:
+      "Consultez les tarifs officiels pour les transferts et excursions en véhicules 4x4 fermés. Comprend les pistes du Cerro Kennedy, San Rafael, cascades Marinka, Haute Sierra et liaisons directes vers Santa Marta ou Aéroport.",
+    capacidad: "Aller simple • De 1 à 4 personnes",
+    tipoVehiculo: "Véhicules 4x4 fermés",
+    preciosFijos: "Tarifs fixes en COP",
+    boton: "Voir la Grille Tarifaire & Réserver via WhatsApp",
+  },
+  de: {
+    badge: "Offizielle Tarife",
+    destinosYExcursiones: "Ziele & Expeditionen",
+    descripcion:
+      "Hier findest du die offiziellen Festpreise für Transfers und Bergtouren in geschlossenen 4x4-Geländewagen. Beinhaltet Strecken zum Cerro Kennedy, San Rafael, Marinka-Wasserfällen, Hohe Sierra und Express-Fahrten nach Santa Marta oder Flughafen.",
+    capacidad: "Einfache Fahrt • 1 bis 4 Personen",
+    tipoVehiculo: "Geschlossene 4x4-Geländewagen",
+    preciosFijos: "Festpreise in COP",
+    boton: "Vollständige Tarife ansehen & via WhatsApp anfragen",
+  },
+};
+
 export function SeccionTarifarioEvento({
   tarifario,
   zonaNombre,
 }: SeccionTarifarioEventoProps) {
-  const [drawerAbierto, setDrawerAbierto] = useState(false);
+  const locale = useLocale();
+  const t = TEXTOS_SECCION[locale] || TEXTOS_SECCION.es;
+
+  // Restauración inmediata al cambiar de idioma para evitar que el drawer se cierre
+  const [drawerAbierto, setDrawerAbierto] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const wasOpen = sessionStorage.getItem("padonde_tarifario_open");
+        const savedId = sessionStorage.getItem("padonde_tarifario_id");
+        return wasOpen === "true" && (!savedId || savedId === tarifario.id);
+      } catch {}
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    try {
+      const wasOpen = sessionStorage.getItem("padonde_tarifario_open");
+      const savedId = sessionStorage.getItem("padonde_tarifario_id");
+      if (wasOpen === "true" && (!savedId || savedId === tarifario.id)) {
+        setDrawerAbierto(true);
+      }
+    } catch {}
+  }, [tarifario.id]);
+
+  const abrirDrawer = () => {
+    try {
+      sessionStorage.setItem("padonde_tarifario_open", "true");
+      sessionStorage.setItem("padonde_tarifario_id", tarifario.id);
+    } catch {}
+    setDrawerAbierto(true);
+  };
+
+  const cerrarDrawer = () => {
+    try {
+      sessionStorage.removeItem("padonde_tarifario_open");
+      sessionStorage.removeItem("padonde_tarifario_id");
+    } catch {}
+    setDrawerAbierto(false);
+  };
+
   const totalRutas = Object.values(tarifario.tarifas).flat().length;
 
   return (
@@ -24,41 +119,40 @@ export function SeccionTarifarioEvento({
             <div className="flex items-center gap-2">
               <span className="text-xl">🚙</span>
               <span className="text-xs font-bold uppercase tracking-wider text-amber-900 bg-amber-200/60 px-2.5 py-0.5 rounded-full border border-amber-300">
-                Tarifas Oficiales
+                {t.badge}
               </span>
             </div>
             <h3 className="font-serif text-lg sm:text-xl font-bold text-forest">
-              {tarifario.nombre} — {totalRutas} Destinos y Excursiones
+              {tarifario.nombre} — {totalRutas} {t.destinosYExcursiones}
             </h3>
           </div>
           <span className="text-2xl shrink-0">📋</span>
         </div>
 
         <p className="font-sans text-xs sm:text-sm text-stone leading-relaxed">
-          Consulta las tarifas oficiales fijadas para traslados y tours en camperos 4x4 encapsulados.
-          Incluye rutas a Cerro Kennedy, San Rafael, cascadas Marinka, Sierra Alta y expresos directos a Santa Marta o Aeropuerto.
+          {t.descripcion}
         </p>
 
         <div className="flex flex-wrap items-center gap-2 text-[11px] font-sans text-amber-950 font-medium pt-1">
           <span className="bg-white/80 border border-amber-200 px-2.5 py-1 rounded-xl shadow-2xs">
-            👥 {tarifario.condiciones.capacidad}
+            👥 {t.capacidad}
           </span>
           <span className="bg-white/80 border border-amber-200 px-2.5 py-1 rounded-xl shadow-2xs">
-            🛡️ {tarifario.condiciones.tipo_vehiculo}
+            🛡️ {t.tipoVehiculo}
           </span>
           <span className="bg-white/80 border border-amber-200 px-2.5 py-1 rounded-xl shadow-2xs">
-            💵 Precios fijos en {tarifario.condiciones.moneda}
+            💵 {t.preciosFijos}
           </span>
         </div>
 
         <div className="pt-2">
           <button
             type="button"
-            onClick={() => setDrawerAbierto(true)}
+            onClick={abrirDrawer}
             className="w-full min-h-[48px] py-3 px-4 rounded-2xl bg-amber-500 hover:bg-amber-600 text-amber-950 font-sans text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-sm active:scale-[0.99] transition-all cursor-pointer"
           >
             <span>🔍</span>
-            <span>Ver Tarifario Completo y Cotizar por WhatsApp</span>
+            <span>{t.boton}</span>
             <span className="text-base font-normal">↗</span>
           </button>
         </div>
@@ -68,10 +162,11 @@ export function SeccionTarifarioEvento({
         <DrawerTarifarioTransporte
           tarifario={tarifario}
           isOpen={drawerAbierto}
-          onClose={() => setDrawerAbierto(false)}
+          onClose={cerrarDrawer}
           zonaNombre={zonaNombre}
         />
       )}
     </>
   );
 }
+

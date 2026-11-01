@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import type { CategoriaServicioEsencial, ServicioEsencial } from "@/lib/types";
 import { CarouselWrapper } from "@/components/ui/CarouselWrapper";
@@ -40,7 +40,28 @@ export function ServiciosList({ servicios, zonaNombre, zonaSlug }: ServiciosList
   const [categoriaActiva, setCategoriaActiva] = useState<string>("todas");
   const [videoActivoId, setVideoActivoId] = useState<string | null>(null);
   const [fotoSeleccionada, setFotoSeleccionada] = useState<Record<string, string>>({});
-  const [tarifarioActivo, setTarifarioActivo] = useState<TarifarioTransporte | null>(null);
+  const [tarifarioActivo, setTarifarioActivo] = useState<TarifarioTransporte | null>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const wasOpen = sessionStorage.getItem("padonde_tarifario_open");
+        const savedId = sessionStorage.getItem("padonde_tarifario_id");
+        if (wasOpen === "true") {
+          return getTarifarioPorId(savedId || "transporte-aventura-4x4-minca");
+        }
+      } catch {}
+    }
+    return null;
+  });
+
+  useEffect(() => {
+    try {
+      const wasOpen = sessionStorage.getItem("padonde_tarifario_open");
+      const savedId = sessionStorage.getItem("padonde_tarifario_id");
+      if (wasOpen === "true" && !tarifarioActivo) {
+        setTarifarioActivo(getTarifarioPorId(savedId || "transporte-aventura-4x4-minca"));
+      }
+    } catch {}
+  }, []);
 
   const serviciosActivos = servicios.filter((s) => s.activo);
 
@@ -352,22 +373,40 @@ export function ServiciosList({ servicios, zonaNombre, zonaSlug }: ServiciosList
                   <div className="pt-1">
                     <button
                       type="button"
-                      onClick={() => setTarifarioActivo(tarifario)}
+                      onClick={() => {
+                        try {
+                          sessionStorage.setItem("padonde_tarifario_open", "true");
+                          sessionStorage.setItem("padonde_tarifario_id", tarifario.id);
+                        } catch {}
+                        setTarifarioActivo(tarifario);
+                      }}
                       className="w-full py-2.5 px-3.5 rounded-2xl bg-amber-500/10 hover:bg-amber-500/15 border border-amber-300/80 text-amber-950 font-sans text-xs font-semibold flex items-center justify-between gap-2 shadow-2xs active:scale-[0.99] transition-all cursor-pointer group"
                     >
                       <div className="flex items-center gap-2.5 text-left min-w-0">
                         <span className="text-base shrink-0 group-hover:scale-110 transition-transform">📋</span>
                         <div className="min-w-0">
                           <span className="block font-bold truncate text-forest">
-                            Tarifario Oficial ({Object.values(tarifario.tarifas).flat().length} Destinos)
+                            {locale === "en"
+                              ? `Official Rate Card (${Object.values(tarifario.tarifas).flat().length} Destinations)`
+                              : locale === "fr"
+                              ? `Grille Tarifaire Officielle (${Object.values(tarifario.tarifas).flat().length} Destinations)`
+                              : locale === "de"
+                              ? `Offizielle Tarife (${Object.values(tarifario.tarifas).flat().length} Ziele)`
+                              : `Tarifario Oficial (${Object.values(tarifario.tarifas).flat().length} Destinos)`}
                           </span>
                           <span className="text-[10px] text-stone truncate block">
-                            Precios fijos a hostales, cascadas y Sierra Alta
+                            {locale === "en"
+                              ? "Fixed rates to hostels, waterfalls & High Sierra"
+                              : locale === "fr"
+                              ? "Tarifs fixes vers auberges, cascades & Haute Sierra"
+                              : locale === "de"
+                              ? "Festpreise zu Hostels, Wasserfällen & Hohe Sierra"
+                              : "Precios fijos a hostales, cascadas y Sierra Alta"}
                           </span>
                         </div>
                       </div>
                       <span className="shrink-0 text-[11px] font-bold bg-white group-hover:bg-amber-50 text-amber-900 border border-amber-300 px-2.5 py-1 rounded-xl shadow-2xs transition-colors">
-                        Ver Tarifas ↗
+                        {locale === "en" ? "View Rates ↗" : locale === "fr" ? "Voir Tarifs ↗" : locale === "de" ? "Tarife ansehen ↗" : "Ver Tarifas ↗"}
                       </span>
                     </button>
                   </div>
@@ -420,7 +459,13 @@ export function ServiciosList({ servicios, zonaNombre, zonaSlug }: ServiciosList
         <DrawerTarifarioTransporte
           tarifario={tarifarioActivo}
           isOpen={Boolean(tarifarioActivo)}
-          onClose={() => setTarifarioActivo(null)}
+          onClose={() => {
+            try {
+              sessionStorage.removeItem("padonde_tarifario_open");
+              sessionStorage.removeItem("padonde_tarifario_id");
+            } catch {}
+            setTarifarioActivo(null);
+          }}
           zonaNombre={zonaNombre}
         />
       )}

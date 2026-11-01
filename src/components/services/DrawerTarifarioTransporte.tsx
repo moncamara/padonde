@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { useLocale } from "next-intl";
+import { useRouter, usePathname } from "@/i18n/routing";
 import type { TarifarioTransporte, ItemTarifaTransporte } from "@/data/tarifas/types";
+import { TEXTOS_TARIFARIO, getDestinoTraducido } from "@/data/tarifas/traducciones";
 
 interface DrawerTarifarioTransporteProps {
   tarifario: TarifarioTransporte;
@@ -12,29 +15,41 @@ interface DrawerTarifarioTransporteProps {
 
 type TabCategoria = "todas" | "sierra_alta_y_montana" | "minca_locales_cercanos" | "expresos";
 
-const NOMBRES_CATEGORIAS: Record<string, { label: string; icon: string }> = {
-  todas: { label: "Todas", icon: "✨" },
-  sierra_alta_y_montana: { label: "Sierra Alta & Montaña", icon: "⛰️" },
-  minca_locales_cercanos: { label: "Locales Cercanos", icon: "🌿" },
-  expresos: { label: "Expresos / Ciudades", icon: "🚐" },
-};
-
 export function DrawerTarifarioTransporte({
   tarifario,
   isOpen,
   onClose,
   zonaNombre = "Minca",
 }: DrawerTarifarioTransporteProps) {
+  const appLocale = useLocale();
+  const [localeActivo, setLocaleActivo] = useState(appLocale);
+  const router = useRouter();
+  const pathname = usePathname();
+
+  // Sincronizar si cambia el locale exterior
+  useEffect(() => {
+    setLocaleActivo(appLocale);
+  }, [appLocale]);
+
+  const t = TEXTOS_TARIFARIO[localeActivo] || TEXTOS_TARIFARIO.es;
+
   const [busqueda, setBusqueda] = useState("");
   const [categoriaActiva, setCategoriaActiva] = useState<TabCategoria>("todas");
   const [numPersonas, setNumPersonas] = useState<number>(4);
 
-  // Cerrar con Escape y bloquear scroll del body mientras el Drawer está abierto
+  // Mantener persistencia del drawer abierto durante cambios de idioma y bloquear scroll
   useEffect(() => {
     if (!isOpen) return;
 
+    if (typeof window !== "undefined") {
+      try {
+        sessionStorage.setItem("padonde_tarifario_open", "true");
+        sessionStorage.setItem("padonde_tarifario_id", tarifario.id);
+      } catch {}
+    }
+
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") handleCerrar();
     };
 
     const prevOverflow = document.body.style.overflow;
@@ -45,7 +60,42 @@ export function DrawerTarifarioTransporte({
       document.body.style.overflow = prevOverflow;
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, tarifario.id]);
+
+  const handleCerrar = () => {
+    if (typeof window !== "undefined") {
+      try {
+        sessionStorage.removeItem("padonde_tarifario_open");
+        sessionStorage.removeItem("padonde_tarifario_id");
+      } catch {}
+    }
+    onClose();
+  };
+
+  const cambiarIdioma = (nuevoLocale: "es" | "en" | "fr" | "de") => {
+    if (nuevoLocale === localeActivo) return;
+    // 1. Cambio reactivo inmediato (0ms de retraso visual dentro del modal)
+    setLocaleActivo(nuevoLocale);
+    // 2. Persistencia en sesión para que la recarga de Next.js no cierre el modal
+    if (typeof window !== "undefined") {
+      try {
+        sessionStorage.setItem("padonde_tarifario_open", "true");
+        sessionStorage.setItem("padonde_tarifario_id", tarifario.id);
+        sessionStorage.setItem("padonde_locale_switching", "true");
+        sessionStorage.setItem("padonde_detail_lang_switched", "true");
+      } catch {}
+    }
+    // 3. Sincronizar ruta en background
+    router.replace(pathname, { locale: nuevoLocale });
+  };
+
+  // Nombres localizados de pestañas
+  const categoriasConfig: Record<TabCategoria, { label: string; icon: string }> = {
+    todas: { label: t.tabTodas, icon: "✨" },
+    sierra_alta_y_montana: { label: t.tabSierra, icon: "⛰️" },
+    minca_locales_cercanos: { label: t.tabLocales, icon: "🌿" },
+    expresos: { label: t.tabExpresos, icon: "🚐" },
+  };
 
   // Aplanar todas las rutas con su categoría asociada
   const todasLasRutas = useMemo(() => {
@@ -72,7 +122,7 @@ export function DrawerTarifarioTransporte({
       .replace(/[\u0300-\u036f]/g, "")
       .trim();
 
-  // Filtrado instantáneo
+  // Filtrado instantáneo bilingüe (busca en español y en el idioma activo)
   const rutasFiltradas = useMemo(() => {
     const q = normalizar(busqueda);
 
@@ -84,21 +134,24 @@ export function DrawerTarifarioTransporte({
 
       if (!q) return true;
 
-      const dest = normalizar(item.destino);
-      return dest.includes(q);
+      const destOrig = normalizar(item.destino);
+      const destTrad = normalizar(getDestinoTraducido(item.destino, localeActivo));
+      return destOrig.includes(q) || destTrad.includes(q);
     });
-  }, [todasLasRutas, busqueda, categoriaActiva]);
+  }, [todasLasRutas, busqueda, categoriaActiva, localeActivo]);
 
-  // Generador de enlace WhatsApp oficial con mensaje pre-cargado
+  // Generador de enlace WhatsApp oficial con mensaje en el idioma activo
   const buildEnlaceWhatsApp = (destino: string, precio: number) => {
     const phone = tarifario.contacto.whatsapp.replace(/\D/g, "");
-    const textoMensaje = `Hola ${tarifario.nombre}, vi sus tarifas en PaDónde y solicito transporte hacia ${destino} para ${numPersonas} persona${numPersonas === 1 ? "" : "s"}. (Tarifa oficial: $${precio.toLocaleString("es-CO")} COP)`;
+    const destinoFinal = getDestinoTraducido(destino, localeActivo);
+    const precioStr = precio.toLocaleString("es-CO");
+    const textoMensaje = t.mensajeWhatsApp(tarifario.nombre, destinoFinal, numPersonas, precioStr);
     return `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(textoMensaje)}`;
   };
 
   const handleWhatsAppCustom = () => {
     const phone = tarifario.contacto.whatsapp.replace(/\D/g, "");
-    const textoMensaje = `Hola ${tarifario.nombre}, vi sus tarifas en PaDónde y quisiera consultar disponibilidad y tarifa personalizada para ${numPersonas} personas hacia: ${busqueda.trim() || "mi destino"}.`;
+    const textoMensaje = t.mensajeWhatsAppCustom(tarifario.nombre, busqueda.trim(), numPersonas);
     window.open(`https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(textoMensaje)}`, "_blank");
   };
 
@@ -107,24 +160,24 @@ export function DrawerTarifarioTransporte({
   return (
     <div
       className="fixed inset-0 z-50 flex flex-col justify-end sm:justify-center sm:items-center bg-black/65 backdrop-blur-xs animate-in fade-in duration-200"
-      onClick={onClose}
+      onClick={handleCerrar}
       role="dialog"
       aria-modal="true"
     >
       <div
-        className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-lg max-h-[90vh] flex flex-col shadow-2xl border border-stone-200 overflow-hidden animate-in slide-in-from-bottom-5 duration-200"
+        className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-lg max-h-[92vh] flex flex-col shadow-2xl border border-stone-200 overflow-hidden animate-in slide-in-from-bottom-5 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Manija táctil móvil */}
         <div className="w-12 h-1.5 bg-stone-300 rounded-full mx-auto mt-2.5 sm:hidden" />
 
-        {/* Cabecera del Drawer */}
-        <div className="p-4 sm:p-5 border-b border-stone-150 bg-stone-50/70 shrink-0 space-y-2">
-          <div className="flex items-start justify-between gap-3">
-            <div className="space-y-0.5 min-w-0">
+        {/* Cabecera del Drawer con Selector de Idioma Integrado */}
+        <div className="p-4 sm:p-5 border-b border-stone-150 bg-stone-50/80 shrink-0 space-y-2">
+          <div className="flex items-start justify-between gap-2">
+            <div className="space-y-0.5 min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs font-bold uppercase tracking-wider text-forest bg-forest/10 px-2.5 py-0.5 rounded-full font-sans">
-                  Tarifario Oficial 4x4
+                  {t.tituloBadge}
                 </span>
                 <span className="text-[11px] text-stone font-medium">
                   {zonaNombre}
@@ -135,15 +188,38 @@ export function DrawerTarifarioTransporte({
               </h3>
             </div>
 
-            <button
-              type="button"
-              onClick={onClose}
-              className="text-stone-400 hover:text-stone-700 bg-white hover:bg-stone-200/60 border border-stone-200 rounded-full w-8 h-8 flex items-center justify-center transition-colors cursor-pointer shrink-0"
-              title="Cerrar tarifario"
-              aria-label="Cerrar"
-            >
-              ✕
-            </button>
+            {/* Selector de Idioma integrado reactivo (0ms) + Botón Cerrar */}
+            <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-0.5 bg-stone-200/80 p-0.5 rounded-full text-xs font-sans shadow-2xs">
+                {(["es", "en", "fr", "de"] as const).map((code) => {
+                  const isActive = localeActivo === code;
+                  return (
+                    <button
+                      key={code}
+                      type="button"
+                      onClick={() => cambiarIdioma(code)}
+                      className={`px-2 py-0.5 rounded-full text-[11px] font-bold transition-all cursor-pointer ${
+                        isActive
+                          ? "bg-forest text-white shadow-xs"
+                          : "text-stone hover:text-forest"
+                      }`}
+                      aria-label={`Cambiar a ${code.toUpperCase()}`}
+                    >
+                      {code.toUpperCase()}
+                    </button>
+                  );
+                })}
+              </div>
+              <button
+                type="button"
+                onClick={handleCerrar}
+                className="text-stone-400 hover:text-stone-700 bg-white hover:bg-stone-200/60 border border-stone-200 rounded-full w-8 h-8 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+                title="Cerrar"
+                aria-label="Cerrar"
+              >
+                ✕
+              </button>
+            </div>
           </div>
 
           {/* Condiciones claras y selector de personas */}
@@ -152,11 +228,11 @@ export function DrawerTarifarioTransporte({
               <span>🚙</span>
               <span>{tarifario.condiciones.tipo_vehiculo}</span>
               <span>•</span>
-              <span className="text-emerald-800 font-semibold">1 a 4 personas</span>
+              <span className="text-emerald-800 font-semibold">{t.capacidad}</span>
             </p>
 
             <div className="flex items-center gap-1.5 bg-white border border-stone-200 px-2 py-0.5 rounded-xl shadow-2xs">
-              <span className="text-[11px] text-stone-500 font-sans">Pasajeros:</span>
+              <span className="text-[11px] text-stone-500 font-sans">{t.pasajeros}</span>
               {[1, 2, 3, 4].map((n) => (
                 <button
                   key={n}
@@ -167,7 +243,7 @@ export function DrawerTarifarioTransporte({
                       ? "bg-forest text-white shadow-xs"
                       : "text-stone hover:bg-stone-100"
                   }`}
-                  title={`${n} persona${n > 1 ? "s" : ""}`}
+                  title={`${n}`}
                 >
                   {n}
                 </button>
@@ -184,7 +260,7 @@ export function DrawerTarifarioTransporte({
               type="text"
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
-              placeholder="Escribe tu destino (ej: Sierra Minca, Pozo Azul, Tagua)..."
+              placeholder={t.placeholderBuscar}
               className="w-full pl-9 pr-9 py-2.5 bg-white text-xs sm:text-sm rounded-xl border border-stone-300 placeholder:text-stone-400 text-forest focus:outline-none focus:ring-1 focus:ring-forest focus:border-forest shadow-2xs"
               autoFocus={false}
             />
@@ -200,11 +276,11 @@ export function DrawerTarifarioTransporte({
             )}
           </div>
 
-          {/* Pills de Categorías de Rutas */}
+          {/* Pills de Categorías de Rutas con nombres traducidos */}
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-1">
             {(["todas", "sierra_alta_y_montana", "minca_locales_cercanos", "expresos"] as TabCategoria[]).map(
               (catKey) => {
-                const conf = NOMBRES_CATEGORIAS[catKey] || { label: catKey, icon: "📍" };
+                const conf = categoriasConfig[catKey];
                 const isSelected = categoriaActiva === catKey;
                 const count =
                   catKey === "todas"
@@ -238,16 +314,16 @@ export function DrawerTarifarioTransporte({
           </div>
         </div>
 
-        {/* Lista de Resultados con Target Táctil >= 48px */}
+        {/* Lista de Resultados con Target Táctil >= 48px y soporte multilingüe */}
         <div className="flex-1 overflow-y-auto divide-y divide-stone-100 px-3 py-1">
           {rutasFiltradas.length === 0 ? (
             <div className="text-center py-10 px-4 space-y-3">
               <span className="text-3xl block">🚙</span>
               <p className="font-serif text-sm font-semibold text-forest">
-                No encontramos una tarifa fija registrada para &quot;{busqueda}&quot;
+                {t.sinResultados}
               </p>
               <p className="text-xs text-stone max-w-xs mx-auto">
-                ¿Vas a un hostal nuevo o sector específico en la Sierra? Puedes consultar la tarifa directa con la estación.
+                {t.noApareceDestino}
               </p>
               <button
                 type="button"
@@ -255,13 +331,15 @@ export function DrawerTarifarioTransporte({
                 className="mt-2 inline-flex items-center justify-center gap-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold py-2.5 px-4 rounded-xl shadow-xs transition-all active:scale-95 cursor-pointer"
               >
                 <span>💬</span>
-                <span>Cotizar viaje por WhatsApp</span>
+                <span>{t.botonCotizarCustom}</span>
               </button>
             </div>
           ) : (
             rutasFiltradas.map((item, idx) => {
               const waUrl = buildEnlaceWhatsApp(item.destino, item.precio);
-              const confCat = NOMBRES_CATEGORIAS[item.categoriaClave];
+              const confCat = categoriasConfig[item.categoriaClave as TabCategoria];
+              const destinoTrad = getDestinoTraducido(item.destino, localeActivo);
+              const esDiferente = destinoTrad !== item.destino;
 
               return (
                 <a
@@ -270,17 +348,22 @@ export function DrawerTarifarioTransporte({
                   target="_blank"
                   rel="noopener noreferrer"
                   className="group flex items-center justify-between gap-3 py-3 px-3 hover:bg-forest/5 active:bg-forest/10 rounded-2xl transition-all min-h-[50px] cursor-pointer"
-                  title={`Pedir campero 4x4 hacia ${item.destino}`}
+                  title={`${t.botonPedir}: ${destinoTrad}`}
                 >
                   <div className="min-w-0 flex-1">
                     <p className="font-sans text-xs sm:text-sm font-semibold text-stone-dark group-hover:text-forest transition-colors truncate">
-                      {item.destino}
+                      {destinoTrad}
                     </p>
+                    {esDiferente && (
+                      <span className="text-[10px] text-stone-400 font-sans block truncate">
+                        {item.destino}
+                      </span>
+                    )}
                     <p className="text-[10px] text-stone-400 font-sans flex items-center gap-1 mt-0.5">
                       <span>{confCat?.icon || "📍"}</span>
                       <span>{confCat?.label || "Ruta"}</span>
                       <span>•</span>
-                      <span>1-4 pers.</span>
+                      <span>1-4 {localeActivo === "en" ? "pax" : "pers."}</span>
                     </p>
                   </div>
 
@@ -298,10 +381,10 @@ export function DrawerTarifarioTransporte({
           )}
         </div>
 
-        {/* Footer del Drawer con instrucción rápida */}
-        <div className="p-3 bg-stone-50 border-t border-stone-150 shrink-0 text-center">
-          <p className="text-[11px] text-stone font-sans">
-            💡 <strong>Toca cualquier ruta</strong> para abrir WhatsApp con el campero listo y la tarifa oficial precargada.
+        {/* Footer del Drawer con advertencia de clima e instrucción rápida */}
+        <div className="p-3 bg-stone-50 border-t border-stone-150 shrink-0 text-center space-y-1">
+          <p className="text-[10px] text-stone-500 font-sans">
+            🛡️ {t.disclaimerClima}
           </p>
         </div>
       </div>
