@@ -137,9 +137,52 @@ export function EventFilters({
 
   return (
     <>
-      {/* Fila Única Unificada de Navegación: Fecha Anclada + Categorías */}
+      {/* Fila Única Unificada de Navegación: Categorías + Selector de Fecha al final */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
-        {/* 1. BOTÓN ANCLA DE FECHA: TOGGLE PURO (Pulsar para elegir / Despulsar para volver a Hoy) */}
+        {/* 1. BOTÓN "TODOS LOS PLANES" DE LA CATEGORÍA */}
+        <button
+          id="btn-cat-all"
+          type="button"
+          onClick={() => onCategoriaChange(null)}
+          className={[
+            "flex-shrink-0 flex flex-col items-center justify-center gap-1 min-w-[70px] px-3.5 py-2.5 rounded-2xl text-xs font-sans transition-all duration-150 cursor-pointer shadow-xs",
+            categoriaActiva === null
+              ? "bg-forest text-white shadow-2xs"
+              : "bg-white/60 border border-stone-light/60 text-stone hover:text-forest",
+          ].join(" ")}
+        >
+          <span className="text-xl leading-none">✨</span>
+          <span className="font-medium tracking-tight">{tCat("all")}</span>
+        </button>
+
+        {/* 2. CATEGORÍAS ESPECÍFICAS SEGÚN EL ORDEN TERRITORIAL */}
+        {categoriasDisponibles.map(({ id, emoji }) => {
+          const isSelected = categoriaActiva === id;
+          return (
+            <button
+              key={id}
+              id={`btn-cat-${id}`}
+              type="button"
+              onClick={() => onCategoriaChange(isSelected ? null : id)}
+              className={[
+                "flex-shrink-0 flex flex-col items-center justify-center gap-1 min-w-[72px] px-3.5 py-2.5 rounded-2xl text-xs font-sans transition-all duration-150 cursor-pointer shadow-xs",
+                isSelected
+                  ? "bg-forest text-white shadow-2xs"
+                  : "bg-white/60 border border-stone-light/60 text-stone hover:text-forest",
+              ].join(" ")}
+            >
+              <span className="text-xl leading-none">{emoji}</span>
+              <span className="font-medium tracking-tight truncate max-w-[84px]">
+                {tCat(id)}
+              </span>
+            </button>
+          );
+        })}
+
+        {/* Separador vertical limpio antes del selector de fecha */}
+        <div className="w-[1px] h-8 bg-stone-light/80 shrink-0 mx-0.5" aria-hidden="true" />
+
+        {/* 3. BOTÓN DE FECHA / DÍAS AL FINAL DE LA FILA */}
         <button
           id="btn-filtro-fecha"
           type="button"
@@ -172,49 +215,6 @@ export function EventFilters({
             {fechaActual.titulo}
           </span>
         </button>
-
-        {/* Separador vertical limpio */}
-        <div className="w-[1px] h-8 bg-stone-light/80 shrink-0 mx-0.5" aria-hidden="true" />
-
-        {/* 2. BOTÓN "TODOS LOS PLANES" DE LA CATEGORÍA */}
-        <button
-          id="btn-cat-all"
-          type="button"
-          onClick={() => onCategoriaChange(null)}
-          className={[
-            "flex-shrink-0 flex flex-col items-center justify-center gap-1 min-w-[70px] px-3.5 py-2.5 rounded-2xl text-xs font-sans transition-all duration-150 cursor-pointer shadow-xs",
-            categoriaActiva === null
-              ? "bg-forest text-white shadow-2xs"
-              : "bg-white/60 border border-stone-light/60 text-stone hover:text-forest",
-          ].join(" ")}
-        >
-          <span className="text-xl leading-none">✨</span>
-          <span className="font-medium tracking-tight">{tCat("all")}</span>
-        </button>
-
-        {/* 3. CATEGORÍAS ESPECÍFICAS SEGÚN EL ORDEN TERRITORIAL */}
-        {categoriasDisponibles.map(({ id, emoji }) => {
-          const isSelected = categoriaActiva === id;
-          return (
-            <button
-              key={id}
-              id={`btn-cat-${id}`}
-              type="button"
-              onClick={() => onCategoriaChange(isSelected ? null : id)}
-              className={[
-                "flex-shrink-0 flex flex-col items-center justify-center gap-1 min-w-[72px] px-3.5 py-2.5 rounded-2xl text-xs font-sans transition-all duration-150 cursor-pointer shadow-xs",
-                isSelected
-                  ? "bg-forest text-white shadow-2xs"
-                  : "bg-white/60 border border-stone-light/60 text-stone hover:text-forest",
-              ].join(" ")}
-            >
-              <span className="text-xl leading-none">{emoji}</span>
-              <span className="font-medium tracking-tight truncate max-w-[84px]">
-                {tCat(id)}
-              </span>
-            </button>
-          );
-        })}
       </div>
 
       {/* MODAL / BOTTOM SHEET DE SELECCIÓN RÁPIDA DE FECHA */}
