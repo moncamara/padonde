@@ -11,6 +11,9 @@ import {
   trackServicioEsencialWhatsAppClick,
   trackServicioEsencialMapsClick,
 } from "@/lib/analytics";
+import { DrawerTarifarioTransporte } from "./DrawerTarifarioTransporte";
+import { getTarifarioPorId } from "@/data/tarifas";
+import type { TarifarioTransporte } from "@/data/tarifas/types";
 
 interface ServiciosListProps {
   servicios: ServicioEsencial[];
@@ -37,6 +40,7 @@ export function ServiciosList({ servicios, zonaNombre, zonaSlug }: ServiciosList
   const [categoriaActiva, setCategoriaActiva] = useState<string>("todas");
   const [videoActivoId, setVideoActivoId] = useState<string | null>(null);
   const [fotoSeleccionada, setFotoSeleccionada] = useState<Record<string, string>>({});
+  const [tarifarioActivo, setTarifarioActivo] = useState<TarifarioTransporte | null>(null);
 
   const serviciosActivos = servicios.filter((s) => s.activo);
 
@@ -133,6 +137,9 @@ export function ServiciosList({ servicios, zonaNombre, zonaSlug }: ServiciosList
             const cardUrl = `${origin}/${locale}/${zonaSlug || "minca"}?tab=servicios#servicio-${servicio.id}`;
             const shareTitle = `${servicio.nombre_comercial} - PaDónde`;
             const shareText = `${servicio.nombre_comercial} (${t(`categories.${servicio.categoria}`)}): ${servicio.subtitulo || ""} en ${zonaNombre}. Consúltalo en PaDónde:`;
+
+            const tarifarioId = (servicio.metadata_comercial as Record<string, any>)?.tarifario_id || servicio.id;
+            const tarifario = getTarifarioPorId(tarifarioId);
 
             return (
               <article
@@ -333,6 +340,32 @@ export function ServiciosList({ servicios, zonaNombre, zonaSlug }: ServiciosList
                   )}
                 </div>
 
+                {/* Tarifario oficial si existe (ej. 4x4, mototaxis) */}
+                {tarifario && (
+                  <div className="pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setTarifarioActivo(tarifario)}
+                      className="w-full py-2.5 px-3.5 rounded-2xl bg-amber-500/10 hover:bg-amber-500/15 border border-amber-300/80 text-amber-950 font-sans text-xs font-semibold flex items-center justify-between gap-2 shadow-2xs active:scale-[0.99] transition-all cursor-pointer group"
+                    >
+                      <div className="flex items-center gap-2.5 text-left min-w-0">
+                        <span className="text-base shrink-0 group-hover:scale-110 transition-transform">📋</span>
+                        <div className="min-w-0">
+                          <span className="block font-bold truncate text-forest">
+                            Tarifario Oficial ({Object.values(tarifario.tarifas).flat().length} Destinos)
+                          </span>
+                          <span className="text-[10px] text-stone truncate block">
+                            Precios fijos a hostales, cascadas y Sierra Alta
+                          </span>
+                        </div>
+                      </div>
+                      <span className="shrink-0 text-[11px] font-bold bg-white group-hover:bg-amber-50 text-amber-900 border border-amber-300 px-2.5 py-1 rounded-xl shadow-2xs transition-colors">
+                        Ver Tarifas ↗
+                      </span>
+                    </button>
+                  </div>
+                )}
+
                 {/* Botones de acción: WhatsApp y Compartir ficha */}
                 <div className="pt-1 flex items-center gap-2">
                   {servicio.boton_whatsapp_activo !== false ? (
@@ -373,6 +406,16 @@ export function ServiciosList({ servicios, zonaNombre, zonaSlug }: ServiciosList
             );
           })}
         </div>
+      )}
+
+      {/* Drawer / Modal de Tarifario de Transporte */}
+      {tarifarioActivo && (
+        <DrawerTarifarioTransporte
+          tarifario={tarifarioActivo}
+          isOpen={Boolean(tarifarioActivo)}
+          onClose={() => setTarifarioActivo(null)}
+          zonaNombre={zonaNombre}
+        />
       )}
     </div>
   );
