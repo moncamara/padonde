@@ -31,6 +31,7 @@ import { Button } from "@/components/ui/Button";
 import { ModalAsistenteEvento } from "./ModalAsistenteEvento";
 import { ModalAficheImprimible } from "@/components/admin/ModalAficheImprimible";
 import { LuxuryRestaurantMenu } from "@/components/menu/LuxuryRestaurantMenu";
+import { LAZY_CAT_MENU } from "@/data/menus/lazyCatMenu";
 import type { EventoExtraido } from "@/lib/eventoParser";
 import type { CategoriaEvento } from "@/lib/types";
 import type { EventoAdminItem } from "./AdminEventList";
@@ -380,13 +381,60 @@ export function EventUpsertForm({
   const [mostrarPreviewModal, setMostrarPreviewModal] = useState(false);
 
   const menuPreviewObj = useMemo(() => {
-    if (!menuDataJson.trim()) return null;
+    const nombreNegocioActual = businessName.trim() || eventTitle.trim() || "Restaurante";
+    if (!menuDataJson.trim()) {
+      return {
+        ...LAZY_CAT_MENU,
+        id: "menu-" + nombreNegocioActual.toLowerCase().replace(/\s+/g, "-"),
+        negocioNombre: nombreNegocioActual,
+        subtitulo: {
+          es: `Carta Digital · ${nombreNegocioActual}`,
+          en: `Digital Menu · ${nombreNegocioActual}`,
+          fr: `Menu Digital · ${nombreNegocioActual}`,
+          de: `Digitale Speisekarte · ${nombreNegocioActual}`,
+        },
+      };
+    }
     try {
-      return JSON.parse(menuDataJson);
+      const parsed = JSON.parse(menuDataJson);
+      let normalizado: any = parsed;
+      // Caso 1: Arreglo de categorías directo
+      if (Array.isArray(parsed)) {
+        normalizado = {
+          id: "menu-" + nombreNegocioActual.toLowerCase().replace(/\s+/g, "-"),
+          negocioNombre: nombreNegocioActual,
+          whatsapp: whatsapp || "573000000000",
+          subtitulo: {
+            es: "Carta Digital Gastronómica",
+            en: "Digital Gastronomic Menu",
+            fr: "Menu Gastronomique Digital",
+            de: "Digitale Speisekarte",
+          },
+          categorias: parsed,
+        };
+      } else if (parsed && typeof parsed === "object") {
+        normalizado = {
+          ...parsed,
+          negocioNombre: parsed.negocioNombre || nombreNegocioActual,
+          whatsapp: parsed.whatsapp || whatsapp || "573000000000",
+          subtitulo: parsed.subtitulo || {
+            es: "Carta Digital Gastronómica",
+            en: "Digital Gastronomic Menu",
+            fr: "Menu Gastronomique Digital",
+            de: "Digitale Speisekarte",
+          },
+          categorias: Array.isArray(parsed.categorias)
+            ? parsed.categorias
+            : Array.isArray(parsed.items)
+            ? [{ id: "menu", icono: "🍽️", titulos: { es: "Carta", en: "Menu" }, items: parsed.items }]
+            : [],
+        };
+      }
+      return normalizado;
     } catch {
       return null;
     }
-  }, [menuDataJson]);
+  }, [menuDataJson, businessName, eventTitle, whatsapp]);
 
   function validarYFormatearJson(str: string) {
     if (!str.trim()) {
@@ -411,9 +459,10 @@ export function EventUpsertForm({
   }
 
   function handleCargarEjemploJson() {
+    const nombreNegocioActual = businessName.trim() || eventTitle.trim() || "Restaurante";
     const ejemplo = {
-      id: "menu-restaurante",
-      negocioNombre: eventTitle.trim() || "Restaurante",
+      id: "menu-" + nombreNegocioActual.toLowerCase().replace(/\s+/g, "-"),
+      negocioNombre: nombreNegocioActual,
       subtitulo: {
         es: "Cocina Fusión · Hamburguesas de Autor · Coctelería",
         en: "Fusion Cuisine · Gourmet Burgers · Cocktails",

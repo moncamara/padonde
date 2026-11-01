@@ -52,7 +52,27 @@ export default async function MenuDemoPage({
   if (search.eventoId) {
     const evento = await getEventoById(search.eventoId);
     if (evento?.metadata_hospedaje?.menu_data) {
-      menuData = evento.metadata_hospedaje.menu_data as any;
+      menuData = {
+        ...(evento.metadata_hospedaje.menu_data as any),
+        negocioNombre:
+          (evento.metadata_hospedaje.menu_data as any)?.negocioNombre ||
+          evento.negocio?.nombre ||
+          evento.titulo,
+      };
+    } else if (evento) {
+      // Si el restaurante existe pero aún está pendiente de guardar su JSON personalizado
+      const nombreNegocio = evento.negocio?.nombre || evento.titulo || "Restaurante";
+      menuData = {
+        ...LAZY_CAT_MENU,
+        id: "menu-" + nombreNegocio.toLowerCase().replace(/\s+/g, "-"),
+        negocioNombre: nombreNegocio,
+        subtitulo: {
+          es: `Carta Digital · ${nombreNegocio}`,
+          en: `Digital Menu · ${nombreNegocio}`,
+          fr: `Menu Digital · ${nombreNegocio}`,
+          de: `Digitale Speisekarte · ${nombreNegocio}`,
+        },
+      };
     }
     const metaTema = evento?.metadata_hospedaje?.menu_tema;
     if (metaTema && metaTema in TEMAS_MENU) {
