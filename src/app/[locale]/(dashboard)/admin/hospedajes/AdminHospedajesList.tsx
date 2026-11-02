@@ -13,146 +13,7 @@ import {
 import { ToggleDestacadoButton } from "../ToggleDestacadoButton";
 import { parsearLineaRapida, buscarCoincidenciaHospedaje } from "@/lib/hospedajeParser";
 
-export const BORRADOR_MAGIC_GREEN_TAYRONA = {
-  id: "temp-magic-green-tayrona",
-  nombreNegocio: "Magic Green Dentro del Parque Tayrona",
-  nombrePropietario: "Manuel",
-  whatsapp: "573114200589",
-  instagram: "@magicgreentayrona",
-  zonaSlug: "tayrona",
-  titulo: "Eco-Lodge con Piscina dentro del Parque Tayrona",
-  descripcion:
-    "🏊 Piscina al Aire Libre, 🌴 Dentro del Tayrona (Km 30), 🌊 A 8 min de Playa Castilletes, 🍽️ Restaurante & Bar, 📶 Wi-Fi Gratis\n\nMagic Green es un eco-lodge privilegiado ubicado en el kilómetro 30, vereda Cañaveral, en el sector El Zaíno y dentro del Parque Nacional Natural Tayrona. Su ubicación permite disfrutar de la selva tropical sin traslados largos hacia las playas, situándose a solo 8 minutos a pie de Playa Castilletes. Cuenta con piscina al aire libre rodeada de palmeras, restaurante con opciones locales y veganas, bar y bungalows independientes en madera con balcones privados y vistas a las montañas de la Sierra Nevada.",
-  imagenUrl: "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/hospedajes/magic-green-portada-piscina.webp",
-  ratingGoogle: "4.7",
-  reviewsGoogle: "67",
-  mapsUrl:
-    "https://www.google.com/maps/place/Magic+Green+Tayrona/@11.289426,-73.9131795,17z/data=!3m1!4b1!4m9!3m8!1s0x8ef4f577ea31e43d:0x740d09caec282039!5m2!4m1!1i2!8m2!3d11.289426!4d-73.9131795!16s%2Fg%2F11l6zwsfm3",
-  googleReviewUrl:
-    "https://www.google.com/maps/place/Magic+Green+Tayrona/@11.289426,-73.9131795,17z/data=!3m1!4b1!4m9!3m8!1s0x8ef4f577ea31e43d:0x740d09caec282039!5m2!4m1!1i2!8m2!3d11.289426!4d-73.9131795!16s%2Fg%2F11l6zwsfm3",
-  destacado: false,
-  metadata_hospedaje: {
-    contacto_propietario: "Manuel",
-    google_reputacion: {
-      rating: 4.7,
-      total_reviews: 67,
-      maps_url:
-        "https://www.google.com/maps/place/Magic+Green+Tayrona/@11.289426,-73.9131795,17z/data=!3m1!4b1!4m9!3m8!1s0x8ef4f577ea31e43d:0x740d09caec282039!5m2!4m1!1i2!8m2!3d11.289426!4d-73.9131795!16s%2Fg%2F11l6zwsfm3",
-    },
-    habitaciones: [
-      {
-        id: "hab-magic-bungalow-familiar",
-        titulo: "Bungalow Familiar con Balcón y Vista a la Selva",
-        descripcion:
-          "Bungalow independiente de 36 m² con balcón privado. Equipado con 1 cama doble, 1 litera y 1 cama individual, baño privado y vistas a la piscina y la montaña.",
-        precio_noche_cop: 320000,
-        capacidad_max: 4,
-        fotos: [
-          "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/hospedajes/magic-green-portada-piscina.webp",
-          "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/hospedajes/magic-green-hab-bungalow-1.webp",
-        ],
-        badges: [
-          { icono: "🌿", texto: "Baño privado" },
-          { icono: "🏊", texto: "Vista piscina" },
-          { icono: "🪑", texto: "Balcón privado" },
-          { icono: "👥", texto: "Hasta 4-5 pers." },
-        ],
-      },
-      {
-        id: "hab-magic-doble-jardin",
-        titulo: "Cabaña Doble Estándar con Terraza",
-        descripcion:
-          "Habitación privada de 20 m² para parejas inmersa en la vegetación nativa. Dispone de cama doble, baño privado, balcón y ventilación natural fresca.",
-        precio_noche_cop: 250000,
-        capacidad_max: 2,
-        fotos: [
-          "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/hospedajes/magic-green-hab-bungalow-2.webp",
-          "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/hospedajes/magic-green-hab-deluxe-1.webp",
-        ],
-        badges: [
-          { icono: "🌿", texto: "Baño privado" },
-          { icono: "🌴", texto: "Vista jardín" },
-          { icono: "🪑", texto: "Balcón privado" },
-          { icono: "☕", texto: "Desayuno disponible" },
-        ],
-      },
-      {
-        id: "hab-magic-bungalow-deluxe",
-        titulo: "Bungalow Deluxe Superior (3 Camas Dobles)",
-        descripcion:
-          "Espacioso chalet de 49 m² ideal para familias o grupos de amigos. Incluye 3 camas dobles, terraza privada amplia con vista panorámica a la Sierra y baño privado.",
-        precio_noche_cop: 420000,
-        capacidad_max: 6,
-        fotos: [
-          "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/hospedajes/magic-green-hab-deluxe-2.webp",
-          "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/hospedajes/magic-green-hab-jardin.webp",
-        ],
-        badges: [
-          { icono: "🌿", texto: "Baño privado" },
-          { icono: "⛰️", texto: "Vista montaña" },
-          { icono: "👥", texto: "Capacidad 6 pers." },
-          { icono: "🪑", texto: "Terraza amplia" },
-        ],
-      },
-    ],
-  },
-  habitaciones: [
-    {
-      id: "hab-magic-bungalow-familiar",
-      titulo: "Bungalow Familiar con Balcón y Vista a la Selva",
-      descripcion:
-        "Bungalow independiente de 36 m² con balcón privado. Equipado con 1 cama doble, 1 litera y 1 cama individual, baño privado y vistas a la piscina y la montaña.",
-      precio_noche_cop: 320000,
-      capacidad_max: 4,
-      fotos: [
-        "https://cf.bstatic.com/xdata/images/hotel/max1024x768/769876416.jpg",
-        "https://cf.bstatic.com/xdata/images/hotel/max1024x768/769874936.jpg",
-      ],
-      badges: [
-        { icono: "🌿", texto: "Baño privado" },
-        { icono: "🏊", texto: "Vista piscina" },
-        { icono: "🪑", texto: "Balcón privado" },
-        { icono: "👥", texto: "Hasta 4-5 pers." },
-      ],
-    },
-    {
-      id: "hab-magic-doble-jardin",
-      titulo: "Cabaña Doble Estándar con Terraza",
-      descripcion:
-        "Habitación privada de 20 m² para parejas inmersa en la vegetación nativa. Dispone de cama doble, baño privado, balcón y ventilación natural fresca.",
-      precio_noche_cop: 250000,
-      capacidad_max: 2,
-      fotos: [
-        "https://cf.bstatic.com/xdata/images/hotel/max1024x768/769873519.jpg",
-        "https://cf.bstatic.com/xdata/images/hotel/max1024x768/769876411.jpg",
-      ],
-      badges: [
-        { icono: "🌿", texto: "Baño privado" },
-        { icono: "🌴", texto: "Vista jardín" },
-        { icono: "🪑", texto: "Balcón privado" },
-        { icono: "☕", texto: "Desayuno disponible" },
-      ],
-    },
-    {
-      id: "hab-magic-bungalow-deluxe",
-      titulo: "Bungalow Deluxe Superior (3 Camas Dobles)",
-      descripcion:
-        "Espacioso chalet de 49 m² ideal para familias o grupos de amigos. Incluye 3 camas dobles, terraza privada amplia con vista panorámica a la Sierra y baño privado.",
-      precio_noche_cop: 420000,
-      capacidad_max: 6,
-      fotos: [
-        "https://cf.bstatic.com/xdata/images/hotel/max1024x768/769873526.jpg",
-        "https://cf.bstatic.com/xdata/images/hotel/max1024x768/769871675.jpg",
-      ],
-      badges: [
-        { icono: "🌿", texto: "Baño privado" },
-        { icono: "⛰️", texto: "Vista montaña" },
-        { icono: "👥", texto: "Capacidad 6 pers." },
-        { icono: "🪑", texto: "Terraza amplia" },
-      ],
-    },
-  ],
-};
+
 
 interface AdminHospedajesListProps {
   hospedajes: any[];
@@ -211,11 +72,11 @@ export function AdminHospedajesList({
     return resultado;
   }, [listaHospedajes, filtroZona, busqueda]);
 
-  const [modalAbierto, setModalAbierto] = useState(true);
+  const [modalAbierto, setModalAbierto] = useState(false);
   const [abrirConJson, setAbrirConJson] = useState(false);
   const [lineaRapida, setLineaRapida] = useState("");
   const [isInvestigando, setIsInvestigando] = useState(false);
-  const [hospedajeEnEdicion, setHospedajeEnEdicion] = useState<any | null>(BORRADOR_MAGIC_GREEN_TAYRONA);
+  const [hospedajeEnEdicion, setHospedajeEnEdicion] = useState<any | null>(null);
   const [hospedajeANotificar, setHospedajeANotificar] = useState<EventoNotificarData | null>(null);
 
   // Estado para alertar si se detecta un posible duplicado antes de crear
@@ -343,18 +204,7 @@ export function AdminHospedajesList({
     setModalAbierto(true);
   };
 
-  // Leer prefill pendiente de sessionStorage si se abrió desde otra ruta
-  useEffect(() => {
-    try {
-      const raw = sessionStorage.getItem("padonde_prefill_hospedaje");
-      if (raw) {
-        const datos = JSON.parse(raw);
-        sessionStorage.removeItem("padonde_prefill_hospedaje");
-        setHospedajeEnEdicion(datos);
-        setModalAbierto(true);
-      }
-    } catch {}
-  }, []);
+
 
   const handleToggleActivo = (id: string, estadoActual: boolean) => {
     startTransition(async () => {
@@ -392,18 +242,6 @@ export function AdminHospedajesList({
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap self-start sm:self-auto">
-          <button
-            type="button"
-            onClick={() => {
-              setHospedajeEnEdicion(BORRADOR_MAGIC_GREEN_TAYRONA);
-              setModalAbierto(true);
-            }}
-            className="px-4 py-2.5 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-950 border border-emerald-500/40 font-sans text-xs font-bold rounded-2xl active:scale-95 transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
-            title="Abrir ficha pre-cargada de Magic Green (Tayrona)"
-          >
-            <span>🌴</span>
-            <span>Cargar Magic Green</span>
-          </button>
 
           <button
             onClick={() => {
