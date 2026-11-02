@@ -4,10 +4,14 @@ import { useState, useEffect, useMemo, useTransition } from "react";
 import Image from "next/image";
 import { Link, useRouter } from "@/i18n/routing";
 import { ModalEditarHospedaje } from "./ModalEditarHospedaje";
-import { ModalAsistenteIngesta } from "./ModalAsistenteIngesta";
+import { UniversalIngestaModal } from "../UniversalIngestaModal";
 import { ModalAlertaDuplicado } from "./ModalAlertaDuplicado";
 import { ModalNotificarAliado, type EventoNotificarData } from "../ModalNotificarAliado";
-import { toggleEventoActivoAction, investigarHospedajeAction } from "../actions";
+import {
+  toggleEventoActivoAction,
+  investigarHospedajeAction,
+  type IngestaUniversalPrefillResultado,
+} from "../actions";
 import { ToggleDestacadoButton } from "../ToggleDestacadoButton";
 import { parsearLineaRapida, buscarCoincidenciaHospedaje } from "@/lib/hospedajeParser";
 
@@ -200,6 +204,46 @@ export function AdminHospedajesList({
     setHospedajeEnEdicion(borrador);
     setModalAbierto(true);
   };
+
+  const handlePrefillUniversalHospedaje = (datos: IngestaUniversalPrefillResultado) => {
+    const borrador = {
+      id: `temp-${Date.now()}`,
+      nombreNegocio: datos.nombreNegocio,
+      nombrePropietario: datos.nombrePropietario || "",
+      whatsapp: datos.whatsapp,
+      instagram: datos.instagram,
+      zonaSlug: datos.zonaSlug,
+      titulo: datos.titulo,
+      descripcion: datos.descripcion,
+      imagenUrl: datos.imagenPortadaUrl || "",
+      ratingGoogle: datos.googleRating ? datos.googleRating.toString() : "",
+      reviewsGoogle: datos.googleReviewsCount ? datos.googleReviewsCount.toString() : "",
+      mapsUrl: datos.googleMapsUrl || "",
+      habitaciones: datos.habitaciones || [],
+      metadata_hospedaje: {
+        contacto_propietario: datos.nombrePropietario || "",
+        google_reputacion: {
+          rating: datos.googleRating || null,
+          total_reviews: datos.googleReviewsCount || null,
+          maps_url: datos.googleMapsUrl || "",
+        },
+        habitaciones: datos.habitaciones || [],
+      },
+    };
+    handleParsed(borrador);
+  };
+
+  // Leer prefill pendiente de sessionStorage si se abrió desde otra ruta
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem("padonde_prefill_hospedaje");
+      if (raw) {
+        const datos = JSON.parse(raw);
+        sessionStorage.removeItem("padonde_prefill_hospedaje");
+        handlePrefillUniversalHospedaje(datos);
+      }
+    } catch {}
+  }, []);
 
   const handleToggleActivo = (id: string, estadoActual: boolean) => {
     startTransition(async () => {
@@ -568,12 +612,21 @@ export function AdminHospedajesList({
         />
       )}
 
-      {/* Modal Asistente de Ingesta Rápida */}
+      {/* Modal Asistente Universal de Ingesta Inteligente */}
       {asistenteAbierto && (
-        <ModalAsistenteIngesta
-          zonas={zonas}
+        <UniversalIngestaModal
+          isOpen={asistenteAbierto}
           onClose={() => setAsistenteAbierto(false)}
-          onParsed={handleParsed}
+          entidadInicial="hospedaje"
+          zonaInicial={zonas[0]?.slug || "minca"}
+          onPrefillHospedaje={handlePrefillUniversalHospedaje}
+          onPrefillEvento={(datos) => {
+            try {
+              sessionStorage.setItem("padonde_asistente_prefill", JSON.stringify(datos));
+            } catch {}
+            setAsistenteAbierto(false);
+            router.push("/admin/nuevo");
+          }}
         />
       )}
 

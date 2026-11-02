@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { Link } from "@/i18n/routing";
+import { Link, useRouter } from "@/i18n/routing";
 import {
   formatFecha,
   formatHora,
@@ -20,7 +20,7 @@ import { ToggleDestacadoButton } from "./ToggleDestacadoButton";
 import { ModalEditarEvento } from "./ModalEditarEvento";
 import { ModalProyectarEvento } from "./ModalProyectarEvento";
 import { ModalNotificarAliado, type EventoNotificarData } from "./ModalNotificarAliado";
-import { ModalAsistenteEvento } from "./ModalAsistenteEvento";
+import { UniversalIngestaModal } from "./UniversalIngestaModal";
 import type { AliadoSimple } from "@/lib/eventoParser";
 import { Button } from "@/components/ui/Button";
 import { getCategoria } from "@/constants";
@@ -81,6 +81,7 @@ export function AdminEventList({
   ],
   locale,
 }: AdminEventListProps) {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [listaEventos, setListaEventos] = useState<EventoAdminItem[]>(eventos);
   const [tabActiva, setTabActiva] = useState<TabType>("vigentes");
@@ -703,12 +704,27 @@ export function AdminEventList({
         onClose={() => setEventoANotificar(null)}
       />
 
-      {/* Modal Asistente Inteligente de Eventos */}
+      {/* Modal Asistente Universal de Ingesta Inteligente */}
       {asistenteAbierto && (
-        <ModalAsistenteEvento
-          aliados={aliados}
-          zonas={zonas}
+        <UniversalIngestaModal
+          isOpen={asistenteAbierto}
           onClose={() => setAsistenteAbierto(false)}
+          entidadInicial="evento"
+          zonaInicial={zonas[0]?.slug || "minca"}
+          onPrefillEvento={(datos) => {
+            try {
+              sessionStorage.setItem("padonde_asistente_prefill", JSON.stringify(datos));
+            } catch {}
+            setAsistenteAbierto(false);
+            router.push("/admin/nuevo");
+          }}
+          onPrefillHospedaje={(datos) => {
+            try {
+              sessionStorage.setItem("padonde_prefill_hospedaje", JSON.stringify(datos));
+            } catch {}
+            setAsistenteAbierto(false);
+            router.push("/admin/hospedajes");
+          }}
         />
       )}
     </section>

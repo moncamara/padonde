@@ -3291,4 +3291,424 @@ Instrucciones indispensables:
   }
 }
 
+// ─── RESOLVER SATÉLITE DE INGESTA UNIVERSAL (PREFILL PATTERN) ───────────────
+
+export interface IngestaUniversalPrefillResultado {
+  entidad: "hospedaje" | "evento";
+  nombreNegocio: string;
+  nombrePropietario?: string;
+  whatsapp: string;
+  instagram: string;
+  zonaSlug: string;
+  titulo: string;
+  descripcion: string;
+  subtitulo?: string;
+  googleMapsUrl?: string;
+  googleRating?: number | null;
+  googleReviewsCount?: number | null;
+  imagenPortadaUrl?: string | null;
+  mensajeWhatsappPreconfigurado?: string;
+  // Específico para Hospedajes
+  habitaciones?: Array<{
+    id: string;
+    titulo: string;
+    descripcion: string;
+    precio_noche_cop: number;
+    capacidad_max: number;
+    fotos: string[];
+    badges: Array<{ icono: string; texto: string }>;
+  }>;
+  // Específico para Eventos
+  tipo?: CategoriaEvento;
+  precio?: number;
+  precioMoneda?: "COP";
+  galeriaFotos?: string[];
+  fechaInicioIso?: string;
+  fechaFinIso?: string | null;
+  esRecurrente?: boolean;
+  diasRecurrentes?: number[];
+}
+
+export interface ResolverIngestaUniversalResult {
+  success: boolean;
+  error?: string;
+  resultado?: IngestaUniversalPrefillResultado;
+}
+
+/**
+ * Server Action Satélite: Ingesta Universal con Google Search Grounding y Sharp WebP.
+ * PREFILL PATTERN ESTRICTO: No ejecuta INSERT ni UPDATE en la BD.
+ */
+export async function resolverIngestaUniversalAction(
+  formData: FormData
+): Promise<ResolverIngestaUniversalResult> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: "No autorizado. Inicia sesión en el panel." };
+    }
+
+    const entidad = ((formData.get("entidad") as string) || "hospedaje") as "hospedaje" | "evento";
+    const zonaSlug = (formData.get("zonaSlug") as string) || "minca";
+    const textoContexto = ((formData.get("textoContexto") as string) || "").trim();
+    const archivosLocales = formData.getAll("archivos") as File[];
+
+    if (!textoContexto && archivosLocales.length === 0) {
+      return {
+        success: false,
+        error: "Por favor proporciona texto, enlaces de Maps/Instagram o fotos del lugar.",
+      };
+    }
+
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return { success: false, error: "GEMINI_API_KEY no configurada en el servidor." };
+    }
+
+    // ─── 1. GOOGLE SEARCH GROUNDING CON GEMINI ──────────────────────────────
+    const prompt = `Actúa como Lead Travel Research Editor de "PaDónde", la plataforma turística del Caribe Colombiano y la Sierra Nevada de Santa Marta (Minca, Mendihuaca, Parque Tayrona, Taganga).
+Entidad a estructurar: ${entidad.toUpperCase()}
+Región / Destino: ${zonaSlug}
+Contexto sin procesar ingresado por el usuario:
+"""
+${textoContexto}
+"""
+
+Instrucciones de Investigación y Grounding:
+1. Si el texto contiene enlaces de Google Maps, nombres de lugares o usuarios de Instagram, usa Google Search para identificar el nombre oficial del establecimiento, el enlace canónico de Google Maps, la calificación de Google (rating de 1.0 a 5.0), el número total de reseñas (reviews_count), y el número de WhatsApp oficial de contacto/reservas (en formato colombiano, ej: 573123456789).
+2. Redacta con estilo editorial de ecoturismo premium (cálido, seductor, claro, mobile-first).
+3. Título comercial: Muy llamativo y directo (máximo 45 caracteres).
+4. Subtítulo: 1 línea vendedora (máx 60 caracteres).
+5. Descripción: Atractiva y sensorial con emojis naturales intercalados (🌿, 🌊, 🌄, ☕, ✨).
+6. Mensaje de WhatsApp pre-configurado para que los turistas reserven directamente.
+${
+  entidad === "hospedaje"
+    ? `7. Detecta o estructura dinámicamente los tipos de habitación (ej: Cabaña Superior, Habitación Privada, Cama en Dormitorio Compartido) con precios aproximados en COP (ej: 150000, 220000), capacidad máxima de personas, y badges de valor con emojis (ej: [{"icono":"🚿","texto":"Baño privado"},{"icono":"🍳","texto":"Desayuno incluido"},{"icono":"📶","texto":"WiFi"}]).`
+    : `7. Categoría de evento: elige una entre ["rumba", "comida", "bienestar", "tours", "arte", "artesanias"]. Precio en COP (0 si es entrada libre). Si es recurrente cada semana, indica "esRecurrente": true y los días en "diasRecurrentes": [0,5,6] (0=Domingo, 1=Lunes, ..., 6=Sábado).`
+}
+
+Devuelve ÚNICAMENTE un objeto JSON válido (sin backticks de markdown, sin texto antes ni después) con esta estructura exacta:
+{
+  "nombreNegocio": "Nombre oficial del comercio o lugar",
+  "nombrePropietario": "Nombre de la persona si se menciona o vacío",
+  "whatsapp": "573XXXXXXXXX",
+  "instagram": "usuario_sin_arroba",
+  "titulo": "Título de máx 45 caracteres",
+  "subtitulo": "Subtítulo de una línea",
+  "descripcion": "Descripción cautivadora de 2 párrafos",
+  "googleMapsUrl": "https://maps.app.goo.gl/...",
+  "googleRating": 4.8,
+  "googleReviewsCount": 125,
+  "mensajeWhatsappPreconfigurado": "¡Hola! Vi su hospedaje en PaDónde y me gustaría consultar disponibilidad...",
+  ${
+    entidad === "hospedaje"
+      ? `"habitaciones": [
+    {
+      "titulo": "Nombre de habitación",
+      "descripcion": "Descripción breve de la habitación",
+      "precio_noche_cop": 180000,
+      "capacidad_max": 2,
+      "badges": [{"icono": "🚿", "texto": "Baño privado"}, {"icono": "🍳", "texto": "Desayuno incluido"}]
+    }
+  ]`
+      : `"tipo": "tours",
+  "precio": 0,
+  "esRecurrente": false,
+  "diasRecurrentes": [5,6]`
+  }
+}`;
+
+    let aiData: any = null;
+    try {
+      // Intento 1: Con Google Search Grounding (gemini-2.5-flash)
+      const resGemini = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            tools: [{ googleSearch: {} }],
+          }),
+        }
+      );
+
+      if (resGemini.ok) {
+        const dataG = await resGemini.json();
+        const rawText = dataG?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (rawText) {
+          const cleaned = rawText.replace(/```json/gi, "").replace(/```/g, "").trim();
+          aiData = JSON.parse(cleaned);
+        }
+      } else {
+        // Fallback a modelo flash-lite si 2.5 con grounding está ocupado
+        const resFallback = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key=${apiKey}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+          }
+        );
+        if (resFallback.ok) {
+          const dataFb = await resFallback.json();
+          const rawFb = dataFb?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (rawFb) {
+            const cleaned = rawFb.replace(/```json/gi, "").replace(/```/g, "").trim();
+            aiData = JSON.parse(cleaned);
+          }
+        }
+      }
+    } catch (aiErr) {
+      console.warn("[resolverIngestaUniversalAction] Advertencia en llamada a Gemini:", aiErr);
+    }
+
+    // ─── 2. PIPELINE MULTIMEDIA AUTÓNOMO (SHARP + STORAGE) ───────────────────
+    // Helper para subir a Supabase Storage con bucket dinámico
+    async function subirImagenWebpAStorage(
+      buffer: Buffer,
+      prefix: string
+    ): Promise<string | null> {
+      try {
+        const webpBuffer = await sharp(buffer)
+          .resize({ width: 1280, withoutEnlargement: true })
+          .webp({ quality: 84 })
+          .toBuffer();
+
+        const fileName = `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.webp`;
+
+        // 1. Intentar bucket específico ("hospedajes" o "eventos")
+        const primaryBucket = entidad === "hospedaje" ? "hospedajes" : "eventos";
+        const primaryPath = fileName;
+        const { error: err1 } = await supabase.storage
+          .from(primaryBucket)
+          .upload(primaryPath, webpBuffer, {
+            contentType: "image/webp",
+            cacheControl: "31536000",
+            upsert: false,
+          });
+
+        if (!err1) {
+          const { data } = supabase.storage.from(primaryBucket).getPublicUrl(primaryPath);
+          return data.publicUrl;
+        }
+
+        // 2. Si el bucket "hospedajes" no existe, fallback a bucket "eventos" con subcarpeta
+        const fallbackPath = `${entidad === "hospedaje" ? "hospedajes" : "eventos"}/${fileName}`;
+        const { error: err2 } = await supabase.storage
+          .from("eventos")
+          .upload(fallbackPath, webpBuffer, {
+            contentType: "image/webp",
+            cacheControl: "31536000",
+            upsert: false,
+          });
+
+        if (!err2) {
+          const { data } = supabase.storage.from("eventos").getPublicUrl(fallbackPath);
+          return data.publicUrl;
+        }
+        return null;
+      } catch (err) {
+        console.warn("[subirImagenWebpAStorage] Falló procesamiento de imagen:", err);
+        return null;
+      }
+    }
+
+    const fotosWebPUrls: string[] = [];
+
+    // 2.1 Procesar archivos subidos localmente (Drag & drop o selector)
+    for (const file of archivosLocales) {
+      if (!file.type || !file.type.startsWith("image/")) continue;
+      try {
+        const arrayBuf = await file.arrayBuffer();
+        const buffer = Buffer.from(arrayBuf);
+        const urlSubida = await subirImagenWebpAStorage(buffer, `${entidad}-local`);
+        if (urlSubida) fotosWebPUrls.push(urlSubida);
+      } catch (fErr) {
+        console.warn("[resolverIngestaUniversalAction] Error procesando archivo local:", fErr);
+      }
+    }
+
+    // 2.2 Detectar URLs de imágenes en el texto de contexto
+    const urlMatches = textoContexto.match(
+      /https?:\/\/[^\s"'<>]+\.(?:jpg|jpeg|png|webp|avif)(?:\?[^\s"'<>]*)?/gi
+    ) || [];
+    const urlsSeleccionadas = Array.from(new Set(urlMatches)).slice(0, 6);
+
+    // 2.3 Descargas Concurrentes con Promise.allSettled y Timeout de 5s (Anti-Bloqueo)
+    if (urlsSeleccionadas.length > 0) {
+      const descargas = await Promise.allSettled(
+        urlsSeleccionadas.map(async (url) => {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 5000);
+          try {
+            const res = await fetch(url, {
+              signal: controller.signal,
+              headers: {
+                "User-Agent":
+                  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+              },
+            });
+            clearTimeout(timeout);
+            if (!res.ok) return null;
+            const arrayBuffer = await res.arrayBuffer();
+            return Buffer.from(arrayBuffer);
+          } catch {
+            clearTimeout(timeout);
+            return null;
+          }
+        })
+      );
+
+      for (const resultado of descargas) {
+        if (resultado.status === "fulfilled" && resultado.value) {
+          const urlSubida = await subirImagenWebpAStorage(resultado.value, `${entidad}-web`);
+          if (urlSubida) fotosWebPUrls.push(urlSubida);
+        }
+      }
+    }
+
+    // ─── 3. CONSTRUCCIÓN DE LA RESPUESTA PREFILL (ZERO DB MUTATION) ──────────
+    const nombreNegocio =
+      aiData?.nombreNegocio ||
+      aiData?.nombreLugar ||
+      (textoContexto.split("\n")[0] || "Nuevo Destino").slice(0, 50).trim();
+
+    let cleanPhone = (aiData?.whatsapp || "").replace(/\D/g, "");
+    if (cleanPhone.length === 10 && cleanPhone.startsWith("3")) {
+      cleanPhone = `57${cleanPhone}`;
+    }
+
+    const imagenPortadaUrl = fotosWebPUrls[0] || null;
+
+    if (entidad === "hospedaje") {
+      const baseHabitaciones =
+        Array.isArray(aiData?.habitaciones) && aiData.habitaciones.length > 0
+          ? aiData.habitaciones
+          : [
+              {
+                titulo: "Habitación Estándar",
+                descripcion: "Cama doble, baño privado y ventilador.",
+                precio_noche_cop: 140000,
+                capacidad_max: 2,
+                badges: [
+                  { icono: "🚿", texto: "Baño privado" },
+                  { icono: "🍳", texto: "Desayuno incluido" },
+                ],
+              },
+              {
+                titulo: "Cabaña Superior",
+                descripcion: "Espacio amplio con vista a la naturaleza y balcón privado.",
+                precio_noche_cop: 240000,
+                capacidad_max: 3,
+                badges: [
+                  { icono: "🌄", texto: "Vista a la naturaleza" },
+                  { icono: "🚿", texto: "Baño privado" },
+                ],
+              },
+            ];
+
+      // Asociar fotos WebP de forma dinámica a cada habitación
+      const poolFotosRestantes = fotosWebPUrls.slice(1);
+      const habitacionesEstructuradas = baseHabitaciones.map((hab: any, idx: number) => {
+        const fotosHab = poolFotosRestantes.slice(idx * 2, (idx + 1) * 2);
+        return {
+          id: `hab-${Date.now()}-${idx}`,
+          titulo: hab.titulo || `Habitación ${idx + 1}`,
+          descripcion: hab.descripcion || "",
+          precio_noche_cop: Number(hab.precio_noche_cop) || 120000,
+          capacidad_max: Number(hab.capacidad_max) || 2,
+          fotos: fotosHab,
+          badges: Array.isArray(hab.badges)
+            ? hab.badges.map((b: any) =>
+                typeof b === "string"
+                  ? { icono: "✨", texto: b }
+                  : { icono: b.icono || "✨", texto: b.texto || "Incluido" }
+              )
+            : [{ icono: "✨", texto: "Confort" }],
+        };
+      });
+
+      const resultadoHospedaje: IngestaUniversalPrefillResultado = {
+        entidad: "hospedaje",
+        nombreNegocio,
+        nombrePropietario: aiData?.nombrePropietario || "",
+        whatsapp: cleanPhone,
+        instagram: (aiData?.instagram || "").replace(/^@/, ""),
+        zonaSlug,
+        titulo: aiData?.titulo || `🏡 ${nombreNegocio} — Refugio Natural 🌿`,
+        descripcion:
+          aiData?.descripcion ||
+          `Ubicado en el entorno mágico de ${zonaSlug}. Espacio ideal para conectar con la naturaleza y descansar en el Caribe colombiano.`,
+        subtitulo: aiData?.subtitulo || `Eco-refugio y descanso en ${zonaSlug}`,
+        googleMapsUrl: aiData?.googleMapsUrl || "",
+        googleRating: typeof aiData?.googleRating === "number" ? aiData.googleRating : null,
+        googleReviewsCount:
+          typeof aiData?.googleReviewsCount === "number" ? aiData.googleReviewsCount : null,
+        imagenPortadaUrl,
+        mensajeWhatsappPreconfigurado:
+          aiData?.mensajeWhatsappPreconfigurado ||
+          `¡Hola! Vi a ${nombreNegocio} en PaDónde y me gustaría consultar disponibilidad de hospedaje 🌿`,
+        habitaciones: habitacionesEstructuradas,
+      };
+
+      return {
+        success: true,
+        resultado: resultadoHospedaje,
+      };
+    } else {
+      // Entidad: Evento / Experiencia / Tour
+      const galeriaFotos = fotosWebPUrls.slice(1, 6);
+      const categoriaDetectada = (
+        aiData?.tipo && ["rumba", "comida", "bienestar", "tours", "arte", "artesanias"].includes(aiData.tipo)
+          ? aiData.tipo
+          : "tours"
+      ) as CategoriaEvento;
+
+      const resultadoEvento: IngestaUniversalPrefillResultado = {
+        entidad: "evento",
+        nombreNegocio,
+        whatsapp: cleanPhone,
+        instagram: (aiData?.instagram || "").replace(/^@/, ""),
+        zonaSlug,
+        titulo: aiData?.titulo || `✨ ${nombreNegocio}`,
+        descripcion:
+          aiData?.descripcion ||
+          `Ven a disfrutar de una experiencia única en ${zonaSlug}. Un plan perfecto para compartir y vibrar en el Caribe colombiano.`,
+        subtitulo: aiData?.subtitulo || `Experiencia recomendada en ${zonaSlug}`,
+        googleMapsUrl: aiData?.googleMapsUrl || "",
+        googleRating: typeof aiData?.googleRating === "number" ? aiData.googleRating : null,
+        googleReviewsCount:
+          typeof aiData?.googleReviewsCount === "number" ? aiData.googleReviewsCount : null,
+        imagenPortadaUrl,
+        galeriaFotos,
+        tipo: categoriaDetectada,
+        precio: typeof aiData?.precio === "number" ? aiData.precio : 0,
+        precioMoneda: "COP",
+        esRecurrente: Boolean(aiData?.esRecurrente),
+        diasRecurrentes: Array.isArray(aiData?.diasRecurrentes) ? aiData.diasRecurrentes : [],
+        mensajeWhatsappPreconfigurado:
+          aiData?.mensajeWhatsappPreconfigurado ||
+          `¡Hola! Vi su experiencia "${nombreNegocio}" en PaDónde y me gustaría reservar ✨`,
+      };
+
+      return {
+        success: true,
+        resultado: resultadoEvento,
+      };
+    }
+  } catch (err: any) {
+    console.error("Excepción en resolverIngestaUniversalAction:", err);
+    return {
+      success: false,
+      error: err?.message || "Ocurrió un error inesperado al resolver la ingesta.",
+    };
+  }
+}
+
+
 

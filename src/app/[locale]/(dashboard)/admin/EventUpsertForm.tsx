@@ -27,9 +27,10 @@ import {
   editarEventoAdminAction,
   eliminarEventoAdminAction,
   variarDescripcionEventoGeminiAction,
+  type IngestaUniversalPrefillResultado,
 } from "./actions";
 import { Button } from "@/components/ui/Button";
-import { ModalAsistenteEvento } from "./ModalAsistenteEvento";
+import { UniversalIngestaModal } from "./UniversalIngestaModal";
 import { ModalAficheImprimible } from "@/components/admin/ModalAficheImprimible";
 import { LuxuryRestaurantMenu } from "@/components/menu/LuxuryRestaurantMenu";
 import { LAZY_CAT_MENU } from "@/data/menus/lazyCatMenu";
@@ -635,7 +636,49 @@ export function EventUpsertForm({
     }
   }
 
-  // Callback del Asistente IA
+  // Callback del Asistente Universal IA (Prefill Pattern Estricto)
+  function handlePrefillUniversal(datos: IngestaUniversalPrefillResultado) {
+    if (datos.titulo) setEventTitle(datos.titulo);
+    if (datos.tipo) {
+      setSelectedCategories((prev) => {
+        const sinNueva = prev.filter((c) => c !== datos.tipo);
+        return [datos.tipo!, ...sinNueva];
+      });
+    }
+    if (datos.precio !== null && datos.precio !== undefined) {
+      setPrice(datos.precio.toString());
+    }
+    if (datos.descripcion) setDescription(limpiarDescripcionRecurrencia(datos.descripcion));
+    if (datos.nombreNegocio && !businessName) setBusinessName(datos.nombreNegocio);
+    if (datos.whatsapp && !whatsapp) setWhatsapp(datos.whatsapp);
+    if (datos.instagram && !instagram) setInstagram(datos.instagram);
+    if (datos.esRecurrente !== undefined) setEsRecurrente(datos.esRecurrente);
+    if (datos.diasRecurrentes && datos.diasRecurrentes.length > 0) {
+      setDiasRecurrentes(datos.diasRecurrentes);
+    }
+    if (datos.imagenPortadaUrl) {
+      setPreviewFoto(datos.imagenPortadaUrl);
+    }
+    if (datos.zonaSlug) {
+      setZonaSlug(datos.zonaSlug);
+    }
+  }
+
+  // Leer prefill pendiente de sessionStorage si se abrió desde otra ruta
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem("padonde_asistente_prefill");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        sessionStorage.removeItem("padonde_asistente_prefill");
+        if (parsed.entidad === "evento" || parsed.titulo) {
+          handlePrefillUniversal(parsed);
+        }
+      }
+    } catch {}
+  }, []);
+
+  // Callback del Asistente IA legacy
   function handleDatosAsistenteExtraidos(datos: EventoExtraido) {
     if (datos.titulo) setEventTitle(datos.titulo);
     if (datos.categoria) {
@@ -2034,29 +2077,13 @@ export function EventUpsertForm({
 
       {/* MODALES AUXILIARES */}
       {mostrarAsistenteIA && (
-        <ModalAsistenteEvento
-          aliados={aliados.map((a) => ({
-            id: a.id,
-            nombre: a.nombre,
-            whatsapp: a.whatsapp,
-            instagram: a.instagram,
-            categoria: a.categoria,
-            zonaSlug: a.zonaSlug,
-            zonaNombre: a.zonaNombre,
-          }))}
-          zonas={[
-            { id: "zona-minca", nombre: "Minca", slug: "minca" },
-            { id: "zona-mendihuaca", nombre: "Mendihuaca", slug: "mendihuaca" },
-            { id: "zona-tayrona", nombre: "Tayrona", slug: "tayrona" },
-            { id: "zona-taganga", nombre: "Taganga", slug: "taganga" },
-          ]}
+        <UniversalIngestaModal
+          isOpen={mostrarAsistenteIA}
           onClose={() => setMostrarAsistenteIA(false)}
-          onPrefillNuevo={(datos, archivoFoto) => {
-            handleDatosAsistenteExtraidos(datos);
-            if (archivoFoto) {
-              setFile(archivoFoto);
-              setPreviewFoto(URL.createObjectURL(archivoFoto));
-            }
+          entidadInicial="evento"
+          zonaInicial={zonaSlug}
+          onPrefillEvento={(datos) => {
+            handlePrefillUniversal(datos);
             setMostrarAsistenteIA(false);
           }}
         />

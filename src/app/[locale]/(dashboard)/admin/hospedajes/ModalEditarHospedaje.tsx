@@ -7,7 +7,9 @@ import {
   eliminarEventoAdminAction,
   importarImagenDesdeUrlAction,
   generarCopyHospedajeGeminiAction,
+  type IngestaUniversalPrefillResultado,
 } from "../actions";
+import { UniversalIngestaModal } from "../UniversalIngestaModal";
 import { uploadEventImage } from "@/lib/supabase/storage";
 import type { BadgeHabitacion } from "@/lib/types";
 import { ModalClasificadorFotosIA } from "./ModalClasificadorFotosIA";
@@ -194,6 +196,25 @@ export function ModalEditarHospedaje({
   const [isGuardando, setIsGuardando] = useState(false);
   const [isRegenerandoAI, setIsRegenerandoAI] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [mostrarAsistenteUniversal, setMostrarAsistenteUniversal] = useState(false);
+
+  const handlePrefillDesdeUniversal = (datos: IngestaUniversalPrefillResultado) => {
+    if (datos.nombreNegocio) setNombreNegocio(datos.nombreNegocio);
+    if (datos.nombrePropietario) setNombrePropietario(datos.nombrePropietario);
+    if (datos.whatsapp) setWhatsapp(datos.whatsapp);
+    if (datos.instagram) setInstagram(datos.instagram);
+    if (datos.titulo) setTitulo(datos.titulo);
+    if (datos.descripcion) setDescripcion(datos.descripcion);
+    if (datos.zonaSlug) setZonaSlug(datos.zonaSlug);
+    if (datos.imagenPortadaUrl) setImagenUrl(datos.imagenPortadaUrl);
+    if (typeof datos.googleRating === "number") setRatingGoogle(datos.googleRating.toString());
+    if (typeof datos.googleReviewsCount === "number") setReviewsGoogle(datos.googleReviewsCount.toString());
+    if (datos.googleMapsUrl) setMapsUrl(datos.googleMapsUrl);
+    if (datos.habitaciones && datos.habitaciones.length > 0) {
+      setHabitaciones(datos.habitaciones);
+    }
+    setMostrarAsistenteUniversal(false);
+  };
 
   const coincidenciaDuplicado =
     !isEdicion &&
@@ -591,12 +612,23 @@ export function ModalEditarHospedaje({
               Configura la información visible y las habitaciones para el pre-cotizador
             </p>
           </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-full bg-stone-light/40 hover:bg-stone-light text-stone hover:text-forest flex items-center justify-center text-sm transition-colors"
-          >
-            ✕
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setMostrarAsistenteUniversal(true)}
+              className="px-3 py-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-950 border border-amber-500/40 rounded-xl font-sans text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs active:scale-95"
+              title="Autocompletar o actualizar ficha usando Google Grounding y fotos WebP"
+            >
+              <span>✨</span>
+              <span>Asistente IA</span>
+            </button>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-full bg-stone-light/40 hover:bg-stone-light text-stone hover:text-forest flex items-center justify-center text-sm transition-colors cursor-pointer"
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
         {errorMsg && (
@@ -1434,6 +1466,17 @@ export function ModalEditarHospedaje({
             initialUrls={fotosImportadas.length > 0 ? fotosImportadas : undefined}
             onClose={() => setMostrarClasificadorFotos(false)}
             onAplicar={handleAplicarFotosClasificadas}
+          />
+        )}
+
+        {/* Asistente Universal Integrado (Prefill Desacoplado) */}
+        {mostrarAsistenteUniversal && (
+          <UniversalIngestaModal
+            isOpen={mostrarAsistenteUniversal}
+            onClose={() => setMostrarAsistenteUniversal(false)}
+            entidadInicial="hospedaje"
+            zonaInicial={zonaSlug}
+            onPrefillHospedaje={handlePrefillDesdeUniversal}
           />
         )}
       </div>
