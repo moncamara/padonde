@@ -31,6 +31,17 @@ Check-in 3:00 PM, sendero ecológico y piscina natural.`,
       zona: "minca",
     },
     {
+      label: "🌴 Magic Green Tayrona",
+      texto: `Magic Green Dentro del Parque Tayrona (Km 30 El Zaíno)
+Google Maps: https://www.google.com/maps/place/Magic+Green+Tayrona/@11.289426,-73.9131795,17z/data=!3m1!4b1!4m9!3m8!1s0x8ef4f577ea31e43d:0x740d09caec282039!5m2!4m1!1i2!8m2!3d11.289426!4d-73.9131795!16s%2Fg%2F11l6zwsfm3
+WhatsApp: 573114200589 (Manuel)
+Instagram: @magicgreentayrona
+Bungalow Familiar $320.000 COP / noche (4 personas, balcón y selva).
+Cabaña Doble $250.000 COP / noche (2 personas, jardín y terraza).
+Bungalow Deluxe $420.000 COP / noche (6 personas, 3 camas dobles, vista Sierra).`,
+      zona: "tayrona",
+    },
+    {
       label: "🌊 Cabañas Mendihuaca",
       texto: `Cabañas del Río Mendihuaca
 Frente al mar y desembocadura del río.
