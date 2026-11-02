@@ -141,7 +141,18 @@ export function ModalEditarHospedaje({
 
   // Estados Importador Rápido de Fotos (Booking, Airbnb o URLs Masivas)
   const [urlsImportador, setUrlsImportador] = useState("");
-  const [fotosImportadas, setFotosImportadas] = useState<string[]>([]);
+  const [fotosImportadas, setFotosImportadas] = useState<string[]>(() => {
+    const urls: string[] = [];
+    const portVal = hospedaje?.imagen_url || hospedaje?.imagenUrl;
+    if (portVal) urls.push(portVal);
+    const habsVal = hospedaje?.metadata_hospedaje?.habitaciones || hospedaje?.habitaciones || [];
+    habsVal.forEach((h: any) => {
+      (h.fotos || []).forEach((f: string) => {
+        if (f) urls.push(f);
+      });
+    });
+    return Array.from(new Set(urls));
+  });
   const [mostrarGuiaBookmarklet, setMostrarGuiaBookmarklet] = useState(false);
   const [copiadoBookmarklet, setCopiadoBookmarklet] = useState(false);
   const [habitacionDestinoId, setHabitacionDestinoId] = useState<string>("todas");
@@ -220,86 +231,24 @@ export function ModalEditarHospedaje({
     }
   };
 
-  // Sincronizar estados cuando cambie la prop hospedaje (ej: al cargar el borrador o prefill)
-  useEffect(() => {
-    if (hospedaje) {
-      setNombreNegocio(hospedaje?.negocio?.nombre || hospedaje?.nombreNegocio || "");
-      setWhatsapp(hospedaje?.negocio?.whatsapp || hospedaje?.whatsapp || "");
-      setNombrePropietario(
-        hospedaje?.metadata_hospedaje?.contacto_propietario ||
-          hospedaje?.nombrePropietario ||
-          ""
-      );
-      setInstagram(hospedaje?.negocio?.instagram || hospedaje?.instagram || "");
-      setTitulo(hospedaje?.titulo || "");
-      setDescripcion(hospedaje?.descripcion || "");
-      setZonaSlug(hospedaje?.zonas?.slug || hospedaje?.zonaSlug || zonas[0]?.slug || "minca");
-      const portVal = hospedaje?.imagen_url || hospedaje?.imagenUrl || "";
-      setImagenUrl(portVal);
-      setDestacado(Boolean(hospedaje?.destacado));
-      setRatingGoogle(
-        hospedaje?.metadata_hospedaje?.google_reputacion?.rating?.toString() ||
-          hospedaje?.ratingGoogle ||
-          ""
-      );
-      setReviewsGoogle(
-        hospedaje?.metadata_hospedaje?.google_reputacion?.total_reviews?.toString() ||
-          hospedaje?.reviewsGoogle ||
-          ""
-      );
-      setMapsUrl(
-        hospedaje?.metadata_hospedaje?.google_reputacion?.maps_url ||
-          hospedaje?.mapsUrl ||
-          ""
-      );
-      const rawRev = hospedaje?.metadata_hospedaje?.google_review_url || hospedaje?.googleReviewUrl;
-      const nom = ((hospedaje?.titulo || "") + " " + (hospedaje?.negocio?.nombre || "") + " " + (hospedaje?.nombreNegocio || "")).toLowerCase();
-      const autoRev =
-        (rawRev && (rawRev.includes("search.google.com/local/writereview") || rawRev.includes("g.page/r/")))
-          ? rawRev
-          : extraerGoogleReviewUrl(rawRev) ||
-            extraerGoogleReviewUrl(hospedaje?.metadata_hospedaje?.google_reputacion?.maps_url || hospedaje?.mapsUrl) ||
-            (nom.includes("velero") ? "https://search.google.com/local/writereview?placeid=ChIJk8ryXc6V9I4RecrT8ADg0SE" : "") ||
-            (nom.includes("almendr") ? "https://search.google.com/local/writereview?placeid=ChIJiwR53JiV9I4RuLUXsKSFFzw" : "") ||
-            (nom.includes("mompe") ? "https://search.google.com/local/writereview?placeid=ChIJaSJS53H19I4RqVvLCT4BGfQ" : "") ||
-            (nom.includes("marley") ? "https://search.google.com/local/writereview?placeid=ChIJpSe4a_319I4RvXXlynR0mMc" : "") ||
-            rawRev ||
-            "";
-      setGoogleReviewUrl(autoRev);
-      const habsVal = hospedaje?.metadata_hospedaje?.habitaciones || hospedaje?.habitaciones || [];
-      if (habsVal.length > 0) {
-        setHabitaciones(habsVal);
-      }
-
-      // Enrutar fotos a la bandeja de Ingesta Rápida de Fotos (Sección 2)
-      const urlsCandidatas: string[] = [];
-      if (portVal) urlsCandidatas.push(portVal);
-      habsVal.forEach((h: any) => {
-        (h.fotos || []).forEach((f: string) => {
-          if (f) urlsCandidatas.push(f);
-        });
-      });
-      const unicas = Array.from(new Set(urlsCandidatas));
-      if (unicas.length > 0) {
-        // Cargar inmediatamente fotos que ya residen en Supabase
-        const soloSupabase = unicas.filter((u) => u.includes("supabase.co"));
-        if (soloSupabase.length > 0) {
-          setFotosImportadas(soloSupabase);
-        }
-        // Iniciar migración a Storage en backend si existen fotos externas
-        const urlsExternas = unicas.filter((u) => !u.includes("supabase.co") && !u.startsWith("blob:"));
-        if (urlsExternas.length > 0) {
-          sincronizarFotosAStorage(habsVal, portVal);
-        }
-      }
-    }
-    // Asegurar que el modal siempre abra desde arriba
-    if (modalScrollRef.current) modalScrollRef.current.scrollTop = 0;
-    if (outerScrollRef.current) outerScrollRef.current.scrollTop = 0;
-  }, [hospedaje, zonas]);
-
   const modalScrollRef = useRef<HTMLDivElement>(null);
   const outerScrollRef = useRef<HTMLDivElement>(null);
+  const timeoutsRef = useRef<NodeJS.Timeout[]>([]);
+
+  const safeTimeout = (fn: () => void, ms: number) => {
+    const t = setTimeout(fn, ms);
+    timeoutsRef.current.push(t);
+    return t;
+  };
+
+  // Asegurar que el modal abra desde arriba en una sola pasada estable y limpiar timers activos
+  useEffect(() => {
+    if (modalScrollRef.current) modalScrollRef.current.scrollTop = 0;
+    if (outerScrollRef.current) outerScrollRef.current.scrollTop = 0;
+    return () => {
+      timeoutsRef.current.forEach((t) => clearTimeout(t));
+    };
+  }, []);
 
   const handleAplicarJsonHospedaje = async (parsed: any) => {
     // 1. Pre-poblar estado local (null-safe: no sobrescribe campos ausentes)
@@ -384,7 +333,7 @@ export function ModalEditarHospedaje({
       setAvisoFotosBloqueadas(null);
       setMensajeExitoJson("🎉 Datos y habitaciones cargados desde JSON con fotos listas en Supabase.");
     }
-    setTimeout(() => setMensajeExitoJson(null), 8000);
+    safeTimeout(() => setMensajeExitoJson(null), 8000);
   };
 
   const coincidenciaDuplicado =
@@ -451,7 +400,7 @@ export function ModalEditarHospedaje({
       setMensajeImportacion("⚠️ Error al conectar con el servidor.");
     } finally {
       setIsProcesandoFotos(false);
-      setTimeout(() => setMensajeImportacion(null), 4000);
+      safeTimeout(() => setMensajeImportacion(null), 4000);
     }
   };
 
@@ -517,7 +466,7 @@ export function ModalEditarHospedaje({
       setMensajeImportacion(`✅ ${fotosImportadas.length} fotos asignadas a "${habNombre}".`);
     }
 
-    setTimeout(() => setMensajeImportacion(null), 4000);
+    safeTimeout(() => setMensajeImportacion(null), 4000);
   };
 
   // Modal de Clasificación Mágica de Fotos con IA
@@ -1114,7 +1063,7 @@ export function ModalEditarHospedaje({
                           e.preventDefault();
                           navigator.clipboard.writeText(SCRIPT_EXTRACCION_BOOKING_AIRBNB);
                           setCopiadoBookmarklet(true);
-                          setTimeout(() => setCopiadoBookmarklet(false), 2500);
+                          safeTimeout(() => setCopiadoBookmarklet(false), 2500);
                         }}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-forest text-cream text-[11px] font-bold hover:bg-forest-dark transition-all cursor-grab active:cursor-grabbing shadow-xs"
                         title="Arrastra a la barra de marcadores o haz clic para copiar el código"
@@ -1146,7 +1095,7 @@ export function ModalEditarHospedaje({
                     onClick={() => {
                       navigator.clipboard.writeText(SCRIPT_EXTRACCION_BOOKING_AIRBNB);
                       setCopiadoBookmarklet(true);
-                      setTimeout(() => setCopiadoBookmarklet(false), 2500);
+                      safeTimeout(() => setCopiadoBookmarklet(false), 2500);
                     }}
                     className="text-[11px] font-semibold text-forest underline hover:text-terra cursor-pointer"
                   >
@@ -1255,7 +1204,7 @@ export function ModalEditarHospedaje({
                             onClick={() => {
                               setImagenUrl(url);
                               setMensajeImportacion("⭐ Foto fijada como Portada Principal");
-                              setTimeout(() => setMensajeImportacion(null), 3000);
+                              safeTimeout(() => setMensajeImportacion(null), 3000);
                             }}
                             title="Fijar como portada"
                             className="bg-amber-400 text-forest text-[9px] font-bold px-1.5 py-0.5 rounded shadow-xs hover:bg-amber-300 cursor-pointer"
@@ -1777,6 +1726,19 @@ function HabitacionFotosManager({
     texto: string;
   } | null>(null);
 
+  const timeoutsRef = useRef<NodeJS.Timeout[]>([]);
+  const safeTimeout = (fn: () => void, ms: number) => {
+    const t = setTimeout(fn, ms);
+    timeoutsRef.current.push(t);
+    return t;
+  };
+
+  useEffect(() => {
+    return () => {
+      timeoutsRef.current.forEach((t) => clearTimeout(t));
+    };
+  }, []);
+
   const esUrlSupabase = (url: string) =>
     url.includes("supabase.co/storage") || url.startsWith("/images/");
 
@@ -1796,7 +1758,7 @@ function HabitacionFotosManager({
     try {
       await navigator.clipboard.writeText(url);
       setCopiadoIndex(index);
-      setTimeout(() => setCopiadoIndex(null), 2000);
+      safeTimeout(() => setCopiadoIndex(null), 2000);
     } catch {
       // Ignorar fallback
     }
@@ -1830,7 +1792,7 @@ function HabitacionFotosManager({
   const handleDescargarTodas = () => {
     if (fotos.length === 0) return;
     fotos.forEach((url, idx) => {
-      setTimeout(() => {
+      safeTimeout(() => {
         handleDescargarFoto(url, idx);
       }, idx * 400);
     });
@@ -1838,7 +1800,7 @@ function HabitacionFotosManager({
       tipo: "ok",
       texto: `📥 Iniciando descarga de ${fotos.length} fotos a tu carpeta Descargas...`,
     });
-    setTimeout(() => setFeedbackMsg(null), 4000);
+    safeTimeout(() => setFeedbackMsg(null), 4000);
   };
 
   // Guardar 1 foto externa directamente en Supabase Storage (bypasea descarga manual)
@@ -1859,7 +1821,7 @@ function HabitacionFotosManager({
         tipo: "ok",
         texto: `✅ Foto #${fotoIndex + 1} guardada con éxito en PaDónde Storage.`,
       });
-      setTimeout(() => setFeedbackMsg(null), 3000);
+      safeTimeout(() => setFeedbackMsg(null), 3000);
     } catch (err: any) {
       setFeedbackMsg({
         tipo: "err",
@@ -1897,7 +1859,7 @@ function HabitacionFotosManager({
       tipo: "ok",
       texto: `🎉 ${exitos} de ${fotosExternas.length} fotos guardadas en PaDónde Storage.`,
     });
-    setTimeout(() => setFeedbackMsg(null), 4500);
+    safeTimeout(() => setFeedbackMsg(null), 4500);
   };
 
   return (

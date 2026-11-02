@@ -11,6 +11,13 @@ export const metadata: Metadata = {
   title: "Gestión de Hospedajes — PaDónde Admin",
 };
 
+const ZONAS_CANONICAS_ADMIN = [
+  { id: "zona-minca", nombre: "Minca", slug: "minca" },
+  { id: "zona-mendihuaca", nombre: "Mendihuaca", slug: "mendihuaca" },
+  { id: "zona-tayrona", nombre: "Tayrona", slug: "tayrona" },
+  { id: "zona-taganga", nombre: "Taganga", slug: "taganga" },
+];
+
 export default async function AdminHospedajesPage({
   params,
 }: {
@@ -110,13 +117,6 @@ export default async function AdminHospedajesPage({
     .from("zonas")
     .select("id, nombre, slug, activa")
     .order("nombre", { ascending: true });
-
-  const ZONAS_CANONICAS_ADMIN = [
-    { id: "zona-minca", nombre: "Minca", slug: "minca" },
-    { id: "zona-mendihuaca", nombre: "Mendihuaca", slug: "mendihuaca" },
-    { id: "zona-tayrona", nombre: "Tayrona", slug: "tayrona" },
-    { id: "zona-taganga", nombre: "Taganga", slug: "taganga" },
-  ];
 
   const mapaZonasAdmin = new Map<string, { id: string; nombre: string; slug: string }>();
   for (const z of ZONAS_CANONICAS_ADMIN) {

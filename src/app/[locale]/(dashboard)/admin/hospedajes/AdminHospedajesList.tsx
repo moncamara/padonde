@@ -35,7 +35,24 @@ export function AdminHospedajesList({
   const [filtroZona, setFiltroZona] = useState<string>("todas");
 
   useEffect(() => {
-    setListaHospedajes(hospedajes);
+    setListaHospedajes((prev) => {
+      if (prev === hospedajes) return prev;
+      if (
+        Array.isArray(prev) &&
+        Array.isArray(hospedajes) &&
+        prev.length === hospedajes.length &&
+        prev.every(
+          (h, i) =>
+            h.id === hospedajes[i]?.id &&
+            h.activo === hospedajes[i]?.activo &&
+            h.destacado === hospedajes[i]?.destacado &&
+            h.titulo === hospedajes[i]?.titulo
+        )
+      ) {
+        return prev;
+      }
+      return hospedajes;
+    });
   }, [hospedajes]);
 
   // Filtrado reactivo en tiempo real
