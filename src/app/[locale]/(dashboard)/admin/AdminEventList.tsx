@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { Link } from "@/i18n/routing";
+import { Link, useRouter } from "@/i18n/routing";
 import {
   formatFecha,
   formatHora,
@@ -20,7 +20,6 @@ import { ToggleDestacadoButton } from "./ToggleDestacadoButton";
 import { ModalEditarEvento } from "./ModalEditarEvento";
 import { ModalProyectarEvento } from "./ModalProyectarEvento";
 import { ModalNotificarAliado, type EventoNotificarData } from "./ModalNotificarAliado";
-import { ModalAsistenteEvento } from "./ModalAsistenteEvento";
 import type { AliadoSimple } from "@/lib/eventoParser";
 import { Button } from "@/components/ui/Button";
 import { getCategoria } from "@/constants";
@@ -81,6 +80,7 @@ export function AdminEventList({
   ],
   locale,
 }: AdminEventListProps) {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [listaEventos, setListaEventos] = useState<EventoAdminItem[]>(eventos);
   const [tabActiva, setTabActiva] = useState<TabType>("vigentes");
@@ -89,7 +89,6 @@ export function AdminEventList({
   const [eventoAEditar, setEventoAEditar] = useState<EventoAdminItem | null>(null);
   const [eventoAProyectar, setEventoAProyectar] = useState<EventoAdminItem | null>(null);
   const [eventoANotificar, setEventoANotificar] = useState<EventoNotificarData | null>(null);
-  const [asistenteAbierto, setAsistenteAbierto] = useState(false);
 
   function handleProyectarFecha(ev: EventoAdminItem) {
     const { fechaInicio, fechaFin } = proyectarProximaFechaEvento(
@@ -261,15 +260,14 @@ export function AdminEventList({
           ))}
         </div>
 
-        <button
-          type="button"
-          onClick={() => setAsistenteAbierto(true)}
-          className="px-3.5 py-1.5 bg-terra hover:bg-terra-dark text-white font-sans text-xs font-bold rounded-xl shadow-xs transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer shrink-0 self-start sm:self-auto"
-          title="Analizar mensaje de WhatsApp o afiche para publicar en 1 clic"
+        <Link
+          href="/admin/nuevo?modalJson=true"
+          className="px-3.5 py-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-950 border border-amber-300 font-sans text-xs font-bold rounded-xl shadow-xs transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer shrink-0 self-start sm:self-auto"
+          title="Crear evento pegando JSON estructurado"
         >
-          <span>✨</span>
-          <span>Asistente Rápido</span>
-        </button>
+          <span>📥</span>
+          <span>Cargar desde JSON</span>
+        </Link>
       </div>
 
       {/* Selector de Pestañas por Vigencia */}
@@ -702,15 +700,6 @@ export function AdminEventList({
         isOpen={Boolean(eventoANotificar)}
         onClose={() => setEventoANotificar(null)}
       />
-
-      {/* Modal Asistente Inteligente de Eventos */}
-      {asistenteAbierto && (
-        <ModalAsistenteEvento
-          aliados={aliados}
-          zonas={zonas}
-          onClose={() => setAsistenteAbierto(false)}
-        />
-      )}
     </section>
   );
 }

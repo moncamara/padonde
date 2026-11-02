@@ -6,8 +6,12 @@ import {
   guardarHospedajeAction,
   eliminarEventoAdminAction,
   importarImagenDesdeUrlAction,
+  importarLoteImagenesHospedajeAction,
+  procesarUrlsFotosAction,
   generarCopyHospedajeGeminiAction,
+  type IngestaJsonHospedaje,
 } from "../actions";
+import { ModalCargarJson } from "../ModalCargarJson";
 import { uploadEventImage } from "@/lib/supabase/storage";
 import type { BadgeHabitacion } from "@/lib/types";
 import { ModalClasificadorFotosIA } from "./ModalClasificadorFotosIA";
@@ -24,6 +28,7 @@ interface ModalEditarHospedajeProps {
   hospedaje?: any | null;
   zonas: Array<{ id: string; nombre: string; slug: string }>;
   hospedajesExistentes?: any[];
+  abrirConModalJson?: boolean;
   onClose: () => void;
   onDeleted?: (id: string) => void;
 }
@@ -44,6 +49,7 @@ export function ModalEditarHospedaje({
   hospedaje,
   zonas,
   hospedajesExistentes = [],
+  abrirConModalJson = false,
   onClose,
   onDeleted,
 }: ModalEditarHospedajeProps) {
@@ -133,7 +139,77 @@ export function ModalEditarHospedaje({
       ]
   );
 
-  // Sincronizar estados cuando cambie la prop hospedaje (ej: al cargar el borrador piloto)
+  // Estados Importador Rápido de Fotos (Booking, Airbnb o URLs Masivas)
+  const [urlsImportador, setUrlsImportador] = useState("");
+  const [fotosImportadas, setFotosImportadas] = useState<string[]>([]);
+  const [mostrarGuiaBookmarklet, setMostrarGuiaBookmarklet] = useState(false);
+  const [copiadoBookmarklet, setCopiadoBookmarklet] = useState(false);
+  const [habitacionDestinoId, setHabitacionDestinoId] = useState<string>("todas");
+  const [mensajeImportacion, setMensajeImportacion] = useState<string | null>(null);
+
+  const [isSubiendoFoto, setIsSubiendoFoto] = useState(false);
+  const [isGuardando, setIsGuardando] = useState(false);
+  const [isRegenerandoAI, setIsRegenerandoAI] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [mostrarModalJson, setMostrarModalJson] = useState(abrirConModalJson);
+  const [mensajeExitoJson, setMensajeExitoJson] = useState<string | null>(null);
+  const [isMigrandoFotosWebP, setIsMigrandoFotosWebP] = useState(false);
+  const [isProcesandoFotos, setIsProcesandoFotos] = useState(false);
+  const [progresoMigracion, setProgresoMigracion] = useState<string | null>(null);
+
+  // Sincronizar concurrentemente fotos externas hacia Supabase Storage (Sharp WebP)
+  const sincronizarFotosAStorage = async (habsInput?: any[], portInput?: string) => {
+    const port = portInput ?? imagenUrl;
+    const habs = habsInput ?? habitaciones;
+    const urlsExternas: string[] = [];
+
+    if (port && !port.includes("supabase.co") && !port.startsWith("blob:")) {
+      urlsExternas.push(port);
+    }
+    habs.forEach((h: any) => {
+      (h.fotos || []).forEach((f: string) => {
+        if (f && !f.includes("supabase.co") && !f.startsWith("blob:")) {
+          urlsExternas.push(f);
+        }
+      });
+    });
+
+    const unicas = Array.from(new Set(urlsExternas));
+    if (unicas.length === 0) return;
+
+    setIsMigrandoFotosWebP(true);
+    setProgresoMigracion(`☁️ Optimizando ${unicas.length} fotos a WebP en PaDónde Storage...`);
+
+    try {
+      const res = await procesarUrlsFotosAction(unicas);
+      if (res.success && res.mapeo && Object.keys(res.mapeo).length > 0) {
+        if (port && res.mapeo[port]) {
+          setImagenUrl(res.mapeo[port]);
+        }
+        setHabitaciones((prev) =>
+          prev.map((h) => ({
+            ...h,
+            fotos: (h.fotos || []).map((f: string) => res.mapeo[f] || f),
+          }))
+        );
+        setFotosImportadas((prev) => {
+          const reemplazadas = prev.map((f) => res.mapeo[f] || f);
+          const mapeadas = Object.values(res.mapeo);
+          return Array.from(new Set([...reemplazadas, ...mapeadas]));
+        });
+        setProgresoMigracion(`🎉 ¡${res.urlsProcesadas.length} fotos optimizadas a WebP y alojadas en PaDónde!`);
+      } else {
+        setProgresoMigracion(null);
+      }
+    } catch {
+      setProgresoMigracion(null);
+    } finally {
+      setIsMigrandoFotosWebP(false);
+      setTimeout(() => setProgresoMigracion(null), 4000);
+    }
+  };
+
+  // Sincronizar estados cuando cambie la prop hospedaje (ej: al cargar el borrador o prefill)
   useEffect(() => {
     if (hospedaje) {
       setNombreNegocio(hospedaje?.negocio?.nombre || hospedaje?.nombreNegocio || "");
@@ -147,7 +223,8 @@ export function ModalEditarHospedaje({
       setTitulo(hospedaje?.titulo || "");
       setDescripcion(hospedaje?.descripcion || "");
       setZonaSlug(hospedaje?.zonas?.slug || hospedaje?.zonaSlug || zonas[0]?.slug || "minca");
-      setImagenUrl(hospedaje?.imagen_url || hospedaje?.imagenUrl || "");
+      const portVal = hospedaje?.imagen_url || hospedaje?.imagenUrl || "";
+      setImagenUrl(portVal);
       setDestacado(Boolean(hospedaje?.destacado));
       setRatingGoogle(
         hospedaje?.metadata_hospedaje?.google_reputacion?.rating?.toString() ||
@@ -178,8 +255,31 @@ export function ModalEditarHospedaje({
             rawRev ||
             "";
       setGoogleReviewUrl(autoRev);
-      if (hospedaje?.metadata_hospedaje?.habitaciones || hospedaje?.habitaciones) {
-        setHabitaciones(hospedaje?.metadata_hospedaje?.habitaciones || hospedaje?.habitaciones);
+      const habsVal = hospedaje?.metadata_hospedaje?.habitaciones || hospedaje?.habitaciones || [];
+      if (habsVal.length > 0) {
+        setHabitaciones(habsVal);
+      }
+
+      // Enrutar fotos a la bandeja de Ingesta Rápida de Fotos (Sección 2)
+      const urlsCandidatas: string[] = [];
+      if (portVal) urlsCandidatas.push(portVal);
+      habsVal.forEach((h: any) => {
+        (h.fotos || []).forEach((f: string) => {
+          if (f) urlsCandidatas.push(f);
+        });
+      });
+      const unicas = Array.from(new Set(urlsCandidatas));
+      if (unicas.length > 0) {
+        // Cargar inmediatamente fotos que ya residen en Supabase
+        const soloSupabase = unicas.filter((u) => u.includes("supabase.co"));
+        if (soloSupabase.length > 0) {
+          setFotosImportadas(soloSupabase);
+        }
+        // Iniciar migración a Storage en backend si existen fotos externas
+        const urlsExternas = unicas.filter((u) => !u.includes("supabase.co") && !u.startsWith("blob:"));
+        if (urlsExternas.length > 0) {
+          sincronizarFotosAStorage(habsVal, portVal);
+        }
       }
     }
     // Asegurar que el modal siempre abra desde arriba
@@ -190,10 +290,117 @@ export function ModalEditarHospedaje({
   const modalScrollRef = useRef<HTMLDivElement>(null);
   const outerScrollRef = useRef<HTMLDivElement>(null);
 
-  const [isSubiendoFoto, setIsSubiendoFoto] = useState(false);
-  const [isGuardando, setIsGuardando] = useState(false);
-  const [isRegenerandoAI, setIsRegenerandoAI] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const handleAplicarJsonHospedaje = async (parsed: any) => {
+    // 1. Pre-poblar estado local (null-safe: no sobrescribe campos ausentes)
+    if (parsed.nombreNegocio !== undefined) setNombreNegocio(parsed.nombreNegocio);
+    if (parsed.nombrePropietario !== undefined) setNombrePropietario(parsed.nombrePropietario);
+    if (parsed.whatsapp !== undefined) {
+      let clean = String(parsed.whatsapp).replace(/\D/g, "");
+      if (clean.length === 10 && clean.startsWith("3")) clean = `57${clean}`;
+      setWhatsapp(clean || parsed.whatsapp);
+    }
+    if (parsed.instagram !== undefined) setInstagram(String(parsed.instagram).replace(/^@/, ""));
+    if (parsed.zonaSlug !== undefined) setZonaSlug(parsed.zonaSlug);
+    if (parsed.titulo !== undefined) setTitulo(parsed.titulo);
+    if (parsed.descripcion !== undefined) setDescripcion(parsed.descripcion);
+    if (parsed.googleMapsUrl !== undefined) setMapsUrl(parsed.googleMapsUrl);
+    if (parsed.googleRating !== undefined && parsed.googleRating !== null) {
+      setRatingGoogle(parsed.googleRating.toString());
+    }
+    if (parsed.googleReviewsCount !== undefined && parsed.googleReviewsCount !== null) {
+      setReviewsGoogle(parsed.googleReviewsCount.toString());
+    }
+    if (parsed.googleReviewUrl !== undefined) setGoogleReviewUrl(parsed.googleReviewUrl);
+    if (parsed.imagenPortadaUrl !== undefined) setImagenUrl(parsed.imagenPortadaUrl);
+
+    // 2. Mapear habitaciones dinámicamente según el array recibido (sin límites fijos)
+    let habsMapeadas: any[] = habitaciones;
+    if (Array.isArray(parsed.habitaciones) && parsed.habitaciones.length > 0) {
+      habsMapeadas = parsed.habitaciones.map((hab: any, idx: number) => {
+        const badgesNormalizados = Array.isArray(hab.badges)
+          ? hab.badges.map((b: any) => {
+              if (typeof b === "string") {
+                const textoLimpio = b.trim();
+                const encontrado = BADGES_DISPONIBLES.find(
+                  (bd) => bd.texto.toLowerCase() === textoLimpio.toLowerCase()
+                );
+                return encontrado || { icono: "✨", texto: textoLimpio };
+              }
+              return {
+                icono: b.icono || "✨",
+                texto: b.texto || "Incluido",
+              };
+            })
+          : [
+              { icono: "🚿", texto: "Baño privado" },
+              { icono: "✨", texto: "Confort" },
+            ];
+
+        return {
+          id: hab.id || `hab-${Date.now()}-${idx}`,
+          titulo: hab.titulo || `Habitación ${idx + 1}`,
+          descripcion: hab.descripcion || "",
+          precio_noche_cop: Number(hab.precio_noche_cop) || 0,
+          capacidad_max: Number(hab.capacidad_max) || 2,
+          fotos: Array.isArray(hab.fotos) ? hab.fotos : [],
+          badges: badgesNormalizados,
+        };
+      });
+      setHabitaciones(habsMapeadas);
+    }
+
+    // 3. Procesar fotos externas con Sharp y Supabase Storage (WebP 82%)
+    const todasLasFotos: string[] = [];
+    if (parsed.imagenPortadaUrl) todasLasFotos.push(parsed.imagenPortadaUrl);
+    habsMapeadas.forEach((h: any) => {
+      (h.fotos || []).forEach((f: string) => {
+        if (f) todasLasFotos.push(f);
+      });
+    });
+
+    const unicas = Array.from(new Set(todasLasFotos));
+    const soloSupabase = unicas.filter((u) => u.includes("supabase.co"));
+    if (soloSupabase.length > 0) {
+      setFotosImportadas((prev) => Array.from(new Set([...prev, ...soloSupabase])));
+    }
+
+    const externas = unicas.filter(
+      (u) => !u.includes("supabase.co") && !u.startsWith("blob:")
+    );
+
+    if (externas.length > 0) {
+      setIsProcesandoFotos(true);
+      setMensajeImportacion(`⚡ Optimizando ${externas.length} foto(s) a WebP en Supabase Storage...`);
+      try {
+        const res = await procesarUrlsFotosAction(externas);
+        if (res.success && res.mapeo && Object.keys(res.mapeo).length > 0) {
+          if (parsed.imagenPortadaUrl && res.mapeo[parsed.imagenPortadaUrl]) {
+            setImagenUrl(res.mapeo[parsed.imagenPortadaUrl]);
+          }
+          setHabitaciones((prevHabs) =>
+            prevHabs.map((h) => ({
+              ...h,
+              fotos: (h.fotos || []).map((f: string) => res.mapeo[f] || f),
+            }))
+          );
+          setFotosImportadas((prev) => {
+            const reemplazadas = prev.map((f) => res.mapeo[f] || f);
+            const nuevas = Object.values(res.mapeo);
+            return Array.from(new Set([...reemplazadas, ...nuevas]));
+          });
+          setMensajeImportacion(`🎉 ${res.urlsProcesadas.length} fotos listas en PaDónde Storage.`);
+        }
+      } catch (errFoto) {
+        console.warn("Advertencia procesando fotos externas del JSON:", errFoto);
+      } finally {
+        setIsProcesandoFotos(false);
+        setTimeout(() => setMensajeImportacion(null), 4000);
+      }
+    }
+
+    setMensajeExitoJson("🎉 Datos y habitaciones cargados desde JSON. Revisa y guarda cuando estés lista.");
+    setTimeout(() => setMensajeExitoJson(null), 6000);
+  };
 
   const coincidenciaDuplicado =
     !isEdicion &&
@@ -234,25 +441,32 @@ export function ModalEditarHospedaje({
     }
   };
 
-  // Estados Importador Rápido de Fotos (Booking, Airbnb o URLs Masivas)
-  const [urlsImportador, setUrlsImportador] = useState("");
-  const [fotosImportadas, setFotosImportadas] = useState<string[]>([]);
-  const [mostrarGuiaBookmarklet, setMostrarGuiaBookmarklet] = useState(false);
-  const [copiadoBookmarklet, setCopiadoBookmarklet] = useState(false);
-  const [habitacionDestinoId, setHabitacionDestinoId] = useState<string>("todas");
-  const [mensajeImportacion, setMensajeImportacion] = useState<string | null>(null);
-
-  // Manejador de pegado de URLs en el importador
-  const handlePegarUrlsImportador = (texto: string) => {
+  // Manejador de pegado de URLs en el importador (Procesamiento Server-Side obligatorio)
+  const handlePegarUrlsImportador = async (texto: string) => {
     setUrlsImportador(texto);
     const urlsExtraidas = extraerYOptimizarUrls(texto);
-    if (urlsExtraidas.length > 0) {
-      setFotosImportadas((prev) => {
-        const combinadas = [...prev, ...urlsExtraidas.filter((u) => !prev.includes(u))];
-        return combinadas;
-      });
-      setMensajeImportacion(`✨ ${urlsExtraidas.length} foto(s) detectadas y optimizadas a HD.`);
-      setTimeout(() => setMensajeImportacion(null), 3500);
+    if (urlsExtraidas.length === 0) return;
+
+    setIsProcesandoFotos(true);
+    setMensajeImportacion(`⚡ Optimizando y subiendo ${urlsExtraidas.length} foto(s) a PaDónde Storage...`);
+
+    try {
+      const res = await procesarUrlsFotosAction(urlsExtraidas);
+      if (res.success && res.urlsProcesadas && res.urlsProcesadas.length > 0) {
+        setFotosImportadas((prev) => {
+          const nuevas = res.urlsProcesadas.filter((u) => !prev.includes(u));
+          return [...prev, ...nuevas];
+        });
+        setMensajeImportacion(`🎉 ${res.urlsProcesadas.length} foto(s) WebP alojadas en PaDónde Storage listas.`);
+      } else {
+        setMensajeImportacion("⚠️ No se pudieron procesar algunas fotos.");
+      }
+    } catch (err) {
+      console.error("Error al procesar fotos:", err);
+      setMensajeImportacion("⚠️ Error al conectar con el servidor.");
+    } finally {
+      setIsProcesandoFotos(false);
+      setTimeout(() => setMensajeImportacion(null), 4000);
     }
   };
 
@@ -591,17 +805,35 @@ export function ModalEditarHospedaje({
               Configura la información visible y las habitaciones para el pre-cotizador
             </p>
           </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-full bg-stone-light/40 hover:bg-stone-light text-stone hover:text-forest flex items-center justify-center text-sm transition-colors"
-          >
-            ✕
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setMostrarModalJson(true)}
+              className="px-3.5 py-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-950 border border-amber-500/40 rounded-xl font-sans text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs active:scale-95"
+              title="Cargar datos y habitaciones estructuradas desde un JSON"
+            >
+              <span>📥</span>
+              <span>Cargar desde JSON</span>
+            </button>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-full bg-stone-light/40 hover:bg-stone-light text-stone hover:text-forest flex items-center justify-center text-sm transition-colors cursor-pointer"
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
         {errorMsg && (
           <div className="p-3 bg-red-100 border border-red-200 text-red-700 text-xs rounded-xl font-sans">
             ⚠️ {errorMsg}
+          </div>
+        )}
+
+        {mensajeExitoJson && (
+          <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-xl font-sans flex items-center gap-2 animate-in fade-in">
+            <span className="text-base shrink-0">🎉</span>
+            <span className="font-medium">{mensajeExitoJson}</span>
           </div>
         )}
 
@@ -774,6 +1006,7 @@ export function ModalEditarHospedaje({
                       <img
                         src={imagenUrl}
                         alt="Vista previa portada"
+                        referrerPolicy="no-referrer"
                         className="w-full h-full object-cover"
                       />
                       <button
@@ -920,7 +1153,16 @@ export function ModalEditarHospedaje({
                   <span>🔗 Pegar URLs de fotos (Booking, Airbnb o enlaces web)</span>
                 </label>
                 <div className="flex items-center gap-2">
-                  {mensajeImportacion && (
+                  {isProcesandoFotos && (
+                    <span className="text-[11px] font-semibold text-amber-700 flex items-center gap-1.5 animate-pulse">
+                      <svg className="animate-spin h-3.5 w-3.5 text-amber-600" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Subiendo a Storage...
+                    </span>
+                  )}
+                  {mensajeImportacion && !isProcesandoFotos && (
                     <span className="text-[11px] font-semibold text-emerald-700 animate-in fade-in">
                       {mensajeImportacion}
                     </span>
@@ -936,10 +1178,29 @@ export function ModalEditarHospedaje({
                 <textarea
                   rows={3}
                   value={urlsImportador}
-                  onChange={(e) => handlePegarUrlsImportador(e.target.value)}
+                  onChange={(e) => setUrlsImportador(e.target.value)}
+                  onPaste={(e) => {
+                    const text = e.clipboardData.getData("text");
+                    if (text) {
+                      e.preventDefault();
+                      handlePegarUrlsImportador(text);
+                    }
+                  }}
+                  disabled={isProcesandoFotos}
                   placeholder="Pega aquí una o varias URLs (ej: https://cf.bstatic.com/... o https://a0.muscache.com/...) separadas por saltos de línea..."
-                  className="w-full bg-white border border-stone-light rounded-xl p-2.5 text-[11px] font-mono text-forest placeholder:text-stone/60 focus:outline-none focus:border-forest resize-y"
+                  className="w-full bg-white border border-stone-light rounded-xl p-2.5 text-[11px] font-mono text-forest placeholder:text-stone/60 focus:outline-none focus:border-forest resize-y disabled:opacity-50"
                 />
+                {urlsImportador.trim().length > 0 && !isProcesandoFotos && (
+                  <div className="mt-2 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => handlePegarUrlsImportador(urlsImportador)}
+                      className="px-3 py-1 bg-forest text-cream text-[11px] font-bold rounded-lg hover:bg-forest-dark transition-colors cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                    >
+                      ⚡ Ingerir a PaDónde Storage
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -948,7 +1209,7 @@ export function ModalEditarHospedaje({
               <div className="space-y-3 pt-2 border-t border-stone-light/60">
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <span className="font-semibold text-forest text-xs">
-                    Previsualización ({fotosImportadas.length} fotos detectadas en alta resolución):
+                    Previsualización ({fotosImportadas.length} fotos listas en PaDónde Storage):
                   </span>
                   <div className="flex items-center gap-2">
                     <button
@@ -972,6 +1233,7 @@ export function ModalEditarHospedaje({
                       <img
                         src={url}
                         alt={`Foto importada ${idx + 1}`}
+                        referrerPolicy="no-referrer"
                         className="w-full h-full object-cover"
                         loading="lazy"
                       />
@@ -1215,8 +1477,18 @@ export function ModalEditarHospedaje({
               <div className="flex items-center gap-2 flex-wrap">
                 <button
                   type="button"
+                  disabled={isMigrandoFotosWebP}
+                  onClick={() => sincronizarFotosAStorage()}
+                  className="px-3 py-1.5 bg-emerald-600/10 hover:bg-emerald-600 text-emerald-800 hover:text-white rounded-xl font-medium transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs text-xs disabled:opacity-50"
+                  title="Optimizar fotos externas a WebP y alojarlas en PaDónde Storage"
+                >
+                  <span>☁️</span>
+                  <span>{isMigrandoFotosWebP ? "Guardando en PaDónde..." : "Guardar todas en PaDónde"}</span>
+                </button>
+                <button
+                  type="button"
                   onClick={() => setMostrarClasificadorFotos(true)}
-                  className="px-3 py-1.5 bg-terra/10 hover:bg-terra text-terra hover:text-white rounded-xl font-medium transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                  className="px-3 py-1.5 bg-terra/10 hover:bg-terra text-terra hover:text-white rounded-xl font-medium transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs text-xs"
                   title="Organizar fotos de Booking o archivos con Inteligencia Artificial"
                 >
                   <span>✨</span>
@@ -1225,12 +1497,19 @@ export function ModalEditarHospedaje({
                 <button
                   type="button"
                   onClick={agregarHabitacion}
-                  className="px-3 py-1.5 bg-forest/10 hover:bg-forest text-forest hover:text-cream rounded-xl font-medium transition-colors cursor-pointer"
+                  className="px-3 py-1.5 bg-forest/10 hover:bg-forest text-forest hover:text-cream rounded-xl font-medium transition-colors cursor-pointer text-xs"
                 >
                   + Agregar Habitación
                 </button>
               </div>
             </div>
+
+            {progresoMigracion && (
+              <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-950 text-xs font-semibold flex items-center gap-2 animate-in fade-in">
+                <span>{isMigrandoFotosWebP ? "⏳" : "✅"}</span>
+                <span>{progresoMigracion}</span>
+              </div>
+            )}
 
             <div className="space-y-4">
               {habitaciones.map((hab, index) => (
@@ -1434,6 +1713,17 @@ export function ModalEditarHospedaje({
             initialUrls={fotosImportadas.length > 0 ? fotosImportadas : undefined}
             onClose={() => setMostrarClasificadorFotos(false)}
             onAplicar={handleAplicarFotosClasificadas}
+          />
+        )}
+
+        {/* Modal para Cargar desde JSON (Prefill Seguro Sin DB Write) */}
+        {mostrarModalJson && (
+          <ModalCargarJson
+            isOpen={mostrarModalJson}
+            onClose={() => setMostrarModalJson(false)}
+            tipo="hospedaje"
+            onAplicar={handleAplicarJsonHospedaje}
+            isProcesando={isProcesandoFotos}
           />
         )}
       </div>
@@ -1684,6 +1974,7 @@ function HabitacionFotosManager({
                 <img
                   src={src}
                   alt={`Foto habitación ${fIdx + 1}`}
+                  referrerPolicy="no-referrer"
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     (e.target as HTMLElement).style.opacity = "0.5";
@@ -1779,6 +2070,7 @@ function HabitacionFotosManager({
                     <img
                       src={url}
                       alt={`Miniatura ${fIdx + 1}`}
+                      referrerPolicy="no-referrer"
                       className="w-8 h-8 rounded-lg object-cover bg-stone-100 flex-shrink-0 border border-stone-light/50"
                       onError={(e) => {
                         (e.target as HTMLElement).style.opacity = "0.5";

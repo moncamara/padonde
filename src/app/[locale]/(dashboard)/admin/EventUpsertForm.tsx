@@ -27,9 +27,11 @@ import {
   editarEventoAdminAction,
   eliminarEventoAdminAction,
   variarDescripcionEventoGeminiAction,
+  procesarUrlsFotosAction,
+  type IngestaJsonEvento,
 } from "./actions";
 import { Button } from "@/components/ui/Button";
-import { ModalAsistenteEvento } from "./ModalAsistenteEvento";
+import { ModalCargarJson } from "./ModalCargarJson";
 import { ModalAficheImprimible } from "@/components/admin/ModalAficheImprimible";
 import { LuxuryRestaurantMenu } from "@/components/menu/LuxuryRestaurantMenu";
 import { LAZY_CAT_MENU } from "@/data/menus/lazyCatMenu";
@@ -606,8 +608,19 @@ export function EventUpsertForm({
   const [deleting, setDeleting] = useState(false);
   const [confirmarEliminar, setConfirmarEliminar] = useState(false);
   const [mostrarHabladorMesa, setMostrarHabladorMesa] = useState(false);
-  const [mostrarAsistenteIA, setMostrarAsistenteIA] = useState(false);
+  const [mostrarModalJson, setMostrarModalJson] = useState(false);
+  const [mensajeExitoJson, setMensajeExitoJson] = useState<string | null>(null);
+  const [isProcesandoFotos, setIsProcesandoFotos] = useState(false);
   const [isVaryingDescription, setIsVaryingDescription] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("modalJson") === "true") {
+        setMostrarModalJson(true);
+      }
+    }
+  }, []);
 
   // Variación Asistida de Descripción con IA para Aliados Recurrentes
   async function handleVariarDescripcion() {
@@ -635,7 +648,93 @@ export function EventUpsertForm({
     }
   }
 
-  // Callback del Asistente IA
+  // Manejador de pre-población directa desde JSON estructurado
+  const handleAplicarJsonEvento = async (parsed: any) => {
+    if (parsed.titulo) setEventTitle(parsed.titulo);
+    if (parsed.descripcion) setDescription(limpiarDescripcionRecurrencia(parsed.descripcion));
+    if (parsed.precio !== undefined && parsed.precio !== null) {
+      setPrice(parsed.precio.toString());
+    }
+    if (parsed.precio_cop !== undefined && parsed.precio_cop !== null) {
+      setPrice(parsed.precio_cop.toString());
+    }
+    if (parsed.nombreNegocio && !businessName) setBusinessName(parsed.nombreNegocio);
+    if (parsed.businessName && !businessName) setBusinessName(parsed.businessName);
+    if (parsed.whatsapp) {
+      let clean = String(parsed.whatsapp).replace(/\D/g, "");
+      if (clean.length === 10 && clean.startsWith("3")) clean = `57${clean}`;
+      setWhatsapp(clean || parsed.whatsapp);
+    }
+    if (parsed.instagram) setInstagram(String(parsed.instagram).replace(/^@/, ""));
+    if (parsed.zonaSlug) setZonaSlug(parsed.zonaSlug);
+    if (parsed.esRecurrente !== undefined) setEsRecurrente(Boolean(parsed.esRecurrente));
+    if (Array.isArray(parsed.diasRecurrentes)) setDiasRecurrentes(parsed.diasRecurrentes);
+
+    const cat = parsed.categoria || parsed.tipo;
+    if (cat) {
+      setSelectedCategories((prev) => Array.from(new Set([cat, ...prev])));
+    } else if (Array.isArray(parsed.categorias) && parsed.categorias.length > 0) {
+      setSelectedCategories(parsed.categorias);
+    }
+
+    if (parsed.fechaInicio) setDateTime(isoADatetimeLocalColombia(parsed.fechaInicio));
+    if (parsed.fechaFin) {
+      setFechaFin(isoADatetimeLocalColombia(parsed.fechaFin));
+      setTieneFechaFin(true);
+    }
+
+    // Procesamiento de fotos externas
+    const fotos: string[] = [];
+    const portada = parsed.imagenPortadaUrl || parsed.imagen_url || parsed.foto;
+    if (portada) fotos.push(portada);
+    if (Array.isArray(parsed.galeriaFotos)) {
+      parsed.galeriaFotos.forEach((f: string) => f && fotos.push(f));
+    }
+    if (Array.isArray(parsed.fotos)) {
+      parsed.fotos.forEach((f: string) => f && fotos.push(f));
+    }
+
+    if (portada && portada.includes("supabase.co")) {
+      setPreviewFoto(portada);
+    }
+
+    const externas = Array.from(new Set(fotos)).filter(
+      (u) => !u.includes("supabase.co") && !u.startsWith("blob:")
+    );
+
+    if (externas.length > 0) {
+      setIsProcesandoFotos(true);
+      try {
+        const res = await procesarUrlsFotosAction(externas);
+        if (res.success && res.mapeo) {
+          if (portada && res.mapeo[portada]) {
+            setPreviewFoto(res.mapeo[portada]);
+          }
+        }
+      } catch (errFoto) {
+        console.warn("Advertencia procesando fotos de JSON evento:", errFoto);
+      } finally {
+        setIsProcesandoFotos(false);
+      }
+    }
+
+    setMensajeExitoJson("🎉 Datos del evento pre-poblados desde JSON. Revisa y publica cuando estés listo.");
+    setTimeout(() => setMensajeExitoJson(null), 6000);
+  };
+
+  // Leer prefill pendiente de sessionStorage si se abrió desde otra ruta
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem("padonde_asistente_prefill");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        sessionStorage.removeItem("padonde_asistente_prefill");
+        handleAplicarJsonEvento(parsed);
+      }
+    } catch {}
+  }, []);
+
+  // Callback del Asistente IA legacy
   function handleDatosAsistenteExtraidos(datos: EventoExtraido) {
     if (datos.titulo) setEventTitle(datos.titulo);
     if (datos.categoria) {
@@ -999,25 +1098,33 @@ export function EventUpsertForm({
         </div>
       )}
 
-      {/* Botón de Asistente IA */}
-      <div className="bg-gradient-to-r from-forest/5 via-forest/10 to-transparent p-3.5 rounded-2xl border border-forest/20 flex items-center justify-between gap-3">
+      {/* Botón Cargar Evento desde JSON */}
+      <div className="bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent p-3.5 rounded-2xl border border-amber-300/80 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <span className="text-xl">✨</span>
+          <span className="text-xl">📥</span>
           <div>
-            <p className="font-sans text-xs font-bold text-forest">Asistente IA de Extracción</p>
+            <p className="font-sans text-xs font-bold text-forest">Cargar Evento desde JSON</p>
             <p className="font-sans text-[11px] text-stone">
-              Pega un texto de WhatsApp o Instagram para rellenar los campos automáticamente.
+              Pega un JSON estructurado para rellenar los datos del evento, fechas, categorías y fotos automáticamente.
             </p>
           </div>
         </div>
         <button
           type="button"
-          onClick={() => setMostrarAsistenteIA(true)}
-          className="px-3 py-1.5 rounded-xl bg-forest text-cream font-sans text-xs font-semibold hover:bg-forest/90 transition-all shrink-0 cursor-pointer shadow-2xs"
+          onClick={() => setMostrarModalJson(true)}
+          className="px-3.5 py-1.5 rounded-xl bg-forest text-cream font-sans text-xs font-bold hover:bg-forest/90 transition-all shrink-0 cursor-pointer shadow-2xs flex items-center gap-1.5 active:scale-95"
         >
-          Pegar Copy
+          <span>📥</span>
+          <span>Pegar JSON</span>
         </button>
       </div>
+
+      {mensajeExitoJson && (
+        <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-xl font-sans flex items-center gap-2 animate-in fade-in">
+          <span className="text-base shrink-0">🎉</span>
+          <span className="font-medium">{mensajeExitoJson}</span>
+        </div>
+      )}
 
       {/* Banner de Proyección Semanal para Aliados Recurrentes */}
       {mode === "crear" && initialEvento && (
@@ -2032,33 +2139,14 @@ export function EventUpsertForm({
         </div>
       </div>
 
-      {/* MODALES AUXILIARES */}
-      {mostrarAsistenteIA && (
-        <ModalAsistenteEvento
-          aliados={aliados.map((a) => ({
-            id: a.id,
-            nombre: a.nombre,
-            whatsapp: a.whatsapp,
-            instagram: a.instagram,
-            categoria: a.categoria,
-            zonaSlug: a.zonaSlug,
-            zonaNombre: a.zonaNombre,
-          }))}
-          zonas={[
-            { id: "zona-minca", nombre: "Minca", slug: "minca" },
-            { id: "zona-mendihuaca", nombre: "Mendihuaca", slug: "mendihuaca" },
-            { id: "zona-tayrona", nombre: "Tayrona", slug: "tayrona" },
-            { id: "zona-taganga", nombre: "Taganga", slug: "taganga" },
-          ]}
-          onClose={() => setMostrarAsistenteIA(false)}
-          onPrefillNuevo={(datos, archivoFoto) => {
-            handleDatosAsistenteExtraidos(datos);
-            if (archivoFoto) {
-              setFile(archivoFoto);
-              setPreviewFoto(URL.createObjectURL(archivoFoto));
-            }
-            setMostrarAsistenteIA(false);
-          }}
+      {/* Modal para Cargar Evento desde JSON */}
+      {mostrarModalJson && (
+        <ModalCargarJson
+          isOpen={mostrarModalJson}
+          onClose={() => setMostrarModalJson(false)}
+          tipo="evento"
+          onAplicar={handleAplicarJsonEvento}
+          isProcesando={isProcesandoFotos}
         />
       )}
 
