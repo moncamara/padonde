@@ -1933,11 +1933,21 @@ export async function importarImagenDesdeUrlAction(
     clearTimeout(timeout);
 
     if (!res.ok) {
-      return { success: false, error: `Error HTTP ${res.status} al descargar imagen externa.` };
+      return {
+        success: false,
+        error: "Foto no disponible por bloqueo del servidor de origen. Sube el archivo manualmente",
+      };
     }
 
     const arrayBuffer = await res.arrayBuffer();
     const rawBuffer = Buffer.from(arrayBuffer);
+
+    if (!rawBuffer || rawBuffer.length < 100) {
+      return {
+        success: false,
+        error: "Foto no disponible por bloqueo del servidor de origen. Sube el archivo manualmente",
+      };
+    }
 
     // Optimización WebP con Sharp
     let webpBuffer: Buffer;
@@ -1947,7 +1957,10 @@ export async function importarImagenDesdeUrlAction(
         .webp({ quality: 84 })
         .toBuffer();
     } catch {
-      webpBuffer = rawBuffer;
+      return {
+        success: false,
+        error: "Foto no disponible por bloqueo del servidor de origen. Sube el archivo manualmente",
+      };
     }
 
     const fileName = `hospedaje-${Date.now()}-${Math.random().toString(36).substring(2, 9)}.webp`;
@@ -2002,11 +2015,12 @@ export async function procesarUrlsFotosAction(
   success: boolean;
   urlsProcesadas: string[];
   mapeo: Record<string, string>;
+  fallidas?: string[];
   error?: string;
 }> {
   try {
     if (!Array.isArray(urls) || urls.length === 0) {
-      return { success: true, urlsProcesadas: [], mapeo: {} };
+      return { success: true, urlsProcesadas: [], mapeo: {}, fallidas: [] };
     }
 
     const supabase = await createClient();
@@ -2016,6 +2030,7 @@ export async function procesarUrlsFotosAction(
 
     const mapeo: Record<string, string> = {};
     const urlsProcesadas: string[] = [];
+    const fallidas: string[] = [];
 
     const descargas = await Promise.allSettled(
       urlsUnicas.map(async (rawUrl) => {
@@ -2065,38 +2080,44 @@ export async function procesarUrlsFotosAction(
 
           clearTimeout(timeout);
 
+          // Si el servidor de origen responde con 401/403/404 o error:
+          // NO generar imágenes sintéticas ni placeholders verdes en Supabase Storage.
+          if (!res.ok) {
+            return {
+              original: rawUrl,
+              urlLimpia,
+              fallida: true,
+              error: `Foto no disponible por bloqueo del servidor de origen (HTTP ${res.status}). Sube el archivo manualmente`,
+            };
+          }
+
+          const arrayBuffer = await res.arrayBuffer();
+          const rawBuffer = Buffer.from(arrayBuffer);
+
+          // Validar que se haya recibido un binario real y suficiente
+          if (!rawBuffer || rawBuffer.length < 100) {
+            return {
+              original: rawUrl,
+              urlLimpia,
+              fallida: true,
+              error: "Contenido binario insuficiente recibido del servidor.",
+            };
+          }
+
           let webpBuffer: Buffer;
-
-          if (res.ok) {
-            const arrayBuffer = await res.arrayBuffer();
-            const rawBuffer = Buffer.from(arrayBuffer);
-
-            // Procesar con Sharp: máx 1280px ancho, WebP 82%
+          try {
             webpBuffer = await sharp(rawBuffer)
               .resize({ width: 1280, withoutEnlargement: true })
               .webp({ quality: 82 })
               .toBuffer();
-          } else {
-            // Generación de WebP elegante en Supabase Storage si el CDN externo bloquea hotlinking (401/403/404)
-            const placeholderSvg = `
-              <svg width="1280" height="960" viewBox="0 0 1280 960" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                  <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stop-color="#1B382B" />
-                    <stop offset="50%" stop-color="#244B39" />
-                    <stop offset="100%" stop-color="#142C21" />
-                  </linearGradient>
-                </defs>
-                <rect width="100%" height="100%" fill="url(#bg)" />
-                <circle cx="640" cy="420" r="85" fill="#ffffff" fill-opacity="0.08" />
-                <text x="640" y="450" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="64" text-anchor="middle" fill="#FAF8F5">🛏️</text>
-                <text x="640" y="560" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="30" font-weight="700" text-anchor="middle" fill="#FAF8F5">Fotografía de Habitación</text>
-                <text x="640" y="605" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="18" text-anchor="middle" fill="#86A789">PaDónde Hospedajes • Optimizada WebP</text>
-              </svg>
-            `;
-            webpBuffer = await sharp(Buffer.from(placeholderSvg))
-              .webp({ quality: 82 })
-              .toBuffer();
+          } catch {
+            // Si Sharp no puede decodificarlo (ej. página HTML de error camuflada)
+            return {
+              original: rawUrl,
+              urlLimpia,
+              fallida: true,
+              error: "Foto no disponible por bloqueo del servidor de origen. Sube el archivo manualmente",
+            };
           }
 
           const fileName = `hab-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.webp`;
@@ -2130,21 +2151,35 @@ export async function procesarUrlsFotosAction(
             return { original: rawUrl, urlLimpia, urlSupabase: data.publicUrl };
           }
 
-          return { original: rawUrl, urlLimpia, error: uploadErr.message || "Error al subir a Storage" };
+          return {
+            original: rawUrl,
+            urlLimpia,
+            fallida: true,
+            error: uploadErr.message || "Error al subir a Storage",
+          };
         } catch (fetchErr: any) {
           clearTimeout(timeout);
-          return { original: rawUrl, urlLimpia, error: fetchErr?.message || "Timeout" };
+          return {
+            original: rawUrl,
+            urlLimpia,
+            fallida: true,
+            error: "Foto no disponible por bloqueo del servidor de origen. Sube el archivo manualmente",
+          };
         }
       })
     );
 
     for (const item of descargas) {
-      if (item.status === "fulfilled" && item.value.urlSupabase) {
-        mapeo[item.value.original] = item.value.urlSupabase;
-        if (item.value.urlLimpia) {
-          mapeo[item.value.urlLimpia] = item.value.urlSupabase;
+      if (item.status === "fulfilled") {
+        if (item.value.urlSupabase) {
+          mapeo[item.value.original] = item.value.urlSupabase;
+          if (item.value.urlLimpia) {
+            mapeo[item.value.urlLimpia] = item.value.urlSupabase;
+          }
+          urlsProcesadas.push(item.value.urlSupabase);
+        } else if (item.value.fallida) {
+          fallidas.push(item.value.original);
         }
-        urlsProcesadas.push(item.value.urlSupabase);
       }
     }
 
@@ -2152,6 +2187,7 @@ export async function procesarUrlsFotosAction(
       success: true,
       urlsProcesadas,
       mapeo,
+      fallidas,
     };
   } catch (err: any) {
     console.error("[procesarUrlsFotosAction] Excepción:", err);
@@ -2159,6 +2195,7 @@ export async function procesarUrlsFotosAction(
       success: false,
       urlsProcesadas: [],
       mapeo: {},
+      fallidas: [],
       error: err?.message || "Error inesperado al procesar fotos.",
     };
   }

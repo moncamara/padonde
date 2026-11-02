@@ -153,6 +153,7 @@ export function ModalEditarHospedaje({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [mostrarModalJson, setMostrarModalJson] = useState(abrirConModalJson);
   const [mensajeExitoJson, setMensajeExitoJson] = useState<string | null>(null);
+  const [avisoFotosBloqueadas, setAvisoFotosBloqueadas] = useState<string | null>(null);
   const [isMigrandoFotosWebP, setIsMigrandoFotosWebP] = useState(false);
   const [isProcesandoFotos, setIsProcesandoFotos] = useState(false);
   const [progresoMigracion, setProgresoMigracion] = useState<string | null>(null);
@@ -197,8 +198,18 @@ export function ModalEditarHospedaje({
           const mapeadas = Object.values(res.mapeo);
           return Array.from(new Set([...reemplazadas, ...mapeadas]));
         });
+        if (res.fallidas && res.fallidas.length > 0) {
+          setAvisoFotosBloqueadas(
+            `Foto no disponible por bloqueo del servidor de origen (${res.fallidas.length} foto(s)). Sube el archivo manualmente.`
+          );
+        }
         setProgresoMigracion(`🎉 ¡${res.urlsProcesadas.length} fotos optimizadas a WebP y alojadas en PaDónde!`);
       } else {
+        if (res.fallidas && res.fallidas.length > 0) {
+          setAvisoFotosBloqueadas(
+            `Foto no disponible por bloqueo del servidor de origen (${res.fallidas.length} foto(s)). Sube el archivo manualmente.`
+          );
+        }
         setProgresoMigracion(null);
       }
     } catch {
@@ -361,10 +372,19 @@ export function ModalEditarHospedaje({
         if (f) fotosNuevas.push(f);
       });
     });
-    setFotosImportadas((prev) => Array.from(new Set([...prev, ...fotosNuevas])));
-
-    setMensajeExitoJson("🎉 Datos y habitaciones cargados desde JSON con fotos listas en Supabase.");
-    setTimeout(() => setMensajeExitoJson(null), 6000);
+    const fallidasCount = parsed.__fotosFallidasCount || 0;
+    if (fallidasCount > 0) {
+      setAvisoFotosBloqueadas(
+        `Foto no disponible por bloqueo del servidor de origen (${fallidasCount} foto(s)). Sube el archivo manualmente.`
+      );
+      setMensajeExitoJson(
+        `🎉 Datos cargados desde JSON. ${fallidasCount} foto(s) protegidas por el servidor externo; puedes subirlas manualmente.`
+      );
+    } else {
+      setAvisoFotosBloqueadas(null);
+      setMensajeExitoJson("🎉 Datos y habitaciones cargados desde JSON con fotos listas en Supabase.");
+    }
+    setTimeout(() => setMensajeExitoJson(null), 8000);
   };
 
   const coincidenciaDuplicado =
@@ -799,6 +819,31 @@ export function ModalEditarHospedaje({
           <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-xl font-sans flex items-center gap-2 animate-in fade-in">
             <span className="text-base shrink-0">🎉</span>
             <span className="font-medium">{mensajeExitoJson}</span>
+          </div>
+        )}
+
+        {avisoFotosBloqueadas && (
+          <div className="p-3.5 bg-amber-50 border-2 border-amber-300 rounded-2xl flex items-start justify-between gap-3 text-xs text-amber-950 animate-in fade-in duration-200 shadow-xs">
+            <div className="flex items-start gap-2.5">
+              <span className="text-base leading-none shrink-0 mt-0.5">⚠️</span>
+              <div className="space-y-0.5">
+                <span className="font-bold block text-amber-950">
+                  Aviso en Ingesta de Fotos:
+                </span>
+                <p className="text-amber-900 leading-relaxed font-sans">
+                  {avisoFotosBloqueadas} Sube el archivo manualmente usando el botón{" "}
+                  <strong>"Subir desde dispositivo (Descargas)"</strong> en la habitación correspondiente.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setAvisoFotosBloqueadas(null)}
+              className="text-stone-500 hover:text-black font-bold p-1 cursor-pointer shrink-0"
+              title="Cerrar aviso"
+            >
+              ✕
+            </button>
           </div>
         )}
 
@@ -1998,9 +2043,12 @@ function HabitacionFotosManager({
           })}
         </div>
       ) : (
-        <div className="p-3 bg-stone-light/20 rounded-xl border border-dashed border-stone-light/70 text-center">
-          <p className="text-[11px] text-stone font-sans">
-            📷 No hay fotos asignadas a esta habitación. Agrega fotos para que el carrusel público se visualice atractivo.
+        <div className="p-3.5 bg-stone-50 rounded-2xl border border-dashed border-stone-light/80 text-center space-y-1">
+          <p className="text-xs text-stone-700 font-sans font-medium">
+            📷 Sin fotos asignadas a esta habitación
+          </p>
+          <p className="text-[11px] text-amber-800 font-sans">
+            Foto no disponible por bloqueo del servidor de origen. Sube el archivo manualmente usando "Subir desde dispositivo (Descargas)".
           </p>
         </div>
       )}

@@ -142,44 +142,70 @@ export function ModalCargarJson({
       );
 
       // 3. Procesar lote con procesarUrlsFotosAction para subirlas a Supabase Storage
+      let fallidasCount = 0;
       if (externas.length > 0) {
         try {
           const res = await procesarUrlsFotosAction(externas);
-          if (res.success && res.mapeo && Object.keys(res.mapeo).length > 0) {
-            const mapeo = res.mapeo;
-            const resolverUrl = (url: string) => {
-              if (!url) return url;
-              const limpia = url.split("?")[0].trim();
-              return mapeo[url] || mapeo[limpia] || url;
-            };
+          const mapeo = res.mapeo || {};
+          const fallidasList = res.fallidas || [];
+          fallidasCount = fallidasList.length;
 
-            // Reemplazar portada
-            if (parsed.imagenPortadaUrl) parsed.imagenPortadaUrl = resolverUrl(parsed.imagenPortadaUrl);
-            if (parsed.imagen_url) parsed.imagen_url = resolverUrl(parsed.imagen_url);
-            if (parsed.foto) parsed.foto = resolverUrl(parsed.foto);
+          const resolverUrl = (url: string): string | null => {
+            if (!url) return null;
+            if (url.includes("supabase.co")) return url;
+            const limpia = url.split("?")[0].trim();
+            if (mapeo[url]) return mapeo[url];
+            if (mapeo[limpia]) return mapeo[limpia];
+            // Si la URL externa no pudo descargarse por bloqueo o error, descartarla
+            return null;
+          };
 
-            // Reemplazar galerías
-            if (Array.isArray(parsed.galeriaFotos)) {
-              parsed.galeriaFotos = parsed.galeriaFotos.map((f: any) =>
-                typeof f === "string" ? resolverUrl(f) : f
-              );
-            }
-            if (Array.isArray(parsed.fotos)) {
-              parsed.fotos = parsed.fotos.map((f: any) =>
-                typeof f === "string" ? resolverUrl(f) : f
-              );
-            }
+          // Reemplazar portada
+          if (parsed.imagenPortadaUrl) {
+            parsed.imagenPortadaUrl = resolverUrl(parsed.imagenPortadaUrl) || "";
+          }
+          if (parsed.imagen_url) {
+            parsed.imagen_url = resolverUrl(parsed.imagen_url) || "";
+          }
+          if (parsed.foto) {
+            parsed.foto = resolverUrl(parsed.foto) || "";
+          }
 
-            // Reemplazar fotos de cada habitación directamente en el JSON parsed
-            if (Array.isArray(parsed.habitaciones)) {
-              parsed.habitaciones = parsed.habitaciones.map((hab: any) => ({
-                ...hab,
-                fotos: Array.isArray(hab.fotos)
-                  ? hab.fotos.map((f: any) => (typeof f === "string" ? resolverUrl(f) : f))
-                  : [],
-              }));
+          // Reemplazar galerías descartando URLs bloqueadas
+          if (Array.isArray(parsed.galeriaFotos)) {
+            parsed.galeriaFotos = parsed.galeriaFotos
+              .map((f: any) => (typeof f === "string" ? resolverUrl(f) : f))
+              .filter(Boolean);
+          }
+          if (Array.isArray(parsed.fotos)) {
+            parsed.fotos = parsed.fotos
+              .map((f: any) => (typeof f === "string" ? resolverUrl(f) : f))
+              .filter(Boolean);
+          }
+
+          // Reemplazar fotos de cada habitación descartando las bloqueadas
+          if (Array.isArray(parsed.habitaciones)) {
+            parsed.habitaciones = parsed.habitaciones.map((hab: any) => ({
+              ...hab,
+              fotos: Array.isArray(hab.fotos)
+                ? hab.fotos
+                    .map((f: any) => (typeof f === "string" ? resolverUrl(f) : f))
+                    .filter(Boolean)
+                : [],
+            }));
+          }
+
+          // Si la portada quedó vacía y hay fotos válidas en alguna habitación, asignar la primera
+          if (!parsed.imagenPortadaUrl && Array.isArray(parsed.habitaciones)) {
+            for (const hab of parsed.habitaciones) {
+              if (Array.isArray(hab.fotos) && hab.fotos.length > 0 && hab.fotos[0]) {
+                parsed.imagenPortadaUrl = hab.fotos[0];
+                break;
+              }
             }
           }
+
+          parsed.__fotosFallidasCount = fallidasCount;
         } catch (errFoto) {
           console.warn("Advertencia procesando fotos externas del JSON en modal:", errFoto);
         }
