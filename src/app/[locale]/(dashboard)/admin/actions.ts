@@ -1915,6 +1915,15 @@ export async function importarImagenDesdeUrlAction(
       return { success: false, error: "Debes iniciar sesión para importar imágenes." };
     }
 
+    if (imageUrl.includes("supabase.co")) {
+      return { success: true, url: imageUrl };
+    }
+
+    const conocida = resolverFotoConocida(imageUrl);
+    if (conocida) {
+      return { success: true, url: conocida };
+    }
+
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10000);
 
@@ -2002,6 +2011,30 @@ const MAPEO_FOTOS_CONOCIDAS_STORAGE: Record<string, string> = {
 };
 
 /**
+ * Resuelve una URL externa contra el mapeo de fotos ya alojadas en Supabase Storage,
+ * ignorando query parameters o haciendo match por ID numérico de imagen de Booking.
+ */
+function resolverFotoConocida(url: string): string | null {
+  if (!url) return null;
+  const urlLimpia = url.trim();
+  if (MAPEO_FOTOS_CONOCIDAS_STORAGE[urlLimpia]) {
+    return MAPEO_FOTOS_CONOCIDAS_STORAGE[urlLimpia];
+  }
+  const sinQuery = urlLimpia.split("?")[0].trim();
+  if (MAPEO_FOTOS_CONOCIDAS_STORAGE[sinQuery]) {
+    return MAPEO_FOTOS_CONOCIDAS_STORAGE[sinQuery];
+  }
+  const idMatch = urlLimpia.match(/\/(\d+)\.(jpg|jpeg|png|webp)/i);
+  if (idMatch && idMatch[1]) {
+    const id = idMatch[1];
+    for (const [k, v] of Object.entries(MAPEO_FOTOS_CONOCIDAS_STORAGE)) {
+      if (k.includes(id)) return v;
+    }
+  }
+  return null;
+}
+
+/**
  * Server Action canónica para procesamiento e ingesta de fotos (Booking, Airbnb o web).
  * Descarga las fotos en Node.js con headers estándar, las procesa con Sharp:
  * - Redimensionar a máx 1280px de ancho (withoutEnlargement: true)
@@ -2037,9 +2070,10 @@ export async function procesarUrlsFotosAction(
           return { original: url, urlSupabase: url };
         }
 
-        // 2. Si es una URL conocida ya alojada en Supabase Storage
-        if (MAPEO_FOTOS_CONOCIDAS_STORAGE[url]) {
-          return { original: url, urlSupabase: MAPEO_FOTOS_CONOCIDAS_STORAGE[url] };
+        // 2. Si es una URL conocida ya alojada en Supabase Storage (o coincide por ID / clean URL)
+        const conocida = resolverFotoConocida(url);
+        if (conocida) {
+          return { original: url, urlSupabase: conocida };
         }
 
         const controller = new AbortController();
@@ -2058,8 +2092,9 @@ export async function procesarUrlsFotosAction(
           clearTimeout(timeout);
 
           if (!res.ok) {
-            if (MAPEO_FOTOS_CONOCIDAS_STORAGE[url]) {
-              return { original: url, urlSupabase: MAPEO_FOTOS_CONOCIDAS_STORAGE[url] };
+            const fallbackConocida = resolverFotoConocida(url);
+            if (fallbackConocida) {
+              return { original: url, urlSupabase: fallbackConocida };
             }
             return { original: url, error: `HTTP ${res.status}` };
           }
@@ -2105,8 +2140,9 @@ export async function procesarUrlsFotosAction(
           return { original: url, urlSupabase: data.publicUrl };
         } catch (fetchErr: any) {
           clearTimeout(timeout);
-          if (MAPEO_FOTOS_CONOCIDAS_STORAGE[url]) {
-            return { original: url, urlSupabase: MAPEO_FOTOS_CONOCIDAS_STORAGE[url] };
+          const fallbackConocida = resolverFotoConocida(url);
+          if (fallbackConocida) {
+            return { original: url, urlSupabase: fallbackConocida };
           }
           return { original: url, error: fetchErr.message || "Timeout" };
         }
