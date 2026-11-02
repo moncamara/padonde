@@ -6,6 +6,7 @@ import {
   guardarHospedajeAction,
   eliminarEventoAdminAction,
   importarImagenDesdeUrlAction,
+  importarLoteImagenesHospedajeAction,
   generarCopyHospedajeGeminiAction,
   type IngestaUniversalPrefillResultado,
 } from "../actions";
@@ -135,7 +136,71 @@ export function ModalEditarHospedaje({
       ]
   );
 
-  // Sincronizar estados cuando cambie la prop hospedaje (ej: al cargar el borrador piloto)
+  // Estados Importador Rápido de Fotos (Booking, Airbnb o URLs Masivas)
+  const [urlsImportador, setUrlsImportador] = useState("");
+  const [fotosImportadas, setFotosImportadas] = useState<string[]>([]);
+  const [mostrarGuiaBookmarklet, setMostrarGuiaBookmarklet] = useState(false);
+  const [copiadoBookmarklet, setCopiadoBookmarklet] = useState(false);
+  const [habitacionDestinoId, setHabitacionDestinoId] = useState<string>("todas");
+  const [mensajeImportacion, setMensajeImportacion] = useState<string | null>(null);
+
+  const [isSubiendoFoto, setIsSubiendoFoto] = useState(false);
+  const [isGuardando, setIsGuardando] = useState(false);
+  const [isRegenerandoAI, setIsRegenerandoAI] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [mostrarAsistenteUniversal, setMostrarAsistenteUniversal] = useState(false);
+  const [isMigrandoFotosWebP, setIsMigrandoFotosWebP] = useState(false);
+  const [progresoMigracion, setProgresoMigracion] = useState<string | null>(null);
+
+  // Sincronizar concurrentemente fotos externas hacia Supabase Storage (Sharp WebP)
+  const sincronizarFotosAStorage = async (habsInput?: any[], portInput?: string) => {
+    const port = portInput ?? imagenUrl;
+    const habs = habsInput ?? habitaciones;
+    const urlsExternas: string[] = [];
+
+    if (port && !port.includes("supabase.co") && !port.startsWith("blob:")) {
+      urlsExternas.push(port);
+    }
+    habs.forEach((h: any) => {
+      (h.fotos || []).forEach((f: string) => {
+        if (f && !f.includes("supabase.co") && !f.startsWith("blob:")) {
+          urlsExternas.push(f);
+        }
+      });
+    });
+
+    const unicas = Array.from(new Set(urlsExternas));
+    if (unicas.length === 0) return;
+
+    setIsMigrandoFotosWebP(true);
+    setProgresoMigracion(`☁️ Optimizando ${unicas.length} fotos a WebP en PaDónde Storage...`);
+
+    try {
+      const res = await importarLoteImagenesHospedajeAction(unicas);
+      if (res.success && res.mapeo && Object.keys(res.mapeo).length > 0) {
+        if (port && res.mapeo[port]) {
+          setImagenUrl(res.mapeo[port]);
+        }
+        setHabitaciones((prev) =>
+          prev.map((h) => ({
+            ...h,
+            fotos: (h.fotos || []).map((f: string) => res.mapeo[f] || f),
+          }))
+        );
+        setFotosImportadas((prev) => prev.map((f) => res.mapeo[f] || f));
+        setProgresoMigracion(`🎉 ¡${res.procesadas} fotos optimizadas a WebP y alojadas en PaDónde!`);
+      } else {
+        setProgresoMigracion(null);
+      }
+    } catch {
+      setProgresoMigracion(null);
+    } finally {
+      setIsMigrandoFotosWebP(false);
+      setTimeout(() => setProgresoMigracion(null), 4000);
+    }
+  };
+
+  // Sincronizar estados cuando cambie la prop hospedaje (ej: al cargar el borrador o prefill)
   useEffect(() => {
     if (hospedaje) {
       setNombreNegocio(hospedaje?.negocio?.nombre || hospedaje?.nombreNegocio || "");
@@ -149,7 +214,8 @@ export function ModalEditarHospedaje({
       setTitulo(hospedaje?.titulo || "");
       setDescripcion(hospedaje?.descripcion || "");
       setZonaSlug(hospedaje?.zonas?.slug || hospedaje?.zonaSlug || zonas[0]?.slug || "minca");
-      setImagenUrl(hospedaje?.imagen_url || hospedaje?.imagenUrl || "");
+      const portVal = hospedaje?.imagen_url || hospedaje?.imagenUrl || "";
+      setImagenUrl(portVal);
       setDestacado(Boolean(hospedaje?.destacado));
       setRatingGoogle(
         hospedaje?.metadata_hospedaje?.google_reputacion?.rating?.toString() ||
@@ -180,8 +246,24 @@ export function ModalEditarHospedaje({
             rawRev ||
             "";
       setGoogleReviewUrl(autoRev);
-      if (hospedaje?.metadata_hospedaje?.habitaciones || hospedaje?.habitaciones) {
-        setHabitaciones(hospedaje?.metadata_hospedaje?.habitaciones || hospedaje?.habitaciones);
+      const habsVal = hospedaje?.metadata_hospedaje?.habitaciones || hospedaje?.habitaciones || [];
+      if (habsVal.length > 0) {
+        setHabitaciones(habsVal);
+      }
+
+      // Enrutar fotos a la bandeja de Ingesta Rápida de Fotos (Sección 2)
+      const urlsCandidatas: string[] = [];
+      if (portVal) urlsCandidatas.push(portVal);
+      habsVal.forEach((h: any) => {
+        (h.fotos || []).forEach((f: string) => {
+          if (f) urlsCandidatas.push(f);
+        });
+      });
+      const unicas = Array.from(new Set(urlsCandidatas));
+      if (unicas.length > 0) {
+        setFotosImportadas(unicas);
+        // Sincronizar automáticamente en segundo plano a Storage (Sharp WebP)
+        sincronizarFotosAStorage(habsVal, portVal);
       }
     }
     // Asegurar que el modal siempre abra desde arriba
@@ -191,12 +273,6 @@ export function ModalEditarHospedaje({
 
   const modalScrollRef = useRef<HTMLDivElement>(null);
   const outerScrollRef = useRef<HTMLDivElement>(null);
-
-  const [isSubiendoFoto, setIsSubiendoFoto] = useState(false);
-  const [isGuardando, setIsGuardando] = useState(false);
-  const [isRegenerandoAI, setIsRegenerandoAI] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [mostrarAsistenteUniversal, setMostrarAsistenteUniversal] = useState(false);
 
   const handlePrefillDesdeUniversal = (datos: IngestaUniversalPrefillResultado) => {
     if (datos.nombreNegocio) setNombreNegocio(datos.nombreNegocio);
@@ -210,9 +286,25 @@ export function ModalEditarHospedaje({
     if (typeof datos.googleRating === "number") setRatingGoogle(datos.googleRating.toString());
     if (typeof datos.googleReviewsCount === "number") setReviewsGoogle(datos.googleReviewsCount.toString());
     if (datos.googleMapsUrl) setMapsUrl(datos.googleMapsUrl);
-    if (datos.habitaciones && datos.habitaciones.length > 0) {
-      setHabitaciones(datos.habitaciones);
+    const habs = datos.habitaciones || [];
+    if (habs.length > 0) {
+      setHabitaciones(habs);
     }
+
+    // Enrutar fotos del prefill a Ingesta Rápida y Storage
+    const urlsCandidatas: string[] = [];
+    if (datos.imagenPortadaUrl) urlsCandidatas.push(datos.imagenPortadaUrl);
+    habs.forEach((h) => {
+      (h.fotos || []).forEach((f) => {
+        if (f) urlsCandidatas.push(f);
+      });
+    });
+    const unicas = Array.from(new Set(urlsCandidatas));
+    if (unicas.length > 0) {
+      setFotosImportadas(unicas);
+      sincronizarFotosAStorage(habs, datos.imagenPortadaUrl || undefined);
+    }
+
     setMostrarAsistenteUniversal(false);
   };
 
@@ -254,14 +346,6 @@ export function ModalEditarHospedaje({
       setIsRegenerandoAI(false);
     }
   };
-
-  // Estados Importador Rápido de Fotos (Booking, Airbnb o URLs Masivas)
-  const [urlsImportador, setUrlsImportador] = useState("");
-  const [fotosImportadas, setFotosImportadas] = useState<string[]>([]);
-  const [mostrarGuiaBookmarklet, setMostrarGuiaBookmarklet] = useState(false);
-  const [copiadoBookmarklet, setCopiadoBookmarklet] = useState(false);
-  const [habitacionDestinoId, setHabitacionDestinoId] = useState<string>("todas");
-  const [mensajeImportacion, setMensajeImportacion] = useState<string | null>(null);
 
   // Manejador de pegado de URLs en el importador
   const handlePegarUrlsImportador = (texto: string) => {
@@ -806,6 +890,8 @@ export function ModalEditarHospedaje({
                       <img
                         src={imagenUrl}
                         alt="Vista previa portada"
+                        referrerPolicy="no-referrer"
+                        crossOrigin="anonymous"
                         className="w-full h-full object-cover"
                       />
                       <button
@@ -1004,6 +1090,8 @@ export function ModalEditarHospedaje({
                       <img
                         src={url}
                         alt={`Foto importada ${idx + 1}`}
+                        referrerPolicy="no-referrer"
+                        crossOrigin="anonymous"
                         className="w-full h-full object-cover"
                         loading="lazy"
                       />
@@ -1247,8 +1335,18 @@ export function ModalEditarHospedaje({
               <div className="flex items-center gap-2 flex-wrap">
                 <button
                   type="button"
+                  disabled={isMigrandoFotosWebP}
+                  onClick={() => sincronizarFotosAStorage()}
+                  className="px-3 py-1.5 bg-emerald-600/10 hover:bg-emerald-600 text-emerald-800 hover:text-white rounded-xl font-medium transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs text-xs disabled:opacity-50"
+                  title="Optimizar fotos externas a WebP y alojarlas en PaDónde Storage"
+                >
+                  <span>☁️</span>
+                  <span>{isMigrandoFotosWebP ? "Guardando en PaDónde..." : "Guardar todas en PaDónde"}</span>
+                </button>
+                <button
+                  type="button"
                   onClick={() => setMostrarClasificadorFotos(true)}
-                  className="px-3 py-1.5 bg-terra/10 hover:bg-terra text-terra hover:text-white rounded-xl font-medium transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                  className="px-3 py-1.5 bg-terra/10 hover:bg-terra text-terra hover:text-white rounded-xl font-medium transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs text-xs"
                   title="Organizar fotos de Booking o archivos con Inteligencia Artificial"
                 >
                   <span>✨</span>
@@ -1257,12 +1355,19 @@ export function ModalEditarHospedaje({
                 <button
                   type="button"
                   onClick={agregarHabitacion}
-                  className="px-3 py-1.5 bg-forest/10 hover:bg-forest text-forest hover:text-cream rounded-xl font-medium transition-colors cursor-pointer"
+                  className="px-3 py-1.5 bg-forest/10 hover:bg-forest text-forest hover:text-cream rounded-xl font-medium transition-colors cursor-pointer text-xs"
                 >
                   + Agregar Habitación
                 </button>
               </div>
             </div>
+
+            {progresoMigracion && (
+              <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-950 text-xs font-semibold flex items-center gap-2 animate-in fade-in">
+                <span>{isMigrandoFotosWebP ? "⏳" : "✅"}</span>
+                <span>{progresoMigracion}</span>
+              </div>
+            )}
 
             <div className="space-y-4">
               {habitaciones.map((hab, index) => (
@@ -1727,6 +1832,8 @@ function HabitacionFotosManager({
                 <img
                   src={src}
                   alt={`Foto habitación ${fIdx + 1}`}
+                  referrerPolicy="no-referrer"
+                  crossOrigin="anonymous"
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     (e.target as HTMLElement).style.opacity = "0.5";
@@ -1822,6 +1929,8 @@ function HabitacionFotosManager({
                     <img
                       src={url}
                       alt={`Miniatura ${fIdx + 1}`}
+                      referrerPolicy="no-referrer"
+                      crossOrigin="anonymous"
                       className="w-8 h-8 rounded-lg object-cover bg-stone-100 flex-shrink-0 border border-stone-light/50"
                       onError={(e) => {
                         (e.target as HTMLElement).style.opacity = "0.5";

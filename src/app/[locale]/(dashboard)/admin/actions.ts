@@ -1898,8 +1898,9 @@ export async function eliminarServicioEsencialAction(
 }
 
 /**
- * Server Action para importar una imagen desde una URL externa (Booking, web, etc.)
- * y guardarla permanentemente en Supabase Storage sin restricciones de CORS.
+ * Server Action para importar una imagen desde una URL externa (Booking, web, etc.),
+ * procesarla con Sharp a formato WebP optimizado (máx 1280px, q84)
+ * y guardarla en Supabase Storage sin restricciones de CORS.
  */
 export async function importarImagenDesdeUrlAction(
   imageUrl: string
@@ -1920,7 +1921,9 @@ export async function importarImagenDesdeUrlAction(
     const res = await fetch(imageUrl, {
       signal: controller.signal,
       headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        Referer: "https://www.booking.com/",
       },
     });
     clearTimeout(timeout);
@@ -1929,33 +1932,86 @@ export async function importarImagenDesdeUrlAction(
       return { success: false, error: `Error HTTP ${res.status} al descargar imagen externa.` };
     }
 
-    const contentType = res.headers.get("content-type") || "image/jpeg";
     const arrayBuffer = await res.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    const rawBuffer = Buffer.from(arrayBuffer);
 
-    let ext = "jpg";
-    if (contentType.includes("png")) ext = "png";
-    else if (contentType.includes("webp")) ext = "webp";
+    // Optimización WebP con Sharp
+    let webpBuffer: Buffer;
+    try {
+      webpBuffer = await sharp(rawBuffer)
+        .resize({ width: 1280, withoutEnlargement: true })
+        .webp({ quality: 84 })
+        .toBuffer();
+    } catch {
+      webpBuffer = rawBuffer;
+    }
 
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${ext}`;
-    const filePath = `eventos/${fileName}`;
+    const fileName = `hospedaje-${Date.now()}-${Math.random().toString(36).substring(2, 9)}.webp`;
 
-    const { error: uploadError } = await supabase.storage
-      .from("eventos")
-      .upload(filePath, buffer, {
-        contentType,
+    // 1. Intentar bucket primario "hospedajes"
+    const { error: err1 } = await supabase.storage
+      .from("hospedajes")
+      .upload(fileName, webpBuffer, {
+        contentType: "image/webp",
         cacheControl: "31536000",
         upsert: false,
       });
 
-    if (uploadError) {
-      return { success: false, error: uploadError.message };
+    if (!err1) {
+      const { data } = supabase.storage.from("hospedajes").getPublicUrl(fileName);
+      return { success: true, url: data.publicUrl };
     }
 
-    const { data } = supabase.storage.from("eventos").getPublicUrl(filePath);
-    return { success: true, url: data.publicUrl };
+    // 2. Fallback a bucket "eventos" en subcarpeta "hospedajes/"
+    const fallbackPath = `hospedajes/${fileName}`;
+    const { error: err2 } = await supabase.storage
+      .from("eventos")
+      .upload(fallbackPath, webpBuffer, {
+        contentType: "image/webp",
+        cacheControl: "31536000",
+        upsert: false,
+      });
+
+    if (!err2) {
+      const { data } = supabase.storage.from("eventos").getPublicUrl(fallbackPath);
+      return { success: true, url: data.publicUrl };
+    }
+
+    return { success: false, error: err2?.message || "No se pudo subir la imagen al Storage." };
   } catch (err: any) {
     return { success: false, error: err?.message || "Error al importar imagen." };
+  }
+}
+
+/**
+ * Server Action para importar concurrentemente un lote de imágenes externas (Booking/Airbnb),
+ * convirtiéndolas a WebP en Supabase Storage sin bloquear la UI ni tocar la base de datos.
+ */
+export async function importarLoteImagenesHospedajeAction(
+  urls: string[]
+): Promise<{ success: boolean; mapeo: Record<string, string>; procesadas: number }> {
+  try {
+    const mapeo: Record<string, string> = {};
+    const urlsUnicas = Array.from(new Set(urls)).slice(0, 20);
+
+    const resultados = await Promise.allSettled(
+      urlsUnicas.map(async (url) => {
+        const res = await importarImagenDesdeUrlAction(url);
+        return { original: url, res };
+      })
+    );
+
+    let procesadas = 0;
+    for (const item of resultados) {
+      if (item.status === "fulfilled" && item.value.res.success && item.value.res.url) {
+        mapeo[item.value.original] = item.value.res.url;
+        procesadas++;
+      }
+    }
+
+    return { success: true, mapeo, procesadas };
+  } catch (err: any) {
+    return { success: false, mapeo: {}, procesadas: 0 };
   }
 }
 
