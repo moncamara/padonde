@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { procesarUrlsFotosAction } from "./actions";
 
 export interface ModalCargarJsonProps {
   isOpen: boolean;
@@ -100,6 +101,91 @@ export function ModalCargarJson({
       }
 
       setIsEjecutando(true);
+
+      // 1. Extraer TODAS las URLs de fotos que vengan en el JSON
+      const todasLasFotos: string[] = [];
+      if (parsed.imagenPortadaUrl && typeof parsed.imagenPortadaUrl === "string") {
+        todasLasFotos.push(parsed.imagenPortadaUrl.trim());
+      }
+      if (parsed.imagen_url && typeof parsed.imagen_url === "string") {
+        todasLasFotos.push(parsed.imagen_url.trim());
+      }
+      if (parsed.foto && typeof parsed.foto === "string") {
+        todasLasFotos.push(parsed.foto.trim());
+      }
+      if (Array.isArray(parsed.galeriaFotos)) {
+        parsed.galeriaFotos.forEach((f: any) => {
+          if (typeof f === "string" && f.trim()) todasLasFotos.push(f.trim());
+        });
+      }
+      if (Array.isArray(parsed.fotos)) {
+        parsed.fotos.forEach((f: any) => {
+          if (typeof f === "string" && f.trim()) todasLasFotos.push(f.trim());
+        });
+      }
+      if (Array.isArray(parsed.habitaciones)) {
+        parsed.habitaciones.forEach((hab: any) => {
+          if (Array.isArray(hab.fotos)) {
+            hab.fotos.forEach((f: any) => {
+              if (typeof f === "string" && f.trim()) todasLasFotos.push(f.trim());
+            });
+          }
+        });
+      }
+
+      // 2. Identificar URLs externas (http/https y que no sean de Supabase Storage)
+      const externas = Array.from(new Set(todasLasFotos)).filter(
+        (u) =>
+          (u.startsWith("http://") || u.startsWith("https://")) &&
+          !u.includes("supabase.co") &&
+          !u.startsWith("blob:")
+      );
+
+      // 3. Procesar lote con procesarUrlsFotosAction para subirlas a Supabase Storage
+      if (externas.length > 0) {
+        try {
+          const res = await procesarUrlsFotosAction(externas);
+          if (res.success && res.mapeo && Object.keys(res.mapeo).length > 0) {
+            const mapeo = res.mapeo;
+            const resolverUrl = (url: string) => {
+              if (!url) return url;
+              const limpia = url.split("?")[0].trim();
+              return mapeo[url] || mapeo[limpia] || url;
+            };
+
+            // Reemplazar portada
+            if (parsed.imagenPortadaUrl) parsed.imagenPortadaUrl = resolverUrl(parsed.imagenPortadaUrl);
+            if (parsed.imagen_url) parsed.imagen_url = resolverUrl(parsed.imagen_url);
+            if (parsed.foto) parsed.foto = resolverUrl(parsed.foto);
+
+            // Reemplazar galerías
+            if (Array.isArray(parsed.galeriaFotos)) {
+              parsed.galeriaFotos = parsed.galeriaFotos.map((f: any) =>
+                typeof f === "string" ? resolverUrl(f) : f
+              );
+            }
+            if (Array.isArray(parsed.fotos)) {
+              parsed.fotos = parsed.fotos.map((f: any) =>
+                typeof f === "string" ? resolverUrl(f) : f
+              );
+            }
+
+            // Reemplazar fotos de cada habitación directamente en el JSON parsed
+            if (Array.isArray(parsed.habitaciones)) {
+              parsed.habitaciones = parsed.habitaciones.map((hab: any) => ({
+                ...hab,
+                fotos: Array.isArray(hab.fotos)
+                  ? hab.fotos.map((f: any) => (typeof f === "string" ? resolverUrl(f) : f))
+                  : [],
+              }));
+            }
+          }
+        } catch (errFoto) {
+          console.warn("Advertencia procesando fotos externas del JSON en modal:", errFoto);
+        }
+      }
+
+      // 4. Inyectar datos en el formulario con las URLs definitivas de Supabase
       await onAplicar(parsed);
       onClose();
     } catch (err: any) {

@@ -313,54 +313,10 @@ export function ModalEditarHospedaje({
     if (parsed.googleReviewUrl !== undefined) setGoogleReviewUrl(parsed.googleReviewUrl);
     if (parsed.imagenPortadaUrl !== undefined) setImagenUrl(parsed.imagenPortadaUrl);
 
-    // 2. Extraer todas las fotos (portada y habitaciones) para optimización previa en Supabase Storage
-    const todasLasFotos: string[] = [];
-    if (parsed.imagenPortadaUrl && typeof parsed.imagenPortadaUrl === "string") {
-      todasLasFotos.push(parsed.imagenPortadaUrl.trim());
-    }
-    if (Array.isArray(parsed.habitaciones)) {
-      parsed.habitaciones.forEach((hab: any) => {
-        if (Array.isArray(hab.fotos)) {
-          hab.fotos.forEach((f: any) => {
-            if (typeof f === "string" && f.trim()) todasLasFotos.push(f.trim());
-          });
-        }
-      });
-    }
-
-    const unicas = Array.from(new Set(todasLasFotos));
-    const soloSupabase = unicas.filter((u) => u.includes("supabase.co"));
-    const externas = unicas.filter(
-      (u) => !u.includes("supabase.co") && !u.startsWith("blob:")
-    );
-
-    let mapeoFotos: Record<string, string> = {};
-
-    // 3. Procesar lote de fotos externas antes de hidratar el estado de habitaciones y cerrar el modal
-    if (externas.length > 0) {
-      setIsProcesandoFotos(true);
-      setMensajeImportacion(`⚡ Optimizando ${externas.length} foto(s) a WebP en Supabase Storage...`);
-      try {
-        const res = await procesarUrlsFotosAction(externas);
-        if (res.success && res.mapeo && Object.keys(res.mapeo).length > 0) {
-          mapeoFotos = res.mapeo;
-        }
-      } catch (errFoto) {
-        console.warn("Advertencia procesando fotos externas del JSON:", errFoto);
-      } finally {
-        setIsProcesandoFotos(false);
-      }
-    }
-
-    // 4. Inyectar portada con URL definitiva de Supabase si fue procesada
-    if (parsed.imagenPortadaUrl) {
-      const portadaFinal = mapeoFotos[parsed.imagenPortadaUrl.trim()] || parsed.imagenPortadaUrl;
-      setImagenUrl(portadaFinal);
-    }
-
-    // 5. Inyectar habitaciones dinámicamente con URLs definitivas de Supabase en cada habitación
+    // 2. Inyectar habitaciones dinámicamente con sus fotos ya optimizadas en Supabase Storage
+    let habsMapeadas: any[] = habitaciones;
     if (Array.isArray(parsed.habitaciones) && parsed.habitaciones.length > 0) {
-      const habsMapeadas = parsed.habitaciones.map((hab: any, idx: number) => {
+      habsMapeadas = parsed.habitaciones.map((hab: any, idx: number) => {
         const badgesNormalizados = Array.isArray(hab.badges)
           ? hab.badges.map((b: any) => {
               if (typeof b === "string") {
@@ -380,11 +336,9 @@ export function ModalEditarHospedaje({
               { icono: "✨", texto: "Confort" },
             ];
 
-        const fotosSupabase = (Array.isArray(hab.fotos) ? hab.fotos : []).map((f: any) => {
-          if (typeof f !== "string") return f;
-          const fTrim = f.trim();
-          return mapeoFotos[fTrim] || fTrim;
-        });
+        const fotosHab = Array.isArray(hab.fotos)
+          ? hab.fotos.filter((f: any) => typeof f === "string" && f.trim())
+          : [];
 
         return {
           id: hab.id || `hab-${Date.now()}-${idx}`,
@@ -392,25 +346,24 @@ export function ModalEditarHospedaje({
           descripcion: hab.descripcion || "",
           precio_noche_cop: Number(hab.precio_noche_cop) || 0,
           capacidad_max: Number(hab.capacidad_max) || 2,
-          fotos: fotosSupabase,
+          fotos: fotosHab,
           badges: badgesNormalizados,
         };
       });
       setHabitaciones(habsMapeadas);
     }
 
-    // 6. Actualizar pool de fotos importadas en el estado del hospedaje
-    const nuevasSubidas = Object.values(mapeoFotos);
-    setFotosImportadas((prev) =>
-      Array.from(new Set([...prev, ...soloSupabase, ...nuevasSubidas]))
-    );
+    // 3. Registrar fotos importadas en el pool del hospedaje
+    const fotosNuevas: string[] = [];
+    if (parsed.imagenPortadaUrl) fotosNuevas.push(parsed.imagenPortadaUrl);
+    habsMapeadas.forEach((h: any) => {
+      (h.fotos || []).forEach((f: string) => {
+        if (f) fotosNuevas.push(f);
+      });
+    });
+    setFotosImportadas((prev) => Array.from(new Set([...prev, ...fotosNuevas])));
 
-    if (nuevasSubidas.length > 0) {
-      setMensajeImportacion(`🎉 ${nuevasSubidas.length} fotos listas en PaDónde Storage.`);
-      setTimeout(() => setMensajeImportacion(null), 4000);
-    }
-
-    setMensajeExitoJson("🎉 Datos y habitaciones cargados desde JSON. Fotos listas en Supabase.");
+    setMensajeExitoJson("🎉 Datos y habitaciones cargados desde JSON con fotos listas en Supabase.");
     setTimeout(() => setMensajeExitoJson(null), 6000);
   };
 

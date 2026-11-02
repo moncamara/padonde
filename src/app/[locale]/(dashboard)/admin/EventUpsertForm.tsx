@@ -683,39 +683,13 @@ export function EventUpsertForm({
       setTieneFechaFin(true);
     }
 
-    // Procesamiento de fotos externas
-    const fotos: string[] = [];
+    // Fotos ya optimizadas y alojadas en Supabase Storage desde ModalCargarJson
     const portada = parsed.imagenPortadaUrl || parsed.imagen_url || parsed.foto;
-    if (portada) fotos.push(portada);
-    if (Array.isArray(parsed.galeriaFotos)) {
-      parsed.galeriaFotos.forEach((f: string) => f && fotos.push(f));
-    }
-    if (Array.isArray(parsed.fotos)) {
-      parsed.fotos.forEach((f: string) => f && fotos.push(f));
-    }
-
-    if (portada && portada.includes("supabase.co")) {
+    if (portada) {
       setPreviewFoto(portada);
     }
-
-    const externas = Array.from(new Set(fotos)).filter(
-      (u) => !u.includes("supabase.co") && !u.startsWith("blob:")
-    );
-
-    if (externas.length > 0) {
-      setIsProcesandoFotos(true);
-      try {
-        const res = await procesarUrlsFotosAction(externas);
-        if (res.success && res.mapeo) {
-          if (portada && res.mapeo[portada]) {
-            setPreviewFoto(res.mapeo[portada]);
-          }
-        }
-      } catch (errFoto) {
-        console.warn("Advertencia procesando fotos de JSON evento:", errFoto);
-      } finally {
-        setIsProcesandoFotos(false);
-      }
+    if (Array.isArray(parsed.galeriaFotos) && parsed.galeriaFotos.length > 0) {
+      setGaleriaFotos(parsed.galeriaFotos.filter((f: any) => typeof f === "string" && f.trim()));
     }
 
     setMensajeExitoJson("🎉 Datos del evento pre-poblados desde JSON. Revisa y publica cuando estés listo.");
