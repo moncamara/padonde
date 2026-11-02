@@ -13,10 +13,12 @@ import {
   esHoy,
   getEtiquetaHorario,
   extraerRecurrencia,
+  proyectarProximaFechaEvento,
 } from "@/lib/utils";
 import { ToggleActivoButton } from "./ToggleActivoButton";
 import { ToggleDestacadoButton } from "./ToggleDestacadoButton";
 import { ModalEditarEvento } from "./ModalEditarEvento";
+import { ModalProyectarEvento } from "./ModalProyectarEvento";
 import { ModalNotificarAliado, type EventoNotificarData } from "./ModalNotificarAliado";
 import { ModalAsistenteEvento } from "./ModalAsistenteEvento";
 import type { AliadoSimple } from "@/lib/eventoParser";
@@ -74,6 +76,8 @@ export function AdminEventList({
   zonas = [
     { id: "1", nombre: "Minca", slug: "minca" },
     { id: "2", nombre: "Mendihuaca", slug: "mendihuaca" },
+    { id: "3", nombre: "Tayrona", slug: "tayrona" },
+    { id: "4", nombre: "Taganga", slug: "taganga" },
   ],
   locale,
 }: AdminEventListProps) {
@@ -83,8 +87,27 @@ export function AdminEventList({
   const [filtroZona, setFiltroZona] = useState<string>("todas");
   const [busqueda, setBusqueda] = useState(searchParams.get("busqueda") || "");
   const [eventoAEditar, setEventoAEditar] = useState<EventoAdminItem | null>(null);
+  const [eventoAProyectar, setEventoAProyectar] = useState<EventoAdminItem | null>(null);
   const [eventoANotificar, setEventoANotificar] = useState<EventoNotificarData | null>(null);
   const [asistenteAbierto, setAsistenteAbierto] = useState(false);
+
+  function handleProyectarFecha(ev: EventoAdminItem) {
+    const { fechaInicio, fechaFin } = proyectarProximaFechaEvento(
+      ev.fecha_inicio,
+      ev.fecha_fin,
+      ev.descripcion
+    );
+
+    const borradorProyectado: EventoAdminItem = {
+      ...ev,
+      id: "",
+      fecha_inicio: fechaInicio,
+      fecha_fin: fechaFin,
+      activo: false,
+    };
+
+    setEventoAProyectar(borradorProyectado);
+  }
 
   useEffect(() => {
     const q = searchParams.get("busqueda");
@@ -200,6 +223,18 @@ export function AdminEventList({
               label: "Mendihuaca",
               icon: "🌊",
               count: listaEventos.filter((e) => e.zonaSlug === "mendihuaca").length,
+            },
+            {
+              id: "tayrona",
+              label: "Tayrona",
+              icon: "🌴",
+              count: listaEventos.filter((e) => e.zonaSlug === "tayrona").length,
+            },
+            {
+              id: "taganga",
+              label: "Taganga",
+              icon: "🤿",
+              count: listaEventos.filter((e) => e.zonaSlug === "taganga").length,
             },
           ].map((z) => (
             <button
@@ -360,10 +395,20 @@ export function AdminEventList({
                       "text-[10px] px-2 py-0.5 rounded-full font-medium border shrink-0",
                       ev.zonaSlug === "mendihuaca"
                         ? "bg-cyan-50 text-cyan-800 border-cyan-200"
+                        : ev.zonaSlug === "tayrona"
+                        ? "bg-amber-50 text-amber-800 border-amber-200"
+                        : ev.zonaSlug === "taganga"
+                        ? "bg-sky-50 text-sky-800 border-sky-200"
                         : "bg-emerald-50 text-emerald-800 border-emerald-200",
                     ].join(" ")}
                   >
-                    {ev.zonaSlug === "mendihuaca" ? "🌊 Mendihuaca" : "🌿 Minca"}
+                    {ev.zonaSlug === "mendihuaca"
+                      ? "🌊 Mendihuaca"
+                      : ev.zonaSlug === "tayrona"
+                      ? "🌴 Tayrona"
+                      : ev.zonaSlug === "taganga"
+                      ? "🤿 Taganga"
+                      : "🌿 Minca"}
                   </span>
 
                   {esEventoDeHoy && tabActiva === "vigentes" && (
@@ -542,6 +587,18 @@ export function AdminEventList({
                     </button>
                   )}
 
+                  {ev.tipo !== "hospedaje" && (
+                    <button
+                      type="button"
+                      onClick={() => handleProyectarFecha(ev)}
+                      className="text-xs text-amber-800 hover:text-amber-950 px-2.5 py-1.5 rounded-xl border border-amber-300/80 bg-amber-50/80 hover:bg-amber-100 transition-colors flex items-center gap-1 font-semibold font-sans shadow-2xs cursor-pointer"
+                      title="Proyectar próxima fecha semanal para este aliado (crea un borrador inactivo con datos precargados)"
+                    >
+                      <span>🗓️</span>
+                      <span className="font-sans">Proyectar Próxima Fecha</span>
+                    </button>
+                  )}
+
                   <Link
                     href={`/${ev.zonaSlug || "minca"}/${ev.id}`}
                     target="_blank"
@@ -612,6 +669,29 @@ export function AdminEventList({
           }}
           onDeleted={(idEliminado) => {
             setListaEventos((prev) => prev.filter((e) => e.id !== idEliminado));
+          }}
+        />
+      )}
+
+      {/* Modal para Proyectar Próxima Fecha (Aliados Recurrentes) */}
+      {eventoAProyectar && (
+        <ModalProyectarEvento
+          eventoProyectado={eventoAProyectar}
+          negocios={negocios}
+          onClose={() => setEventoAProyectar(null)}
+          onSuccess={(res) => {
+            setEventoAProyectar(null);
+            if (res?.eventId) {
+              setListaEventos((prev) => [
+                {
+                  ...eventoAProyectar,
+                  id: res.eventId,
+                  activo: false,
+                },
+                ...prev,
+              ]);
+              setTabActiva("pausados");
+            }
           }}
         />
       )}

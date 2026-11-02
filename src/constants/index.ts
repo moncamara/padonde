@@ -27,18 +27,18 @@ export const ZONAS: ZonaConfig[] = [
     activa: true,
   },
   {
-    slug: "tairona",
-    nombre: "Parque Tairona",
-    nombreCorto: "Tairona",
-    descripcion: "Parque Nacional Natural Tayrona",
-    activa: false, // Se activa en Fase 2
+    slug: "tayrona",
+    nombre: "Parque Tayrona",
+    nombreCorto: "Tayrona",
+    descripcion: "Parque Nacional Natural Tayrona, playas vírgenes y naturaleza",
+    activa: false, // Fase 2 — En preparación interna en admin
   },
   {
     slug: "taganga",
     nombre: "Taganga",
     nombreCorto: "Taganga",
     descripcion: "Bahía de pescadores, buceo en arrecifes y atardeceres mágicos en el Caribe",
-    activa: false, // Fase 2
+    activa: false, // Fase 2 — En preparación interna en admin
   },
   {
     slug: "palomino",
@@ -56,8 +56,8 @@ export const ZONAS: ZonaConfig[] = [
   },
 ];
 
-export const getZona = (slug: ZonaSlug) =>
-  ZONAS.find((z) => z.slug === slug) ?? null;
+export const getZona = (slug: string) =>
+  ZONAS.find((z) => z.slug === slug || (slug === "tairona" && z.slug === "tayrona")) ?? null;
 
 // ─── Categorías ───────────────────────────────────────────────────────────────
 

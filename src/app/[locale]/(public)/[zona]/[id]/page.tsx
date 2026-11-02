@@ -4,6 +4,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/routing";
 import { getEventoById } from "@/lib/supabase/queries";
 import { getCategoria, getCategoriaCTA, getZona, whatsappLink } from "@/constants";
+import { esZonaEnPreview } from "@/lib/preview";
 import {
   formatFecha,
   formatHora,
@@ -53,10 +54,16 @@ export async function generateStaticParams() {
 
     if (!eventos || eventos.length === 0) return [];
 
-    return eventos.map((ev: any) => ({
-      zona: ev.zonas?.slug || (ev.zona_id === "zona-mendihuaca" ? "mendihuaca" : "minca"),
-      id: ev.id,
-    }));
+    return eventos
+      .filter((ev: any) => {
+        const slug = ev.zonas?.slug || (ev.zona_id === "zona-mendihuaca" ? "mendihuaca" : "minca");
+        const zona = getZona(slug);
+        return Boolean(zona?.activa);
+      })
+      .map((ev: any) => ({
+        zona: ev.zonas?.slug || (ev.zona_id === "zona-mendihuaca" ? "mendihuaca" : "minca"),
+        id: ev.id,
+      }));
   } catch {
     return [];
   }
@@ -121,12 +128,12 @@ export async function generateMetadata({ params }: EventoDetailPageProps): Promi
 export default async function EventoDetailPage({ params }: EventoDetailPageProps) {
   const { locale, zona: zonaSlug, id } = await params;
   const zona = getZona(zonaSlug);
-
-  if (!zona || !zona.activa) notFound();
+  const preview = Boolean(zona && !zona.activa && esZonaEnPreview(zona.slug));
+  if (!zona || (!zona.activa && !preview)) notFound();
 
   setRequestLocale(locale);
 
-  const rawEvento = await getEventoById(id);
+  const rawEvento = await getEventoById(id, { preview });
   if (!rawEvento) notFound();
 
   const evento = await getEventoTraducidoAsync(rawEvento, locale);

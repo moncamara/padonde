@@ -29,6 +29,14 @@ export function AdminEsencialesList({
   zonas,
 }: AdminEsencialesListProps) {
   const router = useRouter();
+
+  // Resuelve el slug de la zona a partir del zona_id (UUID real de Supabase o id legado "zona-xxx")
+  const slugDeZona = (zonaId?: string | null): string => {
+    const encontrada = zonas.find((z) => z.id === zonaId);
+    if (encontrada) return encontrada.slug;
+    if (zonaId?.startsWith("zona-")) return zonaId.replace("zona-", "");
+    return "minca";
+  };
   const [servicios, setServicios] =
     useState<ServicioEsencial[]>(serviciosIniciales);
   const [servicioEditando, setServicioEditando] =
@@ -47,7 +55,7 @@ export function AdminEsencialesList({
 
   const handleCopiarEnlaceFicha = async (servicio: ServicioEsencial) => {
     const zonaSlug =
-      servicio.zona_id === "zona-mendihuaca" ? "mendihuaca" : "minca";
+      slugDeZona(servicio.zona_id);
     const url = `https://www.padonde.lat/es/${zonaSlug}?tab=servicios#servicio-${servicio.id}`;
     try {
       await navigator.clipboard.writeText(url);
@@ -68,7 +76,7 @@ export function AdminEsencialesList({
 
     startTransition(async () => {
       const zonaSlug =
-        servicio.zona_id === "zona-mendihuaca" ? "mendihuaca" : "minca";
+        slugDeZona(servicio.zona_id);
       const res = await toggleActivoServicioEsencialAction(
         servicio.id,
         nuevoEstado,
@@ -100,7 +108,7 @@ export function AdminEsencialesList({
 
     startTransition(async () => {
       const zonaSlug =
-        servicio.zona_id === "zona-mendihuaca" ? "mendihuaca" : "minca";
+        slugDeZona(servicio.zona_id);
       const res = await toggleBotonWhatsappServicioEsencialAction(
         servicio.id,
         nuevoEstado,
@@ -131,7 +139,7 @@ export function AdminEsencialesList({
 
     startTransition(async () => {
       const zonaSlug =
-        servicio.zona_id === "zona-mendihuaca" ? "mendihuaca" : "minca";
+        slugDeZona(servicio.zona_id);
       const res = await eliminarServicioEsencialAction(servicio.id, zonaSlug);
       if (!res.success) {
         // Revertir
@@ -149,8 +157,7 @@ export function AdminEsencialesList({
         filtroCategoria === "todas" || s.categoria === filtroCategoria;
       const pasaZona =
         filtroZona === "todas" ||
-        (filtroZona === "minca" && s.zona_id !== "zona-mendihuaca") ||
-        (filtroZona === "mendihuaca" && s.zona_id === "zona-mendihuaca");
+        slugDeZona(s.zona_id) === filtroZona;
       const q = busqueda.trim().toLowerCase();
       const pasaBusqueda =
         !q ||
@@ -515,11 +522,7 @@ export function AdminEsencialesList({
         isOpen={servicioNotificando !== null}
         onClose={() => setServicioNotificando(null)}
         zonaNombre={
-          zonas.find((z) =>
-            servicioNotificando?.zona_id === "zona-mendihuaca"
-              ? z.slug === "mendihuaca"
-              : z.slug === "minca"
-          )?.nombre || "Minca"
+          zonas.find((z) => z.slug === slugDeZona(servicioNotificando?.zona_id))?.nombre || "Minca"
         }
       />
     </div>

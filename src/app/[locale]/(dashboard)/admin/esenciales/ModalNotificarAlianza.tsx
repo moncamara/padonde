@@ -58,7 +58,11 @@ export function ModalNotificarAlianza({
 }: ModalNotificarAlianzaProps) {
   if (!isOpen || !servicio) return null;
 
-  const zonaSlug = servicio.zona_id === "zona-mendihuaca" ? "mendihuaca" : "minca";
+  const zonaSlug = zonaNombre
+    ? zonaNombre.toLowerCase()
+    : servicio.zona_id?.startsWith("zona-")
+      ? servicio.zona_id.replace("zona-", "")
+      : "minca";
   const destino = zonaNombre || (zonaSlug === "mendihuaca" ? "Mendihuaca" : "Minca");
   const urlPublicacion = `https://www.padonde.lat/es/${zonaSlug}?tab=servicios#servicio-${servicio.id}`;
 

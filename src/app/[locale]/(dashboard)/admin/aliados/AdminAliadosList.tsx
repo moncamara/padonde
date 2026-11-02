@@ -248,7 +248,15 @@ export function AdminAliadosList({
   function generarEnlaceWhatsAppCobro(aliado: AliadoItem) {
     const cleanWa = cleanPhoneNumber(aliado.whatsapp);
     const est = getEstadoExpiracion(aliado);
-    const destinoNombre = aliado.zonaNombre || (aliado.zonaSlug === "mendihuaca" ? "Mendihuaca" : "Minca");
+    const destinoNombre =
+      aliado.zonaNombre ||
+      (aliado.zonaSlug === "mendihuaca"
+        ? "Mendihuaca"
+        : aliado.zonaSlug === "tayrona"
+        ? "Tayrona"
+        : aliado.zonaSlug === "taganga"
+        ? "Taganga"
+        : "Minca");
 
     const mensaje = generarMensajeCobro({
       nombre: aliado.nombre,
@@ -264,7 +272,15 @@ export function AdminAliadosList({
   // Copiar reporte al portapapeles
   function handleCopiarReporte(aliado: AliadoItem) {
     const est = getEstadoExpiracion(aliado);
-    const destinoNombre = aliado.zonaNombre || (aliado.zonaSlug === "mendihuaca" ? "Mendihuaca" : "Minca");
+    const destinoNombre =
+      aliado.zonaNombre ||
+      (aliado.zonaSlug === "mendihuaca"
+        ? "Mendihuaca"
+        : aliado.zonaSlug === "tayrona"
+        ? "Tayrona"
+        : aliado.zonaSlug === "taganga"
+        ? "Taganga"
+        : "Minca");
     const info = calcularPeriodoReporteAliado(aliado, metricasDinamicas, fechaCorteGA4);
 
     const estadoAlAire = info.esEventoPuntual
@@ -352,6 +368,18 @@ export function AdminAliadosList({
               label: "Mendihuaca",
               icon: "🌊",
               count: aliados.filter((a) => a.zonaSlug === "mendihuaca").length,
+            },
+            {
+              id: "tayrona",
+              label: "Tayrona",
+              icon: "🌴",
+              count: aliados.filter((a) => a.zonaSlug === "tayrona").length,
+            },
+            {
+              id: "taganga",
+              label: "Taganga",
+              icon: "🤿",
+              count: aliados.filter((a) => a.zonaSlug === "taganga").length,
             },
           ].map((z) => (
             <button
@@ -600,10 +628,20 @@ export function AdminAliadosList({
                       "text-[10px] px-2 py-0.5 rounded-full font-medium border shrink-0",
                       aliado.zonaSlug === "mendihuaca"
                         ? "bg-cyan-50 text-cyan-800 border-cyan-200"
+                        : aliado.zonaSlug === "tayrona"
+                        ? "bg-amber-50 text-amber-800 border-amber-200"
+                        : aliado.zonaSlug === "taganga"
+                        ? "bg-sky-50 text-sky-800 border-sky-200"
                         : "bg-emerald-50 text-emerald-800 border-emerald-200",
                     ].join(" ")}
                   >
-                    {aliado.zonaSlug === "mendihuaca" ? "🌊 Mendihuaca" : "🌿 Minca"}
+                    {aliado.zonaSlug === "mendihuaca"
+                      ? "🌊 Mendihuaca"
+                      : aliado.zonaSlug === "tayrona"
+                      ? "🌴 Tayrona"
+                      : aliado.zonaSlug === "taganga"
+                      ? "🤿 Taganga"
+                      : "🌿 Minca"}
                   </span>
 
                   {/* Badge de Google Maps si está configurado */}
@@ -982,7 +1020,13 @@ export function AdminAliadosList({
         const cleanWa = cleanPhoneNumber(reporteNegocio.whatsapp);
         const destinoNombre =
           reporteNegocio.zonaNombre ||
-          (reporteNegocio.zonaSlug === "mendihuaca" ? "Mendihuaca" : "Minca");
+          (reporteNegocio.zonaSlug === "mendihuaca"
+            ? "Mendihuaca"
+            : reporteNegocio.zonaSlug === "tayrona"
+            ? "Tayrona"
+            : reporteNegocio.zonaSlug === "taganga"
+            ? "Taganga"
+            : "Minca");
         const destinoUrl = `https://padonde.lat/es/${reporteNegocio.zonaSlug || "minca"}`;
 
         const infoPeriodo = calcularPeriodoReporteAliado(

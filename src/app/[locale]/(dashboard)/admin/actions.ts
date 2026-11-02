@@ -29,6 +29,7 @@ export interface AdminPublishInput {
   imageUrl?: string;
   videoUrl?: string;
   isFeatured?: boolean;
+  activo?: boolean;
   zonaSlug: string;
   googleReputacion?: {
     rating: number;
@@ -70,16 +71,37 @@ export async function adminPublishEventAction(
       return { success: false, error: "No autorizado. Debes iniciar sesión." };
     }
 
-    // 2. Obtener zona
-    const { data: zona, error: zonaError } = await supabase
+    // 2. Obtener zona (en admin se permite registrar sobre cualquier zona de la plataforma, activa o en preparación)
+    let { data: zona, error: zonaError } = await supabase
       .from("zonas")
-      .select("id")
+      .select("id, slug, activa")
       .eq("slug", input.zonaSlug)
-      .eq("activa", true)
-      .single();
+      .maybeSingle();
 
-    if (zonaError || !zona) {
-      return { success: false, error: "Zona no válida o inactiva." };
+    if (!zona) {
+      const nombresZonas: Record<string, string> = {
+        tayrona: "Tayrona",
+        taganga: "Taganga",
+        minca: "Minca",
+        mendihuaca: "Mendihuaca",
+        palomino: "Palomino",
+      };
+      const nombreZona = nombresZonas[input.zonaSlug] || input.zonaSlug;
+      const { data: nuevaZona } = await supabase
+        .from("zonas")
+        .insert({
+          nombre: nombreZona,
+          slug: input.zonaSlug,
+          activa: false, // Inactiva por defecto para aislar del público
+          descripcion: `Destino ${nombreZona} en la Costa Caribe Colombiana`,
+        })
+        .select("id, slug, activa")
+        .single();
+      zona = nuevaZona;
+    }
+
+    if (!zona) {
+      return { success: false, error: "Zona no válida o no se pudo registrar." };
     }
 
     // 3. Buscar o crear negocio
@@ -226,7 +248,7 @@ export async function adminPublishEventAction(
       video_url: input.videoUrl || null,
       destacado: Boolean(input.isFeatured),
       tiene_boleteria: false,
-      activo: true,
+      activo: input.activo !== undefined ? Boolean(input.activo) : true,
       metadata_hospedaje:
         input.googleReputacion ||
         (input.galeriaFotos && input.galeriaFotos.length > 0) ||
@@ -1418,15 +1440,36 @@ export async function guardarHospedajeAction(input: GuardarHospedajeInput) {
     }
 
     // 1. Obtener ID de la zona
-    const { data: zona, error: zonaError } = await supabase
+    let { data: zona } = await supabase
       .from("zonas")
-      .select("id")
+      .select("id, slug, activa")
       .eq("slug", input.zonaSlug)
-      .eq("activa", true)
-      .single();
+      .maybeSingle();
 
-    if (zonaError || !zona) {
-      return { success: false, error: "Zona no válida o inactiva." };
+    if (!zona) {
+      const nombresZonas: Record<string, string> = {
+        tayrona: "Tayrona",
+        taganga: "Taganga",
+        minca: "Minca",
+        mendihuaca: "Mendihuaca",
+        palomino: "Palomino",
+      };
+      const nombreZona = nombresZonas[input.zonaSlug] || input.zonaSlug;
+      const { data: nuevaZona } = await supabase
+        .from("zonas")
+        .insert({
+          nombre: nombreZona,
+          slug: input.zonaSlug,
+          activa: false,
+          descripcion: `Destino ${nombreZona} en la Costa Caribe Colombiana`,
+        })
+        .select("id, slug, activa")
+        .single();
+      zona = nuevaZona;
+    }
+
+    if (!zona) {
+      return { success: false, error: "Zona geográfica no válida o no registrada." };
     }
 
     // 2. Buscar o crear negocio (aliado de hospedaje) con prevención estricta de duplicados
@@ -1603,14 +1646,35 @@ export async function guardarServicioEsencialAction(
     }
 
     // 1. Obtener ID de la zona
-    const { data: zona } = await supabase
+    let { data: zona } = await supabase
       .from("zonas")
-      .select("id")
+      .select("id, slug, activa")
       .eq("slug", input.zonaSlug)
-      .eq("activa", true)
-      .single();
+      .maybeSingle();
 
-    const zonaId = zona?.id || (input.zonaSlug === "mendihuaca" ? "zona-mendihuaca" : "zona-minca");
+    if (!zona) {
+      const nombresZonas: Record<string, string> = {
+        tayrona: "Tayrona",
+        taganga: "Taganga",
+        minca: "Minca",
+        mendihuaca: "Mendihuaca",
+        palomino: "Palomino",
+      };
+      const nombreZona = nombresZonas[input.zonaSlug] || input.zonaSlug;
+      const { data: nuevaZona } = await supabase
+        .from("zonas")
+        .insert({
+          nombre: nombreZona,
+          slug: input.zonaSlug,
+          activa: false,
+          descripcion: `Destino ${nombreZona} en la Costa Caribe Colombiana`,
+        })
+        .select("id, slug, activa")
+        .single();
+      zona = nuevaZona;
+    }
+
+    const zonaId = zona?.id || (input.zonaSlug === "mendihuaca" ? "zona-mendihuaca" : input.zonaSlug === "tayrona" ? "zona-tayrona" : input.zonaSlug === "taganga" ? "zona-taganga" : "zona-minca");
     const cleanPhone = input.whatsapp.replace(/\D/g, "");
 
     const imagenesValidas = (input.imagenes || []).map((img) => img.trim()).filter(Boolean);
@@ -1939,7 +2003,7 @@ Analiza este texto bruto (mensaje de WhatsApp, publicación de Instagram o afich
 "${input.textoBruto.replace(/"/g, '\\"')}"
 
 Comercio / Aliado referencial: ${input.businessName || "No especificado"}
-Zona: ${input.zonaSlug === "mendihuaca" ? "Mendihuaca (Playa, Surf, Río)" : "Minca (Montaña, Selva, Café)"}
+Zona: ${input.zonaSlug === "mendihuaca" ? "Mendihuaca (Playa, Surf, Río)" : input.zonaSlug === "tayrona" ? "Tayrona (Parque Nacional, Playas vírgenes, Senderos tropicales)" : input.zonaSlug === "taganga" ? "Taganga (Bahía de pescadores, Buceo, Atardeceres caribeños)" : "Minca (Montaña, Selva, Café)"}
 
 Instrucciones de Redacción y Extracción:
 1. Redacción cautivadora: No uses clichés genéricos. Transmite la atmósfera auténtica de la Sierra Nevada (ambiente bohemio, relajado, risas, tragos de autor, buena música, naturaleza).
@@ -3121,4 +3185,110 @@ Responde ÚNICAMENTE en JSON válido con el siguiente formato exacto (sin bloque
     return { success: false, error: err?.message || "Error al sincronizar reputación de Google con Gemini." };
   }
 }
+
+export interface VariarDescripcionGeminiInput {
+  titulo: string;
+  descripcionActual: string;
+  businessName?: string;
+  zonaSlug?: string;
+}
+
+export interface VariarDescripcionGeminiResult {
+  success: boolean;
+  descripcionVariada?: string;
+  error?: string;
+}
+
+/**
+ * Server Action que reescribe o genera una variación fresca de la descripción de un evento recurrente
+ * manteniendo la esencia, el tono festivo y los datos clave para la nueva semana.
+ */
+export async function variarDescripcionEventoGeminiAction(
+  input: VariarDescripcionGeminiInput
+): Promise<VariarDescripcionGeminiResult> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  const descLimpia = input.descripcionActual.trim();
+  if (!descLimpia) {
+    return { success: false, error: "Ingresa o ten una descripción previa para poder generar una variación." };
+  }
+
+  if (!apiKey) {
+    // Modo resiliencia si la clave no está presente en desarrollo local
+    const frasesApertura = [
+      "¡Llegó la semana de fiesta y buena vibra en la Sierra! 🌴✨",
+      "¡Nueva semana, nuevo parche imperdible en la montaña! 🎶🍹",
+      "¡Volvemos con toda la energía este fin de semana! 🌿✨",
+      "¡Se armó el parche de la semana! Prepárate para una noche inolvidable 🔥🍹",
+    ];
+    const aperturaAleatoria = frasesApertura[Math.floor(Math.random() * frasesApertura.length)];
+    return {
+      success: true,
+      descripcionVariada: `${aperturaAleatoria}\n\n${descLimpia}`,
+    };
+  }
+
+  try {
+    const prompt = `Eres el editor y copywriter de "PaDónde", la plataforma de eventos y experiencias de Minca y la Sierra Nevada de Santa Marta (Colombia).
+Tu tarea es tomar la descripción base de un evento recurrente/semanal de nuestro aliado ("${input.businessName || "Aliado PaDónde"}") y generar una variación fresca, festiva y cautivadora para la cartelera de esta nueva semana.
+
+Título del evento: "${input.titulo || "Evento Semanal"}"
+Zona: ${input.zonaSlug === "mendihuaca" ? "Mendihuaca (Playa, Surf, Río)" : input.zonaSlug === "tayrona" ? "Tayrona (Parque Nacional, Playas vírgenes, Naturaleza tropical)" : input.zonaSlug === "taganga" ? "Taganga (Bahía de pescadores, Buceo, Atardeceres caribeños)" : "Minca (Montaña, Selva, Café)"}
+Descripción original:
+"${descLimpia.replace(/"/g, '\\"')}"
+
+Instrucciones indispensables:
+1. Mantén la esencia, el tipo de experiencia, el lugar y los datos clave (ofertas, horarios o temáticas esenciales).
+2. Prohibido usar clichés corporativos ("un evento ideal"). Usa un tono festivo, playero o de montaña, cálido y divertido dirigido a mochileros y turistas.
+3. Varía el gancho inicial y la invitación para que se sienta como una cita renovada e imperdible esta semana.
+4. Incluye de 3 a 5 emojis vibrantes bien distribuidos.
+5. Si la descripción original contiene un comentario de metadato de recurrencia como <!--recurrente:...-->, presérvalo intacto al final del texto.
+6. Responde ÚNICAMENTE con el texto de la nueva descripción (sin comillas alrededor, sin títulos adicionales, sin explicaciones ni formato markdown de bloque de código).`;
+
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+      }
+    );
+
+    if (!res.ok) {
+      // Fallback a gemini-flash-lite-latest si 2.5 no responde
+      const resFallback = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+        }
+      );
+      if (!resFallback.ok) {
+        const errData = await resFallback.json().catch(() => null);
+        return { success: false, error: errData?.error?.message || "Error al conectar con el asistente de IA." };
+      }
+      const dataFallback = await resFallback.json();
+      const rawText = dataFallback?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!rawText) return { success: false, error: "Respuesta vacía de IA." };
+      return { success: true, descripcionVariada: rawText.trim() };
+    }
+
+    const data = await res.json();
+    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!rawText) {
+      return { success: false, error: "Respuesta vacía de IA." };
+    }
+
+    return {
+      success: true,
+      descripcionVariada: rawText.trim(),
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err?.message || "Error al generar la variación de texto.",
+    };
+  }
+}
+
 

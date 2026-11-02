@@ -244,24 +244,82 @@ export interface RecurrenciaConfig {
 
 /**
  * Extrae la configuración de días de repetición embebida en la descripción.
+ * Soporta formato canónico numérico (<!--recurrente:0,1,2,3,4,5,6-->)
+ * y variantes descriptivas en lenguaje natural (ej: <!--recurrente: lunes a domingo ... excepto los domingos-->).
  */
 export function extraerRecurrencia(descripcion?: string | null): RecurrenciaConfig {
   if (!descripcion) return { esRecurrente: false, dias: [] };
-  const match = descripcion.match(/<!--recurrente:([0-6,]+)-->/);
-  if (!match) return { esRecurrente: false, dias: [] };
-  const dias = match[1]
-    .split(",")
-    .map((n) => parseInt(n.trim(), 10))
-    .filter((n) => !isNaN(n) && n >= 0 && n <= 6);
-  return { esRecurrente: dias.length > 0, dias };
+
+  // 1. Coincidencia con formato numérico canónico (ej: <!--recurrente:0,1,2,3,4,5,6-->)
+  const matchNumerico = descripcion.match(/<!--\s*recurrente:([0-6,\s]+)-->/i);
+  if (matchNumerico) {
+    const dias = matchNumerico[1]
+      .split(",")
+      .map((n) => parseInt(n.trim(), 10))
+      .filter((n) => !isNaN(n) && n >= 0 && n <= 6);
+    if (dias.length > 0) {
+      return { esRecurrente: true, dias: [...new Set(dias)].sort() };
+    }
+  }
+
+  // 2. Coincidencia con comentarios de recurrencia en texto natural
+  const matchTexto = descripcion.match(/<!--\s*recurrente:([\s\S]*?)-->/i);
+  if (matchTexto) {
+    const contenido = matchTexto[1].toLowerCase();
+    const diasDetectados = new Set<number>();
+
+    const todosLosDias =
+      contenido.includes("lunes a domingo") ||
+      contenido.includes("diario") ||
+      contenido.includes("todos los dias") ||
+      contenido.includes("todos los días");
+
+    const finesDeSemana =
+      contenido.includes("fines de semana") ||
+      contenido.includes("fin de semana");
+
+    if (todosLosDias) {
+      [0, 1, 2, 3, 4, 5, 6].forEach((d) => diasDetectados.add(d));
+    } else if (finesDeSemana) {
+      [5, 6, 0].forEach((d) => diasDetectados.add(d));
+    } else {
+      if (contenido.includes("lunes")) diasDetectados.add(1);
+      if (contenido.includes("martes")) diasDetectados.add(2);
+      if (contenido.includes("miercoles") || contenido.includes("miércoles")) diasDetectados.add(3);
+      if (contenido.includes("jueves")) diasDetectados.add(4);
+      if (contenido.includes("viernes")) diasDetectados.add(5);
+      if (contenido.includes("sabado") || contenido.includes("sábado")) diasDetectados.add(6);
+      if (contenido.includes("domingo")) diasDetectados.add(0);
+    }
+
+    // Manejo de excepciones (ej: "excepto los domingos", "excepto domingos", "menos domingos")
+    if (contenido.includes("excepto") || contenido.includes("menos")) {
+      if (contenido.includes("domingo")) diasDetectados.delete(0);
+      if (contenido.includes("lunes")) diasDetectados.delete(1);
+      if (contenido.includes("martes")) diasDetectados.delete(2);
+      if (contenido.includes("miercoles") || contenido.includes("miércoles")) diasDetectados.delete(3);
+      if (contenido.includes("jueves")) diasDetectados.delete(4);
+      if (contenido.includes("viernes")) diasDetectados.delete(5);
+      if (contenido.includes("sabado") || contenido.includes("sábado")) diasDetectados.delete(6);
+    }
+
+    if (diasDetectados.size > 0) {
+      return { esRecurrente: true, dias: Array.from(diasDetectados).sort() };
+    }
+  }
+
+  return { esRecurrente: false, dias: [] };
 }
 
 /**
- * Limpia la descripción eliminando cualquier metadato técnico de recurrencia.
+ * Limpia la descripción eliminando cualquier metadato técnico o comentario HTML.
  */
 export function limpiarDescripcionRecurrencia(descripcion?: string | null): string {
   if (!descripcion) return "";
-  return descripcion.replace(/<!--recurrente:[0-6,]+-->/g, "").trim();
+  return descripcion
+    .replace(/<!--\s*recurrente:[\s\S]*?-->/gi, "")
+    .replace(/<!--[\s\S]*?-->/g, "")
+    .trim();
 }
 
 /**
@@ -699,4 +757,88 @@ export function extraerGoogleReviewUrl(inputUrl?: string | null): string | null 
 
   return null;
 }
+
+/**
+ * Proyecta la fecha de un evento hacia la próxima ocurrencia semanal (UTC-5 Colombia).
+ * - Si el evento ya ocurrió o es hoy, busca el próximo día coincidente (1 a 7 días adelante).
+ * - Si el evento ya está programado en el futuro, le suma 7 días para proyectar la semana siguiente.
+ * Preserva exactamente la hora de inicio y la duración original si tenía fecha_fin.
+ */
+export function proyectarProximaFechaEvento(
+  fechaInicioIso: string,
+  fechaFinIso?: string | null,
+  descripcion?: string | null
+): { fechaInicio: string; fechaFin: string | null } {
+  try {
+    const ahora = new Date();
+    const hoyYMD = getFechaYMDColombia(ahora);
+    const ymdInicio = getFechaYMDDesdeISO(fechaInicioIso);
+
+    // Extraer hora y minutos originales en formato HH:mm en Colombia
+    const fechaInicioObj = new Date(fechaInicioIso);
+    const horaFormateador = new Intl.DateTimeFormat("en-GB", {
+      timeZone: TIMEZONE_COLOMBIA,
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+    const horaStr = horaFormateador.format(fechaInicioObj);
+
+    let targetYmd = "";
+
+    // 1. Si el evento original es futuro respecto a hoy, avanzar exactamente 7 días
+    if (ymdInicio > hoyYMD) {
+      const [year, month, day] = ymdInicio.split("-").map(Number);
+      const d = new Date(Date.UTC(year, month - 1, day + 7, 12, 0, 0));
+      targetYmd = d.toISOString().slice(0, 10);
+    } else {
+      // 2. Si el evento ya pasó o es hoy, buscar el próximo día recurrente
+      const rec = extraerRecurrencia(descripcion);
+      const diaSemanaOriginal = getDayOfWeekColombia(ymdInicio);
+      const diasObjetivo = rec.esRecurrente && rec.dias.length > 0 ? rec.dias : [diaSemanaOriginal];
+
+      // Probar días hacia adelante desde mañana (1 a 7 días)
+      for (let offset = 1; offset <= 7; offset++) {
+        const candidate = new Date(ahora);
+        candidate.setDate(candidate.getDate() + offset);
+        const candidateYMD = getFechaYMDColombia(candidate);
+        const candidateDay = getDayOfWeekColombia(candidateYMD);
+
+        if (diasObjetivo.includes(candidateDay)) {
+          targetYmd = candidateYMD;
+          break;
+        }
+      }
+
+      if (!targetYmd) {
+        // Fallback: +7 días desde hoy
+        const fallback = new Date(ahora);
+        fallback.setDate(fallback.getDate() + 7);
+        targetYmd = getFechaYMDColombia(fallback);
+      }
+    }
+
+    const nuevaFechaInicio = parseLocalColombiaAISO(`${targetYmd}T${horaStr}`);
+
+    let nuevaFechaFin: string | null = null;
+    if (fechaFinIso) {
+      const diffMs = new Date(fechaFinIso).getTime() - fechaInicioObj.getTime();
+      if (diffMs > 0 && diffMs < 7 * 24 * 60 * 60 * 1000) {
+        nuevaFechaFin = new Date(new Date(nuevaFechaInicio).getTime() + diffMs).toISOString();
+      }
+    }
+
+    return {
+      fechaInicio: nuevaFechaInicio,
+      fechaFin: nuevaFechaFin,
+    };
+  } catch (err) {
+    console.warn("Aviso en proyectarProximaFechaEvento:", err);
+    return {
+      fechaInicio: new Date().toISOString(),
+      fechaFin: null,
+    };
+  }
+}
+
 

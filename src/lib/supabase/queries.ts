@@ -94,34 +94,53 @@ const COLUMNAS_CON_REPUTACION_Y_TRADUCCIONES = `
   )
 `;
 
+type OpcionesLectura = { preview?: boolean };
+
+/**
+ * Cliente de lectura: público (sin cookies, compatible con ISR) por defecto.
+ * Solo en vista previa LOCAL (ver src/lib/preview.ts) usa la sesión del admin,
+ * para que la política RLS "authenticated" permita leer zonas inactivas.
+ */
+async function getClienteLectura(preview?: boolean) {
+  if (preview) {
+    const { createClient } = await import("@/lib/supabase/server");
+    return await createClient();
+  }
+  return getPublicSupabaseClient();
+}
+
 /**
  * Obtiene los eventos activos de una zona desde Supabase.
  * Realiza un JOIN relacional con la tabla de negocios.
  */
-export async function getEventosByZona(zonaSlug: ZonaSlug): Promise<EventoConNegocio[]> {
+export async function getEventosByZona(
+  zonaSlug: ZonaSlug,
+  opciones: OpcionesLectura = {}
+): Promise<EventoConNegocio[]> {
   try {
-    const supabase = getPublicSupabaseClient();
+    const supabase = await getClienteLectura(opciones.preview);
 
-    // 1. Obtener ID de la zona por su slug
-    const { data: zona, error: zonaError } = await supabase
-      .from("zonas")
-      .select("id")
-      .eq("slug", zonaSlug)
-      .eq("activa", true)
-      .single();
+    // 1. Obtener ID de la zona por su slug (en producción solo zonas activas)
+    let zonaQuery = supabase.from("zonas").select("id").eq("slug", zonaSlug);
+    if (!opciones.preview) zonaQuery = zonaQuery.eq("activa", true);
+    const { data: zona, error: zonaError } = await zonaQuery.single();
 
     if (zonaError || !zona) {
       console.warn(`Zona no encontrada en Supabase: ${zonaSlug}`);
       return getMockEventos(zonaSlug);
     }
 
-    // 2. Obtener eventos con su negocio relacionado (todos los activos)
+    // 2. Obtener eventos con su negocio relacionado
+    // En producción solo eventos activos; en vista previa local muestra todo para validar el montaje
     let eventosData: any[] | null = null;
-    const resInicial = await supabase
+    let queryInicial = supabase
       .from("eventos")
       .select(COLUMNAS_CON_REPUTACION_Y_TRADUCCIONES)
-      .eq("zona_id", zona.id)
-      .eq("activo", true)
+      .eq("zona_id", zona.id);
+    if (!opciones.preview) {
+      queryInicial = queryInicial.eq("activo", true);
+    }
+    const resInicial = await queryInicial
       .order("destacado", { ascending: false })
       .order("fecha_inicio", { ascending: true });
 
@@ -130,22 +149,24 @@ export async function getEventosByZona(zonaSlug: ZonaSlug): Promise<EventoConNeg
 
     // Fallback retrocompatible por si las nuevas columnas de reputación aún no existen en 'negocios'
     if (eventosError && eventosError.code === "42703") {
-      const fallbackTraducciones = await supabase
+      let queryTrad = supabase
         .from("eventos")
         .select(COLUMNAS_CON_TRADUCCIONES)
-        .eq("zona_id", zona.id)
-        .eq("activo", true)
+        .eq("zona_id", zona.id);
+      if (!opciones.preview) queryTrad = queryTrad.eq("activo", true);
+      const fallbackTraducciones = await queryTrad
         .order("destacado", { ascending: false })
         .order("fecha_inicio", { ascending: true });
       eventosData = fallbackTraducciones.data;
       eventosError = fallbackTraducciones.error;
 
       if (eventosError && eventosError.code === "42703") {
-        const fallbackBase = await supabase
+        let queryBase = supabase
           .from("eventos")
           .select(COLUMNAS_BASE)
-          .eq("zona_id", zona.id)
-          .eq("activo", true)
+          .eq("zona_id", zona.id);
+        if (!opciones.preview) queryBase = queryBase.eq("activo", true);
+        const fallbackBase = await queryBase
           .order("destacado", { ascending: false })
           .order("fecha_inicio", { ascending: true });
         eventosData = fallbackBase.data;
@@ -159,8 +180,11 @@ export async function getEventosByZona(zonaSlug: ZonaSlug): Promise<EventoConNeg
     }
 
     const lista = (eventosData as unknown as (EventoConNegocio & { negocio?: { activo?: boolean } })[]) || [];
-    // Ocultar del feed público si el comercio aliado está desactivado
-    const filtrados = lista.filter((e) => !e.negocio || e.negocio.activo !== false);
+    // En producción oculta si el negocio está inactivo; en preview local permite verlo
+    const filtrados = opciones.preview
+      ? lista
+      : lista.filter((e) => !e.negocio || e.negocio.activo !== false);
+
     if (filtrados.length === 0) {
       return getMockEventos(zonaSlug);
     }
@@ -175,39 +199,42 @@ export async function getEventosByZona(zonaSlug: ZonaSlug): Promise<EventoConNeg
  * Obtiene el detalle de un evento por su ID con datos del negocio.
  * Si no está en Supabase, busca en el mock como fallback.
  */
-export async function getEventoById(id: string): Promise<EventoConNegocio | null> {
+export async function getEventoById(
+  id: string,
+  opciones: OpcionesLectura = {}
+): Promise<EventoConNegocio | null> {
   try {
-    const supabase = getPublicSupabaseClient();
+    const supabase = await getClienteLectura(opciones.preview);
 
     let eventoData: any = null;
-    const resInicial = await supabase
+    let queryInicial = supabase
       .from("eventos")
       .select(COLUMNAS_CON_REPUTACION_Y_TRADUCCIONES)
-      .eq("id", id)
-      .eq("activo", true)
-      .single();
+      .eq("id", id);
+    if (!opciones.preview) queryInicial = queryInicial.eq("activo", true);
+    const resInicial = await queryInicial.single();
 
     let error = resInicial.error;
     eventoData = resInicial.data;
 
     // Fallback retrocompatible por si las nuevas columnas de reputación aún no existen en 'negocios'
     if (error && error.code === "42703") {
-      const fallbackTraducciones = await supabase
+      let queryTrad = supabase
         .from("eventos")
         .select(COLUMNAS_CON_TRADUCCIONES)
-        .eq("id", id)
-        .eq("activo", true)
-        .single();
+        .eq("id", id);
+      if (!opciones.preview) queryTrad = queryTrad.eq("activo", true);
+      const fallbackTraducciones = await queryTrad.single();
       eventoData = fallbackTraducciones.data;
       error = fallbackTraducciones.error;
 
       if (error && error.code === "42703") {
-        const fallbackBase = await supabase
+        let queryBase = supabase
           .from("eventos")
           .select(COLUMNAS_BASE)
-          .eq("id", id)
-          .eq("activo", true)
-          .single();
+          .eq("id", id);
+        if (!opciones.preview) queryBase = queryBase.eq("activo", true);
+        const fallbackBase = await queryBase.single();
         eventoData = fallbackBase.data;
         error = fallbackBase.error;
       }
@@ -232,34 +259,29 @@ export async function getEventoById(id: string): Promise<EventoConNegocio | null
  * Si la tabla aún no existe en Supabase o da error, usa el mock como fallback seguro.
  */
 export async function getServiciosEsencialesByZona(
-  zonaSlug: ZonaSlug
+  zonaSlug: ZonaSlug,
+  opciones: OpcionesLectura = {}
 ): Promise<ServicioEsencial[]> {
   try {
-    const supabase = getPublicSupabaseClient();
+    const supabase = await getClienteLectura(opciones.preview);
 
-    // 1. Obtener ID de la zona por su slug
-    const { data: zona } = await supabase
-      .from("zonas")
-      .select("id")
-      .eq("slug", zonaSlug)
-      .eq("activa", true)
-      .single();
+    // 1. Obtener ID de la zona por su slug (en producción solo zonas activas)
+    let zonaQuery = supabase.from("zonas").select("id").eq("slug", zonaSlug);
+    if (!opciones.preview) zonaQuery = zonaQuery.eq("activa", true);
+    const { data: zona } = await zonaQuery.single();
 
-    const zonaId = zona?.id || (zonaSlug === "mendihuaca" ? "zona-mendihuaca" : "zona-minca");
+    const zonaId = zona?.id || `zona-${zonaSlug}`;
 
-    const { data, error } = await supabase
+    let queryEsenciales = supabase
       .from("servicios_esenciales")
       .select("*")
-      .eq("zona_id", zonaId)
-      .eq("activo", true)
-      .order("orden_prioridad", { ascending: true });
+      .eq("zona_id", zonaId);
+    if (!opciones.preview) queryEsenciales = queryEsenciales.eq("activo", true);
+    const { data, error } = await queryEsenciales.order("orden_prioridad", { ascending: true });
 
     if (error || !data || data.length === 0) {
       const fallbackList = MOCK_SERVICIOS_ESENCIALES.filter((s) => {
-        const matchesSlug =
-          zonaSlug === "mendihuaca"
-            ? s.zona_id === "zona-mendihuaca"
-            : s.zona_id === "zona-minca";
+        const matchesSlug = s.zona_id === `zona-${zonaSlug}`;
         return (s.zona_id === zonaId || matchesSlug) && s.activo;
       });
       return fallbackList.sort((a, b) => a.orden_prioridad - b.orden_prioridad);
@@ -269,10 +291,7 @@ export async function getServiciosEsencialesByZona(
   } catch (err) {
     console.warn("[getServiciosEsencialesByZona] Fallback a mock:", err);
     return MOCK_SERVICIOS_ESENCIALES.filter((s) => {
-      const matchesSlug =
-        zonaSlug === "mendihuaca"
-          ? s.zona_id === "zona-mendihuaca"
-          : s.zona_id === "zona-minca";
+      const matchesSlug = s.zona_id === `zona-${zonaSlug}`;
       return matchesSlug && s.activo;
     });
   }

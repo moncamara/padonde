@@ -105,12 +105,27 @@ export default async function AdminHospedajesPage({
     hospedajesData = fallbackRes.data as any;
   }
 
-  // 3. Obtener zonas activas para el formulario
+  // 3. Obtener zonas para el formulario (garantizar que siempre aparezcan Tayrona y Taganga en admin)
   const { data: zonasData } = await supabase
     .from("zonas")
-    .select("id, nombre, slug")
-    .eq("activa", true)
+    .select("id, nombre, slug, activa")
     .order("nombre", { ascending: true });
+
+  const ZONAS_CANONICAS_ADMIN = [
+    { id: "zona-minca", nombre: "Minca", slug: "minca" },
+    { id: "zona-mendihuaca", nombre: "Mendihuaca", slug: "mendihuaca" },
+    { id: "zona-tayrona", nombre: "Tayrona", slug: "tayrona" },
+    { id: "zona-taganga", nombre: "Taganga", slug: "taganga" },
+  ];
+
+  const mapaZonasAdmin = new Map<string, { id: string; nombre: string; slug: string }>();
+  for (const z of ZONAS_CANONICAS_ADMIN) {
+    mapaZonasAdmin.set(z.slug, z);
+  }
+  for (const z of zonasData || []) {
+    if (z.slug) mapaZonasAdmin.set(z.slug, { id: z.id, nombre: z.nombre, slug: z.slug });
+  }
+  const zonasCompletas = Array.from(mapaZonasAdmin.values());
 
   return (
     <div className="min-h-screen bg-cream flex flex-col">
@@ -119,7 +134,7 @@ export default async function AdminHospedajesPage({
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
         <AdminHospedajesList
           hospedajes={(hospedajesData as any[]) || []}
-          zonas={(zonasData as any[]) || []}
+          zonas={zonasCompletas}
           locale={locale}
         />
       </main>

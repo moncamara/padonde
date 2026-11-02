@@ -26,6 +26,7 @@ import {
   adminPublishEventAction,
   editarEventoAdminAction,
   eliminarEventoAdminAction,
+  variarDescripcionEventoGeminiAction,
 } from "./actions";
 import { Button } from "@/components/ui/Button";
 import { ModalAsistenteEvento } from "./ModalAsistenteEvento";
@@ -89,10 +90,11 @@ export function EventUpsertForm({
   // 1. Estado de Zona y Aliado / Negocio
   const [zonaSlug, setZonaSlug] = useState<string>(() => {
     if (initialEvento) {
-      return initialEvento.zona_id === "zona-mendihuaca" ||
-        (initialEvento as any).zonaSlug === "mendihuaca"
-        ? "mendihuaca"
-        : defaultZona || "minca";
+      if (initialEvento.zonaSlug) return initialEvento.zonaSlug;
+      if (initialEvento.zona_id === "zona-mendihuaca") return "mendihuaca";
+      if (initialEvento.zona_id === "zona-tayrona") return "tayrona";
+      if (initialEvento.zona_id === "zona-taganga") return "taganga";
+      return defaultZona || "minca";
     }
     return initialNegocio?.zonaSlug || defaultZona || "minca";
   });
@@ -221,7 +223,9 @@ export function EventUpsertForm({
     }
     return "0";
   });
-  const [description, setDescription] = useState(initialEvento?.descripcion || "");
+  const [description, setDescription] = useState(() =>
+    initialEvento?.descripcion ? limpiarDescripcionRecurrencia(initialEvento.descripcion) : ""
+  );
 
   // 3. Fechas y Horarios
   const [dateTime, setDateTime] = useState(() => {
@@ -603,6 +607,33 @@ export function EventUpsertForm({
   const [confirmarEliminar, setConfirmarEliminar] = useState(false);
   const [mostrarHabladorMesa, setMostrarHabladorMesa] = useState(false);
   const [mostrarAsistenteIA, setMostrarAsistenteIA] = useState(false);
+  const [isVaryingDescription, setIsVaryingDescription] = useState(false);
+
+  // Variación Asistida de Descripción con IA para Aliados Recurrentes
+  async function handleVariarDescripcion() {
+    if (!description.trim()) {
+      alert("Por favor escribe o ten una descripción base antes de generar una variación.");
+      return;
+    }
+    setIsVaryingDescription(true);
+    try {
+      const res = await variarDescripcionEventoGeminiAction({
+        titulo: eventTitle,
+        descripcionActual: description,
+        businessName: businessName,
+        zonaSlug: zonaSlug,
+      });
+      if (res.success && res.descripcionVariada) {
+        setDescription(limpiarDescripcionRecurrencia(res.descripcionVariada));
+      } else {
+        alert(res.error || "No se pudo generar la variación con IA.");
+      }
+    } catch (e: any) {
+      alert("Error: " + (e?.message || "Ocurrió un error al contactar al asistente de IA."));
+    } finally {
+      setIsVaryingDescription(false);
+    }
+  }
 
   // Callback del Asistente IA
   function handleDatosAsistenteExtraidos(datos: EventoExtraido) {
@@ -621,7 +652,7 @@ export function EventUpsertForm({
     if (datos.precio !== null && datos.precio !== undefined) {
       setPrice(datos.precio.toString());
     }
-    if (datos.descripcion) setDescription(datos.descripcion);
+    if (datos.descripcion) setDescription(limpiarDescripcionRecurrencia(datos.descripcion));
     if (datos.businessName && !businessName) setBusinessName(datos.businessName);
     if (datos.whatsapp && !whatsapp) setWhatsapp(datos.whatsapp);
     if (datos.instagram && !instagram) setInstagram(datos.instagram);
@@ -717,6 +748,7 @@ export function EventUpsertForm({
           imageUrl: finalImgUrl,
           videoUrl: finalVidUrl || undefined,
           isFeatured,
+          activo: isActive,
           zonaSlug,
           googleReputacion: googleReputacion || undefined,
           galeriaFotos: galeriaFotos.length > 0 ? galeriaFotos : undefined,
@@ -740,6 +772,13 @@ export function EventUpsertForm({
 
         if (onSuccess) {
           onSuccess(res);
+        }
+
+        if (isModal) {
+          setTimeout(() => {
+            router.refresh();
+            if (onClose) onClose();
+          }, 800);
         }
       } else {
         // MODO EDITAR: UPDATE con Merge Seguro (WHERE id = target_id)
@@ -913,14 +952,22 @@ export function EventUpsertForm({
       {isModal && (
         <div className="flex items-center justify-between pb-4 border-b border-stone-light/70">
           <div className="flex items-center gap-2">
-            <span className="text-xl">✏️</span>
+            <span className="text-xl">
+              {mode === "editar" ? "✏️" : initialEvento ? "🗓️" : "✨"}
+            </span>
             <div>
               <h2 className="font-serif text-lg sm:text-xl font-bold text-forest">
-                {mode === "editar" ? "Editar Evento" : "Nuevo Evento"}
+                {mode === "editar"
+                  ? "Editar Evento"
+                  : initialEvento
+                  ? "Proyectar Próxima Fecha"
+                  : "Nuevo Evento"}
               </h2>
               <p className="font-sans text-[11px] text-stone">
                 {mode === "editar"
                   ? `Modificando registro: ${initialEvento?.titulo || "Evento"}`
+                  : initialEvento
+                  ? `Borrador semanal proyectado para: ${initialEvento.negocio?.nombre || initialEvento.titulo}`
                   : "Completa la información oficial para publicar en la cartelera."}
               </p>
             </div>
@@ -972,6 +1019,22 @@ export function EventUpsertForm({
         </button>
       </div>
 
+      {/* Banner de Proyección Semanal para Aliados Recurrentes */}
+      {mode === "crear" && initialEvento && (
+        <div className="bg-amber-50/90 border border-amber-200/90 rounded-2xl p-3.5 flex items-start gap-3">
+          <span className="text-xl shrink-0">🗓️</span>
+          <div className="text-xs text-amber-950 space-y-1">
+            <p className="font-bold">
+              Plantilla Semanal para Aliado Recurrente
+            </p>
+            <p className="text-amber-900/90 leading-relaxed font-sans">
+              Se han precargado los datos base del aliado ({initialEvento.negocio?.nombre || "Aliado"}) y la fecha se calculó automáticamente para la próxima fecha.
+              Este evento se guardará como <strong>Borrador (Inactivo)</strong> para que puedas adjuntar la foto o afiche final antes de activarlo en la cartelera pública.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* 1. SELECCIÓN DE REGIÓN Y NEGOCIO / ORGANIZADOR */}
       <div className="bg-white/80 p-4 sm:p-5 rounded-3xl border border-stone-light/70 shadow-2xs space-y-4">
         <div className="flex items-center justify-between border-b border-stone-light/40 pb-2.5">
@@ -996,6 +1059,8 @@ export function EventUpsertForm({
             >
               <option value="minca">🌿 Minca (Sierra Nevada)</option>
               <option value="mendihuaca">🌊 Mendihuaca (Caribe & Surf)</option>
+              <option value="tayrona">🌴 Tayrona (Parque Nacional & Playas) — En preparación</option>
+              <option value="taganga">🤿 Taganga (Bahía & Buceo) — En preparación</option>
             </select>
           </div>
 
@@ -1179,9 +1244,30 @@ export function EventUpsertForm({
 
           {/* Descripción */}
           <div>
-            <label className="block text-xs font-semibold text-forest mb-1">
-              Descripción del Evento <span className="text-stone font-normal">(opcional)</span>
-            </label>
+            <div className="flex items-center justify-between mb-1.5 gap-2 flex-wrap">
+              <label className="block text-xs font-semibold text-forest">
+                Descripción del Evento <span className="text-stone font-normal">(opcional)</span>
+              </label>
+              <button
+                type="button"
+                disabled={isVaryingDescription || !description.trim()}
+                onClick={handleVariarDescripcion}
+                className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-forest/90 hover:text-forest bg-forest/5 hover:bg-forest/10 px-2.5 py-1 rounded-lg border border-forest/15 transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                title="Genera una variación fresca y festiva manteniendo los datos esenciales del aliado"
+              >
+                {isVaryingDescription ? (
+                  <>
+                    <span className="w-2.5 h-2.5 border-2 border-forest border-t-transparent rounded-full animate-spin" />
+                    <span>Variando texto con IA...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>✨</span>
+                    <span>Variar texto para esta semana (IA)</span>
+                  </>
+                )}
+              </button>
+            </div>
             <textarea
               rows={3}
               value={description}
@@ -1933,7 +2019,15 @@ export function EventUpsertForm({
             disabled={loading}
             className="px-6 py-2.5 rounded-xl bg-forest hover:bg-forest/90 text-cream font-sans text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer disabled:opacity-60"
           >
-            {loading ? "Guardando..." : mode === "crear" ? "🌿 Publicar Evento" : "💾 Guardar Cambios"}
+            {loading
+              ? "Guardando..."
+              : guardadoExito
+              ? "✅ ¡Guardado con éxito!"
+              : mode === "crear"
+              ? initialEvento
+                ? "🗓️ Guardar Borrador Proyectado"
+                : "🌿 Publicar Evento"
+              : "💾 Guardar Cambios"}
           </button>
         </div>
       </div>
@@ -1953,6 +2047,8 @@ export function EventUpsertForm({
           zonas={[
             { id: "zona-minca", nombre: "Minca", slug: "minca" },
             { id: "zona-mendihuaca", nombre: "Mendihuaca", slug: "mendihuaca" },
+            { id: "zona-tayrona", nombre: "Tayrona", slug: "tayrona" },
+            { id: "zona-taganga", nombre: "Taganga", slug: "taganga" },
           ]}
           onClose={() => setMostrarAsistenteIA(false)}
           onPrefillNuevo={(datos, archivoFoto) => {

@@ -4,6 +4,7 @@
 // Diseñado con tolerancia total a fallos (fallback al texto original si hay error de red).
 
 import type { LocaleCode } from "./eventosTraducciones";
+import { limpiarDescripcionRecurrencia, extraerRecurrencia } from "@/lib/utils";
 
 export interface ContenidoTraducido {
   titulo: string;
@@ -81,9 +82,9 @@ export async function traducirEventoCompleto(
   const descRaw = descripcion || "";
 
   // Separar etiqueta técnica de recurrencia si existe
-  const tagMatch = descRaw.match(/<!--recurrente:([0-9,]+)-->/);
-  const tagTecnica = tagMatch ? tagMatch[0] : "";
-  const descSinTag = descRaw.replace(/<!--recurrente:([0-9,]+)-->/g, "").trim();
+  const descSinTag = limpiarDescripcionRecurrencia(descRaw);
+  const rec = extraerRecurrencia(descRaw);
+  const tagTecnica = rec.esRecurrente && rec.dias.length > 0 ? `<!--recurrente:${rec.dias.join(",")}-->` : "";
 
   const idiomas: ("en" | "de" | "fr")[] = ["en", "de", "fr"];
 

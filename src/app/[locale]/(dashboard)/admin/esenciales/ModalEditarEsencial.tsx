@@ -32,12 +32,19 @@ export function ModalEditarEsencial({
   onSaved,
   zonas,
 }: ModalEditarEsencialProps) {
+  // Resuelve el slug de la zona a partir del zona_id (UUID real de Supabase o id legado "zona-xxx")
+  const slugDeZona = (zonaId?: string | null): string => {
+    const encontrada = zonas.find((z) => z.id === zonaId);
+    if (encontrada) return encontrada.slug;
+    if (zonaId?.startsWith("zona-")) return zonaId.replace("zona-", "");
+    return "minca";
+  };
   const [isPending, startTransition] = useTransition();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Form states
   const [zonaSlug, setZonaSlug] = useState(
-    servicio?.zona_id === "zona-mendihuaca" ? "mendihuaca" : "minca"
+    slugDeZona(servicio?.zona_id)
   );
   const [categoria, setCategoria] = useState<CategoriaServicioEsencial>(
     servicio?.categoria || "efectivo"
@@ -96,7 +103,7 @@ export function ModalEditarEsencial({
   useEffect(() => {
     if (servicio) {
       setZonaSlug(
-        servicio.zona_id === "zona-mendihuaca" ? "mendihuaca" : "minca"
+        slugDeZona(servicio?.zona_id)
       );
       setCategoria(servicio.categoria || "efectivo");
       setNombreComercial(servicio.nombre_comercial || "");

@@ -107,10 +107,14 @@ export default async function AdminAliadosPage({
 
   const { data: rawZonas } = await supabase
     .from("zonas")
-    .select("id, nombre, slug")
-    .eq("activa", true);
+    .select("id, nombre, slug, activa");
 
-  const mapaZonas: Record<string, { nombre: string; slug: string }> = {};
+  const mapaZonas: Record<string, { nombre: string; slug: string }> = {
+    "zona-minca": { nombre: "Minca", slug: "minca" },
+    "zona-mendihuaca": { nombre: "Mendihuaca", slug: "mendihuaca" },
+    "zona-tayrona": { nombre: "Tayrona", slug: "tayrona" },
+    "zona-taganga": { nombre: "Taganga", slug: "taganga" },
+  };
   for (const z of rawZonas || []) {
     mapaZonas[z.id] = { nombre: z.nombre, slug: z.slug };
   }

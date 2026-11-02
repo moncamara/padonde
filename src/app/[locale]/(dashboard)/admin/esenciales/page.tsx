@@ -57,6 +57,8 @@ export default async function AdminEsencialesPage({
       : [
           { id: "zona-minca", nombre: "Minca", slug: "minca" },
           { id: "zona-mendihuaca", nombre: "Mendihuaca", slug: "mendihuaca" },
+          { id: "zona-tayrona", nombre: "Tayrona", slug: "tayrona" },
+          { id: "zona-taganga", nombre: "Taganga", slug: "taganga" },
         ];
 
   // Métricas rápidas

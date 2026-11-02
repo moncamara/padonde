@@ -91,7 +91,7 @@ export function TabsDestinos({ zonaActiva, locale, className = "" }: TabsDestino
         {DESTINOS_TABS.map((destino) => {
           const isSelected = zonaActiva === destino.slug;
 
-          if (!destino.activa) {
+          if (!destino.activa && !isSelected) {
             return (
               <div
                 key={destino.slug}

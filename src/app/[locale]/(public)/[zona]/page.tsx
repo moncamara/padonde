@@ -17,6 +17,7 @@ import {
   getConfigTerritorialAsync,
 } from "@/lib/supabase/queries";
 import { getZona, whatsappLink, WHATSAPP_CONTACTO } from "@/constants";
+import { esZonaEnPreview } from "@/lib/preview";
 import { getEventoTraducidoAsync } from "@/lib/translations/eventosTraducciones";
 import type { ZonaSlug } from "@/lib/types";
 import type { Metadata } from "next";
@@ -103,7 +104,10 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
   const { locale, zona: zonaSlug } = await params;
   const zona = getZona(zonaSlug);
 
-  if (!zona || !zona.activa) notFound();
+  // Zonas inactivas (Tayrona, Taganga) → 404 para turistas.
+  // Solo se abren en vista previa LOCAL (npm run dev + PREVIEW_ZONAS + sesión admin).
+  const preview = Boolean(zona && !zona.activa && esZonaEnPreview(zona.slug));
+  if (!zona || (!zona.activa && !preview)) notFound();
 
   setRequestLocale(locale);
 
@@ -113,8 +117,8 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
 
   // Obtener eventos, servicios esenciales y configuración territorial activa de la nube
   const [eventosRaw, servicios, configTerritorial] = await Promise.all([
-    getEventosByZona(zonaSlug),
-    getServiciosEsencialesByZona(zonaSlug),
+    getEventosByZona(zona.slug as ZonaSlug, { preview }),
+    getServiciosEsencialesByZona(zona.slug as ZonaSlug, { preview }),
     getConfigTerritorialAsync(),
   ]);
   let eventos = eventosRaw;

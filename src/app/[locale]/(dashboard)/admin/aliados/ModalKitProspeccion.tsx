@@ -46,7 +46,14 @@ export function ModalKitProspeccion({ zonaInicial = "minca" }: ModalKitProspecci
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [abierto]);
 
-  const zonaNombre = zona === "mendihuaca" ? "Mendihuaca" : "Minca";
+  const zonaNombre =
+    zona === "mendihuaca"
+      ? "Mendihuaca"
+      : zona === "tayrona"
+      ? "Tayrona"
+      : zona === "taganga"
+      ? "Taganga"
+      : "Minca";
   const urlCartelera = `https://www.padonde.lat/es/${zona}`;
 
   // Plantillas de prospección canónicas desde templates.ts
@@ -185,6 +192,28 @@ export function ModalKitProspeccion({ zonaInicial = "minca" }: ModalKitProspecci
                     }`}
                   >
                     🌊 Mendihuaca
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setZona("tayrona")}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-sans font-medium transition-all cursor-pointer ${
+                      zona === "tayrona"
+                        ? "bg-forest text-white font-semibold shadow-2xs"
+                        : "bg-cream text-stone hover:text-forest"
+                    }`}
+                  >
+                    🌴 Tayrona
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setZona("taganga")}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-sans font-medium transition-all cursor-pointer ${
+                      zona === "taganga"
+                        ? "bg-forest text-white font-semibold shadow-2xs"
+                        : "bg-cream text-stone hover:text-forest"
+                    }`}
+                  >
+                    🤿 Taganga
                   </button>
                 </div>
               </div>

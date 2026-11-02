@@ -172,7 +172,8 @@ export function AdminQRGenerator({ locale }: { locale: string }) {
                 >
                   <option value="minca">🌿 Minca</option>
                   <option value="mendihuaca">🌊 Mendihuaca</option>
-                  <option value="tairona">🌴 Tairona</option>
+                  <option value="tayrona">🌴 Tayrona</option>
+                  <option value="taganga">🤿 Taganga</option>
                   <option value="santa-marta">🌊 Santa Marta</option>
                 </select>
               </div>
