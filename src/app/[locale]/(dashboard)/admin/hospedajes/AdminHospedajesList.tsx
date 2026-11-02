@@ -4,13 +4,11 @@ import { useState, useEffect, useMemo, useTransition } from "react";
 import Image from "next/image";
 import { Link, useRouter } from "@/i18n/routing";
 import { ModalEditarHospedaje } from "./ModalEditarHospedaje";
-import { UniversalIngestaModal } from "../UniversalIngestaModal";
 import { ModalAlertaDuplicado } from "./ModalAlertaDuplicado";
 import { ModalNotificarAliado, type EventoNotificarData } from "../ModalNotificarAliado";
 import {
   toggleEventoActivoAction,
   investigarHospedajeAction,
-  type IngestaUniversalPrefillResultado,
 } from "../actions";
 import { ToggleDestacadoButton } from "../ToggleDestacadoButton";
 import { parsearLineaRapida, buscarCoincidenciaHospedaje } from "@/lib/hospedajeParser";
@@ -214,7 +212,7 @@ export function AdminHospedajesList({
   }, [listaHospedajes, filtroZona, busqueda]);
 
   const [modalAbierto, setModalAbierto] = useState(true);
-  const [asistenteAbierto, setAsistenteAbierto] = useState(false);
+  const [abrirConJson, setAbrirConJson] = useState(false);
   const [lineaRapida, setLineaRapida] = useState("");
   const [isInvestigando, setIsInvestigando] = useState(false);
   const [hospedajeEnEdicion, setHospedajeEnEdicion] = useState<any | null>(BORRADOR_MAGIC_GREEN_TAYRONA);
@@ -341,37 +339,8 @@ export function AdminHospedajesList({
   };
 
   const handleParsed = (borrador: any) => {
-    setAsistenteAbierto(false);
     setHospedajeEnEdicion(borrador);
     setModalAbierto(true);
-  };
-
-  const handlePrefillUniversalHospedaje = (datos: IngestaUniversalPrefillResultado) => {
-    const borrador = {
-      id: `temp-${Date.now()}`,
-      nombreNegocio: datos.nombreNegocio,
-      nombrePropietario: datos.nombrePropietario || "",
-      whatsapp: datos.whatsapp,
-      instagram: datos.instagram,
-      zonaSlug: datos.zonaSlug,
-      titulo: datos.titulo,
-      descripcion: datos.descripcion,
-      imagenUrl: datos.imagenPortadaUrl || "",
-      ratingGoogle: datos.googleRating ? datos.googleRating.toString() : "",
-      reviewsGoogle: datos.googleReviewsCount ? datos.googleReviewsCount.toString() : "",
-      mapsUrl: datos.googleMapsUrl || "",
-      habitaciones: datos.habitaciones || [],
-      metadata_hospedaje: {
-        contacto_propietario: datos.nombrePropietario || "",
-        google_reputacion: {
-          rating: datos.googleRating || null,
-          total_reviews: datos.googleReviewsCount || null,
-          maps_url: datos.googleMapsUrl || "",
-        },
-        habitaciones: datos.habitaciones || [],
-      },
-    };
-    handleParsed(borrador);
   };
 
   // Leer prefill pendiente de sessionStorage si se abrió desde otra ruta
@@ -381,7 +350,8 @@ export function AdminHospedajesList({
       if (raw) {
         const datos = JSON.parse(raw);
         sessionStorage.removeItem("padonde_prefill_hospedaje");
-        handlePrefillUniversalHospedaje(datos);
+        setHospedajeEnEdicion(datos);
+        setModalAbierto(true);
       }
     } catch {}
   }, []);
@@ -436,12 +406,16 @@ export function AdminHospedajesList({
           </button>
 
           <button
-            onClick={() => setAsistenteAbierto(true)}
-            className="px-4 py-2.5 bg-terra/10 hover:bg-terra/20 text-terra border border-terra/30 font-sans text-xs font-semibold rounded-2xl active:scale-95 transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
-            title="Pegar texto extenso de Booking, WhatsApp o Instagram para estructurar automáticamente"
+            onClick={() => {
+              setHospedajeEnEdicion(null);
+              setAbrirConJson(true);
+              setModalAbierto(true);
+            }}
+            className="px-4 py-2.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-950 border border-amber-300 font-sans text-xs font-bold rounded-2xl active:scale-95 transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
+            title="Cargar y pre-poblar hospedaje desde un JSON estructurado"
           >
-            <span>📋</span>
-            <span>Pegar Texto Completo</span>
+            <span>📥</span>
+            <span>Cargar desde JSON</span>
           </button>
 
           <button
@@ -761,26 +735,12 @@ export function AdminHospedajesList({
           hospedaje={hospedajeEnEdicion}
           zonas={zonas}
           hospedajesExistentes={listaHospedajes}
-          onClose={() => setModalAbierto(false)}
-          onDeleted={handleDeleted}
-        />
-      )}
-
-      {/* Modal Asistente Universal de Ingesta Inteligente */}
-      {asistenteAbierto && (
-        <UniversalIngestaModal
-          isOpen={asistenteAbierto}
-          onClose={() => setAsistenteAbierto(false)}
-          entidadInicial="hospedaje"
-          zonaInicial={zonas[0]?.slug || "minca"}
-          onPrefillHospedaje={handlePrefillUniversalHospedaje}
-          onPrefillEvento={(datos) => {
-            try {
-              sessionStorage.setItem("padonde_asistente_prefill", JSON.stringify(datos));
-            } catch {}
-            setAsistenteAbierto(false);
-            router.push("/admin/nuevo");
+          abrirConModalJson={abrirConJson}
+          onClose={() => {
+            setModalAbierto(false);
+            setAbrirConJson(false);
           }}
+          onDeleted={handleDeleted}
         />
       )}
 
