@@ -25,7 +25,7 @@ export const BORRADOR_MAGIC_GREEN_TAYRONA = {
   titulo: "Eco-Lodge con Piscina dentro del Parque Tayrona",
   descripcion:
     "🏊 Piscina al Aire Libre, 🌴 Dentro del Tayrona (Km 30), 🌊 A 8 min de Playa Castilletes, 🍽️ Restaurante & Bar, 📶 Wi-Fi Gratis\n\nMagic Green es un eco-lodge privilegiado ubicado en el kilómetro 30, vereda Cañaveral, en el sector El Zaíno y dentro del Parque Nacional Natural Tayrona. Su ubicación permite disfrutar de la selva tropical sin traslados largos hacia las playas, situándose a solo 8 minutos a pie de Playa Castilletes. Cuenta con piscina al aire libre rodeada de palmeras, restaurante con opciones locales y veganas, bar y bungalows independientes en madera con balcones privados y vistas a las montañas de la Sierra Nevada.",
-  imagenUrl: "https://cf.bstatic.com/xdata/images/hotel/max1024x768/769876416.jpg",
+  imagenUrl: "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/hospedajes/magic-green-portada-piscina.webp",
   ratingGoogle: "4.7",
   reviewsGoogle: "67",
   mapsUrl:
@@ -50,8 +50,8 @@ export const BORRADOR_MAGIC_GREEN_TAYRONA = {
         precio_noche_cop: 320000,
         capacidad_max: 4,
         fotos: [
-          "https://cf.bstatic.com/xdata/images/hotel/max1024x768/769876416.jpg",
-          "https://cf.bstatic.com/xdata/images/hotel/max1024x768/769874936.jpg",
+          "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/hospedajes/magic-green-portada-piscina.webp",
+          "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/hospedajes/magic-green-hab-bungalow-1.webp",
         ],
         badges: [
           { icono: "🌿", texto: "Baño privado" },
@@ -68,8 +68,8 @@ export const BORRADOR_MAGIC_GREEN_TAYRONA = {
         precio_noche_cop: 250000,
         capacidad_max: 2,
         fotos: [
-          "https://cf.bstatic.com/xdata/images/hotel/max1024x768/769873519.jpg",
-          "https://cf.bstatic.com/xdata/images/hotel/max1024x768/769876411.jpg",
+          "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/hospedajes/magic-green-hab-bungalow-2.webp",
+          "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/hospedajes/magic-green-hab-deluxe-1.webp",
         ],
         badges: [
           { icono: "🌿", texto: "Baño privado" },
@@ -86,8 +86,8 @@ export const BORRADOR_MAGIC_GREEN_TAYRONA = {
         precio_noche_cop: 420000,
         capacidad_max: 6,
         fotos: [
-          "https://cf.bstatic.com/xdata/images/hotel/max1024x768/769873526.jpg",
-          "https://cf.bstatic.com/xdata/images/hotel/max1024x768/769871675.jpg",
+          "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/hospedajes/magic-green-hab-deluxe-2.webp",
+          "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/hospedajes/magic-green-hab-jardin.webp",
         ],
         badges: [
           { icono: "🌿", texto: "Baño privado" },

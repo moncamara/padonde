@@ -1984,6 +1984,159 @@ export async function importarImagenDesdeUrlAction(
 }
 
 /**
+ * Mapeo de respaldo para fotos de Magic Green Tayrona u orígenes conocidos
+ */
+const MAPEO_FOTOS_CONOCIDAS_STORAGE: Record<string, string> = {
+  "https://cf.bstatic.com/xdata/images/hotel/max1024x768/769876416.jpg":
+    "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/hospedajes/magic-green-portada-piscina.webp",
+  "https://cf.bstatic.com/xdata/images/hotel/max1024x768/769874936.jpg":
+    "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/hospedajes/magic-green-hab-bungalow-1.webp",
+  "https://cf.bstatic.com/xdata/images/hotel/max1024x768/769873519.jpg":
+    "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/hospedajes/magic-green-hab-bungalow-2.webp",
+  "https://cf.bstatic.com/xdata/images/hotel/max1024x768/769876411.jpg":
+    "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/hospedajes/magic-green-hab-deluxe-1.webp",
+  "https://cf.bstatic.com/xdata/images/hotel/max1024x768/769873526.jpg":
+    "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/hospedajes/magic-green-hab-deluxe-2.webp",
+  "https://cf.bstatic.com/xdata/images/hotel/max1024x768/769871675.jpg":
+    "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/hospedajes/magic-green-hab-jardin.webp",
+};
+
+/**
+ * Server Action canónica para procesamiento e ingesta de fotos (Booking, Airbnb o web).
+ * Descarga las fotos en Node.js con headers estándar, las procesa con Sharp:
+ * - Redimensionar a máx 1280px de ancho (withoutEnlargement: true)
+ * - Convertir a formato .webp con calidad 82%
+ * - Subir al bucket de Supabase Storage (hospedajes/)
+ * Devuelve únicamente URLs públicas definitivas de Supabase con cero errores de CORS.
+ */
+export async function procesarUrlsFotosAction(
+  urls: string[]
+): Promise<{
+  success: boolean;
+  urlsProcesadas: string[];
+  mapeo: Record<string, string>;
+  error?: string;
+}> {
+  try {
+    if (!Array.isArray(urls) || urls.length === 0) {
+      return { success: true, urlsProcesadas: [], mapeo: {} };
+    }
+
+    const supabase = await createClient();
+    const urlsUnicas = Array.from(new Set(urls.map((u) => (u || "").trim()))).filter(
+      (u) => u.startsWith("http://") || u.startsWith("https://")
+    ).slice(0, 20);
+
+    const mapeo: Record<string, string> = {};
+    const urlsProcesadas: string[] = [];
+
+    const descargas = await Promise.allSettled(
+      urlsUnicas.map(async (url) => {
+        // 1. Si ya es una URL de Supabase Storage, no reprocesar
+        if (url.includes("supabase.co")) {
+          return { original: url, urlSupabase: url };
+        }
+
+        // 2. Si es una URL conocida ya alojada en Supabase Storage
+        if (MAPEO_FOTOS_CONOCIDAS_STORAGE[url]) {
+          return { original: url, urlSupabase: MAPEO_FOTOS_CONOCIDAS_STORAGE[url] };
+        }
+
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 8000);
+
+        try {
+          const res = await fetch(url, {
+            signal: controller.signal,
+            headers: {
+              "User-Agent":
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+              Referer: "https://www.booking.com/",
+              Accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+            },
+          });
+          clearTimeout(timeout);
+
+          if (!res.ok) {
+            if (MAPEO_FOTOS_CONOCIDAS_STORAGE[url]) {
+              return { original: url, urlSupabase: MAPEO_FOTOS_CONOCIDAS_STORAGE[url] };
+            }
+            return { original: url, error: `HTTP ${res.status}` };
+          }
+
+          const arrayBuffer = await res.arrayBuffer();
+          const rawBuffer = Buffer.from(arrayBuffer);
+
+          // Procesar con Sharp: máx 1280px ancho (withoutEnlargement: true), WebP 82%
+          const webpBuffer = await sharp(rawBuffer)
+            .resize({ width: 1280, withoutEnlargement: true })
+            .webp({ quality: 82 })
+            .toBuffer();
+
+          const fileName = `hab-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.webp`;
+          const filePath = `hospedajes/${fileName}`;
+
+          // Subir a bucket "eventos" (carpeta hospedajes/)
+          const { error: uploadErr } = await supabase.storage
+            .from("eventos")
+            .upload(filePath, webpBuffer, {
+              contentType: "image/webp",
+              cacheControl: "31536000",
+              upsert: true,
+            });
+
+          if (uploadErr) {
+            // Reintento en bucket "hospedajes" como respaldo
+            const { error: bucketErr } = await supabase.storage
+              .from("hospedajes")
+              .upload(fileName, webpBuffer, {
+                contentType: "image/webp",
+                cacheControl: "31536000",
+                upsert: true,
+              });
+            if (bucketErr) {
+              return { original: url, error: bucketErr.message };
+            }
+            const { data } = supabase.storage.from("hospedajes").getPublicUrl(fileName);
+            return { original: url, urlSupabase: data.publicUrl };
+          }
+
+          const { data } = supabase.storage.from("eventos").getPublicUrl(filePath);
+          return { original: url, urlSupabase: data.publicUrl };
+        } catch (fetchErr: any) {
+          clearTimeout(timeout);
+          if (MAPEO_FOTOS_CONOCIDAS_STORAGE[url]) {
+            return { original: url, urlSupabase: MAPEO_FOTOS_CONOCIDAS_STORAGE[url] };
+          }
+          return { original: url, error: fetchErr.message || "Timeout" };
+        }
+      })
+    );
+
+    for (const item of descargas) {
+      if (item.status === "fulfilled" && item.value.urlSupabase) {
+        mapeo[item.value.original] = item.value.urlSupabase;
+        urlsProcesadas.push(item.value.urlSupabase);
+      }
+    }
+
+    return {
+      success: true,
+      urlsProcesadas,
+      mapeo,
+    };
+  } catch (err: any) {
+    console.error("[procesarUrlsFotosAction] Excepción:", err);
+    return {
+      success: false,
+      urlsProcesadas: [],
+      mapeo: {},
+      error: err?.message || "Error inesperado al procesar fotos.",
+    };
+  }
+}
+
+/**
  * Server Action para importar concurrentemente un lote de imágenes externas (Booking/Airbnb),
  * convirtiéndolas a WebP en Supabase Storage sin bloquear la UI ni tocar la base de datos.
  */
@@ -1991,25 +2144,12 @@ export async function importarLoteImagenesHospedajeAction(
   urls: string[]
 ): Promise<{ success: boolean; mapeo: Record<string, string>; procesadas: number }> {
   try {
-    const mapeo: Record<string, string> = {};
-    const urlsUnicas = Array.from(new Set(urls)).slice(0, 20);
-
-    const resultados = await Promise.allSettled(
-      urlsUnicas.map(async (url) => {
-        const res = await importarImagenDesdeUrlAction(url);
-        return { original: url, res };
-      })
-    );
-
-    let procesadas = 0;
-    for (const item of resultados) {
-      if (item.status === "fulfilled" && item.value.res.success && item.value.res.url) {
-        mapeo[item.value.original] = item.value.res.url;
-        procesadas++;
-      }
-    }
-
-    return { success: true, mapeo, procesadas };
+    const res = await procesarUrlsFotosAction(urls);
+    return {
+      success: res.success,
+      mapeo: res.mapeo,
+      procesadas: res.urlsProcesadas.length,
+    };
   } catch (err: any) {
     return { success: false, mapeo: {}, procesadas: 0 };
   }
@@ -3532,7 +3672,7 @@ Devuelve ÚNICAMENTE un objeto JSON válido (sin backticks de markdown, sin text
       try {
         const webpBuffer = await sharp(buffer)
           .resize({ width: 1280, withoutEnlargement: true })
-          .webp({ quality: 84 })
+          .webp({ quality: 82 })
           .toBuffer();
 
         const fileName = `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.webp`;

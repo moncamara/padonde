@@ -7,6 +7,7 @@ import {
   eliminarEventoAdminAction,
   importarImagenDesdeUrlAction,
   importarLoteImagenesHospedajeAction,
+  procesarUrlsFotosAction,
   generarCopyHospedajeGeminiAction,
   type IngestaUniversalPrefillResultado,
 } from "../actions";
@@ -150,6 +151,7 @@ export function ModalEditarHospedaje({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [mostrarAsistenteUniversal, setMostrarAsistenteUniversal] = useState(false);
   const [isMigrandoFotosWebP, setIsMigrandoFotosWebP] = useState(false);
+  const [isProcesandoFotos, setIsProcesandoFotos] = useState(false);
   const [progresoMigracion, setProgresoMigracion] = useState<string | null>(null);
 
   // Sincronizar concurrentemente fotos externas hacia Supabase Storage (Sharp WebP)
@@ -176,7 +178,7 @@ export function ModalEditarHospedaje({
     setProgresoMigracion(`☁️ Optimizando ${unicas.length} fotos a WebP en PaDónde Storage...`);
 
     try {
-      const res = await importarLoteImagenesHospedajeAction(unicas);
+      const res = await procesarUrlsFotosAction(unicas);
       if (res.success && res.mapeo && Object.keys(res.mapeo).length > 0) {
         if (port && res.mapeo[port]) {
           setImagenUrl(res.mapeo[port]);
@@ -187,8 +189,12 @@ export function ModalEditarHospedaje({
             fotos: (h.fotos || []).map((f: string) => res.mapeo[f] || f),
           }))
         );
-        setFotosImportadas((prev) => prev.map((f) => res.mapeo[f] || f));
-        setProgresoMigracion(`🎉 ¡${res.procesadas} fotos optimizadas a WebP y alojadas en PaDónde!`);
+        setFotosImportadas((prev) => {
+          const reemplazadas = prev.map((f) => res.mapeo[f] || f);
+          const mapeadas = Object.values(res.mapeo);
+          return Array.from(new Set([...reemplazadas, ...mapeadas]));
+        });
+        setProgresoMigracion(`🎉 ¡${res.urlsProcesadas.length} fotos optimizadas a WebP y alojadas en PaDónde!`);
       } else {
         setProgresoMigracion(null);
       }
@@ -261,9 +267,16 @@ export function ModalEditarHospedaje({
       });
       const unicas = Array.from(new Set(urlsCandidatas));
       if (unicas.length > 0) {
-        setFotosImportadas(unicas);
-        // Sincronizar automáticamente en segundo plano a Storage (Sharp WebP)
-        sincronizarFotosAStorage(habsVal, portVal);
+        // Cargar inmediatamente fotos que ya residen en Supabase
+        const soloSupabase = unicas.filter((u) => u.includes("supabase.co"));
+        if (soloSupabase.length > 0) {
+          setFotosImportadas(soloSupabase);
+        }
+        // Iniciar migración a Storage en backend si existen fotos externas
+        const urlsExternas = unicas.filter((u) => !u.includes("supabase.co") && !u.startsWith("blob:"));
+        if (urlsExternas.length > 0) {
+          sincronizarFotosAStorage(habsVal, portVal);
+        }
       }
     }
     // Asegurar que el modal siempre abra desde arriba
@@ -301,8 +314,14 @@ export function ModalEditarHospedaje({
     });
     const unicas = Array.from(new Set(urlsCandidatas));
     if (unicas.length > 0) {
-      setFotosImportadas(unicas);
-      sincronizarFotosAStorage(habs, datos.imagenPortadaUrl || undefined);
+      const soloSupabase = unicas.filter((u) => u.includes("supabase.co"));
+      if (soloSupabase.length > 0) {
+        setFotosImportadas(soloSupabase);
+      }
+      const urlsExternas = unicas.filter((u) => !u.includes("supabase.co") && !u.startsWith("blob:"));
+      if (urlsExternas.length > 0) {
+        sincronizarFotosAStorage(habs, datos.imagenPortadaUrl || undefined);
+      }
     }
 
     setMostrarAsistenteUniversal(false);
@@ -347,17 +366,32 @@ export function ModalEditarHospedaje({
     }
   };
 
-  // Manejador de pegado de URLs en el importador
-  const handlePegarUrlsImportador = (texto: string) => {
+  // Manejador de pegado de URLs en el importador (Procesamiento Server-Side obligatorio)
+  const handlePegarUrlsImportador = async (texto: string) => {
     setUrlsImportador(texto);
     const urlsExtraidas = extraerYOptimizarUrls(texto);
-    if (urlsExtraidas.length > 0) {
-      setFotosImportadas((prev) => {
-        const combinadas = [...prev, ...urlsExtraidas.filter((u) => !prev.includes(u))];
-        return combinadas;
-      });
-      setMensajeImportacion(`✨ ${urlsExtraidas.length} foto(s) detectadas y optimizadas a HD.`);
-      setTimeout(() => setMensajeImportacion(null), 3500);
+    if (urlsExtraidas.length === 0) return;
+
+    setIsProcesandoFotos(true);
+    setMensajeImportacion(`⚡ Optimizando y subiendo ${urlsExtraidas.length} foto(s) a PaDónde Storage...`);
+
+    try {
+      const res = await procesarUrlsFotosAction(urlsExtraidas);
+      if (res.success && res.urlsProcesadas && res.urlsProcesadas.length > 0) {
+        setFotosImportadas((prev) => {
+          const nuevas = res.urlsProcesadas.filter((u) => !prev.includes(u));
+          return [...prev, ...nuevas];
+        });
+        setMensajeImportacion(`🎉 ${res.urlsProcesadas.length} foto(s) WebP alojadas en PaDónde Storage listas.`);
+      } else {
+        setMensajeImportacion("⚠️ No se pudieron procesar algunas fotos.");
+      }
+    } catch (err) {
+      console.error("Error al procesar fotos:", err);
+      setMensajeImportacion("⚠️ Error al conectar con el servidor.");
+    } finally {
+      setIsProcesandoFotos(false);
+      setTimeout(() => setMensajeImportacion(null), 4000);
     }
   };
 
@@ -891,7 +925,6 @@ export function ModalEditarHospedaje({
                         src={imagenUrl}
                         alt="Vista previa portada"
                         referrerPolicy="no-referrer"
-                        crossOrigin="anonymous"
                         className="w-full h-full object-cover"
                       />
                       <button
@@ -1038,7 +1071,16 @@ export function ModalEditarHospedaje({
                   <span>🔗 Pegar URLs de fotos (Booking, Airbnb o enlaces web)</span>
                 </label>
                 <div className="flex items-center gap-2">
-                  {mensajeImportacion && (
+                  {isProcesandoFotos && (
+                    <span className="text-[11px] font-semibold text-amber-700 flex items-center gap-1.5 animate-pulse">
+                      <svg className="animate-spin h-3.5 w-3.5 text-amber-600" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Subiendo a Storage...
+                    </span>
+                  )}
+                  {mensajeImportacion && !isProcesandoFotos && (
                     <span className="text-[11px] font-semibold text-emerald-700 animate-in fade-in">
                       {mensajeImportacion}
                     </span>
@@ -1054,10 +1096,29 @@ export function ModalEditarHospedaje({
                 <textarea
                   rows={3}
                   value={urlsImportador}
-                  onChange={(e) => handlePegarUrlsImportador(e.target.value)}
+                  onChange={(e) => setUrlsImportador(e.target.value)}
+                  onPaste={(e) => {
+                    const text = e.clipboardData.getData("text");
+                    if (text) {
+                      e.preventDefault();
+                      handlePegarUrlsImportador(text);
+                    }
+                  }}
+                  disabled={isProcesandoFotos}
                   placeholder="Pega aquí una o varias URLs (ej: https://cf.bstatic.com/... o https://a0.muscache.com/...) separadas por saltos de línea..."
-                  className="w-full bg-white border border-stone-light rounded-xl p-2.5 text-[11px] font-mono text-forest placeholder:text-stone/60 focus:outline-none focus:border-forest resize-y"
+                  className="w-full bg-white border border-stone-light rounded-xl p-2.5 text-[11px] font-mono text-forest placeholder:text-stone/60 focus:outline-none focus:border-forest resize-y disabled:opacity-50"
                 />
+                {urlsImportador.trim().length > 0 && !isProcesandoFotos && (
+                  <div className="mt-2 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => handlePegarUrlsImportador(urlsImportador)}
+                      className="px-3 py-1 bg-forest text-cream text-[11px] font-bold rounded-lg hover:bg-forest-dark transition-colors cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                    >
+                      ⚡ Ingerir a PaDónde Storage
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1066,7 +1127,7 @@ export function ModalEditarHospedaje({
               <div className="space-y-3 pt-2 border-t border-stone-light/60">
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <span className="font-semibold text-forest text-xs">
-                    Previsualización ({fotosImportadas.length} fotos detectadas en alta resolución):
+                    Previsualización ({fotosImportadas.length} fotos listas en PaDónde Storage):
                   </span>
                   <div className="flex items-center gap-2">
                     <button
@@ -1091,7 +1152,6 @@ export function ModalEditarHospedaje({
                         src={url}
                         alt={`Foto importada ${idx + 1}`}
                         referrerPolicy="no-referrer"
-                        crossOrigin="anonymous"
                         className="w-full h-full object-cover"
                         loading="lazy"
                       />
@@ -1833,7 +1893,6 @@ function HabitacionFotosManager({
                   src={src}
                   alt={`Foto habitación ${fIdx + 1}`}
                   referrerPolicy="no-referrer"
-                  crossOrigin="anonymous"
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     (e.target as HTMLElement).style.opacity = "0.5";
@@ -1930,7 +1989,6 @@ function HabitacionFotosManager({
                       src={url}
                       alt={`Miniatura ${fIdx + 1}`}
                       referrerPolicy="no-referrer"
-                      crossOrigin="anonymous"
                       className="w-8 h-8 rounded-lg object-cover bg-stone-100 flex-shrink-0 border border-stone-light/50"
                       onError={(e) => {
                         (e.target as HTMLElement).style.opacity = "0.5";
