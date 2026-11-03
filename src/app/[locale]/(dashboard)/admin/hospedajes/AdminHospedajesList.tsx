@@ -30,9 +30,11 @@ export function AdminHospedajesList({
   const [isPending, startTransition] = useTransition();
   const [listaHospedajes, setListaHospedajes] = useState<any[]>(hospedajes);
 
-  // Estados de Búsqueda y Filtro de Zona
+  // Estados de Búsqueda, Filtro de Zona y Ordenación
   const [busqueda, setBusqueda] = useState("");
   const [filtroZona, setFiltroZona] = useState<string>("todas");
+  type CriterioOrdenHospedajes = "recientes" | "nombre" | "rating" | "antiguos";
+  const [criterioOrden, setCriterioOrden] = useState<CriterioOrdenHospedajes>("recientes");
 
   useEffect(() => {
     setListaHospedajes((prev) => {
@@ -55,7 +57,7 @@ export function AdminHospedajesList({
     });
   }, [hospedajes]);
 
-  // Filtrado reactivo en tiempo real
+  // Filtrado y ordenación reactiva en tiempo real
   const hospedajesFiltrados = useMemo(() => {
     let resultado = listaHospedajes;
 
@@ -86,8 +88,29 @@ export function AdminHospedajesList({
       });
     }
 
-    return resultado;
-  }, [listaHospedajes, filtroZona, busqueda]);
+    // Ordenación según criterio seleccionado
+    return [...resultado].sort((a, b) => {
+      if (criterioOrden === "nombre") {
+        const nomA = (a.titulo || a.negocio?.nombre || "").toLowerCase();
+        const nomB = (b.titulo || b.negocio?.nombre || "").toLowerCase();
+        return nomA.localeCompare(nomB, "es", { sensitivity: "base" });
+      }
+      if (criterioOrden === "rating") {
+        const rA = Number(a.metadata_hospedaje?.google_reputacion?.rating ?? a.negocio?.google_rating ?? 0);
+        const rB = Number(b.metadata_hospedaje?.google_reputacion?.rating ?? b.negocio?.google_rating ?? 0);
+        return rB - rA;
+      }
+      if (criterioOrden === "antiguos") {
+        const tA = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const tB = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return tA - tB;
+      }
+      // "recientes" (por defecto): del más reciente al más antiguo
+      const tA = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const tB = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return tB - tA;
+    });
+  }, [listaHospedajes, filtroZona, busqueda, criterioOrden]);
 
   const [modalAbierto, setModalAbierto] = useState(false);
   const [abrirConJson, setAbrirConJson] = useState(false);
@@ -367,27 +390,48 @@ export function AdminHospedajesList({
           })}
         </div>
 
-        {/* Buscador de Hospedaje */}
-        <div className="relative w-full sm:w-72 shrink-0">
-          <input
-            type="text"
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-            placeholder="Buscar por nombre, anfitrión..."
-            className="w-full pl-9 pr-8 py-2 text-xs bg-stone-light/20 focus:bg-white rounded-2xl border border-stone-light/80 placeholder:text-stone/60 focus:outline-none focus:ring-1 focus:ring-forest text-forest transition-colors font-sans"
-          />
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone text-xs pointer-events-none">
-            🔍
-          </span>
-          {busqueda && (
-            <button
-              onClick={() => setBusqueda("")}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone hover:text-forest text-xs cursor-pointer p-1"
-              title="Limpiar búsqueda"
+        {/* Controles de Orden y Búsqueda */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+          {/* Selector de Orden */}
+          <div className="relative shrink-0">
+            <select
+              value={criterioOrden}
+              onChange={(e) => setCriterioOrden(e.target.value as any)}
+              className="w-full sm:w-auto py-2 sm:py-2 pl-3 pr-7 text-xs bg-stone-light/20 focus:bg-white rounded-2xl border border-stone-light/80 text-forest font-medium focus:outline-none focus:ring-1 focus:ring-forest cursor-pointer appearance-none shadow-2xs transition-colors"
+              title="Criterio de ordenación"
             >
-              ✕
-            </button>
-          )}
+              <option value="recientes">⚡ Más recientes primero</option>
+              <option value="nombre">🔤 Nombre (A-Z)</option>
+              <option value="rating">⭐ Mayor Rating Google</option>
+              <option value="antiguos">🗓️ Más antiguos primero</option>
+            </select>
+            <span className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-[10px] text-stone">
+              ▼
+            </span>
+          </div>
+
+          {/* Buscador de Hospedaje */}
+          <div className="relative w-full sm:w-64 shrink-0">
+            <input
+              type="text"
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              placeholder="Buscar por nombre, anfitrión..."
+              className="w-full pl-9 pr-8 py-2 text-xs bg-stone-light/20 focus:bg-white rounded-2xl border border-stone-light/80 placeholder:text-stone/60 focus:outline-none focus:ring-1 focus:ring-forest text-forest transition-colors font-sans"
+            />
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone text-xs pointer-events-none">
+              🔍
+            </span>
+            {busqueda && (
+              <button
+                onClick={() => setBusqueda("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone hover:text-forest text-xs cursor-pointer p-1"
+                title="Limpiar búsqueda"
+              >
+                ✕
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

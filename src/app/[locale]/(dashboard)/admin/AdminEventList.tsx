@@ -88,6 +88,8 @@ export function AdminEventList({
   const [tabActiva, setTabActiva] = useState<TabType>("vigentes");
   const [filtroZona, setFiltroZona] = useState<string>("todas");
   const [busqueda, setBusqueda] = useState(searchParams.get("busqueda") || "");
+  type CriterioOrdenEventos = "recientes" | "cronologico" | "nombre" | "antiguos";
+  const [criterioOrden, setCriterioOrden] = useState<CriterioOrdenEventos>("recientes");
   const [eventoAEditar, setEventoAEditar] = useState<EventoAdminItem | null>(null);
   const [eventoAProyectar, setEventoAProyectar] = useState<EventoAdminItem | null>(null);
   const [eventoANotificar, setEventoANotificar] = useState<EventoNotificarData | null>(null);
@@ -188,20 +190,46 @@ export function AdminEventList({
     }
   }, [tabActiva, vigentes, pausados, pasados]);
 
-  // 3. Filtrado por texto de búsqueda
+  // 3. Filtrado por texto de búsqueda y ordenación
   const listaFiltrada = useMemo(() => {
+    let res = listaBase;
     const q = busqueda.trim().toLowerCase();
-    if (!q) return listaBase;
+    if (q) {
+      res = res.filter((ev) => {
+        const tituloMatch = ev.titulo.toLowerCase().includes(q);
+        const negocioMatch = ev.negocio?.nombre.toLowerCase().includes(q) ?? false;
+        const tipoMatch =
+          ev.tipo.toLowerCase().includes(q) ||
+          (ev.categorias && ev.categorias.some((c) => c.toLowerCase().includes(q)));
+        return tituloMatch || negocioMatch || tipoMatch;
+      });
+    }
 
-    return listaBase.filter((ev) => {
-      const tituloMatch = ev.titulo.toLowerCase().includes(q);
-      const negocioMatch = ev.negocio?.nombre.toLowerCase().includes(q) ?? false;
-      const tipoMatch =
-        ev.tipo.toLowerCase().includes(q) ||
-        (ev.categorias && ev.categorias.some((c) => c.toLowerCase().includes(q)));
-      return tituloMatch || negocioMatch || tipoMatch;
+    return [...res].sort((a, b) => {
+      if (criterioOrden === "nombre") {
+        return a.titulo.localeCompare(b.titulo, "es", { sensitivity: "base" });
+      }
+      if (criterioOrden === "cronologico") {
+        if (a.destacado !== b.destacado) return a.destacado ? -1 : 1;
+        const ymdA = getFechaYMDDesdeISO(a.fecha_inicio);
+        const ymdB = getFechaYMDDesdeISO(b.fecha_inicio);
+        if (ymdA !== ymdB) return ymdA.localeCompare(ymdB);
+        const minA = getMinutosDelDiaColombia(a.fecha_inicio);
+        const minB = getMinutosDelDiaColombia(b.fecha_inicio);
+        if (minA !== minB) return minA - minB;
+        return a.titulo.localeCompare(b.titulo);
+      }
+      if (criterioOrden === "antiguos") {
+        const tA = (a as any).created_at ? new Date((a as any).created_at).getTime() : new Date(a.fecha_inicio).getTime();
+        const tB = (b as any).created_at ? new Date((b as any).created_at).getTime() : new Date(b.fecha_inicio).getTime();
+        return tA - tB;
+      }
+      // "recientes" (por defecto): del más reciente al más antiguo según creación o última fecha
+      const tA = (a as any).created_at ? new Date((a as any).created_at).getTime() : new Date(a.fecha_inicio).getTime();
+      const tB = (b as any).created_at ? new Date((b as any).created_at).getTime() : new Date(b.fecha_inicio).getTime();
+      return tB - tA;
     });
-  }, [listaBase, busqueda]);
+  }, [listaBase, busqueda, criterioOrden]);
 
   return (
     <section className="space-y-4">
@@ -345,23 +373,44 @@ export function AdminEventList({
           </button>
         </div>
 
-        {/* Buscador Rápido */}
-        <div className="relative w-full sm:w-auto">
-          <input
-            type="text"
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-            placeholder="Buscar por título o negocio..."
-            className="w-full sm:w-64 px-3.5 py-2 sm:py-1.5 text-xs bg-white/80 rounded-xl border border-stone-light/80 placeholder:text-stone/60 focus:outline-none focus:ring-1 focus:ring-forest text-forest"
-          />
-          {busqueda && (
-            <button
-              onClick={() => setBusqueda("")}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone hover:text-forest text-xs cursor-pointer p-1"
+        {/* Controles de Orden y Búsqueda */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+          {/* Selector de Orden */}
+          <div className="relative shrink-0">
+            <select
+              value={criterioOrden}
+              onChange={(e) => setCriterioOrden(e.target.value as any)}
+              className="w-full sm:w-auto py-2 sm:py-1.5 pl-3 pr-7 text-xs bg-white/90 rounded-xl border border-stone-light/80 text-forest font-medium focus:outline-none focus:ring-1 focus:ring-forest cursor-pointer appearance-none shadow-2xs"
+              title="Criterio de ordenación de eventos"
             >
-              ✕
-            </button>
-          )}
+              <option value="recientes">⚡ Más recientes primero</option>
+              <option value="cronologico">🗓️ Por fecha de evento</option>
+              <option value="nombre">🔤 Nombre / Título (A-Z)</option>
+              <option value="antiguos">⏳ Más antiguos primero</option>
+            </select>
+            <span className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-[10px] text-stone">
+              ▼
+            </span>
+          </div>
+
+          {/* Buscador Rápido */}
+          <div className="relative w-full sm:w-60">
+            <input
+              type="text"
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              placeholder="Buscar por título o negocio..."
+              className="w-full px-3.5 py-2 sm:py-1.5 text-xs bg-white/80 rounded-xl border border-stone-light/80 placeholder:text-stone/60 focus:outline-none focus:ring-1 focus:ring-forest text-forest"
+            />
+            {busqueda && (
+              <button
+                onClick={() => setBusqueda("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone hover:text-forest text-xs cursor-pointer p-1"
+              >
+                ✕
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
