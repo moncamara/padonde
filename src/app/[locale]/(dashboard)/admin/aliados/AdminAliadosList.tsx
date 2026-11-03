@@ -244,6 +244,83 @@ export function AdminAliadosList({
     setAliadosSeleccionados(nueva);
   };
 
+  // Exportar directorio completo o filtrado a Excel (CSV con UTF-8 BOM)
+  const handleExportarExcel = () => {
+    const lista = aliadosFiltrados.length > 0 ? aliadosFiltrados : aliados;
+    const headers = [
+      "Nombre del Aliado",
+      "Zona / Destino",
+      "Categoría",
+      "Teléfono / WhatsApp",
+      "Link WhatsApp",
+      "Instagram Handle",
+      "Link Instagram",
+      "Estado",
+      "Plan",
+      "Rating Google",
+      "Total Reseñas",
+      "Google Maps URL"
+    ];
+
+    const escapeCsv = (val: any) => {
+      if (val === null || val === undefined) return "";
+      const str = String(val).replace(/"/g, '""');
+      if (str.includes(";") || str.includes("\n") || str.includes('"')) {
+        return `"${str}"`;
+      }
+      return str;
+    };
+
+    const cleanInstagram = (ig?: string | null) => {
+      if (!ig || !ig.trim()) return "";
+      const clean = ig.trim().replace(/^@/, "").replace(/^https?:\/\/(www\.)?instagram\.com\//, "").replace(/\/$/, "");
+      return clean ? `@${clean}` : "";
+    };
+
+    const rows = lista.map((a) => {
+      const wa = cleanPhoneNumber(a.whatsapp);
+      const waLink = wa ? `https://wa.me/${wa}` : "";
+      const igHandle = cleanInstagram(a.instagram);
+      const igLink = igHandle ? `https://instagram.com/${igHandle.replace(/^@/, "")}` : "";
+      const destino =
+        a.zonaNombre ||
+        (a.zonaSlug === "mendihuaca"
+          ? "Mendihuaca"
+          : a.zonaSlug === "tayrona"
+          ? "Tayrona"
+          : a.zonaSlug === "taganga"
+          ? "Taganga"
+          : "Minca");
+      const rating = a.google_rating != null ? String(a.google_rating).replace(".", ",") : "";
+
+      return [
+        escapeCsv(a.nombre),
+        escapeCsv(destino),
+        escapeCsv(a.categoria),
+        escapeCsv(wa ? `+${wa}` : ""),
+        escapeCsv(waLink),
+        escapeCsv(igHandle),
+        escapeCsv(igLink),
+        escapeCsv(a.activo ? "Activo" : "Inactivo"),
+        escapeCsv(a.plan || "gratis"),
+        escapeCsv(rating),
+        escapeCsv(a.google_total_reviews != null ? a.google_total_reviews : ""),
+        escapeCsv(a.google_maps_url || "")
+      ].join(";");
+    });
+
+    const csvContent = "\uFEFF" + [headers.join(";"), ...rows].join("\r\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `directorio_aliados_padonde_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   // Mensaje para cobrar o contactar por WhatsApp
   function generarEnlaceWhatsAppCobro(aliado: AliadoItem) {
     const cleanWa = cleanPhoneNumber(aliado.whatsapp);
@@ -536,6 +613,17 @@ export function AdminAliadosList({
               </button>
             )}
           </div>
+
+          {/* Botón Exportar a Excel */}
+          <button
+            type="button"
+            onClick={handleExportarExcel}
+            className="px-3.5 py-2 sm:py-1.5 rounded-xl text-xs font-semibold bg-emerald-800 text-white hover:bg-emerald-900 transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+            title="Descargar directorio completo en formato Excel (.CSV)"
+          >
+            <span>📥</span>
+            <span>Exportar a Excel</span>
+          </button>
         </div>
       </div>
 
