@@ -329,6 +329,25 @@ export function EventUpsertForm({
     );
   }
 
+  // Recordatorio visual: si es recurrente con 1 o 2 días y la fecha de ancla ya pasó
+  const hoyYMDActual = useMemo(() => getFechaYMDColombia(new Date()), []);
+  const alertaRecurrenciaPasada = useMemo(() => {
+    if (!esRecurrente) return false;
+    if (diasRecurrentes.length === 0 || diasRecurrentes.length > 2) return false;
+    const anclaPasada = Boolean(fechaAncla && fechaAncla < hoyYMDActual);
+    if (!anclaPasada) return false;
+    const tieneVigenciaFuturaActiva =
+      tieneLimiteVigencia && fechaLimiteVigencia && fechaLimiteVigencia >= hoyYMDActual;
+    return !tieneVigenciaFuturaActiva;
+  }, [
+    esRecurrente,
+    diasRecurrentes,
+    fechaAncla,
+    hoyYMDActual,
+    tieneLimiteVigencia,
+    fechaLimiteVigencia,
+  ]);
+
   // 5. Fotografía Principal y Portada
   const [file, setFile] = useState<File | null>(null);
   const [previewFoto, setPreviewFoto] = useState<string | null>(initialEvento?.imagen_url || null);
@@ -1683,6 +1702,16 @@ export function EventUpsertForm({
                   <p className="text-[10px] text-emerald-800 font-medium pt-1">
                     ✓ Se mostrará los {formatearDiasRecurrencia(diasRecurrentes).toLowerCase()} de {horaInicio} a {horaFin}
                   </p>
+                )}
+
+                {/* Alerta de Recurrencia Pasada vs Vigencia */}
+                {alertaRecurrenciaPasada && (
+                  <div className="flex items-start gap-2.5 p-3 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-900 mt-2">
+                    <span className="text-sm select-none shrink-0 mt-0.5">⚠️</span>
+                    <p className="text-xs text-amber-900 leading-relaxed font-medium">
+                      Si este evento ya culminó, desmarca la casilla de recurrencia o define una fecha límite de vigencia.
+                    </p>
+                  </div>
                 )}
               </div>
 

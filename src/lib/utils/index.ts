@@ -508,6 +508,7 @@ export function eventoCoincideConFiltroTiempo(
   const rec = extraerRecurrencia(descripcion, metadata, diasRecurrentesDirectos);
   const ymdInicio = getFechaYMDDesdeISO(fechaInicioIso);
   const ymdFin = fechaFinIso ? getFechaYMDDesdeISO(fechaFinIso) : null;
+  const hoyYMD = getFechaYMDColombia(now);
 
   // Fecha límite de vigencia de recurrencia (si fue explícitamente configurada)
   // NOTA CRÍTICA: En eventos recurrentes, un ymdFin igual o contiguo a ymdInicio (ymdFin <= ymdInicio + 1)
@@ -528,6 +529,8 @@ export function eventoCoincideConFiltroTiempo(
     // Las actividades recurrentes semanales/diarias ya se muestran en la barra de 7 días.
     // Solo aparecen en "Próximos" si su fecha ancla inicial aún no ha comenzado y arranca después de los 7 días.
     if (rec.esRecurrente) {
+      if (fechaLimiteVigencia && fechaLimiteVigencia < hoyYMD) return false;
+      if (!fechaLimiteVigencia && ymdFin && ymdFin < hoyYMD) return false;
       return ymdInicio > limiteBarraYMD;
     }
 
@@ -545,10 +548,13 @@ export function eventoCoincideConFiltroTiempo(
   }
 
   if (filtro === "todos") {
-    const hoyYMD = getFechaYMDColombia(now);
     if (rec.esRecurrente) {
-      // Si tiene fecha límite de vigencia y ya caducó antes de hoy, no mostrar
+      // 1. Si cuenta con fecha límite de vigencia explícita y ya expiró, no mostrar
       if (fechaLimiteVigencia && fechaLimiteVigencia < hoyYMD) {
+        return false;
+      }
+      // 2. Si NO tiene fecha límite de vigencia pero su fecha_fin original en BD quedó en el pasado anterior a hoy, descartar
+      if (!fechaLimiteVigencia && ymdFin && ymdFin < hoyYMD) {
         return false;
       }
       return true;
@@ -622,13 +628,20 @@ export function eventoCoincideConFiltroTiempo(
 
   // Caso 1: Evento recurrente (días específicos de la semana / permanente)
   if (rec.esRecurrente) {
-    // 1. Debe ser igual o posterior a la fecha de inicio / ancla en Colombia
-    if (ymdTarget < ymdInicio) return false;
-
-    // 2. Si tiene fecha límite de vigencia y ya venció, no mostrar
+    // 1. Si cuenta con fecha límite de vigencia explícita y ya expiró, no mostrar
     if (fechaLimiteVigencia && ymdTarget > fechaLimiteVigencia) return false;
 
-    // 3. Coincide si el día de la semana coincide con los días programados en dias_recurrentes
+    // 2. Si NO tiene fecha límite de vigencia pero su fecha_fin original en base de datos
+    // quedó registrada con una fecha en el pasado anterior a hoy (por ejemplo un evento cerrado
+    // antes de la migración), no lo interpretes como infinito: respeta esa caducidad y descártalo.
+    if (!fechaLimiteVigencia && ymdFin && ymdFin < hoyYMD) {
+      return false;
+    }
+
+    // 3. Debe ser igual o posterior a la fecha de inicio / ancla en Colombia
+    if (ymdTarget < ymdInicio) return false;
+
+    // 4. Coincide si el día de la semana coincide con los días programados en dias_recurrentes
     const diaSemana = getDayOfWeekColombia(ymdTarget);
     return rec.dias.includes(diaSemana);
   }
