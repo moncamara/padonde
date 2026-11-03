@@ -77,25 +77,28 @@ export default async function MenuDemoPage({
     const isSilocibe =
       search.eventoId === "08e4bfe7-8b1c-45a0-9efb-9cb0932b8d09";
     const evento = await getEventoById(search.eventoId);
+    const dbMenu = evento?.metadata_hospedaje?.menu_data as any;
+    const esMenuSilocibeIncompleto =
+      isSilocibe && (!dbMenu?.categorias || dbMenu.categorias.length < 12);
 
-    if (evento?.metadata_hospedaje?.menu_data) {
+    if (evento && dbMenu && !esMenuSilocibeIncompleto) {
       menuData = {
-        ...(evento.metadata_hospedaje.menu_data as any),
+        ...(dbMenu as any),
         negocioNombre:
-          (evento.metadata_hospedaje.menu_data as any)?.negocioNombre ||
+          (dbMenu as any)?.negocioNombre ||
           evento.negocio?.nombre ||
           evento.titulo,
         whatsapp:
-          (evento.metadata_hospedaje.menu_data as any)?.whatsapp ||
+          (dbMenu as any)?.whatsapp ||
           evento.negocio?.whatsapp ||
           "573218507204",
         googleMapsUrl:
-          (evento.metadata_hospedaje.menu_data as any)?.googleMapsUrl ||
+          (dbMenu as any)?.googleMapsUrl ||
           evento.metadata_hospedaje?.google_review_url ||
           (evento.metadata_hospedaje?.google_reputacion as any)?.maps_url ||
           "https://search.google.com/local/writereview?placeid=ChIJKy680-Lx9I4Rk89-h79nh9s",
         pdfOriginalUrl:
-          (evento.metadata_hospedaje.menu_data as any)?.pdfOriginalUrl ||
+          (dbMenu as any)?.pdfOriginalUrl ||
           evento.metadata_hospedaje?.menu_url ||
           "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/eventos/silocibe-menu-oficial-minca.pdf",
       };

@@ -534,6 +534,15 @@ export function EventUpsertForm({
   // Carta Digital Interactiva JSON (Gemini)
   const [menuDataJson, setMenuDataJson] = useState<string>(() => {
     const raw = initialEvento?.metadata_hospedaje?.menu_data;
+    if (isSilocibe) {
+      let parsedRaw: any = raw;
+      if (typeof raw === "string") {
+        try { parsedRaw = JSON.parse(raw); } catch { parsedRaw = null; }
+      }
+      if (!parsedRaw || !Array.isArray(parsedRaw.categorias) || parsedRaw.categorias.length < 12) {
+        return JSON.stringify(SILOCIBE_MENU, null, 2);
+      }
+    }
     if (raw) {
       try {
         return typeof raw === "string" ? raw : JSON.stringify(raw, null, 2);
@@ -548,7 +557,16 @@ export function EventUpsertForm({
   });
   const [jsonError, setJsonError] = useState<string | null>(null);
   const [jsonStats, setJsonStats] = useState<{ categorias: number; platos: number } | null>(() => {
-    const raw = initialEvento?.metadata_hospedaje?.menu_data || (isSilocibe ? SILOCIBE_MENU : null);
+    let raw = initialEvento?.metadata_hospedaje?.menu_data;
+    if (isSilocibe) {
+      let parsedRaw: any = raw;
+      if (typeof raw === "string") {
+        try { parsedRaw = JSON.parse(raw); } catch { parsedRaw = null; }
+      }
+      if (!parsedRaw || !Array.isArray(parsedRaw.categorias) || parsedRaw.categorias.length < 12) {
+        raw = SILOCIBE_MENU;
+      }
+    }
     if (raw && typeof raw === "object") {
       const cats = Array.isArray(raw.categorias) ? raw.categorias.length : 0;
       const platos = Array.isArray(raw.categorias)
