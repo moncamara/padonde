@@ -25,6 +25,7 @@ export interface CategoriaMenu {
   icono: string;
   titulos: Record<IdiomaCodigo, string>;
   subtitulos?: Record<IdiomaCodigo, string>;
+  imagenPortada?: string;
   items: ItemMenu[];
 }
 

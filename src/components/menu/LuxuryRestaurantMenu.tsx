@@ -1003,6 +1003,65 @@ export function LuxuryRestaurantMenu({
                 </span>
               </div>
 
+              {/* Banner Destacado de Categoría (Visual Appetite Appeal) */}
+              {cat.imagenPortada && (
+                <div
+                  className="relative w-full overflow-hidden rounded-2xl group h-36 sm:h-44 aspect-[16/9] shadow-md border"
+                  style={{
+                    borderColor: th.border,
+                    backgroundColor: th.surface,
+                  }}
+                >
+                  <img
+                    src={cat.imagenPortada}
+                    alt={cat.titulos[idioma] || cat.titulos.es}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 select-none"
+                    loading="lazy"
+                  />
+                  {/* Gradiente protector para contraste y toque editorial */}
+                  <div
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.15) 50%, transparent 100%)",
+                      pointerEvents: "none",
+                      display: "flex",
+                      alignItems: "flex-end",
+                      padding: "0.85rem 1rem",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+                      <span
+                        style={{
+                          fontFamily: th.fontTitle,
+                          fontSize: "0.95rem",
+                          fontWeight: 700,
+                          color: "#FFFFFF",
+                          textShadow: "0 2px 6px rgba(0,0,0,0.8)",
+                        }}
+                      >
+                        {cat.subtitulos?.[idioma] || cat.titulos[idioma]}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: "0.68rem",
+                          fontFamily: "monospace",
+                          fontWeight: 700,
+                          padding: "0.2rem 0.55rem",
+                          borderRadius: "9999px",
+                          backgroundColor: "rgba(0,0,0,0.6)",
+                          backdropFilter: "blur(6px)",
+                          color: th.accent,
+                          border: `1px solid ${th.border}`,
+                        }}
+                      >
+                        {itemsFiltrados.length} {itemsFiltrados.length === 1 ? t.opcion : t.opciones}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Tarjetas editoriales (sin carrito de compras) */}
               <div
                 style={{

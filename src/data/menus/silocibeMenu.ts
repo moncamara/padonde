@@ -133,7 +133,8 @@ export const SILOCIBE_MENU: MenuRestaurante = {
             "reconfortante"
           ]
         }
-      ]
+      ],
+      "imagenPortada": "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/eventos/1793722179618-silocibe-banner-entradas.webp"
     },
     {
       "id": "platos-fuertes",
@@ -222,7 +223,8 @@ export const SILOCIBE_MENU: MenuRestaurante = {
             "especialidad"
           ]
         }
-      ]
+      ],
+      "imagenPortada": "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/eventos/1793722179618-silocibe-banner-platos-fuertes.webp"
     },
     {
       "id": "hamburguesas-y-sandwiches",
@@ -350,7 +352,8 @@ export const SILOCIBE_MENU: MenuRestaurante = {
             "clasico"
           ]
         }
-      ]
+      ],
+      "imagenPortada": "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/eventos/1793722179618-silocibe-banner-hamburguesas.webp"
     },
     {
       "id": "sushi-bar",
@@ -442,7 +445,8 @@ export const SILOCIBE_MENU: MenuRestaurante = {
             "para-compartir"
           ]
         }
-      ]
+      ],
+      "imagenPortada": "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/eventos/1793722179618-silocibe-banner-sushi.webp"
     },
     {
       "id": "pizzas",
@@ -533,7 +537,8 @@ export const SILOCIBE_MENU: MenuRestaurante = {
             "italiana"
           ]
         }
-      ]
+      ],
+      "imagenPortada": "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/eventos/1793722179618-silocibe-banner-pizzas.webp"
     },
     {
       "id": "bebidas-calientes",
@@ -605,7 +610,8 @@ export const SILOCIBE_MENU: MenuRestaurante = {
             "coctel-caliente"
           ]
         }
-      ]
+      ],
+      "imagenPortada": "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/eventos/1793722179618-silocibe-banner-cafe-chocosilo.webp"
     },
     {
       "id": "cocteleria",
@@ -677,7 +683,8 @@ export const SILOCIBE_MENU: MenuRestaurante = {
             "fresco"
           ]
         }
-      ]
+      ],
+      "imagenPortada": "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/eventos/1793722179618-silocibe-banner-cocteleria.webp"
     }
   ],
   "zona": "Minca · Sierra Nevada de Santa Marta",
