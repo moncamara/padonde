@@ -140,7 +140,8 @@ export function LuxuryRestaurantMenu({
 
   // Mensaje directo y realista hacia WhatsApp (consulta de mesa / disponibilidad)
   const whatsappUrl = useMemo(() => {
-    const telefono = menu.whatsapp.replace(/\D/g, "");
+    const rawNumber = menu.whatsapp || "573218507204";
+    const telefono = rawNumber.replace(/\D/g, "");
     let mensaje = "";
 
     if (idioma === "en") {
@@ -1191,25 +1192,27 @@ export function LuxuryRestaurantMenu({
             gap: "0.5rem",
           }}
         >
-          <div>
-            <a
-              href={menu.pdfOriginalUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "0.35rem",
-                fontSize: "0.75rem",
-                color: th.accent,
-                textDecoration: "underline",
-                textUnderlineOffset: "3px",
-              }}
-            >
-              <span>📄</span>
-              <span>{t.verPdf}</span>
-            </a>
-          </div>
+          {menu.pdfOriginalUrl && (
+            <div>
+              <a
+                href={menu.pdfOriginalUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.35rem",
+                  fontSize: "0.75rem",
+                  color: th.accent,
+                  textDecoration: "underline",
+                  textUnderlineOffset: "3px",
+                }}
+              >
+                <span>📄</span>
+                <span>{t.verPdf}</span>
+              </a>
+            </div>
+          )}
           <p
             style={{
               fontSize: "0.75rem",
@@ -1331,7 +1334,7 @@ export function LuxuryRestaurantMenu({
           </a>
 
           <a
-            href={menu.googleMapsUrl}
+            href={menu.googleMapsUrl || "https://search.google.com/local/writereview?placeid=ChIJKy680-Lx9I4Rk89-h79nh9s"}
             target="_blank"
             rel="noopener noreferrer"
             style={{

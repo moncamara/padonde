@@ -15,7 +15,7 @@ export interface ItemMenu {
     fr: string;
     de: string;
   };
-  etiquetas?: ("angus" | "vegetariano" | "chef" | "happy_hour" | "fines_de_semana")[];
+  etiquetas?: ("angus" | "vegetariano" | "chef" | "happy_hour" | "fines_de_semana" | string)[];
   maridaje?: Record<IdiomaCodigo, string>;
   imagenUrl?: string;
 }

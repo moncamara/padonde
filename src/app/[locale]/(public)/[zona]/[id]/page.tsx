@@ -31,6 +31,7 @@ import { EventHeroGallery } from "@/components/events/EventHeroGallery";
 import { RestaurantMenuSection } from "@/components/events/RestaurantMenuSection";
 import { SeccionTarifarioEvento } from "@/components/events/SeccionTarifarioEvento";
 import { getTarifarioPorId } from "@/data/tarifas";
+import { SILOCIBE_FOTOS_MENU } from "@/data/menus/silocibeMenu";
 import type { ZonaSlug } from "@/lib/types";
 import type { Metadata } from "next";
 
@@ -435,17 +436,28 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
               evento.id === "0274476c-aa64-42d9-9cbc-1e0a41940c2d" ||
               evento.negocio.nombre.toLowerCase().includes("pepe mojito");
 
+            const isSilocibe =
+              evento.id === "08e4bfe7-8b1c-45a0-9efb-9cb0932b8d09" ||
+              (evento.negocio?.nombre || "").toLowerCase().includes("silocibe") ||
+              (evento.titulo || "").toLowerCase().includes("silocibe");
+
             const menuFotos =
               evento.metadata_hospedaje?.menu_fotos &&
               evento.metadata_hospedaje.menu_fotos.length > 0
                 ? evento.metadata_hospedaje.menu_fotos
+                : isSilocibe
+                ? SILOCIBE_FOTOS_MENU
                 : isPepeMojito
                 ? ["/menus/menupepe1.webp", "/menus/menupepe2.webp"]
                 : undefined;
 
             const menuUrl =
               evento.metadata_hospedaje?.menu_url ||
-              (isPepeMojito ? "/menus/menupepe1.webp" : undefined);
+              (isSilocibe
+                ? "https://drive.google.com/file/d/1UKgR8T8baw9qIljkCR47CCxwSDvklsV7/view?usp=sharing"
+                : isPepeMojito
+                ? "/menus/menupepe1.webp"
+                : undefined);
 
             const isJungleJoe =
               evento.id === "6817d5de-d00a-4514-b505-fa2c10608749" ||
@@ -456,7 +468,9 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
               evento.negocio?.google_review_url ||
               evento.metadata_hospedaje?.google_review_url ||
               extraerGoogleReviewUrl(googleReputacion?.maps_url) ||
-              (isPepeMojito
+              (isSilocibe
+                ? "https://search.google.com/local/writereview?placeid=ChIJKy680-Lx9I4Rk89-h79nh9s"
+                : isPepeMojito
                 ? "https://search.google.com/local/writereview?placeid=ChIJiQTfKLuV9I4R3E86eG2jG6w"
                 : isJungleJoe
                 ? "https://search.google.com/local/writereview?placeid=ChIJ6S1R3yvx9I4RZovuGgHEzBs"
@@ -464,7 +478,11 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
 
             const googleMapsUrl =
               googleReputacion?.maps_url ||
-              (isPepeMojito ? "https://maps.google.com/?cid=12401671911910625244" : undefined);
+              (isSilocibe
+                ? "https://www.google.com/maps/place/Silocibe+Bar/@11.1451904,-74.1192181,17z/data=!3m1!4b1!4m6!3m5!1s0x8ef4f1e2d3bc2e2b:0xdb8767bf877ecf93!8m2!3d11.1451904!4d-74.1192181!16s%2Fg%2F11t653sb35"
+                : isPepeMojito
+                ? "https://maps.google.com/?cid=12401671911910625244"
+                : undefined);
 
             const isLazyCat =
               evento.negocio.nombre.toLowerCase().includes("lazy cat") ||
@@ -472,13 +490,11 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
 
             const meta = evento.metadata_hospedaje;
             const tieneMenuInteractivo =
-              meta?.menu_interactivo !== undefined
-                ? Boolean(meta.menu_interactivo)
-                : isLazyCat;
+              isSilocibe || isLazyCat || Boolean(meta?.menu_interactivo);
 
             const menuTema =
               (meta?.menu_tema as "fogon" | "sierra" | "caribe" | "oro") ||
-              (isLazyCat ? "fogon" : "fogon");
+              (isSilocibe ? "fogon" : isLazyCat ? "fogon" : "fogon");
 
             const luxuryMenuUrl = tieneMenuInteractivo
               ? `/${locale}/${zonaSlug}/menu-demo?eventoId=${evento.id}&tema=${menuTema}`

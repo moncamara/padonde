@@ -195,8 +195,8 @@ export function RestaurantMenuSection({
           </Link>
         )}
 
-        {/* Solo mostrar la carta tradicional si NO hay carta interactiva de lujo configurada */}
-        {!luxuryMenuUrl && tieneMenu && (
+        {/* ─── Carta física / tradicional (Doble Experiencia Premium o Carta Estándar) ─── */}
+        {tieneMenu && (
           <button
             type="button"
             onClick={() => {
@@ -209,16 +209,22 @@ export function RestaurantMenuSection({
               setModalAbierto(true);
             }}
             className="w-full text-left p-4 rounded-2xl bg-gradient-to-br from-terra/10 via-cream to-white border border-terra/20 hover:border-terra/40 hover:shadow-md active:scale-[0.99] transition-all flex items-center justify-between gap-3 cursor-pointer group"
-            aria-label={isEn ? "View menu & dishes" : "Ver carta y menú digital"}
+            aria-label={
+              luxuryMenuUrl
+                ? isEn ? "Browse physical menu in photos" : "Hojear carta física original"
+                : isEn ? "View menu & dishes" : "Ver carta y menú digital"
+            }
           >
             <div className="flex items-center gap-3 min-w-0">
               <div className="w-12 h-12 rounded-xl bg-terra text-white flex items-center justify-center text-2xl shrink-0 shadow-xs group-hover:scale-105 transition-transform">
-                🍽️
+                {luxuryMenuUrl ? "📖" : "🍽️"}
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
                   <h3 className="font-serif text-base font-semibold text-forest truncate group-hover:text-terra transition-colors">
-                    {isEn ? "Digital Menu" : "Carta & Menú"}
+                    {luxuryMenuUrl
+                      ? isEn ? "Original Physical Menu" : "Carta Física Original"
+                      : isEn ? "Digital Menu" : "Carta & Menú"}
                   </h3>
                   {fotos.length > 0 && (
                     <span className="text-[10px] font-sans font-medium px-2 py-0.5 rounded-full bg-terra/15 text-terra shrink-0">
@@ -227,7 +233,11 @@ export function RestaurantMenuSection({
                   )}
                 </div>
                 <p className="text-xs text-stone line-clamp-1 mt-0.5">
-                  {isEn
+                  {luxuryMenuUrl
+                    ? isEn
+                      ? `Browse all ${fotos.length || 10} illustrated pages in high definition`
+                      : `Hojea las ${fotos.length || 10} páginas ilustradas en alta definición`
+                    : isEn
                     ? "Prices, specialties and options"
                     : "Precios y platos recomendados"}
                 </p>
@@ -237,8 +247,8 @@ export function RestaurantMenuSection({
             <span
               className="shrink-0 bg-terra group-hover:bg-terra-dark text-white font-sans text-xs font-semibold px-3.5 py-2.5 rounded-xl transition-all shadow-xs group-hover:shadow-md group-hover:scale-105 flex items-center gap-1.5 pointer-events-none"
             >
-              <span>📖</span>
-              <span>{isEn ? "View Menu" : "Ver Carta"}</span>
+              <span>{luxuryMenuUrl ? "🖼️" : "📖"}</span>
+              <span>{luxuryMenuUrl ? (isEn ? "Browse" : "Hojear") : (isEn ? "View Menu" : "Ver Carta")}</span>
             </span>
           </button>
         )}
@@ -302,20 +312,32 @@ export function RestaurantMenuSection({
             </div>
 
             <div className="flex items-center gap-2">
+              {menuUrl && (
+                <a
+                  href={menuUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs bg-white/15 hover:bg-white/25 text-white px-2.5 py-1 rounded-full border border-white/20 flex items-center gap-1 transition-all no-underline shrink-0"
+                  title={isEn ? "Open original PDF in Google Drive" : "Abrir PDF original en Google Drive"}
+                >
+                  <span>📄</span>
+                  <span className="hidden sm:inline font-sans font-medium text-[11px]">{isEn ? "Drive PDF" : "PDF en Drive"}</span>
+                </a>
+              )}
               {fotos.length > 1 && (
-                <div className="flex items-center gap-1 bg-white/15 backdrop-blur-md p-1 rounded-full border border-white/20">
+                <div className="flex items-center gap-1 bg-white/15 backdrop-blur-md p-1 rounded-full border border-white/20 max-w-[140px] sm:max-w-none overflow-x-auto scrollbar-none">
                   {fotos.map((_, idx) => (
                     <button
                       key={idx}
                       type="button"
                       onClick={() => irAPagina(idx)}
-                      className={`text-[11px] font-sans font-bold px-2.5 py-0.5 rounded-full transition-all cursor-pointer ${
+                      className={`text-[11px] font-sans font-bold px-2 py-0.5 rounded-full transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                         idx === paginaActual
                           ? "bg-terra text-white shadow-xs"
                           : "text-white/75 hover:text-white"
                       }`}
                     >
-                      Pág. {idx + 1}
+                      {idx + 1}
                     </button>
                   ))}
                 </div>
