@@ -14,7 +14,7 @@ UPDATE public.eventos
 SET metadata_hospedaje = COALESCE(metadata_hospedaje, '{}'::jsonb) || jsonb_build_object(
   'menu_interactivo', true,
   'menu_tema', 'fogon',
-  'menu_url', 'https://drive.google.com/file/d/1UKgR8T8baw9qIljkCR47CCxwSDvklsV7/view?usp=sharing',
+  'menu_url', 'https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/eventos/silocibe-menu-oficial-minca.pdf',
   'google_review_url', 'https://search.google.com/local/writereview?placeid=ChIJKy680-Lx9I4Rk89-h79nh9s',
   'menu_fotos', jsonb_build_array(
   'https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/eventos/silocibe-menu-1793719696872-p1.webp',

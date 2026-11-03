@@ -454,7 +454,7 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
             const menuUrl =
               evento.metadata_hospedaje?.menu_url ||
               (isSilocibe
-                ? "https://drive.google.com/file/d/1UKgR8T8baw9qIljkCR47CCxwSDvklsV7/view?usp=sharing"
+                ? "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/eventos/silocibe-menu-oficial-minca.pdf"
                 : isPepeMojito
                 ? "/menus/menupepe1.webp"
                 : undefined);

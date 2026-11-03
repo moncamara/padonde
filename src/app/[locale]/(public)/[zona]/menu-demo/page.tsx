@@ -97,7 +97,7 @@ export default async function MenuDemoPage({
         pdfOriginalUrl:
           (evento.metadata_hospedaje.menu_data as any)?.pdfOriginalUrl ||
           evento.metadata_hospedaje?.menu_url ||
-          "https://drive.google.com/file/d/1UKgR8T8baw9qIljkCR47CCxwSDvklsV7/view?usp=sharing",
+          "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/eventos/silocibe-menu-oficial-minca.pdf",
       };
     } else if (isSilocibe) {
       menuData = SILOCIBE_MENU;

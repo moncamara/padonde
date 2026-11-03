@@ -694,7 +694,7 @@ export const SILOCIBE_MENU: MenuRestaurante = {
     "fr": "Point de Vue Panoramique & Haute Gastronomie",
     "de": "Panoramablick & Kulinarik der Spitzenklasse"
   },
-  "pdfOriginalUrl": "https://drive.google.com/file/d/1UKgR8T8baw9qIljkCR47CCxwSDvklsV7/view?usp=sharing",
+  "pdfOriginalUrl": "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/eventos/silocibe-menu-oficial-minca.pdf",
   "googleMapsUrl": "https://search.google.com/local/writereview?placeid=ChIJKy680-Lx9I4Rk89-h79nh9s",
   "tema": "fogon",
   "whatsapp": "573218507204",
