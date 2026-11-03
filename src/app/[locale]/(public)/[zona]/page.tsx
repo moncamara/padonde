@@ -176,27 +176,25 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
       {/* Persistencia silenciosa de la última zona visitada para acceso directo PWA y retorno */}
       <ZonaPersistence zonaSlug={zonaSlug} />
 
-      <Suspense fallback={null}>
-        <SearchProvider>
-          {/* Header fijo superior interactivo con selector de destino Minca/Mendihuaca, buscador colapsable, selector de idioma y compartir */}
-          <ZonaHeader
-            zonaNombre={zona.nombre}
-            zonaSlug={zonaSlug}
-            locale={locale}
-          />
+      <SearchProvider>
+        {/* Header fijo superior interactivo con selector de destino Minca/Mendihuaca, buscador colapsable, selector de idioma y compartir */}
+        <ZonaHeader
+          zonaNombre={zona.nombre}
+          zonaSlug={zonaSlug}
+          locale={locale}
+        />
 
-          {/* Feed principal y Servicios Esenciales con padding-top generoso para que el header fijo no monte las pestañas */}
-          <div className="max-w-lg mx-auto px-4 pt-24 sm:pt-28 pb-6">
-            <FeedTabsContainer
-              eventos={eventos}
-              servicios={servicios}
-              zona={zonaSlug}
-              zonaNombre={zona.nombre}
-              configTerritorial={configTerritorial}
-            />
-          </div>
-        </SearchProvider>
-      </Suspense>
+        {/* Feed principal y Servicios Esenciales con padding-top generoso para que el header fijo no monte las pestañas */}
+        <div className="max-w-lg mx-auto px-4 pt-24 sm:pt-28 pb-6">
+          <FeedTabsContainer
+            eventos={eventos}
+            servicios={servicios}
+            zona={zonaSlug}
+            zonaNombre={zona.nombre}
+            configTerritorial={configTerritorial}
+          />
+        </div>
+      </SearchProvider>
 
       {/* Footer — Módulo fijo de tránsito entre destinos + invitación a negocios */}
       <footer className="text-center py-6 px-4 pb-24 max-w-lg mx-auto">

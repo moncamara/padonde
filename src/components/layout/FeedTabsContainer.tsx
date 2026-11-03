@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import { EventFeed } from "@/components/events/EventFeed";
 import { ServiciosList } from "@/components/services/ServiciosList";
@@ -27,11 +26,10 @@ export function FeedTabsContainer({
 }: FeedTabsContainerProps) {
   const t = useTranslations("essentialServices");
   const locale = useLocale();
-  const searchParams = useSearchParams();
   const [tabActiva, setTabActiva] = useState<"eventos" | "servicios">("eventos");
 
   useEffect(() => {
-    const urlTab = searchParams.get("tab");
+    const urlTab = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("tab") : null;
     const hash = typeof window !== "undefined" ? window.location.hash : "";
     const isServicioHash = hash.startsWith("#servicio-");
 
@@ -63,7 +61,7 @@ export function FeedTabsContainer({
         }
       }, 400);
     }
-  }, [searchParams]);
+  }, []);
 
   const handleSwitchTab = (nuevaTab: "eventos" | "servicios") => {
     if (nuevaTab !== tabActiva) {

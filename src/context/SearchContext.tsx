@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useRef, useEffect } from "react";
-import { useSearchParams, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 
 export type CriterioOrden = "recomendados" | "hora" | "precio";
 
@@ -24,29 +24,39 @@ interface SearchContextType {
 const SearchContext = createContext<SearchContextType | null>(null);
 
 export function SearchProvider({ children }: { children: React.ReactNode }) {
-  const searchParams = useSearchParams();
   const pathname = usePathname();
   const inputRef = useRef<HTMLInputElement | null>(null);
 
-  const [busqueda, setBusquedaState] = useState<string>(() => {
-    return searchParams.get("q") || "";
-  });
-
-  const [isSearchOpen, setIsSearchOpen] = useState<boolean>(() => {
-    return !!searchParams.get("q");
-  });
-
+  const [busqueda, setBusquedaState] = useState<string>("");
+  const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
   const [filtroTiempo, setFiltroTiempoState] = useState<string>("hoy");
   const [criterioOrden, setCriterioOrdenState] = useState<CriterioOrden>("recomendados");
   const [isFilterMenuOpen, setIsFilterMenuOpen] = useState<boolean>(false);
 
   useEffect(() => {
     try {
+      if (typeof window !== "undefined") {
+        const q = new URLSearchParams(window.location.search).get("q");
+        if (q) {
+          setBusquedaState(q);
+          setIsSearchOpen(true);
+        }
+      }
       const savedTiempo = sessionStorage.getItem("padonde_filtro_tiempo");
       if (savedTiempo) setFiltroTiempoState(savedTiempo);
       const savedOrden = sessionStorage.getItem("padonde_criterio_orden") as CriterioOrden;
       if (savedOrden) setCriterioOrdenState(savedOrden);
     } catch {}
+
+    const handlePopState = () => {
+      try {
+        const q = new URLSearchParams(window.location.search).get("q") || "";
+        setBusquedaState(q);
+        setIsSearchOpen(!!q);
+      } catch {}
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
   const setFiltroTiempo = (t: string) => {

@@ -1,6 +1,5 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
 import { Link } from "@/i18n/routing";
 import { ZONAS } from "@/constants";
 import { trackDestinationSwitch } from "@/lib/analytics";
@@ -63,9 +62,6 @@ const DESTINOS_TABS: DestinoTabConfig[] = [
 ];
 
 export function TabsDestinos({ zonaActiva, locale, className = "" }: TabsDestinosProps) {
-  const searchParams = useSearchParams();
-  const queryString = searchParams.toString() ? `?${searchParams.toString()}` : "";
-
   const handleSelectZona = (targetSlug: string) => {
     if (targetSlug === zonaActiva) return;
     try {
@@ -110,7 +106,7 @@ export function TabsDestinos({ zonaActiva, locale, className = "" }: TabsDestino
           return (
             <Link
               key={destino.slug}
-              href={`/${destino.slug}${queryString}`}
+              href={`/${destino.slug}`}
               onClick={() => handleSelectZona(destino.slug)}
               className={[
                 "shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl text-xs font-sans transition-all duration-200 cursor-pointer shadow-2xs active:scale-95",
