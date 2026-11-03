@@ -14,6 +14,7 @@ import {
   formatearDiasRecurrencia,
   getDayOfWeekColombia,
   getFechaYMDDesdeISO,
+  getFechaYMDColombia,
   extraerGoogleReviewUrl,
 } from "@/lib/utils";
 import {
@@ -230,6 +231,8 @@ export function EventUpsertForm({
   );
 
   // 3. Fechas y Horarios
+  const horarioMeta = (initialEvento?.metadata_hospedaje as any)?.horario;
+
   const [dateTime, setDateTime] = useState(() => {
     if (initialEvento?.fecha_inicio) {
       return isoADatetimeLocalColombia(initialEvento.fecha_inicio);
@@ -244,22 +247,80 @@ export function EventUpsertForm({
     return "";
   });
 
-  // 4. Recurrencia
+  // 4. Recurrencia y Horarios Limpios
   const recInicial = useMemo(
-    () => (initialEvento ? extraerRecurrencia(initialEvento.descripcion) : { esRecurrente: false, dias: [] }),
+    () => {
+      if (!initialEvento) return { esRecurrente: false, dias: [] };
+      return extraerRecurrencia(
+        initialEvento.descripcion,
+        initialEvento.metadata_hospedaje,
+        (initialEvento as any).dias_recurrentes
+      );
+    },
     [initialEvento]
   );
+
+  const [esRecurrente, setEsRecurrente] = useState(recInicial.esRecurrente);
+
+  // Fecha de ancla / inicio de vigencia para eventos recurrentes
+  const [fechaAncla, setFechaAncla] = useState(() => {
+    if (initialEvento?.fecha_inicio) {
+      return isoADatetimeLocalColombia(initialEvento.fecha_inicio).split("T")[0] || "";
+    }
+    return getFechaYMDColombia(new Date());
+  });
+
   const diaBaseEvento = useMemo(() => {
+    if (fechaAncla) {
+      return getDayOfWeekColombia(fechaAncla);
+    }
     if (dateTime) {
       return getDayOfWeekColombia(getFechaYMDDesdeISO(dateTime));
     }
     return new Date().getDay();
-  }, [dateTime]);
+  }, [fechaAncla, dateTime]);
 
-  const [esRecurrente, setEsRecurrente] = useState(recInicial.esRecurrente);
   const [diasRecurrentes, setDiasRecurrentes] = useState<number[]>(
     recInicial.dias.length > 0 ? recInicial.dias : [diaBaseEvento]
   );
+
+  // Horas limpias para eventos recurrentes
+  const [horaInicio, setHoraInicio] = useState(() => {
+    if (horarioMeta?.hora_inicio) return horarioMeta.hora_inicio;
+    if (initialEvento?.fecha_inicio) {
+      const hora = isoADatetimeLocalColombia(initialEvento.fecha_inicio).split("T")[1];
+      if (hora) return hora.slice(0, 5);
+    }
+    return "08:00";
+  });
+
+  const [horaFin, setHoraFin] = useState(() => {
+    if (horarioMeta?.hora_fin) return horarioMeta.hora_fin;
+    if (initialEvento?.fecha_fin) {
+      const hora = isoADatetimeLocalColombia(initialEvento.fecha_fin).split("T")[1];
+      if (hora) return hora.slice(0, 5);
+    }
+    return "23:00";
+  });
+
+  // Fecha límite de vigencia opcional (desactivable)
+  const [tieneLimiteVigencia, setTieneLimiteVigencia] = useState(() => {
+    if (horarioMeta?.fecha_limite_vigencia) return true;
+    if (initialEvento?.fecha_fin && initialEvento?.fecha_inicio && recInicial.esRecurrente) {
+      const ymdIni = getFechaYMDDesdeISO(initialEvento.fecha_inicio);
+      const ymdFin = getFechaYMDDesdeISO(initialEvento.fecha_fin);
+      if (ymdFin > ymdIni + 1) return true;
+    }
+    return false;
+  });
+
+  const [fechaLimiteVigencia, setFechaLimiteVigencia] = useState(() => {
+    if (horarioMeta?.fecha_limite_vigencia) return horarioMeta.fecha_limite_vigencia;
+    if (initialEvento?.fecha_fin && recInicial.esRecurrente) {
+      return isoADatetimeLocalColombia(initialEvento.fecha_fin).split("T")[0] || "";
+    }
+    return "";
+  });
 
   function toggleDia(dia: number) {
     setDiasRecurrentes((prev) =>
@@ -669,6 +730,12 @@ export function EventUpsertForm({
     if (parsed.zonaSlug) setZonaSlug(parsed.zonaSlug);
     if (parsed.esRecurrente !== undefined) setEsRecurrente(Boolean(parsed.esRecurrente));
     if (Array.isArray(parsed.diasRecurrentes)) setDiasRecurrentes(parsed.diasRecurrentes);
+    if (parsed.horaInicio) setHoraInicio(parsed.horaInicio);
+    if (parsed.horaFin) setHoraFin(parsed.horaFin);
+    if (parsed.fechaLimiteVigencia) {
+      setFechaLimiteVigencia(parsed.fechaLimiteVigencia);
+      setTieneLimiteVigencia(true);
+    }
 
     const cat = parsed.categoria || parsed.tipo;
     if (cat) {
@@ -677,7 +744,12 @@ export function EventUpsertForm({
       setSelectedCategories(parsed.categorias);
     }
 
-    if (parsed.fechaInicio) setDateTime(isoADatetimeLocalColombia(parsed.fechaInicio));
+    if (parsed.fechaInicio) {
+      const local = isoADatetimeLocalColombia(parsed.fechaInicio);
+      setDateTime(local);
+      const ymd = local.split("T")[0];
+      if (ymd) setFechaAncla(ymd);
+    }
     if (parsed.fechaFin) {
       setFechaFin(isoADatetimeLocalColombia(parsed.fechaFin));
       setTieneFechaFin(true);
@@ -764,15 +836,23 @@ export function EventUpsertForm({
         if (uploadedVideo) finalVidUrl = uploadedVideo;
       }
 
-      // 3. Construcción de Recurrencia
+      // 3. Construcción de Recurrencia y Horarios Limpios
       const diasFinales =
         diasRecurrentes.length > 0
           ? diasRecurrentes
-          : [dateTime ? getDayOfWeekColombia(getFechaYMDDesdeISO(dateTime)) : 5];
+          : [esRecurrente ? getDayOfWeekColombia(fechaAncla || getFechaYMDColombia(new Date())) : 5];
 
       const descripcionFinal = esRecurrente
         ? inyectarRecurrencia(description, diasFinales)
         : limpiarDescripcionRecurrencia(description);
+
+      const finalDateTime = esRecurrente
+        ? `${fechaAncla || getFechaYMDColombia(new Date())}T${horaInicio || "08:00"}`
+        : (dateTime || new Date().toISOString());
+
+      const finalFechaFin = esRecurrente
+        ? (tieneLimiteVigencia && fechaLimiteVigencia ? `${fechaLimiteVigencia}T${horaFin || "23:59"}` : null)
+        : (tieneFechaFin && fechaFin ? fechaFin : null);
 
       // 4. Construcción de Reputación Google
       const googleReputacion =
@@ -814,8 +894,8 @@ export function EventUpsertForm({
           eventTitle: eventTitle.trim(),
           category,
           categories: selectedCategories,
-          dateTime: dateTime || new Date().toISOString(),
-          fechaFin: tieneFechaFin && fechaFin ? fechaFin : null,
+          dateTime: finalDateTime,
+          fechaFin: finalFechaFin,
           price: parseFloat(price) || 0,
           description: descripcionFinal,
           imageUrl: finalImgUrl,
@@ -832,6 +912,11 @@ export function EventUpsertForm({
           menuTema,
           menuData: parsedMenuData,
           tarifarioId: tarifarioId || undefined,
+          horaInicio: esRecurrente ? horaInicio : undefined,
+          horaFin: esRecurrente ? horaFin : undefined,
+          esRecurrente,
+          diasRecurrentes: esRecurrente ? diasFinales : undefined,
+          fechaLimiteVigencia: esRecurrente && tieneLimiteVigencia && fechaLimiteVigencia ? fechaLimiteVigencia : undefined,
         });
 
         if (!res.success) {
@@ -866,8 +951,8 @@ export function EventUpsertForm({
           tipo: category,
           categories: selectedCategories,
           precio: parseFloat(price) || 0,
-          dateTime: dateTime || initialEvento.fecha_inicio,
-          fechaFin: tieneFechaFin && fechaFin ? fechaFin : null,
+          dateTime: finalDateTime,
+          fechaFin: finalFechaFin,
           imageUrl: finalImgUrl || undefined,
           videoUrl: finalVidUrl,
           destacado: isFeatured,
@@ -882,6 +967,11 @@ export function EventUpsertForm({
           menuTema,
           menuData: parsedMenuData,
           tarifarioId: tarifarioId || undefined,
+          horaInicio: esRecurrente ? horaInicio : undefined,
+          horaFin: esRecurrente ? horaFin : undefined,
+          esRecurrente,
+          diasRecurrentes: esRecurrente ? diasFinales : undefined,
+          fechaLimiteVigencia: esRecurrente && tieneLimiteVigencia && fechaLimiteVigencia ? fechaLimiteVigencia : undefined,
         });
 
         if (!res.success) {
@@ -1360,57 +1450,15 @@ export function EventUpsertForm({
         </div>
       </div>
 
-      {/* 3. FECHAS Y RECURRENCIA */}
+      {/* 3. FECHAS Y HORARIOS */}
       <div className="bg-white/80 p-4 sm:p-5 rounded-3xl border border-stone-light/70 shadow-2xs space-y-4">
         <h3 className="font-serif text-sm font-bold text-forest uppercase tracking-wider flex items-center gap-1.5 border-b border-stone-light/40 pb-2.5">
           <span>🗓️</span> 3. Fechas y Horarios
         </h3>
 
         <div className="space-y-3.5 font-sans">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            {/* Fecha y Hora de Inicio */}
-            <div>
-              <label className="block text-xs font-semibold text-forest mb-1">
-                Fecha y Hora de Inicio *
-              </label>
-              <input
-                type="datetime-local"
-                value={dateTime}
-                onChange={(e) => setDateTime(e.target.value)}
-                className="w-full p-2.5 text-xs bg-white rounded-xl border border-stone-light/80 text-forest font-medium outline-none focus:ring-1 focus:ring-forest"
-                required
-              />
-            </div>
-
-            {/* Fecha de Fin Opcional */}
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="text-xs font-semibold text-forest">Fecha de Fin</label>
-                <button
-                  type="button"
-                  onClick={() => setTieneFechaFin(!tieneFechaFin)}
-                  className="text-[10px] text-forest underline cursor-pointer"
-                >
-                  {tieneFechaFin ? "Quitar fecha fin" : "+ Agregar fecha fin"}
-                </button>
-              </div>
-              {tieneFechaFin ? (
-                <input
-                  type="datetime-local"
-                  value={fechaFin}
-                  onChange={(e) => setFechaFin(e.target.value)}
-                  className="w-full p-2.5 text-xs bg-white rounded-xl border border-stone-light/80 text-forest font-medium outline-none focus:ring-1 focus:ring-forest"
-                />
-              ) : (
-                <div className="p-2.5 rounded-xl border border-dashed border-stone-light text-[11px] text-stone text-center">
-                  Evento de un solo día o sesión
-                </div>
-              )}
-            </div>
-          </div>
-
           {/* Toggle de Recurrencia */}
-          <div className="pt-2 border-t border-stone-light/40">
+          <div className="bg-stone-light/20 p-3 rounded-2xl">
             <label className="flex items-center gap-2 cursor-pointer select-none">
               <input
                 type="checkbox"
@@ -1419,15 +1467,99 @@ export function EventUpsertForm({
                 className="rounded text-forest focus:ring-forest w-4 h-4 cursor-pointer"
               />
               <span className="text-xs font-semibold text-forest">
-                🔄 Es un evento recurrente (se repite semanalmente)
+                🔄 Es un evento recurrente (restaurante, bar, tour o experiencia diaria/semanal)
               </span>
             </label>
+          </div>
 
-            {esRecurrente && (
-              <div className="mt-3 p-3 bg-stone-light/20 rounded-2xl space-y-2">
-                <span className="text-[11px] text-stone block font-medium">
-                  Selecciona los días en que se repite:
-                </span>
+          {/* RENDERIZADO CONDICIONAL: Recurrente vs Evento de Fecha/Rango */}
+          {esRecurrente ? (
+            /* VISTA EXPERIENCIAS RECURRENTES / PERMANENTES */
+            <div className="space-y-4 pt-1">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {/* Fecha Ancla / Inicio de Vigencia */}
+                <div>
+                  <label className="block text-xs font-semibold text-forest mb-1">
+                    Fecha de Inicio / Ancla *
+                  </label>
+                  <input
+                    type="date"
+                    value={fechaAncla}
+                    onChange={(e) => setFechaAncla(e.target.value)}
+                    className="w-full p-2.5 text-xs bg-white rounded-xl border border-stone-light/80 text-forest font-medium outline-none focus:ring-1 focus:ring-forest"
+                    required
+                  />
+                  <span className="text-[10px] text-stone block mt-1">
+                    Vigente a partir de este día
+                  </span>
+                </div>
+
+                {/* Hora de Inicio Limpia */}
+                <div>
+                  <label className="block text-xs font-semibold text-forest mb-1">
+                    Hora de Inicio *
+                  </label>
+                  <input
+                    type="time"
+                    value={horaInicio}
+                    onChange={(e) => setHoraInicio(e.target.value)}
+                    className="w-full p-2.5 text-xs bg-white rounded-xl border border-stone-light/80 text-forest font-medium outline-none focus:ring-1 focus:ring-forest"
+                    required
+                  />
+                  <span className="text-[10px] text-stone block mt-1">
+                    Ej: 08:00 (Apertura)
+                  </span>
+                </div>
+
+                {/* Hora de Cierre / Fin Limpia */}
+                <div>
+                  <label className="block text-xs font-semibold text-forest mb-1">
+                    Hora de Cierre / Fin *
+                  </label>
+                  <input
+                    type="time"
+                    value={horaFin}
+                    onChange={(e) => setHoraFin(e.target.value)}
+                    className="w-full p-2.5 text-xs bg-white rounded-xl border border-stone-light/80 text-forest font-medium outline-none focus:ring-1 focus:ring-forest"
+                    required
+                  />
+                  <span className="text-[10px] text-stone block mt-1">
+                    Ej: 23:00 o 00:00 (Cierre)
+                  </span>
+                </div>
+              </div>
+
+              {/* Selector de Días Semanales */}
+              <div className="p-3 bg-stone-light/20 rounded-2xl space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] text-stone font-medium">
+                    Días en que opera la experiencia:
+                  </span>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setDiasRecurrentes([0, 1, 2, 3, 4, 5, 6])}
+                      className="text-[10px] text-forest underline cursor-pointer hover:font-bold"
+                    >
+                      Todos los días
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDiasRecurrentes([5, 6, 0])}
+                      className="text-[10px] text-forest underline cursor-pointer hover:font-bold"
+                    >
+                      Fines de semana
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDiasRecurrentes([1, 2, 3, 4, 5])}
+                      className="text-[10px] text-forest underline cursor-pointer hover:font-bold"
+                    >
+                      Lun a Vie
+                    </button>
+                  </div>
+                </div>
+
                 <div className="flex flex-wrap gap-1.5">
                   {[
                     { id: 1, label: "Lun" },
@@ -1442,9 +1574,9 @@ export function EventUpsertForm({
                       key={dia.id}
                       type="button"
                       onClick={() => toggleDia(dia.id)}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                         diasRecurrentes.includes(dia.id)
-                          ? "bg-forest text-cream shadow-2xs"
+                          ? "bg-forest text-cream shadow-2xs scale-102"
                           : "bg-white text-stone border border-stone-light/80 hover:text-forest"
                       }`}
                     >
@@ -1454,12 +1586,87 @@ export function EventUpsertForm({
                 </div>
                 {diasRecurrentes.length > 0 && (
                   <p className="text-[10px] text-emerald-800 font-medium pt-1">
-                    ✓ Se mostrará los {formatearDiasRecurrencia(diasRecurrentes).toLowerCase()}
+                    ✓ Se mostrará los {formatearDiasRecurrencia(diasRecurrentes).toLowerCase()} de {horaInicio} a {horaFin}
                   </p>
                 )}
               </div>
-            )}
-          </div>
+
+              {/* Fecha Límite de Vigencia Opcional (Desactivable) */}
+              <div className="pt-2 border-t border-stone-light/40">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={tieneLimiteVigencia}
+                    onChange={(e) => setTieneLimiteVigencia(e.target.checked)}
+                    className="rounded text-forest focus:ring-forest w-3.5 h-3.5 cursor-pointer"
+                  />
+                  <span className="text-xs font-medium text-forest">
+                    Definir fecha límite de vigencia (opcional para experiencias con fecha de expiración futura)
+                  </span>
+                </label>
+                {tieneLimiteVigencia && (
+                  <div className="mt-2.5 max-w-xs">
+                    <label className="block text-[11px] font-medium text-stone mb-1">
+                      Fecha límite de caducidad
+                    </label>
+                    <input
+                      type="date"
+                      value={fechaLimiteVigencia}
+                      onChange={(e) => setFechaLimiteVigencia(e.target.value)}
+                      min={fechaAncla}
+                      className="w-full p-2.5 text-xs bg-white rounded-xl border border-stone-light/80 text-forest font-medium outline-none focus:ring-1 focus:ring-forest"
+                    />
+                    <span className="text-[10px] text-stone block mt-1">
+                      La experiencia dejará de aparecer en la cartelera después de esta fecha.
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            /* VISTA EVENTO PUNTUAL O DE VARIOS DÍAS (NO RECURRENTE) */
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              {/* Fecha y Hora de Inicio */}
+              <div>
+                <label className="block text-xs font-semibold text-forest mb-1">
+                  Fecha y Hora de Inicio *
+                </label>
+                <input
+                  type="datetime-local"
+                  value={dateTime}
+                  onChange={(e) => setDateTime(e.target.value)}
+                  className="w-full p-2.5 text-xs bg-white rounded-xl border border-stone-light/80 text-forest font-medium outline-none focus:ring-1 focus:ring-forest"
+                  required
+                />
+              </div>
+
+              {/* Fecha de Fin Opcional */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-semibold text-forest">Fecha de Fin</label>
+                  <button
+                    type="button"
+                    onClick={() => setTieneFechaFin(!tieneFechaFin)}
+                    className="text-[10px] text-forest underline cursor-pointer"
+                  >
+                    {tieneFechaFin ? "Quitar fecha fin" : "+ Agregar fecha fin"}
+                  </button>
+                </div>
+                {tieneFechaFin ? (
+                  <input
+                    type="datetime-local"
+                    value={fechaFin}
+                    onChange={(e) => setFechaFin(e.target.value)}
+                    className="w-full p-2.5 text-xs bg-white rounded-xl border border-stone-light/80 text-forest font-medium outline-none focus:ring-1 focus:ring-forest"
+                  />
+                ) : (
+                  <div className="p-2.5 rounded-xl border border-dashed border-stone-light text-[11px] text-stone text-center">
+                    Evento de un solo día o sesión
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

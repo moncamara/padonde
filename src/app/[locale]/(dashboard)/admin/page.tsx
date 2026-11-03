@@ -184,10 +184,14 @@ export default async function AdminDashboardPage({
   const eventosVigentes = eventos.filter((e) => {
     if (!e.activo) return false;
     if (e.tipo === "hospedaje") return true;
-    const rec = extraerRecurrencia(e.descripcion);
+    const rec = extraerRecurrencia(e.descripcion, e.metadata_hospedaje, e.dias_recurrentes);
     if (rec.esRecurrente) {
+      const ymdInicio = getFechaYMDDesdeISO(e.fecha_inicio);
       const ymdFin = e.fecha_fin ? getFechaYMDDesdeISO(e.fecha_fin) : null;
-      return ymdFin ? ymdFin >= hoyYMD : true;
+      const fechaLimite =
+        (e.metadata_hospedaje as any)?.horario?.fecha_limite_vigencia ||
+        (ymdFin && ymdFin > ymdInicio + 1 ? ymdFin : null);
+      return fechaLimite ? fechaLimite >= hoyYMD : true;
     }
     const ymdInicio = getFechaYMDDesdeISO(e.fecha_inicio);
     const ymdFin = e.fecha_fin ? getFechaYMDDesdeISO(e.fecha_fin) : null;
@@ -195,7 +199,16 @@ export default async function AdminDashboardPage({
   });
 
   const eventosHoy = eventosVigentes.filter((e) =>
-    eventoCoincideConFiltroTiempo(e.fecha_inicio, "hoy", new Date(), e.fecha_fin, e.descripcion, e.tipo)
+    eventoCoincideConFiltroTiempo(
+      e.fecha_inicio,
+      "hoy",
+      new Date(),
+      e.fecha_fin,
+      e.descripcion,
+      e.tipo,
+      e.metadata_hospedaje,
+      e.dias_recurrentes
+    )
   ).length;
   const destacadosActivos = eventosVigentes.filter((e) => e.destacado).length;
   const eventosPausados = eventos.filter((e) => !e.activo).length;

@@ -56,6 +56,8 @@ export interface EventoAdminItem {
   } | null;
   clicsCount?: number;
   metadata_hospedaje?: any | null;
+  es_recurrente?: boolean;
+  dias_recurrentes?: number[];
 }
 
 interface AdminEventListProps {

@@ -243,11 +243,32 @@ export interface RecurrenciaConfig {
 }
 
 /**
- * Extrae la configuración de días de repetición embebida en la descripción.
- * Soporta formato canónico numérico (<!--recurrente:0,1,2,3,4,5,6-->)
- * y variantes descriptivas en lenguaje natural (ej: <!--recurrente: lunes a domingo ... excepto los domingos-->).
+ * Extrae la configuración de días de repetición embebida en la descripción o metadata.
+ * Soporta formato canónico numérico (<!--recurrente:0,1,2,3,4,5,6-->),
+ * metadata_hospedaje.horario y variantes descriptivas en lenguaje natural.
  */
-export function extraerRecurrencia(descripcion?: string | null): RecurrenciaConfig {
+export function extraerRecurrencia(
+  descripcion?: string | null,
+  metadata?: any,
+  diasDirectos?: number[]
+): RecurrenciaConfig {
+  if (Array.isArray(diasDirectos) && diasDirectos.length > 0) {
+    const diasValidos = diasDirectos.filter((n) => typeof n === "number" && n >= 0 && n <= 6);
+    if (diasValidos.length > 0) {
+      return { esRecurrente: true, dias: [...new Set(diasValidos)].sort() };
+    }
+  }
+
+  const metaHorario = metadata?.horario;
+  if (Array.isArray(metaHorario?.dias_recurrentes) && metaHorario.dias_recurrentes.length > 0) {
+    const diasValidos = (metaHorario.dias_recurrentes as number[]).filter(
+      (n) => typeof n === "number" && n >= 0 && n <= 6
+    );
+    if (diasValidos.length > 0) {
+      return { esRecurrente: true, dias: [...new Set(diasValidos)].sort() };
+    }
+  }
+
   if (!descripcion) return { esRecurrente: false, dias: [] };
 
   // 1. Coincidencia con formato numérico canónico (ej: <!--recurrente:0,1,2,3,4,5,6-->)
@@ -383,8 +404,24 @@ export function formatearDiasRecurrencia(dias: number[], locale = "es"): string 
 }
 
 /**
+ * Formatea una hora en string "HH:mm" (ej: "08:00", "23:30") a formato 12h "8:00 AM" / "11:30 PM".
+ */
+export function formatHoraDesdeHHMM(hhmm?: string | null): string {
+  if (!hhmm) return "";
+  const partes = hhmm.trim().split(":");
+  if (partes.length < 2) return hhmm;
+  let h = parseInt(partes[0], 10);
+  const m = partes[1].slice(0, 2);
+  if (isNaN(h)) return hhmm;
+  const ampm = h >= 12 ? "PM" : "AM";
+  if (h === 0) h = 12;
+  else if (h > 12) h -= 12;
+  return `${h}:${m} ${ampm}`;
+}
+
+/**
  * Genera la etiqueta de fecha y hora para mostrar en tarjetas y cabeceras.
- * Si es recurrente: "🔄 Todos los días · 6:00 AM" / "🔄 Every day · 6:00 AM"
+ * Si es recurrente: "🔄 Todos los días · 8:00 AM – 11:00 PM"
  * Si es puntual: "jue, 15 oct · 7:00 PM" / "Thu, Oct 15 · 7:00 PM"
  */
 export function getEtiquetaHorario(
@@ -393,6 +430,8 @@ export function getEtiquetaHorario(
     fecha_fin?: string | null;
     descripcion?: string | null;
     tipo?: string | null;
+    metadata_hospedaje?: any;
+    dias_recurrentes?: number[];
   },
   locale = "es"
 ): string {
@@ -407,11 +446,15 @@ export function getEtiquetaHorario(
     return `🏡 ${labels[locale] || labels.es}`;
   }
 
-  const rec = extraerRecurrencia(evento.descripcion);
-  const hora = formatHora(evento.fecha_inicio);
+  const rec = extraerRecurrencia(evento.descripcion, evento.metadata_hospedaje, evento.dias_recurrentes);
+  const horario = evento.metadata_hospedaje?.horario;
 
   if (rec.esRecurrente) {
     const diasTexto = formatearDiasRecurrencia(rec.dias, locale);
+    if (horario?.hora_inicio && horario?.hora_fin) {
+      return `🔄 ${diasTexto} · ${formatHoraDesdeHHMM(horario.hora_inicio)} – ${formatHoraDesdeHHMM(horario.hora_fin)}`;
+    }
+    const hora = formatHora(evento.fecha_inicio);
     return `🔄 ${diasTexto} · ${hora}`;
   }
 
@@ -422,6 +465,7 @@ export function getEtiquetaHorario(
     return `${formatFecha(evento.fecha_inicio, locale)} — ${formatFecha(evento.fecha_fin, locale)}`;
   }
 
+  const hora = formatHora(evento.fecha_inicio);
   return `${formatFecha(evento.fecha_inicio, locale)} · ${hora}`;
 }
 
@@ -449,7 +493,9 @@ export function eventoCoincideConFiltroTiempo(
   now: Date = new Date(),
   fechaFinIso?: string | null,
   descripcion?: string | null,
-  tipo?: string | null
+  tipo?: string | null,
+  metadata?: any,
+  diasRecurrentesDirectos?: number[]
 ): boolean {
   // Los hospedajes y alojamientos tienen disponibilidad permanente (todo el año).
   // Coinciden con cualquier día del calendario (hoy, mañana, días específicos, todos).
@@ -459,6 +505,19 @@ export function eventoCoincideConFiltroTiempo(
     return true;
   }
 
+  const rec = extraerRecurrencia(descripcion, metadata, diasRecurrentesDirectos);
+  const ymdInicio = getFechaYMDDesdeISO(fechaInicioIso);
+  const ymdFin = fechaFinIso ? getFechaYMDDesdeISO(fechaFinIso) : null;
+
+  // Fecha límite de vigencia de recurrencia (si fue explícitamente configurada)
+  // NOTA CRÍTICA: En eventos recurrentes, un ymdFin igual o contiguo a ymdInicio (ymdFin <= ymdInicio + 1)
+  // corresponde al horario de cierre de la primera jornada (ej: bar de 8pm a 2am),
+  // y NUNCA a una caducidad de la experiencia. Solo un límite explícito o fecha a futuro lejano actúa como fin de vigencia.
+  const metaHorario = metadata?.horario;
+  const fechaLimiteVigencia =
+    metaHorario?.fecha_limite_vigencia ||
+    (rec.esRecurrente && ymdFin && ymdFin > ymdInicio + 1 ? ymdFin : null);
+
   // Caso especial: Planes futuros más allá del rango de 7 días visible en la barra
   if (filtro === "proximos") {
     // La barra muestra 7 días individuales: hoy (día 0) hasta hoy + 6 días
@@ -466,14 +525,10 @@ export function eventoCoincideConFiltroTiempo(
     limiteBarra.setDate(limiteBarra.getDate() + 6);
     const limiteBarraYMD = getFechaYMDColombia(limiteBarra);
 
-    const ymdInicio = getFechaYMDDesdeISO(fechaInicioIso);
-    const ymdFin = fechaFinIso ? getFechaYMDDesdeISO(fechaFinIso) : null;
-    const rec = extraerRecurrencia(descripcion);
-
-    // Las actividades recurrentes diarias (ej: menús del día, tours permanentes)
-    // ya se muestran en cada día correspondiente de la semana y no son eventos futuros "Más adelante"
-    if (rec.esRecurrente && rec.dias.length >= 6) {
-      return false;
+    // Las actividades recurrentes semanales/diarias ya se muestran en la barra de 7 días.
+    // Solo aparecen en "Próximos" si su fecha ancla inicial aún no ha comenzado y arranca después de los 7 días.
+    if (rec.esRecurrente) {
+      return ymdInicio > limiteBarraYMD;
     }
 
     // Eventos que inician después del rango de 7 días visible
@@ -491,11 +546,12 @@ export function eventoCoincideConFiltroTiempo(
 
   if (filtro === "todos") {
     const hoyYMD = getFechaYMDColombia(now);
-    const ymdInicio = getFechaYMDDesdeISO(fechaInicioIso);
-    const ymdFin = fechaFinIso ? getFechaYMDDesdeISO(fechaFinIso) : null;
-    const rec = extraerRecurrencia(descripcion);
     if (rec.esRecurrente) {
-      return ymdFin ? ymdFin >= hoyYMD : true;
+      // Si tiene fecha límite de vigencia y ya caducó antes de hoy, no mostrar
+      if (fechaLimiteVigencia && fechaLimiteVigencia < hoyYMD) {
+        return false;
+      }
+      return true;
     }
     return ymdFin ? ymdFin >= hoyYMD : ymdInicio >= hoyYMD;
   }
@@ -532,8 +588,26 @@ export function eventoCoincideConFiltroTiempo(
     }
 
     return (
-      eventoCoincideConFiltroTiempo(fechaInicioIso, ymdSabado, now, fechaFinIso, descripcion, tipo) ||
-      eventoCoincideConFiltroTiempo(fechaInicioIso, ymdDomingo, now, fechaFinIso, descripcion, tipo)
+      eventoCoincideConFiltroTiempo(
+        fechaInicioIso,
+        ymdSabado,
+        now,
+        fechaFinIso,
+        descripcion,
+        tipo,
+        metadata,
+        diasRecurrentesDirectos
+      ) ||
+      eventoCoincideConFiltroTiempo(
+        fechaInicioIso,
+        ymdDomingo,
+        now,
+        fechaFinIso,
+        descripcion,
+        tipo,
+        metadata,
+        diasRecurrentesDirectos
+      )
     );
   }
 
@@ -546,16 +620,15 @@ export function eventoCoincideConFiltroTiempo(
     ymdTarget = getFechaYMDColombia(manana);
   }
 
-  const ymdInicio = getFechaYMDDesdeISO(fechaInicioIso);
-  const ymdFin = fechaFinIso ? getFechaYMDDesdeISO(fechaFinIso) : null;
-  const rec = extraerRecurrencia(descripcion);
-
-  // Caso 1: Evento recurrente (días específicos de la semana)
+  // Caso 1: Evento recurrente (días específicos de la semana / permanente)
   if (rec.esRecurrente) {
-    // Si tiene fecha límite de vigencia y ya venció, no mostrar
-    if (ymdFin && ymdTarget > ymdFin) return false;
+    // 1. Debe ser igual o posterior a la fecha de inicio / ancla en Colombia
+    if (ymdTarget < ymdInicio) return false;
 
-    // Coincide si el día de la semana coincide con los días programados
+    // 2. Si tiene fecha límite de vigencia y ya venció, no mostrar
+    if (fechaLimiteVigencia && ymdTarget > fechaLimiteVigencia) return false;
+
+    // 3. Coincide si el día de la semana coincide con los días programados en dias_recurrentes
     const diaSemana = getDayOfWeekColombia(ymdTarget);
     return rec.dias.includes(diaSemana);
   }

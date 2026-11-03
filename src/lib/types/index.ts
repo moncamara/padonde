@@ -77,8 +77,11 @@ export type Evento = {
   activo: boolean;
   created_at: string;
   traducciones?: Record<string, { titulo: string; descripcion: string }> | null;
-  /** Datos opcionales para hospedajes (habitaciones, cotizador, reputación Google) */
+  /** Datos opcionales para hospedajes (habitaciones, cotizador, reputación Google) y horarios estructurados */
   metadata_hospedaje?: HospedajeMetadata | null;
+  /** Atributos directos de recurrencia (compatibilidad null-safe) */
+  es_recurrente?: boolean;
+  dias_recurrentes?: number[];
   // Relación — se incluye en queries con JOIN
   negocio?: {
     id?: string;
@@ -116,6 +119,14 @@ export type GoogleReputacion = {
   maps_url: string;           // ej: "https://maps.app.goo.gl/..."
 };
 
+export type HorarioExperiencia = {
+  hora_inicio?: string;
+  hora_fin?: string;
+  es_recurrente?: boolean;
+  dias_recurrentes?: number[];
+  fecha_limite_vigencia?: string | null;
+};
+
 export type HospedajeMetadata = {
   check_in_hora?: string;     // ej: "15:00"
   check_out_hora?: string;    // ej: "11:00"
@@ -128,6 +139,7 @@ export type HospedajeMetadata = {
   menu_interactivo?: boolean; // Carta digital interactiva multilingüe
   menu_tema?: "fogon" | "sierra" | "caribe" | "oro"; // Tema visual de autor para la carta
   menu_data?: any;            // Estructura JSON de la carta digital (categorías, platos, precios y traducciones)
+  horario?: HorarioExperiencia; // Horario limpio y recurrencia para experiencias gastronómicas, bares y miradores
 };
 
 // ─── Tipos de Servicios Esenciales e Info Útil ────────────────────────────────

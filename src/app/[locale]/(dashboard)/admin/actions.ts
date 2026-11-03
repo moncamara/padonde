@@ -44,6 +44,11 @@ export interface AdminPublishInput {
   menuTema?: "fogon" | "sierra" | "caribe" | "oro";
   menuData?: any;
   tarifarioId?: string | null;
+  horaInicio?: string;
+  horaFin?: string;
+  esRecurrente?: boolean;
+  diasRecurrentes?: number[];
+  fechaLimiteVigencia?: string | null;
 }
 
 export interface AdminPublishResult {
@@ -257,7 +262,11 @@ export async function adminPublishEventAction(
         input.googleReviewUrl ||
         input.menuInteractivo !== undefined ||
         input.menuTema ||
-        input.tarifarioId
+        input.tarifarioId ||
+        input.esRecurrente ||
+        input.horaInicio ||
+        input.horaFin ||
+        (input.diasRecurrentes && input.diasRecurrentes.length > 0)
           ? {
               ...(input.googleReputacion ? { google_reputacion: input.googleReputacion } : {}),
               ...(input.galeriaFotos && input.galeriaFotos.length > 0
@@ -281,6 +290,17 @@ export async function adminPublishEventAction(
                       typeof input.menuData === "string"
                         ? JSON.parse(input.menuData)
                         : input.menuData,
+                  }
+                : {}),
+              ...(input.esRecurrente || input.horaInicio || input.horaFin || (input.diasRecurrentes && input.diasRecurrentes.length > 0)
+                ? {
+                    horario: {
+                      hora_inicio: input.horaInicio,
+                      hora_fin: input.horaFin,
+                      es_recurrente: Boolean(input.esRecurrente),
+                      dias_recurrentes: input.diasRecurrentes || [],
+                      fecha_limite_vigencia: input.fechaLimiteVigencia || null,
+                    },
                   }
                 : {}),
             }
@@ -860,6 +880,11 @@ export interface EditarEventoAdminInput {
   menuTema?: "fogon" | "sierra" | "caribe" | "oro";
   menuData?: any;
   tarifarioId?: string | null;
+  horaInicio?: string;
+  horaFin?: string;
+  esRecurrente?: boolean;
+  diasRecurrentes?: number[];
+  fechaLimiteVigencia?: string | null;
 }
 
 /**
@@ -912,7 +937,13 @@ export async function editarEventoAdminAction(input: EditarEventoAdminInput) {
       input.menuFotos !== undefined ||
       input.menuUrl !== undefined ||
       input.menuInteractivo !== undefined ||
-      input.menuTema !== undefined
+      input.menuTema !== undefined ||
+      input.tarifarioId !== undefined ||
+      input.esRecurrente !== undefined ||
+      input.horaInicio !== undefined ||
+      input.horaFin !== undefined ||
+      input.diasRecurrentes !== undefined ||
+      input.fechaLimiteVigencia !== undefined
     ) {
       const { data: currentEvent } = await supabase
         .from("eventos")
@@ -1037,6 +1068,33 @@ export async function editarEventoAdminAction(input: EditarEventoAdminInput) {
           delete currentMeta.galeria_fotos;
         } else {
           currentMeta.galeria_fotos = input.galeriaFotos.filter(Boolean);
+        }
+      }
+
+      if (
+        input.esRecurrente !== undefined ||
+        input.horaInicio !== undefined ||
+        input.horaFin !== undefined ||
+        input.diasRecurrentes !== undefined ||
+        input.fechaLimiteVigencia !== undefined
+      ) {
+        if (input.esRecurrente) {
+          currentMeta.horario = {
+            ...(currentMeta.horario || {}),
+            hora_inicio: input.horaInicio !== undefined ? input.horaInicio : currentMeta.horario?.hora_inicio,
+            hora_fin: input.horaFin !== undefined ? input.horaFin : currentMeta.horario?.hora_fin,
+            es_recurrente: true,
+            dias_recurrentes:
+              input.diasRecurrentes !== undefined
+                ? input.diasRecurrentes
+                : currentMeta.horario?.dias_recurrentes || [],
+            fecha_limite_vigencia:
+              input.fechaLimiteVigencia !== undefined
+                ? input.fechaLimiteVigencia
+                : currentMeta.horario?.fecha_limite_vigencia || null,
+          };
+        } else if (input.esRecurrente === false) {
+          delete currentMeta.horario;
         }
       }
 

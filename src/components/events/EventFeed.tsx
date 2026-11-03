@@ -201,7 +201,7 @@ export function EventFeed({ eventos, zona, configTerritorial }: EventFeedProps) 
       ? porCategoria
       : porCategoria.filter((e) => eventoCoincideConBusqueda(e, queryNorm));
 
-    // 3. Filtrar por fecha
+    // 3. Filtrar por fecha con validación null-safe de recurrencia y huso horario Colombia
     const coincidentesEnFecha = coincidentesBusqueda.filter((e) => {
       if (filtroCategoria === "hospedaje") {
         return e.categorias?.length ? e.categorias.includes("hospedaje") : e.tipo === "hospedaje";
@@ -213,7 +213,9 @@ export function EventFeed({ eventos, zona, configTerritorial }: EventFeedProps) 
         now,
         e.fecha_fin,
         e.descripcion,
-        e.tipo
+        e.tipo,
+        e.metadata_hospedaje,
+        e.dias_recurrentes
       );
     });
 
