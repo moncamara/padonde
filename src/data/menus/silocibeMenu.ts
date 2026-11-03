@@ -88,7 +88,6 @@ export const SILOCIBE_MENU: MenuRestaurante = {
             "de": "Getoastetes Landbrot mit Guacamole, Haussauce, Champignons, Käse und Kirschtomaten."
           },
           "precio": 18000,
-          "imagenUrl": "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/eventos/1793722179618-silocibe-banner-entradas.webp",
           "insignia": {
             "es": "⭐ Tradición",
             "en": "⭐ Traditional",
@@ -168,7 +167,6 @@ export const SILOCIBE_MENU: MenuRestaurante = {
             "de": "Saftiges Steak serviert mit Kochbananen oder Pommes frites und Haussalat."
           },
           "precio": 40000,
-          "imagenUrl": "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/eventos/1793722179618-silocibe-banner-platos-fuertes.webp",
           "insignia": {
             "es": "🔥 Especial Parrilla",
             "en": "🔥 Grill Special",
@@ -323,7 +321,6 @@ export const SILOCIBE_MENU: MenuRestaurante = {
             "de": "130g Rindfleisch-Patty, sautierte Champignons, knuspriger Speck, Schmelzkäse, karamellisierte Zwiebeln und Pommes frites."
           },
           "precio": 38000,
-          "imagenUrl": "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/eventos/1793722179618-silocibe-banner-hamburguesas.webp",
           "insignia": {
             "es": "⭐ De la Casa",
             "en": "⭐ Signature",
@@ -421,7 +418,6 @@ export const SILOCIBE_MENU: MenuRestaurante = {
             "de": "Sautierte Pilze, Kochbanane, Avocado, flambiertes Rinderfilet und würzige Chocorozo-Sauce."
           },
           "precio": 40000,
-          "imagenUrl": "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/eventos/1793722179618-silocibe-banner-sushi.webp",
           "insignia": {
             "es": "🍣 Fusión Montaña",
             "en": "🍣 Mountain Fusion",
@@ -501,7 +497,6 @@ export const SILOCIBE_MENU: MenuRestaurante = {
             "de": "Sautierte Pilze, knuspriger Speck, Mozzarella und Parmesan."
           },
           "precio": 35000,
-          "imagenUrl": "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/eventos/1793722179618-silocibe-banner-pizzas.webp",
           "insignia": {
             "es": "🍕 Horno a la Piedra",
             "en": "🍕 Stone Baked",
@@ -600,7 +595,6 @@ export const SILOCIBE_MENU: MenuRestaurante = {
             "de": "Hausgemachte Trinkschokolade serviert mit geschmolzenem Käse."
           },
           "precio": 10000,
-          "imagenUrl": "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/eventos/1793722179618-silocibe-banner-cafe-chocosilo.webp",
           "insignia": {
             "es": "☕ Ícono de Minca",
             "en": "☕ Minca Icon",
@@ -680,7 +674,6 @@ export const SILOCIBE_MENU: MenuRestaurante = {
             "de": "Whisky, Maracuja, Ingwer und aromatischer Kardamom."
           },
           "precio": 35000,
-          "imagenUrl": "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/eventos/1793722179618-silocibe-banner-cocteleria.webp",
           "insignia": {
             "es": "🍸 Coctel Signature",
             "en": "🍸 Signature Drink",
