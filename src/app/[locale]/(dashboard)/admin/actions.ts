@@ -49,6 +49,7 @@ export interface AdminPublishInput {
   esRecurrente?: boolean;
   diasRecurrentes?: number[];
   fechaLimiteVigencia?: string | null;
+  posicionPortada?: string;
 }
 
 export interface AdminPublishResult {
@@ -266,8 +267,10 @@ export async function adminPublishEventAction(
         input.esRecurrente ||
         input.horaInicio ||
         input.horaFin ||
-        (input.diasRecurrentes && input.diasRecurrentes.length > 0)
+        (input.diasRecurrentes && input.diasRecurrentes.length > 0) ||
+        input.posicionPortada
           ? {
+              ...(input.posicionPortada ? { posicion_portada: input.posicionPortada } : {}),
               ...(input.googleReputacion ? { google_reputacion: input.googleReputacion } : {}),
               ...(input.galeriaFotos && input.galeriaFotos.length > 0
                 ? { galeria_fotos: input.galeriaFotos.filter(Boolean) }
@@ -885,6 +888,7 @@ export interface EditarEventoAdminInput {
   esRecurrente?: boolean;
   diasRecurrentes?: number[];
   fechaLimiteVigencia?: string | null;
+  posicionPortada?: string;
 }
 
 /**
@@ -943,7 +947,8 @@ export async function editarEventoAdminAction(input: EditarEventoAdminInput) {
       input.horaInicio !== undefined ||
       input.horaFin !== undefined ||
       input.diasRecurrentes !== undefined ||
-      input.fechaLimiteVigencia !== undefined
+      input.fechaLimiteVigencia !== undefined ||
+      input.posicionPortada !== undefined
     ) {
       const { data: currentEvent } = await supabase
         .from("eventos")
@@ -951,6 +956,14 @@ export async function editarEventoAdminAction(input: EditarEventoAdminInput) {
         .eq("id", input.eventoId)
         .single();
       const currentMeta = (currentEvent?.metadata_hospedaje as Record<string, any>) || {};
+
+      if (input.posicionPortada !== undefined) {
+        if (!input.posicionPortada) {
+          delete currentMeta.posicion_portada;
+        } else {
+          currentMeta.posicion_portada = input.posicionPortada;
+        }
+      }
 
       if (input.googleReputacion !== undefined) {
         if (input.googleReputacion === null) {
@@ -1473,6 +1486,8 @@ export interface GuardarHospedajeInput {
     };
     google_review_url?: string;
     contacto_propietario?: string;
+    posicion_portada?: string;
+    posicionPortada?: string;
     habitaciones: Array<{
       id: string;
       titulo: string;

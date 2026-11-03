@@ -79,6 +79,22 @@ export function ModalEditarHospedaje({
   const [imagenUrl, setImagenUrl] = useState(hospedaje?.imagen_url || hospedaje?.imagenUrl || "");
   const [destacado, setDestacado] = useState(Boolean(hospedaje?.destacado));
 
+  // Control de Encuadre Vertical Dinámico (Focal Point) de la Portada
+  const [posicionPortada, setPosicionPortada] = useState<string>(() => {
+    const raw =
+      hospedaje?.metadata_hospedaje?.posicion_portada ||
+      (hospedaje?.metadata_hospedaje as any)?.posicionPortada;
+    if (!raw) return "50%";
+    if (typeof raw === "number") return `${raw}%`;
+    if (typeof raw === "string") {
+      if (raw === "top" || raw === "arriba") return "20%";
+      if (raw === "center" || raw === "centro") return "50%";
+      if (raw === "bottom" || raw === "abajo") return "80%";
+      return raw.includes("%") ? raw : `${raw}%`;
+    }
+    return "50%";
+  });
+
   // Estados Google Rating
   const [ratingGoogle, setRatingGoogle] = useState(
     hospedaje?.metadata_hospedaje?.google_reputacion?.rating?.toString() ||
@@ -691,6 +707,8 @@ export function ModalEditarHospedaje({
         check_in_hora: hospedaje?.metadata_hospedaje?.check_in_hora || "14:00",
         check_out_hora: hospedaje?.metadata_hospedaje?.check_out_hora || "11:00",
         contacto_propietario: nombrePropietario.trim() || undefined,
+        posicion_portada: posicionPortada || "50%",
+        posicionPortada: posicionPortada || "50%",
         google_reputacion:
           ratingGoogle && reviewsGoogle && mapsUrl
             ? {
@@ -981,22 +999,93 @@ export function ModalEditarHospedaje({
                     />
                   </div>
                   {imagenUrl && (
-                    <div className="relative w-28 aspect-16/9 rounded-xl overflow-hidden border border-stone-light shadow-2xs group mt-1">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={imagenUrl}
-                        alt="Vista previa portada"
-                        referrerPolicy="no-referrer"
-                        className="w-full h-full object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setImagenUrl("")}
-                        title="Quitar foto de portada"
-                        className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-600 text-white flex items-center justify-center text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700 cursor-pointer"
-                      >
-                        ✕
-                      </button>
+                    <div className="p-3 rounded-2xl bg-forest/5 border border-forest/15 space-y-3 mt-1.5">
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <div>
+                          <label className="text-xs font-semibold text-forest flex items-center gap-1.5">
+                            <span>🎯</span> Encuadre Vertical de Portada (Focal Point)
+                          </label>
+                          <p className="text-[11px] text-stone">
+                            Ajusta el foco de corte de la foto en las tarjetas horizontales de la plataforma.
+                          </p>
+                        </div>
+                        <span className="text-[11px] font-mono font-bold text-forest bg-white px-2 py-0.5 rounded-full border border-forest/20 shadow-2xs">
+                          {posicionPortada}
+                        </span>
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row items-center gap-3.5">
+                        {/* Mini Previsualización Horizontal en Tiempo Real */}
+                        <div className="relative w-full sm:w-52 aspect-[16/10] rounded-xl overflow-hidden border-2 border-forest/30 shadow-xs bg-stone-100 shrink-0 group">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={imagenUrl}
+                            alt="Vista previa portada"
+                            referrerPolicy="no-referrer"
+                            className="w-full h-full object-cover transition-all duration-200"
+                            style={{ objectPosition: `center ${posicionPortada}` }}
+                          />
+                          <div className="absolute top-1.5 left-1.5 bg-black/60 backdrop-blur-xs text-white text-[9px] font-semibold px-2 py-0.5 rounded-full pointer-events-none">
+                            Vista Tarjeta
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setImagenUrl("")}
+                            title="Quitar foto de portada"
+                            className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-red-600 text-white flex items-center justify-center text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700 cursor-pointer shadow-xs"
+                          >
+                            ✕
+                          </button>
+                          <div className="absolute bottom-1.5 right-1.5 bg-forest/90 text-cream text-[9px] font-mono px-1.5 py-0.5 rounded pointer-events-none">
+                            {posicionPortada}
+                          </div>
+                        </div>
+
+                        {/* Controles: Slider + Botones Rápidos */}
+                        <div className="w-full flex-1 space-y-2">
+                          <div className="space-y-1">
+                            <div className="flex justify-between text-[10px] text-stone font-medium">
+                              <span>⬆️ Arriba (0%)</span>
+                              <span>⏺️ Centro (50%)</span>
+                              <span>⬇️ Abajo (100%)</span>
+                            </div>
+                            <input
+                              type="range"
+                              min="0"
+                              max="100"
+                              step="5"
+                              value={parseInt(posicionPortada.replace("%", ""), 10) || 50}
+                              onChange={(e) => setPosicionPortada(`${e.target.value}%`)}
+                              className="w-full accent-forest cursor-pointer h-2 bg-stone-200 rounded-lg"
+                            />
+                          </div>
+
+                          {/* Botones de Selección Rápida */}
+                          <div className="flex items-center gap-1.5">
+                            {[
+                              { label: "⬆️ Arriba", value: "20%" },
+                              { label: "⏺️ Centro", value: "50%" },
+                              { label: "⬇️ Abajo", value: "80%" },
+                            ].map((btn) => {
+                              const isSelected = posicionPortada === btn.value;
+                              return (
+                                <button
+                                  key={btn.value}
+                                  type="button"
+                                  onClick={() => setPosicionPortada(btn.value)}
+                                  className={`flex-1 py-1 px-1.5 rounded-xl text-[11px] font-medium transition-all cursor-pointer text-center ${
+                                    isSelected
+                                      ? "bg-forest text-cream shadow-2xs font-bold"
+                                      : "bg-white text-forest border border-forest/20 hover:bg-forest/10"
+                                  }`}
+                                >
+                                  {btn.label} ({btn.value})
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>

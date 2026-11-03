@@ -42,6 +42,11 @@ export function EventCard({ evento: rawEvento, zona, priority = false }: EventCa
       ? tPrice("consult")
       : formatPrecio(evento.precio, evento.precio_moneda);
 
+  const posicionPortada =
+    evento.metadata_hospedaje?.posicion_portada ||
+    (evento.metadata_hospedaje as any)?.posicionPortada ||
+    "50%";
+
   return (
     <article
       id={`card-evento-${evento.id}`}
@@ -76,6 +81,9 @@ export function EventCard({ evento: rawEvento, zona, priority = false }: EventCa
             fill
             sizes="(max-width: 640px) 100vw, 640px"
             className="object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+            style={{
+              objectPosition: `center ${posicionPortada || "50%"}`,
+            }}
             priority={priority}
           />
         ) : (

@@ -9,6 +9,7 @@ interface EventHeroGalleryProps {
   galeriaFotos?: string[] | null;
   categoriaBadge?: React.ReactNode;
   destacadoBadge?: React.ReactNode;
+  posicionPortada?: string | null;
 }
 
 /**
@@ -24,6 +25,7 @@ export function EventHeroGallery({
   galeriaFotos,
   categoriaBadge,
   destacadoBadge,
+  posicionPortada,
 }: EventHeroGalleryProps) {
   // Combinamos la foto de portada principal con las fotos de galería adicionales
   const fotos: string[] = [imagenUrl, ...(galeriaFotos || [])].filter(
@@ -85,6 +87,7 @@ export function EventHeroGallery({
           priority
           sizes="(max-width: 640px) 100vw, 640px"
           className="object-cover"
+          style={{ objectPosition: `center ${posicionPortada || "50%"}` }}
         />
         {/* Sombra sutil solo en el pie de la foto para contraste de badges sin opacar la comida */}
         <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/50 via-black/15 to-transparent pointer-events-none" />
@@ -120,6 +123,7 @@ export function EventHeroGallery({
               loading={idx === 0 ? "eager" : "lazy"}
               sizes="(max-width: 640px) 100vw, 640px"
               className="object-cover"
+              style={idx === 0 ? { objectPosition: `center ${posicionPortada || "50%"}` } : undefined}
             />
           </div>
         ))}

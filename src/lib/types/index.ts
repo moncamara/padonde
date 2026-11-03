@@ -140,6 +140,8 @@ export type HospedajeMetadata = {
   menu_tema?: "fogon" | "sierra" | "caribe" | "oro"; // Tema visual de autor para la carta
   menu_data?: any;            // Estructura JSON de la carta digital (categorías, platos, precios y traducciones)
   horario?: HorarioExperiencia; // Horario limpio y recurrencia para experiencias gastronómicas, bares y miradores
+  posicion_portada?: string;  // Enfoque vertical de la portada (ej: "20%", "50%", "80%")
+  posicionPortada?: string;   // Alias camelCase de compatibilidad
 };
 
 // ─── Tipos de Servicios Esenciales e Info Útil ────────────────────────────────

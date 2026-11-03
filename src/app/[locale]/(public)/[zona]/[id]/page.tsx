@@ -283,6 +283,10 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
         imagenUrl={evento.imagen_url}
         titulo={evento.titulo}
         galeriaFotos={evento.metadata_hospedaje?.galeria_fotos}
+        posicionPortada={
+          evento.metadata_hospedaje?.posicion_portada ||
+          (evento.metadata_hospedaje as any)?.posicionPortada
+        }
         categoriaBadge={
           <div className="flex items-center gap-1.5 flex-wrap">
             {categoria ? (

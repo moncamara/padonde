@@ -457,6 +457,13 @@ export function AdminHospedajesList({
                             alt={hosp.titulo}
                             fill
                             className="object-cover"
+                            style={{
+                              objectPosition: `center ${
+                                hosp.metadata_hospedaje?.posicion_portada ||
+                                (hosp.metadata_hospedaje as any)?.posicionPortada ||
+                                "50%"
+                              }`,
+                            }}
                             sizes="48px"
                           />
                         ) : (
