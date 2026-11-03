@@ -632,6 +632,27 @@ export function ModalEditarHospedaje({
     });
   };
 
+  // Reordenar fotos mediante Drag and Drop nativo
+  const reordenarFotosHabitacion = (indexHab: number, fromIndex: number, toIndex: number) => {
+    if (fromIndex === toIndex) return;
+    setHabitaciones((prev) => {
+      const copy = [...prev];
+      const fotosActuales = [...(copy[indexHab].fotos || [])];
+      if (
+        fromIndex < 0 ||
+        fromIndex >= fotosActuales.length ||
+        toIndex < 0 ||
+        toIndex >= fotosActuales.length
+      ) {
+        return copy;
+      }
+      const [fotoMovida] = fotosActuales.splice(fromIndex, 1);
+      fotosActuales.splice(toIndex, 0, fotoMovida);
+      copy[indexHab].fotos = fotosActuales;
+      return copy;
+    });
+  };
+
   // Agregar foto mediante URL externa o ruta local (admite una o varias URLs separadas por coma o salto de línea)
   const agregarFotoPorUrl = (indexHab: number, urlOrUrls: string) => {
     const urls = extraerYOptimizarUrls(urlOrUrls);
@@ -1553,6 +1574,7 @@ export function ModalEditarHospedaje({
                     onAddUrl={agregarFotoPorUrl}
                     onRemoveFoto={eliminarFotoHabitacion}
                     onSetPortada={hacerFotoPortadaHabitacion}
+                    onReorderFotos={reordenarFotosHabitacion}
                     onReplaceFoto={reemplazarFotoHabitacion}
                   />
 
@@ -1701,6 +1723,7 @@ interface HabitacionFotosManagerProps {
   onAddUrl: (indexHab: number, url: string) => void;
   onRemoveFoto: (indexHab: number, fotoIndex: number) => void;
   onSetPortada: (indexHab: number, fotoIndex: number) => void;
+  onReorderFotos?: (indexHab: number, fromIndex: number, toIndex: number) => void;
   onReplaceFoto?: (indexHab: number, fotoIndex: number, nuevaUrl: string) => void;
 }
 
@@ -1713,6 +1736,7 @@ function HabitacionFotosManager({
   onAddUrl,
   onRemoveFoto,
   onSetPortada,
+  onReorderFotos,
   onReplaceFoto,
 }: HabitacionFotosManagerProps) {
   const [urlInput, setUrlInput] = useState("");
@@ -1721,6 +1745,8 @@ function HabitacionFotosManager({
   const [copiadoIndex, setCopiadoIndex] = useState<number | null>(null);
   const [importandoIndex, setImportandoIndex] = useState<number | null>(null);
   const [isBatchGuardando, setIsBatchGuardando] = useState(false);
+  const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
   const [feedbackMsg, setFeedbackMsg] = useState<{
     tipo: "ok" | "err";
     texto: string;
@@ -1933,76 +1959,123 @@ function HabitacionFotosManager({
         </div>
       )}
 
-      {/* Galería de Miniaturas */}
+      {/* Galería de Miniaturas con Drag and Drop Nativo */}
       {fotos.length > 0 ? (
-        <div className="flex flex-wrap gap-2.5 p-2.5 bg-white rounded-2xl border border-stone-light/70 shadow-2xs">
-          {fotos.map((src, fIdx) => {
-            const esSupabase = esUrlSupabase(src);
-            return (
-              <div
-                key={`${src}-${fIdx}`}
-                className="relative w-20 h-20 rounded-xl overflow-hidden border border-stone-light/80 shadow-2xs group bg-stone-100 flex-shrink-0"
-              >
-                <img
-                  src={src}
-                  alt={`Foto habitación ${fIdx + 1}`}
-                  referrerPolicy="no-referrer"
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    (e.target as HTMLElement).style.opacity = "0.5";
+        <div className="space-y-1.5">
+          {fotos.length > 1 && (
+            <p className="text-[10px] text-stone font-medium flex items-center gap-1 select-none">
+              <span>🖐️</span> Arrastra las fotos para reordenarlas. La primera queda como <span className="font-semibold text-forest">⭐ Portada</span>.
+            </p>
+          )}
+          <div className="flex flex-wrap gap-2.5 p-2.5 bg-white rounded-2xl border border-stone-light/70 shadow-2xs">
+            {fotos.map((src, fIdx) => {
+              const esSupabase = esUrlSupabase(src);
+              const isDragging = draggedIdx === fIdx;
+              const isDragOver = dragOverIdx === fIdx && draggedIdx !== fIdx;
+
+              return (
+                <div
+                  key={`${src}-${fIdx}`}
+                  draggable
+                  onDragStart={(e) => {
+                    setDraggedIdx(fIdx);
+                    e.dataTransfer.effectAllowed = "move";
+                    e.dataTransfer.setData("text/plain", fIdx.toString());
                   }}
-                />
-
-                {/* Badge de tipo de almacenamiento */}
-                <span
-                  title={esSupabase ? "Guardada en PaDónde Storage" : "URL externa (Booking/Web)"}
-                  className={`absolute top-1 left-1 text-[8px] font-sans font-bold px-1 py-0.2 rounded shadow-2xs ${
-                    esSupabase
-                      ? "bg-emerald-600/90 text-white"
-                      : "bg-amber-600/90 text-white"
+                  onDragEnd={() => {
+                    setDraggedIdx(null);
+                    setDragOverIdx(null);
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "move";
+                    if (dragOverIdx !== fIdx) {
+                      setDragOverIdx(fIdx);
+                    }
+                  }}
+                  onDragLeave={() => {
+                    if (dragOverIdx === fIdx) {
+                      setDragOverIdx(null);
+                    }
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    if (draggedIdx !== null && draggedIdx !== fIdx) {
+                      onReorderFotos?.(indexHab, draggedIdx, fIdx);
+                    }
+                    setDraggedIdx(null);
+                    setDragOverIdx(null);
+                  }}
+                  className={`relative w-20 h-20 rounded-xl overflow-hidden shadow-2xs group bg-stone-100 flex-shrink-0 cursor-grab active:cursor-grabbing transition-all select-none ${
+                    isDragging
+                      ? "opacity-30 scale-95 border-2 border-dashed border-forest ring-2 ring-forest/30"
+                      : isDragOver
+                      ? "border-2 border-dashed border-forest ring-2 ring-forest/50 scale-105"
+                      : "border border-stone-light/80 hover:border-forest/50 hover:shadow-xs"
                   }`}
+                  title="Arrastra para reordenar (la primera queda como Portada)"
                 >
-                  {esSupabase ? "☁️" : "🌐"}
-                </span>
+                  <img
+                    src={src}
+                    alt={`Foto habitación ${fIdx + 1}`}
+                    referrerPolicy="no-referrer"
+                    className="w-full h-full object-cover pointer-events-none"
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.opacity = "0.5";
+                    }}
+                  />
 
-                {/* Distintivo de Portada */}
-                {fIdx === 0 ? (
-                  <span className="absolute bottom-1 left-1 bg-forest/90 text-cream text-[9px] font-sans font-bold px-1.5 py-0.5 rounded shadow-xs">
-                    ⭐ Portada
+                  {/* Badge de tipo de almacenamiento */}
+                  <span
+                    title={esSupabase ? "Guardada en PaDónde Storage" : "URL externa (Booking/Web)"}
+                    className={`absolute top-1 left-1 text-[8px] font-sans font-bold px-1 py-0.2 rounded shadow-2xs pointer-events-none ${
+                      esSupabase
+                        ? "bg-emerald-600/90 text-white"
+                        : "bg-amber-600/90 text-white"
+                    }`}
+                  >
+                    {esSupabase ? "☁️" : "🌐"}
                   </span>
-                ) : (
+
+                  {/* Distintivo de Portada */}
+                  {fIdx === 0 ? (
+                    <span className="absolute bottom-1 left-1 bg-forest/90 text-cream text-[9px] font-sans font-bold px-1.5 py-0.5 rounded shadow-xs pointer-events-none">
+                      ⭐ Portada
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => onSetPortada(indexHab, fIdx)}
+                      title="Establecer como foto principal"
+                      className="absolute bottom-1 left-1 bg-black/70 hover:bg-forest text-cream text-[9px] font-sans font-medium px-1.5 py-0.5 rounded shadow-xs transition-colors opacity-90 sm:opacity-0 sm:group-hover:opacity-100 cursor-pointer"
+                    >
+                      ⭐ Principal
+                    </button>
+                  )}
+
+                  {/* Botón Descargar rápido a equipo */}
                   <button
                     type="button"
-                    onClick={() => onSetPortada(indexHab, fIdx)}
-                    title="Establecer como foto principal"
-                    className="absolute bottom-1 left-1 bg-black/70 hover:bg-forest text-cream text-[9px] font-sans font-medium px-1.5 py-0.5 rounded shadow-xs transition-colors opacity-90 sm:opacity-0 sm:group-hover:opacity-100"
+                    onClick={() => handleDescargarFoto(src, fIdx)}
+                    title="Descargar esta foto a tu carpeta Descargas"
+                    className="absolute top-1 right-7 w-5 h-5 rounded-full bg-black/70 hover:bg-forest text-white text-[10px] flex items-center justify-center transition-colors shadow-xs opacity-90 sm:opacity-0 sm:group-hover:opacity-100 cursor-pointer"
                   >
-                    ⭐ Principal
+                    📥
                   </button>
-                )}
 
-                {/* Botón Descargar rápido a equipo */}
-                <button
-                  type="button"
-                  onClick={() => handleDescargarFoto(src, fIdx)}
-                  title="Descargar esta foto a tu carpeta Descargas"
-                  className="absolute top-1 right-7 w-5 h-5 rounded-full bg-black/70 hover:bg-forest text-white text-[10px] flex items-center justify-center transition-colors shadow-xs opacity-90 sm:opacity-0 sm:group-hover:opacity-100"
-                >
-                  📥
-                </button>
-
-                {/* Botón Eliminar individual */}
-                <button
-                  type="button"
-                  onClick={() => onRemoveFoto(indexHab, fIdx)}
-                  title="Eliminar esta foto"
-                  className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/70 hover:bg-red-600 text-white text-[10px] flex items-center justify-center transition-colors shadow-xs"
-                >
-                  ✕
-                </button>
-              </div>
-            );
-          })}
+                  {/* Botón Eliminar individual */}
+                  <button
+                    type="button"
+                    onClick={() => onRemoveFoto(indexHab, fIdx)}
+                    title="Eliminar esta foto"
+                    className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/70 hover:bg-red-600 text-white text-[10px] flex items-center justify-center transition-colors shadow-xs cursor-pointer"
+                  >
+                    ✕
+                  </button>
+                </div>
+              );
+            })}
+          </div>
         </div>
       ) : (
         <div className="p-3.5 bg-stone-50 rounded-2xl border border-dashed border-stone-light/80 text-center space-y-1">

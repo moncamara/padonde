@@ -352,21 +352,28 @@ export function EventUpsertForm({
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
-    if (galeriaFotos.length + files.length > 5) {
-      alert("Puedes agregar un máximo de 5 fotos adicionales (total de 6 fotos con la portada) para garantizar velocidad máxima de carga.");
+    if (fotosEvento.length + files.length > 6) {
+      alert("Puedes agregar un máximo de 6 fotos en total (portada + galería) para garantizar velocidad máxima de carga.");
       return;
     }
 
     setSubiendoFotoGaleria(true);
     try {
+      let isFirst = !previewFoto;
       for (const f of files) {
         const url = await uploadEventImage(f);
         if (url) {
-          setGaleriaFotos((prev) => [...prev, url]);
+          if (isFirst) {
+            setPreviewFoto(url);
+            setFile(null);
+            isFirst = false;
+          } else {
+            setGaleriaFotos((prev) => [...prev, url]);
+          }
         }
       }
     } catch (err: any) {
-      alert("Error al subir fotografía de vitrina: " + (err?.message || "intenta de nuevo"));
+      alert("Error al subir fotografía: " + (err?.message || "intenta de nuevo"));
     } finally {
       setSubiendoFotoGaleria(false);
       e.target.value = "";
@@ -376,6 +383,44 @@ export function EventUpsertForm({
   function handleEliminarFotoGaleria(indexAEliminar: number) {
     setGaleriaFotos((prev) => prev.filter((_, i) => i !== indexAEliminar));
   }
+
+  // Drag and Drop nativo para reordenar fotografías (la primera queda como Portada)
+  const [draggedFotoIdx, setDraggedFotoIdx] = useState<number | null>(null);
+  const [dragOverFotoIdx, setDragOverFotoIdx] = useState<number | null>(null);
+
+  const fotosEvento = useMemo(() => {
+    const list: string[] = [];
+    if (previewFoto) list.push(previewFoto);
+    galeriaFotos.forEach((f) => {
+      if (f && !list.includes(f)) list.push(f);
+    });
+    return list;
+  }, [previewFoto, galeriaFotos]);
+
+  const handleReordenarFotosEvento = (fromIdx: number, toIdx: number) => {
+    if (fromIdx === toIdx) return;
+    const lista = [...fotosEvento];
+    if (fromIdx < 0 || fromIdx >= lista.length || toIdx < 0 || toIdx >= lista.length) return;
+    const [fotoMovida] = lista.splice(fromIdx, 1);
+    lista.splice(toIdx, 0, fotoMovida);
+
+    // El índice 0 siempre define la Portada del evento
+    setPreviewFoto(lista[0] || null);
+    setFile(null);
+    setGaleriaFotos(lista.slice(1));
+  };
+
+  const handleHacerPortadaEvento = (idx: number) => {
+    handleReordenarFotosEvento(idx, 0);
+  };
+
+  const handleEliminarFotoEvento = (idx: number) => {
+    const lista = [...fotosEvento];
+    lista.splice(idx, 1);
+    setPreviewFoto(lista[0] || null);
+    if (idx === 0) setFile(null);
+    setGaleriaFotos(lista.slice(1));
+  };
 
   // 7. Video / Reel
   const [videoFile, setVideoFile] = useState<File | null>(null);
@@ -1670,141 +1715,151 @@ export function EventUpsertForm({
         </div>
       </div>
 
-      {/* 4. MULTIMEDIA: FOTO PRINCIPAL Y GALERÍA COMPLETA (PARIDAD TOTAL) */}
+      {/* 4. MULTIMEDIA: FOTO PRINCIPAL Y GALERÍA CON DRAG AND DROP NATIVO */}
       <div className="bg-white/80 p-4 sm:p-5 rounded-3xl border border-stone-light/70 shadow-2xs space-y-4">
         <div className="flex items-center justify-between border-b border-stone-light/40 pb-2.5">
-          <h3 className="font-serif text-sm font-bold text-forest uppercase tracking-wider flex items-center gap-1.5">
-            <span>📷</span> 4. Fotografía y Galería de Vitrina
-          </h3>
-          <span className="text-[10px] text-stone font-mono">
-            {galeriaFotos.length + (previewFoto ? 1 : 0)} / 6 fotos
-          </span>
+          <div>
+            <h3 className="font-serif text-sm font-bold text-forest uppercase tracking-wider flex items-center gap-1.5">
+              <span>📷</span> 4. Fotografía y Galería de Vitrina
+            </h3>
+            <p className="text-[11px] text-stone mt-0.5">
+              Arrastra las fotos para definir el orden. La primera foto define automáticamente la Portada destacada.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            {subiendoFotoGaleria && (
+              <span className="text-[11px] text-terra font-semibold animate-pulse">
+                Subiendo fotos...
+              </span>
+            )}
+            <span className="text-[10px] text-stone font-mono bg-cream px-2 py-0.5 rounded-full border border-stone-light/60">
+              {fotosEvento.length} / 6 fotos
+            </span>
+          </div>
         </div>
 
-        <div className="space-y-4 font-sans">
-          {/* A. Foto de Portada */}
-          <div>
-            <label className="block text-xs font-semibold text-forest mb-1.5">
-              Fotografía Principal (Portada) *
-            </label>
+        <div className="space-y-3 font-sans">
+          {fotosEvento.length > 1 && (
+            <p className="text-[11px] text-stone font-medium flex items-center gap-1 select-none">
+              <span>🖐️</span> Arrastra las fotos para reordenarlas. La primera foto queda como <span className="font-semibold text-forest">⭐ Portada</span>.
+            </p>
+          )}
 
-            <div className="flex items-center gap-4">
-              {previewFoto ? (
-                <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden border border-stone-light/80 shrink-0 shadow-2xs group">
-                  <Image
-                    src={previewFoto}
-                    alt="Foto de portada"
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform"
-                  />
-                  <label className="absolute inset-0 bg-black/40 text-white text-[10px] font-semibold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                    Cambiar
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileChange}
-                      className="hidden"
-                    />
-                  </label>
-                </div>
-              ) : (
-                <label className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl border-2 border-dashed border-forest/30 hover:border-forest/60 bg-forest/5 flex flex-col items-center justify-center text-center p-2 cursor-pointer transition-colors shrink-0">
-                  <span className="text-xl">📸</span>
-                  <span className="text-[10px] font-bold text-forest mt-1">Subir Foto</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    className="hidden"
-                  />
-                </label>
-              )}
+          {/* Grid de Miniaturas con Drag and Drop Nativo */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+            {fotosEvento.map((fotoUrl, idx) => {
+              const isDragging = draggedFotoIdx === idx;
+              const isDragOver = dragOverFotoIdx === idx && draggedFotoIdx !== idx;
 
-              <div className="text-xs text-stone space-y-1">
-                <p className="font-semibold text-forest">Esta es la foto destacada en la cartelera.</p>
-                <p className="text-[11px] leading-relaxed">
-                  Formato WebP, JPG o PNG. Se comprime automáticamente para una carga ultra rápida en teléfonos móviles de turistas.
-                </p>
-                {previewFoto && (
-                  <label className="inline-block text-[11px] text-forest underline cursor-pointer pt-1">
-                    Seleccionar otra foto
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileChange}
-                      className="hidden"
-                    />
-                  </label>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* B. Galería de Fotos Adicionales (Carrusel de Vitrina) */}
-          <div className="pt-3 border-t border-stone-light/40 space-y-2.5">
-            <div className="flex items-center justify-between">
-              <div>
-                <label className="text-xs font-semibold text-forest flex items-center gap-1.5">
-                  <span>📸</span> Galería Adicional de Vitrina ({galeriaFotos.length}/5)
-                </label>
-                <p className="text-[11px] text-stone">
-                  Crea el carrusel swipeable para que los viajeros vean platos, ambiente y detalles.
-                </p>
-              </div>
-
-              {subiendoFotoGaleria && (
-                <span className="text-[11px] text-terra font-semibold animate-pulse">
-                  Subiendo fotografías...
-                </span>
-              )}
-            </div>
-
-            {/* Grid de fotos cargadas en la galería */}
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2.5">
-              {galeriaFotos.map((fotoUrl, idx) => (
+              return (
                 <div
-                  key={idx}
-                  className="relative aspect-square rounded-2xl overflow-hidden border border-stone-light/80 shadow-2xs group"
+                  key={`${fotoUrl}-${idx}`}
+                  draggable
+                  onDragStart={(e) => {
+                    setDraggedFotoIdx(idx);
+                    e.dataTransfer.effectAllowed = "move";
+                    e.dataTransfer.setData("text/plain", idx.toString());
+                  }}
+                  onDragEnd={() => {
+                    setDraggedFotoIdx(null);
+                    setDragOverFotoIdx(null);
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "move";
+                    if (dragOverFotoIdx !== idx) {
+                      setDragOverFotoIdx(idx);
+                    }
+                  }}
+                  onDragLeave={() => {
+                    if (dragOverFotoIdx === idx) {
+                      setDragOverFotoIdx(null);
+                    }
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    if (draggedFotoIdx !== null && draggedFotoIdx !== idx) {
+                      handleReordenarFotosEvento(draggedFotoIdx, idx);
+                    }
+                    setDraggedFotoIdx(null);
+                    setDragOverFotoIdx(null);
+                  }}
+                  className={`relative aspect-square rounded-2xl overflow-hidden shadow-2xs group cursor-grab active:cursor-grabbing transition-all select-none ${
+                    isDragging
+                      ? "opacity-30 scale-95 border-2 border-dashed border-forest ring-2 ring-forest/30"
+                      : isDragOver
+                      ? "border-2 border-dashed border-forest ring-2 ring-forest/50 scale-105"
+                      : "border border-stone-light/80 hover:border-forest/50"
+                  }`}
+                  title="Arrastra para reordenar (la primera queda como Portada)"
                 >
                   <Image
                     src={fotoUrl}
-                    alt={`Foto vitrina ${idx + 1}`}
+                    alt={idx === 0 ? "Foto de portada" : `Foto vitrina ${idx + 1}`}
                     fill
-                    className="object-cover group-hover:scale-105 transition-transform"
+                    className="object-cover group-hover:scale-105 transition-transform pointer-events-none"
                   />
+
+                  {/* Insignia de Portada o Botón para Hacer Portada */}
+                  {idx === 0 ? (
+                    <span className="absolute bottom-1.5 left-1.5 bg-forest text-cream text-[9px] font-sans font-bold px-1.5 py-0.5 rounded shadow-xs pointer-events-none flex items-center gap-1">
+                      ⭐ Portada
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleHacerPortadaEvento(idx)}
+                      title="Establecer como foto principal de portada"
+                      className="absolute bottom-1.5 left-1.5 bg-black/70 hover:bg-forest text-cream text-[9px] font-sans font-medium px-1.5 py-0.5 rounded shadow-xs transition-colors opacity-90 sm:opacity-0 sm:group-hover:opacity-100 cursor-pointer"
+                    >
+                      ⭐ Portada
+                    </button>
+                  )}
+
+                  {/* Número de posición */}
+                  <span className="absolute top-1.5 left-1.5 bg-black/60 text-white font-mono text-[9px] px-1 rounded pointer-events-none">
+                    #{idx + 1}
+                  </span>
+
+                  {/* Botón Eliminar Foto */}
                   <button
                     type="button"
-                    onClick={() => handleEliminarFotoGaleria(idx)}
-                    className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/70 hover:bg-red-600 text-white text-[10px] flex items-center justify-center transition-colors cursor-pointer shadow"
+                    onClick={() => handleEliminarFotoEvento(idx)}
+                    className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/70 hover:bg-red-600 text-white text-[10px] flex items-center justify-center transition-colors cursor-pointer shadow"
                     title="Eliminar esta foto"
                   >
                     ✕
                   </button>
-                  <span className="absolute bottom-1 left-1 bg-black/60 text-white font-mono text-[9px] px-1 rounded">
-                    #{idx + 1}
-                  </span>
                 </div>
-              ))}
+              );
+            })}
 
-              {/* Botón para subir fotos a la galería */}
-              {galeriaFotos.length < 5 && (
-                <label className="aspect-square rounded-2xl border-2 border-dashed border-stone-light/80 hover:border-forest/60 bg-stone-light/10 flex flex-col items-center justify-center text-center p-2 cursor-pointer transition-colors">
-                  <span className="text-lg">＋</span>
-                  <span className="text-[10px] font-bold text-forest mt-0.5">
-                    {galeriaFotos.length === 0 ? "Agregar Fotos" : "+ Otra Foto"}
-                  </span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    disabled={subiendoFotoGaleria}
-                    onChange={handleAgregarFotosGaleria}
-                    className="hidden"
-                  />
-                </label>
-              )}
-            </div>
+            {/* Botón para subir fotos (hasta 6 fotos en total) */}
+            {fotosEvento.length < 6 && (
+              <label className="aspect-square rounded-2xl border-2 border-dashed border-stone-light/80 hover:border-forest/60 bg-stone-light/10 hover:bg-stone-light/20 flex flex-col items-center justify-center text-center p-2 cursor-pointer transition-colors group">
+                <span className="text-xl group-hover:scale-110 transition-transform">📸</span>
+                <span className="text-[10px] font-bold text-forest mt-1">
+                  {fotosEvento.length === 0 ? "Subir Foto" : "+ Otra Foto"}
+                </span>
+                <span className="text-[9px] text-stone mt-0.5">
+                  ({6 - fotosEvento.length} disponibles)
+                </span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  disabled={subiendoFotoGaleria}
+                  onChange={handleAgregarFotosGaleria}
+                  className="hidden"
+                />
+              </label>
+            )}
           </div>
+
+          <p className="text-[11px] text-stone leading-relaxed">
+            Formato WebP, JPG o PNG. Las imágenes se comprimen automáticamente para una carga ultra rápida en teléfonos móviles de turistas.
+          </p>
+        </div>
 
           {/* C. Video / Reel (Opcional) */}
           <div className="pt-3 border-t border-stone-light/40 space-y-2">
@@ -1849,7 +1904,6 @@ export function EventUpsertForm({
             )}
           </div>
         </div>
-      </div>
 
       {/* 5. CARTA / MENÚ DIGITAL (PÁGINAS EN FOTOS, PDF Y TEMA) */}
       <div className="bg-white/80 p-4 sm:p-5 rounded-3xl border border-stone-light/70 shadow-2xs space-y-4">
