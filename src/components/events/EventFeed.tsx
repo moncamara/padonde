@@ -232,7 +232,15 @@ export function EventFeed({ eventos, zona, configTerritorial }: EventFeedProps) 
     const territorialConfig = getTerritorialConfig(zona, configTerritorial);
 
     const ordenados = [...listaAFiltrar].sort((a, b) => {
-      // 1. Si estamos mostrando otras fechas o es filtro "proximos" o "todos", orden cronológico por día
+      // 1. Jerarquía de Destacados en Cartelera:
+      // Eventos con destacado === true (o es_destacado) encabecen estrictamente el listado antes de los eventos estándar
+      const esDestacadoA = Boolean(a.destacado || (a as any).es_destacado);
+      const esDestacadoB = Boolean(b.destacado || (b as any).es_destacado);
+      if (esDestacadoA !== esDestacadoB) {
+        return esDestacadoA ? -1 : 1;
+      }
+
+      // 2. Si estamos mostrando otras fechas o es filtro "proximos" o "todos", orden cronológico por día
       if (fallbackOtrasFechas || filtroTiempo === "proximos" || filtroTiempo === "todos") {
         const ymdA = getFechaYMDDesdeISO(a.fecha_inicio);
         const ymdB = getFechaYMDDesdeISO(b.fecha_inicio);
@@ -241,7 +249,7 @@ export function EventFeed({ eventos, zona, configTerritorial }: EventFeedProps) 
         }
       }
 
-      // 2. Prioridad territorial de categoría
+      // 3. Prioridad territorial de categoría
       const esHospedajeA = a.tipo === "hospedaje";
       const esHospedajeB = b.tipo === "hospedaje";
       if (esHospedajeA !== esHospedajeB) {
@@ -250,11 +258,6 @@ export function EventFeed({ eventos, zona, configTerritorial }: EventFeedProps) 
         } else {
           return esHospedajeA ? 1 : -1;
         }
-      }
-
-      // 3. Destacados primero (Aliados pagos siempre arriba)
-      if (a.destacado !== b.destacado) {
-        return a.destacado ? -1 : 1;
       }
 
       // 4. Horas del evento (de más temprano a más tarde en el día)

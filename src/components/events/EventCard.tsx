@@ -47,6 +47,34 @@ export function EventCard({ evento: rawEvento, zona, priority = false }: EventCa
     (evento.metadata_hospedaje as any)?.posicionPortada ||
     "50%";
 
+  const esHospedaje =
+    evento.tipo === "hospedaje" ||
+    (evento.categorias?.length ? evento.categorias.includes("hospedaje") : false);
+
+  // Rotación Diaria de Portadas solo para Eventos (los hospedajes mantienen su foto fija)
+  const fotoPortadaHoy = (() => {
+    if (esHospedaje || !evento.imagen_url) {
+      return evento.imagen_url;
+    }
+
+    const todasLasFotos = [
+      evento.imagen_url,
+      ...(evento.metadata_hospedaje?.galeria_fotos || (evento as any)?.galeria_fotos || []),
+    ].filter(Boolean) as string[];
+
+    if (todasLasFotos.length <= 1) {
+      return evento.imagen_url;
+    }
+
+    const diaDelAno = Math.floor(
+      (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24)
+    );
+    const indiceFoto = (diaDelAno + (evento.id.charCodeAt(0) || 0)) % todasLasFotos.length;
+    return todasLasFotos[indiceFoto] || evento.imagen_url;
+  })();
+
+  const esDestacado = Boolean(evento.destacado || (evento as any).es_destacado);
+
   return (
     <article
       id={`card-evento-${evento.id}`}
@@ -74,9 +102,9 @@ export function EventCard({ evento: rawEvento, zona, priority = false }: EventCa
 
       {/* 2. Contenedor de Imagen / Flyer 100% limpio y visible */}
       <div className="relative aspect-[16/10] sm:aspect-[16/9] w-full overflow-hidden bg-stone-100">
-        {evento.imagen_url ? (
+        {fotoPortadaHoy ? (
           <Image
-            src={evento.imagen_url}
+            src={fotoPortadaHoy}
             alt={evento.titulo}
             fill
             sizes="(max-width: 640px) 100vw, 640px"
@@ -138,7 +166,7 @@ export function EventCard({ evento: rawEvento, zona, priority = false }: EventCa
             )}
           </div>
 
-          {evento.destacado && (
+          {esDestacado && (
             <span className="bg-terra text-white text-xs font-sans font-semibold px-3 py-1 rounded-full shadow-xs">
               ⭐ {tCard("featured")}
             </span>
