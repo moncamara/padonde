@@ -494,7 +494,7 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
 
             const menuTema =
               (meta?.menu_tema as "fogon" | "sierra" | "caribe" | "oro") ||
-              (isSilocibe ? "fogon" : isLazyCat ? "fogon" : "fogon");
+              (isSilocibe ? "oro" : isLazyCat ? "fogon" : "fogon");
 
             const luxuryMenuUrl = tieneMenuInteractivo
               ? `/${locale}/${zonaSlug}/menu-demo?eventoId=${evento.id}&tema=${menuTema}`

@@ -36,6 +36,7 @@ import { ModalCargarJson } from "./ModalCargarJson";
 import { ModalAficheImprimible } from "@/components/admin/ModalAficheImprimible";
 import { LuxuryRestaurantMenu } from "@/components/menu/LuxuryRestaurantMenu";
 import { LAZY_CAT_MENU } from "@/data/menus/lazyCatMenu";
+import { SILOCIBE_MENU } from "@/data/menus/silocibeMenu";
 import type { EventoExtraido } from "@/lib/eventoParser";
 import type { CategoriaEvento } from "@/lib/types";
 import type { EventoAdminItem } from "./AdminEventList";
@@ -471,17 +472,23 @@ export function EventUpsertForm({
     (businessName || "").toLowerCase().includes("lazy cat") ||
     (eventTitle || "").toLowerCase().includes("lazy cat");
 
+  const isSilocibe =
+    initialEvento?.id === "08e4bfe7-8b1c-45a0-9efb-9cb0932b8d09" ||
+    (businessName || "").toLowerCase().includes("silocibe") ||
+    (eventTitle || "").toLowerCase().includes("silocibe");
+
   const [menuInteractivo, setMenuInteractivo] = useState<boolean>(() => {
     if (initialEvento?.metadata_hospedaje?.menu_interactivo !== undefined) {
       return Boolean(initialEvento.metadata_hospedaje.menu_interactivo);
     }
-    return isLazyCat;
+    return isLazyCat || isSilocibe;
   });
 
   const [menuTema, setMenuTema] = useState<"fogon" | "sierra" | "caribe" | "oro">(() => {
     return (
       (initialEvento?.metadata_hospedaje?.menu_tema as any) ||
-      (isLazyCat ? "fogon" : "fogon")
+      (initialEvento?.metadata_hospedaje?.menu_data as any)?.tema ||
+      (isSilocibe ? "oro" : isLazyCat ? "fogon" : "fogon")
     );
   });
 
@@ -515,11 +522,14 @@ export function EventUpsertForm({
         return "";
       }
     }
+    if (isSilocibe) {
+      return JSON.stringify(SILOCIBE_MENU, null, 2);
+    }
     return "";
   });
   const [jsonError, setJsonError] = useState<string | null>(null);
   const [jsonStats, setJsonStats] = useState<{ categorias: number; platos: number } | null>(() => {
-    const raw = initialEvento?.metadata_hospedaje?.menu_data;
+    const raw = initialEvento?.metadata_hospedaje?.menu_data || (isSilocibe ? SILOCIBE_MENU : null);
     if (raw && typeof raw === "object") {
       const cats = Array.isArray(raw.categorias) ? raw.categorias.length : 0;
       const platos = Array.isArray(raw.categorias)
@@ -534,16 +544,20 @@ export function EventUpsertForm({
   const menuPreviewObj = useMemo(() => {
     const nombreNegocioActual = businessName.trim() || eventTitle.trim() || "Restaurante";
     if (!menuDataJson.trim()) {
+      const baseMenu = isSilocibe ? SILOCIBE_MENU : LAZY_CAT_MENU;
       return {
-        ...LAZY_CAT_MENU,
+        ...baseMenu,
         id: "menu-" + nombreNegocioActual.toLowerCase().replace(/\s+/g, "-"),
         negocioNombre: nombreNegocioActual,
-        subtitulo: {
-          es: `Carta Digital · ${nombreNegocioActual}`,
-          en: `Digital Menu · ${nombreNegocioActual}`,
-          fr: `Menu Digital · ${nombreNegocioActual}`,
-          de: `Digitale Speisekarte · ${nombreNegocioActual}`,
-        },
+        subtitulo: isSilocibe
+          ? SILOCIBE_MENU.subtitulo
+          : {
+              es: `Carta Digital · ${nombreNegocioActual}`,
+              en: `Digital Menu · ${nombreNegocioActual}`,
+              fr: `Menu Digital · ${nombreNegocioActual}`,
+              de: `Digitale Speisekarte · ${nombreNegocioActual}`,
+            },
+        tema: menuTema,
       };
     }
     try {
@@ -562,6 +576,7 @@ export function EventUpsertForm({
             de: "Digitale Speisekarte",
           },
           categorias: parsed,
+          tema: menuTema,
         };
       } else if (parsed && typeof parsed === "object") {
         normalizado = {
@@ -579,13 +594,18 @@ export function EventUpsertForm({
             : Array.isArray(parsed.items)
             ? [{ id: "menu", icono: "🍽️", titulos: { es: "Carta", en: "Menu" }, items: parsed.items }]
             : [],
+          tema: menuTema,
         };
       }
       return normalizado;
     } catch {
-      return null;
+      const baseMenu = isSilocibe ? SILOCIBE_MENU : LAZY_CAT_MENU;
+      return {
+        ...baseMenu,
+        tema: menuTema,
+      };
     }
-  }, [menuDataJson, businessName, eventTitle, whatsapp]);
+  }, [menuDataJson, businessName, eventTitle, whatsapp, isSilocibe, menuTema]);
 
   function validarYFormatearJson(str: string) {
     if (!str.trim()) {
@@ -610,10 +630,22 @@ export function EventUpsertForm({
   }
 
   function handleCargarEjemploJson() {
+    if (isSilocibe) {
+      const silocibeConTema = {
+        ...SILOCIBE_MENU,
+        tema: menuTema,
+      };
+      const formatted = JSON.stringify(silocibeConTema, null, 2);
+      setMenuDataJson(formatted);
+      validarYFormatearJson(formatted);
+      return;
+    }
+
     const nombreNegocioActual = businessName.trim() || eventTitle.trim() || "Restaurante";
     const ejemplo = {
       id: "menu-" + nombreNegocioActual.toLowerCase().replace(/\s+/g, "-"),
       negocioNombre: nombreNegocioActual,
+      tema: menuTema,
       subtitulo: {
         es: "Cocina Fusión · Hamburguesas de Autor · Coctelería",
         en: "Fusion Cuisine · Gourmet Burgers · Cocktails",
@@ -2037,7 +2069,22 @@ export function EventUpsertForm({
                   <span className="text-[10px] text-stone font-semibold">Tema Visual:</span>
                   <select
                     value={menuTema}
-                    onChange={(e) => setMenuTema(e.target.value as any)}
+                    onChange={(e) => {
+                      const nuevoTema = e.target.value as any;
+                      setMenuTema(nuevoTema);
+                      // Sincronizar propiedad 'tema' dentro del JSON de la carta si existe
+                      if (menuDataJson.trim()) {
+                        try {
+                          const parsed = JSON.parse(menuDataJson);
+                          if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+                            parsed.tema = nuevoTema;
+                            setMenuDataJson(JSON.stringify(parsed, null, 2));
+                          }
+                        } catch {
+                          // Si el JSON actual no es válido aún, se actualiza en el próximo formato
+                        }
+                      }
+                    }}
                     className="text-xs p-1.5 rounded-xl border border-stone-light/80 bg-white text-forest font-medium outline-none cursor-pointer"
                   >
                     <option value="fogon">🔥 Fogón & Brasa</option>

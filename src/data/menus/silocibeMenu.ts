@@ -745,7 +745,7 @@ export const SILOCIBE_MENU: MenuRestaurante = {
   },
   "pdfOriginalUrl": "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/eventos/silocibe-menu-oficial-minca.pdf",
   "googleMapsUrl": "https://search.google.com/local/writereview?placeid=ChIJKy680-Lx9I4Rk89-h79nh9s",
-  "tema": "fogon",
+  "tema": "oro",
   "whatsapp": "573218507204",
   "telefono": "+57 321 850 7204",
   "email": "silocibeminca@gmail.com",

@@ -116,14 +116,17 @@ export default async function MenuDemoPage({
         },
       };
     }
-    const metaTema = isSilocibe ? "fogon" : evento?.metadata_hospedaje?.menu_tema;
+    const metaTema =
+      evento?.metadata_hospedaje?.menu_tema ||
+      (evento?.metadata_hospedaje?.menu_data as any)?.tema ||
+      (isSilocibe ? "oro" : undefined);
     if (metaTema && metaTema in TEMAS_MENU) {
       temaAsignado = metaTema as TemaMenuId;
     }
   }
 
-  // B) Si el admin pasó ?tema= en la URL
-  if (!temaAsignado && search.tema && search.tema in TEMAS_MENU) {
+  // B) Si el admin o usuario pasó ?tema= en la URL (ej. selector dinámico o previsualización), tiene máxima prioridad
+  if (search.tema && search.tema in TEMAS_MENU) {
     temaAsignado = search.tema as TemaMenuId;
   }
 
