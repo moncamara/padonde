@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef, type CSSProperties } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import {
   LAZY_CAT_MENU,
@@ -66,6 +67,39 @@ export function LuxuryRestaurantMenu({
 
   // Botón flotante para volver arriba (menú largo en móvil)
   const [mostrarScrollArriba, setMostrarScrollArriba] = useState<boolean>(false);
+
+  // Estado para visor modal de fotos de platos (Lightbox superpuesto)
+  const [mounted, setMounted] = useState<boolean>(false);
+  const [fotoModal, setFotoModal] = useState<{
+    url: string;
+    titulo: string;
+    subtitulo?: string;
+    descripcion?: string;
+    precio?: number;
+    insignia?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Bloquear scroll de la página y escuchar tecla Escape cuando el visor de foto esté abierto
+  useEffect(() => {
+    if (fotoModal) {
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "Escape") {
+          setFotoModal(null);
+        }
+      };
+      window.addEventListener("keydown", handleKeyDown);
+      return () => {
+        document.body.style.overflow = prevOverflow;
+        window.removeEventListener("keydown", handleKeyDown);
+      };
+    }
+  }, [fotoModal]);
 
   const categoryRefs = useRef<Record<string, HTMLElement | null>>({});
   const originalBgRef = useRef<string | null>(null);
@@ -1006,7 +1040,27 @@ export function LuxuryRestaurantMenu({
               {/* Banner Destacado de Categoría (Visual Appetite Appeal) */}
               {cat.imagenPortada && (
                 <div
-                  className="relative w-full overflow-hidden rounded-2xl group h-36 sm:h-44 aspect-[16/9] shadow-md border"
+                  onClick={() =>
+                    setFotoModal({
+                      url: cat.imagenPortada!,
+                      titulo: cat.titulos[idioma] || cat.titulos.es,
+                      subtitulo: cat.subtitulos?.[idioma] || cat.titulos[idioma],
+                    })
+                  }
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setFotoModal({
+                        url: cat.imagenPortada!,
+                        titulo: cat.titulos[idioma] || cat.titulos.es,
+                        subtitulo: cat.subtitulos?.[idioma] || cat.titulos[idioma],
+                      });
+                    }
+                  }}
+                  aria-label={`Ver foto completa de ${cat.titulos[idioma] || cat.titulos.es}`}
+                  className="relative w-full overflow-hidden rounded-2xl group h-36 sm:h-44 aspect-[16/9] shadow-md border cursor-pointer select-none"
                   style={{
                     borderColor: th.border,
                     backgroundColor: th.surface,
@@ -1018,6 +1072,40 @@ export function LuxuryRestaurantMenu({
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 select-none"
                     loading="lazy"
                   />
+                  {/* Badge flotante: Toca para ver completa */}
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: "0.65rem",
+                      right: "0.65rem",
+                      zIndex: 2,
+                      padding: "4px 10px",
+                      borderRadius: "9999px",
+                      backgroundColor: "rgba(0,0,0,0.65)",
+                      backdropFilter: "blur(8px)",
+                      WebkitBackdropFilter: "blur(8px)",
+                      border: "1px solid rgba(255, 255, 255, 0.25)",
+                      color: "#FFFFFF",
+                      fontSize: "0.68rem",
+                      fontWeight: 600,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.3rem",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.4)",
+                      pointerEvents: "none",
+                    }}
+                  >
+                    <span>🔍</span>
+                    <span>
+                      {idioma === "en"
+                        ? "Tap to expand"
+                        : idioma === "fr"
+                        ? "Agrandir"
+                        : idioma === "de"
+                        ? "Vergrößern"
+                        : "Toca para ampliar"}
+                    </span>
+                  </div>
                   {/* Gradiente protector para contraste y toque editorial */}
                   <div
                     style={{
@@ -1083,6 +1171,31 @@ export function LuxuryRestaurantMenu({
                   >
                     {item.imagenUrl && (
                       <div
+                        onClick={() =>
+                          setFotoModal({
+                            url: item.imagenUrl!,
+                            titulo: getNombrePlato(item, idioma),
+                            descripcion: getDescripcionPlato(item, idioma) || undefined,
+                            precio: item.precio,
+                            insignia: item.insignia?.[idioma],
+                          })
+                        }
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            setFotoModal({
+                              url: item.imagenUrl!,
+                              titulo: getNombrePlato(item, idioma),
+                              descripcion: getDescripcionPlato(item, idioma) || undefined,
+                              precio: item.precio,
+                              insignia: item.insignia?.[idioma],
+                            });
+                          }
+                        }}
+                        aria-label={`Ver foto completa de ${getNombrePlato(item, idioma)}`}
+                        className="group/img cursor-pointer select-none"
                         style={{
                           position: "relative",
                           width: "100%",
@@ -1098,10 +1211,49 @@ export function LuxuryRestaurantMenu({
                           alt={getNombrePlato(item, idioma)}
                           width={320}
                           height={165}
-                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                            transition: "transform 0.45s ease",
+                          }}
+                          className="group-hover/img:scale-105"
                           loading="lazy"
                           decoding="async"
                         />
+                        {/* Indicador de Toca para ampliar */}
+                        <div
+                          style={{
+                            position: "absolute",
+                            bottom: "0.5rem",
+                            right: "0.5rem",
+                            padding: "3px 8px",
+                            borderRadius: "9999px",
+                            backgroundColor: "rgba(0, 0, 0, 0.7)",
+                            backdropFilter: "blur(6px)",
+                            WebkitBackdropFilter: "blur(6px)",
+                            border: "1px solid rgba(255, 255, 255, 0.2)",
+                            color: "#FFFFFF",
+                            fontSize: "0.62rem",
+                            fontWeight: 600,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.25rem",
+                            boxShadow: "0 2px 6px rgba(0,0,0,0.35)",
+                            pointerEvents: "none",
+                          }}
+                        >
+                          <span>🔍</span>
+                          <span>
+                            {idioma === "en"
+                              ? "Expand"
+                              : idioma === "fr"
+                              ? "Agrandir"
+                              : idioma === "de"
+                              ? "Vergrößern"
+                              : "Ampliar"}
+                          </span>
+                        </div>
                         {item.insignia && (
                           <span
                             style={{
@@ -1120,6 +1272,7 @@ export function LuxuryRestaurantMenu({
                               border: `1px solid ${th.badgeBorder}`,
                               color: th.isDark ? th.badgeText : th.heading,
                               boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
+                              pointerEvents: "none",
                             }}
                           >
                             {item.insignia[idioma]}
@@ -1472,6 +1625,252 @@ export function LuxuryRestaurantMenu({
           ))}
         </div>
       )}
+      {/* ─── MODAL VISOR DE FOTO COMPLETA (LIGHTBOX CON PORTAL) ─── */}
+      {mounted &&
+        fotoModal &&
+        createPortal(
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={fotoModal.titulo}
+            onClick={() => setFotoModal(null)}
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 99999,
+              backgroundColor: "rgba(0, 0, 0, 0.88)",
+              backdropFilter: "blur(12px)",
+              WebkitBackdropFilter: "blur(12px)",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "1rem",
+              animation: "luxuryFadeIn 0.22s ease-out forwards",
+              cursor: "zoom-out",
+            }}
+          >
+            {/* Botón flotante para cerrar */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setFotoModal(null);
+              }}
+              aria-label={
+                idioma === "en"
+                  ? "Close full picture"
+                  : idioma === "fr"
+                  ? "Fermer l'image"
+                  : idioma === "de"
+                  ? "Schließen"
+                  : "Cerrar foto"
+              }
+              style={{
+                position: "fixed",
+                top: "1.25rem",
+                right: "1.25rem",
+                zIndex: 100000,
+                width: "2.75rem",
+                height: "2.75rem",
+                borderRadius: "9999px",
+                backgroundColor: "rgba(255, 255, 255, 0.15)",
+                backdropFilter: "blur(8px)",
+                WebkitBackdropFilter: "blur(8px)",
+                border: "1px solid rgba(255, 255, 255, 0.25)",
+                color: "#FFFFFF",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                fontSize: "1.25rem",
+                fontWeight: 300,
+                transition: "all 0.2s ease",
+                boxShadow: "0 4px 14px rgba(0, 0, 0, 0.5)",
+              }}
+            >
+              ✕
+            </button>
+
+            {/* Contenedor central con tarjeta de la foto completa */}
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                position: "relative",
+                maxWidth: "min(94vw, 680px)",
+                maxHeight: "92vh",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                cursor: "default",
+                animation: "luxuryZoomIn 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+              }}
+            >
+              {/* Contenedor de la Imagen completa */}
+              <div
+                style={{
+                  position: "relative",
+                  width: "100%",
+                  maxHeight: "68vh",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  borderRadius: "1.25rem",
+                  overflow: "hidden",
+                  boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.12)",
+                  backgroundColor: "#0C0A09",
+                }}
+              >
+                <img
+                  src={fotoModal.url}
+                  alt={fotoModal.titulo}
+                  style={{
+                    width: "auto",
+                    height: "auto",
+                    maxWidth: "100%",
+                    maxHeight: "66vh",
+                    objectFit: "contain",
+                    display: "block",
+                    userSelect: "none",
+                  }}
+                />
+
+                {/* Insignia / Badge si existe */}
+                {fotoModal.insignia && (
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: "0.85rem",
+                      left: "0.85rem",
+                      fontSize: "0.75rem",
+                      fontWeight: 700,
+                      padding: "4px 12px",
+                      borderRadius: "9999px",
+                      backgroundColor: "rgba(0, 0, 0, 0.78)",
+                      backdropFilter: "blur(8px)",
+                      WebkitBackdropFilter: "blur(8px)",
+                      border: "1px solid rgba(255, 215, 0, 0.4)",
+                      color: "#F6C343",
+                      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.5)",
+                    }}
+                  >
+                    {fotoModal.insignia}
+                  </span>
+                )}
+              </div>
+
+              {/* Ficha editorial con el nombre, precio y descripción */}
+              <div
+                style={{
+                  width: "100%",
+                  marginTop: "0.75rem",
+                  padding: "0.85rem 1.15rem",
+                  borderRadius: "1rem",
+                  backgroundColor: "rgba(23, 20, 18, 0.92)",
+                  backdropFilter: "blur(14px)",
+                  WebkitBackdropFilter: "blur(14px)",
+                  border: "1px solid rgba(255, 255, 255, 0.14)",
+                  boxShadow: "0 10px 30px rgba(0, 0, 0, 0.6)",
+                  color: "#FFFFFF",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: "0.75rem",
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <h3
+                    style={{
+                      fontFamily: th.fontTitle,
+                      fontSize: "1.2rem",
+                      fontWeight: 700,
+                      color: "#FFFFFF",
+                      margin: 0,
+                      lineHeight: 1.25,
+                    }}
+                  >
+                    {fotoModal.titulo}
+                  </h3>
+
+                  {fotoModal.precio !== undefined && (
+                    <span
+                      style={{
+                        fontFamily: "monospace",
+                        fontWeight: 700,
+                        fontSize: "1.05rem",
+                        color: th.accent,
+                        padding: "0.2rem 0.65rem",
+                        borderRadius: "9999px",
+                        backgroundColor: "rgba(255, 255, 255, 0.08)",
+                        border: `1px solid ${th.border}`,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {formatearPrecio(fotoModal.precio)}
+                    </span>
+                  )}
+                </div>
+
+                {fotoModal.subtitulo && (
+                  <p
+                    style={{
+                      margin: "0.25rem 0 0",
+                      fontSize: "0.82rem",
+                      color: "rgba(255, 255, 255, 0.72)",
+                      fontStyle: "italic",
+                    }}
+                  >
+                    {fotoModal.subtitulo}
+                  </p>
+                )}
+
+                {fotoModal.descripcion && (
+                  <p
+                    style={{
+                      margin: "0.35rem 0 0",
+                      fontSize: "0.85rem",
+                      lineHeight: 1.4,
+                      color: "rgba(255, 255, 255, 0.85)",
+                    }}
+                  >
+                    {fotoModal.descripcion}
+                  </p>
+                )}
+
+                <div
+                  style={{
+                    marginTop: "0.55rem",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    fontSize: "0.7rem",
+                    color: "rgba(255, 255, 255, 0.5)",
+                    borderTop: "1px solid rgba(255, 255, 255, 0.08)",
+                    paddingTop: "0.45rem",
+                  }}
+                >
+                  <span>
+                    {idioma === "en"
+                      ? "Tap outside or ✕ to close"
+                      : idioma === "fr"
+                      ? "Touchez l'extérieur ou ✕ pour fermer"
+                      : idioma === "de"
+                      ? "Zum Schließen daneben tippen oder ✕"
+                      : "Toca fuera de la foto o ✕ para cerrar"}
+                  </span>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
+                    🔍 {idioma === "en" ? "HD photo preview" : "Fotografía en alta definición"}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

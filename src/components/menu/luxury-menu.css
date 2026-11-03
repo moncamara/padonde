@@ -343,3 +343,25 @@ body.luxury-menu-active {
     transform: translateY(0) scale(1);
   }
 }
+
+/* ─── VISOR MODAL DE FOTO DE PLATO (LIGHTBOX) ─── */
+@keyframes luxuryFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes luxuryZoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
