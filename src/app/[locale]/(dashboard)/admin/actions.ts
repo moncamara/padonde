@@ -255,59 +255,45 @@ export async function adminPublishEventAction(
       destacado: Boolean(input.isFeatured),
       tiene_boleteria: false,
       activo: input.activo !== undefined ? Boolean(input.activo) : true,
-      metadata_hospedaje:
-        input.googleReputacion ||
-        (input.galeriaFotos && input.galeriaFotos.length > 0) ||
-        input.menuUrl ||
-        (input.menuFotos && input.menuFotos.length > 0) ||
-        input.googleReviewUrl ||
-        input.menuInteractivo !== undefined ||
-        input.menuTema ||
-        input.tarifarioId ||
-        input.esRecurrente ||
-        input.horaInicio ||
-        input.horaFin ||
-        (input.diasRecurrentes && input.diasRecurrentes.length > 0) ||
-        input.posicionPortada
+      metadata_hospedaje: {
+        ultima_edicion: new Date().toISOString(),
+        ...(input.posicionPortada ? { posicion_portada: input.posicionPortada } : {}),
+        ...(input.googleReputacion ? { google_reputacion: input.googleReputacion } : {}),
+        ...(input.galeriaFotos && input.galeriaFotos.length > 0
+          ? { galeria_fotos: input.galeriaFotos.filter(Boolean) }
+          : {}),
+        ...(input.menuFotos && input.menuFotos.length > 0
+          ? { menu_fotos: input.menuFotos.filter(Boolean) }
+          : {}),
+        ...(input.menuUrl ? { menu_url: input.menuUrl.trim() } : {}),
+        ...(input.googleReviewUrl
+          ? { google_review_url: input.googleReviewUrl.trim() }
+          : input.googleReputacion?.maps_url
+          ? { google_review_url: extraerGoogleReviewUrl(input.googleReputacion.maps_url) || undefined }
+          : {}),
+        ...(input.menuInteractivo !== undefined ? { menu_interactivo: Boolean(input.menuInteractivo) } : {}),
+        ...(input.menuTema ? { menu_tema: input.menuTema } : {}),
+        ...(input.tarifarioId ? { tarifario_id: input.tarifarioId.trim() } : {}),
+        ...(input.menuData
           ? {
-              ...(input.posicionPortada ? { posicion_portada: input.posicionPortada } : {}),
-              ...(input.googleReputacion ? { google_reputacion: input.googleReputacion } : {}),
-              ...(input.galeriaFotos && input.galeriaFotos.length > 0
-                ? { galeria_fotos: input.galeriaFotos.filter(Boolean) }
-                : {}),
-              ...(input.menuFotos && input.menuFotos.length > 0
-                ? { menu_fotos: input.menuFotos.filter(Boolean) }
-                : {}),
-              ...(input.menuUrl ? { menu_url: input.menuUrl.trim() } : {}),
-              ...(input.googleReviewUrl
-                ? { google_review_url: input.googleReviewUrl.trim() }
-                : input.googleReputacion?.maps_url
-                ? { google_review_url: extraerGoogleReviewUrl(input.googleReputacion.maps_url) || undefined }
-                : {}),
-              ...(input.menuInteractivo !== undefined ? { menu_interactivo: Boolean(input.menuInteractivo) } : {}),
-              ...(input.menuTema ? { menu_tema: input.menuTema } : {}),
-              ...(input.tarifarioId ? { tarifario_id: input.tarifarioId.trim() } : {}),
-              ...(input.menuData
-                ? {
-                    menu_data:
-                      typeof input.menuData === "string"
-                        ? JSON.parse(input.menuData)
-                        : input.menuData,
-                  }
-                : {}),
-              ...(input.esRecurrente || input.horaInicio || input.horaFin || (input.diasRecurrentes && input.diasRecurrentes.length > 0)
-                ? {
-                    horario: {
-                      hora_inicio: input.horaInicio,
-                      hora_fin: input.horaFin,
-                      es_recurrente: Boolean(input.esRecurrente),
-                      dias_recurrentes: input.diasRecurrentes || [],
-                      fecha_limite_vigencia: input.fechaLimiteVigencia || null,
-                    },
-                  }
-                : {}),
+              menu_data:
+                typeof input.menuData === "string"
+                  ? JSON.parse(input.menuData)
+                  : input.menuData,
             }
-          : null,
+          : {}),
+        ...(input.esRecurrente || input.horaInicio || input.horaFin || (input.diasRecurrentes && input.diasRecurrentes.length > 0)
+          ? {
+              horario: {
+                hora_inicio: input.horaInicio,
+                hora_fin: input.horaFin,
+                es_recurrente: Boolean(input.esRecurrente),
+                dias_recurrentes: input.diasRecurrentes || [],
+                fecha_limite_vigencia: input.fechaLimiteVigencia || null,
+              },
+            }
+          : {}),
+      },
     };
 
     let { data: nuevoEvento, error: evError } = await supabase
@@ -934,185 +920,172 @@ export async function editarEventoAdminAction(input: EditarEventoAdminInput) {
       updatePayload.negocio_id = input.negocioId;
     }
 
+    // Obtener evento actual para preservar y enriquecer metadata_hospedaje
+    const { data: currentEvent } = await supabase
+      .from("eventos")
+      .select("metadata_hospedaje, negocio_id")
+      .eq("id", input.eventoId)
+      .single();
+    const currentMeta = (currentEvent?.metadata_hospedaje as Record<string, any>) || {};
+
+    // Estampar siempre fecha de última edición para ordenamiento exacto en el panel admin
+    currentMeta.ultima_edicion = new Date().toISOString();
+
+    if (input.posicionPortada !== undefined) {
+      if (!input.posicionPortada) {
+        delete currentMeta.posicion_portada;
+      } else {
+        currentMeta.posicion_portada = input.posicionPortada;
+      }
+    }
+
+    if (input.googleReputacion !== undefined) {
+      if (input.googleReputacion === null) {
+        delete currentMeta.google_reputacion;
+      } else {
+        currentMeta.google_reputacion = input.googleReputacion;
+      }
+    }
+
+    if (input.googleReviewUrl !== undefined) {
+      const val = input.googleReviewUrl?.trim() || "";
+      const isDirect = val.includes("search.google.com/local/writereview") || val.includes("g.page/r/");
+      if (isDirect) {
+        currentMeta.google_review_url = val;
+      } else {
+        const auto =
+          extraerGoogleReviewUrl(val) ||
+          extraerGoogleReviewUrl(input.googleReputacion?.maps_url);
+        if (auto) {
+          currentMeta.google_review_url = auto;
+        } else if (val) {
+          currentMeta.google_review_url = val;
+        } else {
+          delete currentMeta.google_review_url;
+        }
+      }
+    } else if (input.googleReputacion?.maps_url && !currentMeta.google_review_url) {
+      const auto = extraerGoogleReviewUrl(input.googleReputacion.maps_url);
+      if (auto) {
+        currentMeta.google_review_url = auto;
+      }
+    }
+
+    // Sincronizar reputación de Google hacia la tabla 'negocios' del aliado
+    const targetNegocioId = input.negocioId || currentEvent?.negocio_id;
+    if (targetNegocioId && (input.googleReputacion !== undefined || input.googleReviewUrl !== undefined)) {
+      const negSync: Record<string, any> = {};
+      if (input.googleReputacion !== undefined) {
+        if (input.googleReputacion) {
+          negSync.google_rating = input.googleReputacion.rating;
+          negSync.google_total_reviews = input.googleReputacion.total_reviews;
+          negSync.google_maps_url = input.googleReputacion.maps_url;
+        } else {
+          negSync.google_rating = null;
+          negSync.google_total_reviews = null;
+          negSync.google_maps_url = null;
+        }
+      }
+      if (input.googleReviewUrl !== undefined) {
+        negSync.google_review_url = currentMeta.google_review_url || null;
+      }
+      if (Object.keys(negSync).length > 0) {
+        try {
+          const { error: negErr } = await supabase.from("negocios").update(negSync).eq("id", targetNegocioId);
+          if (negErr && negErr.code === "42703") {
+            // Si las columnas aún no existen en la BD, no bloquear
+          }
+        } catch {}
+      }
+    }
+
+    if (input.menuFotos !== undefined) {
+      if (!input.menuFotos || input.menuFotos.length === 0) {
+        delete currentMeta.menu_fotos;
+      } else {
+        currentMeta.menu_fotos = input.menuFotos.filter(Boolean);
+      }
+    }
+
+    if (input.menuUrl !== undefined) {
+      if (!input.menuUrl?.trim()) {
+        delete currentMeta.menu_url;
+      } else {
+        currentMeta.menu_url = input.menuUrl.trim();
+      }
+    }
+
+    if (input.menuInteractivo !== undefined) {
+      currentMeta.menu_interactivo = Boolean(input.menuInteractivo);
+    }
+
+    if (input.menuTema !== undefined) {
+      if (!input.menuTema) {
+        delete currentMeta.menu_tema;
+      } else {
+        currentMeta.menu_tema = input.menuTema;
+      }
+    }
+
+    if (input.menuData !== undefined) {
+      if (!input.menuData) {
+        delete currentMeta.menu_data;
+      } else {
+        try {
+          currentMeta.menu_data =
+            typeof input.menuData === "string"
+              ? JSON.parse(input.menuData)
+              : input.menuData;
+        } catch {
+          currentMeta.menu_data = input.menuData;
+        }
+      }
+    }
+
+    if (input.tarifarioId !== undefined) {
+      if (!input.tarifarioId?.trim()) {
+        delete currentMeta.tarifario_id;
+      } else {
+        currentMeta.tarifario_id = input.tarifarioId.trim();
+      }
+    }
+
+    if (input.galeriaFotos !== undefined) {
+      if (!input.galeriaFotos || input.galeriaFotos.length === 0) {
+        delete currentMeta.galeria_fotos;
+      } else {
+        currentMeta.galeria_fotos = input.galeriaFotos.filter(Boolean);
+      }
+    }
+
     if (
-      input.googleReputacion !== undefined ||
-      input.galeriaFotos !== undefined ||
-      input.googleReviewUrl !== undefined ||
-      input.menuFotos !== undefined ||
-      input.menuUrl !== undefined ||
-      input.menuInteractivo !== undefined ||
-      input.menuTema !== undefined ||
-      input.tarifarioId !== undefined ||
       input.esRecurrente !== undefined ||
       input.horaInicio !== undefined ||
       input.horaFin !== undefined ||
       input.diasRecurrentes !== undefined ||
-      input.fechaLimiteVigencia !== undefined ||
-      input.posicionPortada !== undefined
+      input.fechaLimiteVigencia !== undefined
     ) {
-      const { data: currentEvent } = await supabase
-        .from("eventos")
-        .select("metadata_hospedaje, negocio_id")
-        .eq("id", input.eventoId)
-        .single();
-      const currentMeta = (currentEvent?.metadata_hospedaje as Record<string, any>) || {};
-
-      if (input.posicionPortada !== undefined) {
-        if (!input.posicionPortada) {
-          delete currentMeta.posicion_portada;
-        } else {
-          currentMeta.posicion_portada = input.posicionPortada;
-        }
+      if (input.esRecurrente) {
+        currentMeta.horario = {
+          ...(currentMeta.horario || {}),
+          hora_inicio: input.horaInicio !== undefined ? input.horaInicio : currentMeta.horario?.hora_inicio,
+          hora_fin: input.horaFin !== undefined ? input.horaFin : currentMeta.horario?.hora_fin,
+          es_recurrente: true,
+          dias_recurrentes:
+            input.diasRecurrentes !== undefined
+              ? input.diasRecurrentes
+              : currentMeta.horario?.dias_recurrentes || [],
+          fecha_limite_vigencia:
+            input.fechaLimiteVigencia !== undefined
+              ? input.fechaLimiteVigencia
+              : currentMeta.horario?.fecha_limite_vigencia || null,
+        };
+      } else if (input.esRecurrente === false) {
+        delete currentMeta.horario;
       }
-
-      if (input.googleReputacion !== undefined) {
-        if (input.googleReputacion === null) {
-          delete currentMeta.google_reputacion;
-        } else {
-          currentMeta.google_reputacion = input.googleReputacion;
-        }
-      }
-
-      if (input.googleReviewUrl !== undefined) {
-        const val = input.googleReviewUrl?.trim() || "";
-        const isDirect = val.includes("search.google.com/local/writereview") || val.includes("g.page/r/");
-        if (isDirect) {
-          currentMeta.google_review_url = val;
-        } else {
-          const auto =
-            extraerGoogleReviewUrl(val) ||
-            extraerGoogleReviewUrl(input.googleReputacion?.maps_url);
-          if (auto) {
-            currentMeta.google_review_url = auto;
-          } else if (val) {
-            currentMeta.google_review_url = val;
-          } else {
-            delete currentMeta.google_review_url;
-          }
-        }
-      } else if (input.googleReputacion?.maps_url && !currentMeta.google_review_url) {
-        const auto = extraerGoogleReviewUrl(input.googleReputacion.maps_url);
-        if (auto) {
-          currentMeta.google_review_url = auto;
-        }
-      }
-
-      // Sincronizar reputación de Google hacia la tabla 'negocios' del aliado
-      const targetNegocioId = input.negocioId || currentEvent?.negocio_id;
-      if (targetNegocioId && (input.googleReputacion !== undefined || input.googleReviewUrl !== undefined)) {
-        const negSync: Record<string, any> = {};
-        if (input.googleReputacion !== undefined) {
-          if (input.googleReputacion) {
-            negSync.google_rating = input.googleReputacion.rating;
-            negSync.google_total_reviews = input.googleReputacion.total_reviews;
-            negSync.google_maps_url = input.googleReputacion.maps_url;
-          } else {
-            negSync.google_rating = null;
-            negSync.google_total_reviews = null;
-            negSync.google_maps_url = null;
-          }
-        }
-        if (input.googleReviewUrl !== undefined) {
-          negSync.google_review_url = currentMeta.google_review_url || null;
-        }
-        if (Object.keys(negSync).length > 0) {
-          try {
-            const { error: negErr } = await supabase.from("negocios").update(negSync).eq("id", targetNegocioId);
-            if (negErr && negErr.code === "42703") {
-              // Si las columnas aún no existen en la BD, no bloquear
-            }
-          } catch {}
-        }
-      }
-
-      if (input.menuFotos !== undefined) {
-        if (!input.menuFotos || input.menuFotos.length === 0) {
-          delete currentMeta.menu_fotos;
-        } else {
-          currentMeta.menu_fotos = input.menuFotos.filter(Boolean);
-        }
-      }
-
-      if (input.menuUrl !== undefined) {
-        if (!input.menuUrl?.trim()) {
-          delete currentMeta.menu_url;
-        } else {
-          currentMeta.menu_url = input.menuUrl.trim();
-        }
-      }
-
-      if (input.menuInteractivo !== undefined) {
-        currentMeta.menu_interactivo = Boolean(input.menuInteractivo);
-      }
-
-      if (input.menuTema !== undefined) {
-        if (!input.menuTema) {
-          delete currentMeta.menu_tema;
-        } else {
-          currentMeta.menu_tema = input.menuTema;
-        }
-      }
-
-      if (input.menuData !== undefined) {
-        if (!input.menuData) {
-          delete currentMeta.menu_data;
-        } else {
-          try {
-            currentMeta.menu_data =
-              typeof input.menuData === "string"
-                ? JSON.parse(input.menuData)
-                : input.menuData;
-          } catch {
-            currentMeta.menu_data = input.menuData;
-          }
-        }
-      }
-
-      if (input.tarifarioId !== undefined) {
-        if (!input.tarifarioId?.trim()) {
-          delete currentMeta.tarifario_id;
-        } else {
-          currentMeta.tarifario_id = input.tarifarioId.trim();
-        }
-      }
-
-      if (input.galeriaFotos !== undefined) {
-        if (!input.galeriaFotos || input.galeriaFotos.length === 0) {
-          delete currentMeta.galeria_fotos;
-        } else {
-          currentMeta.galeria_fotos = input.galeriaFotos.filter(Boolean);
-        }
-      }
-
-      if (
-        input.esRecurrente !== undefined ||
-        input.horaInicio !== undefined ||
-        input.horaFin !== undefined ||
-        input.diasRecurrentes !== undefined ||
-        input.fechaLimiteVigencia !== undefined
-      ) {
-        if (input.esRecurrente) {
-          currentMeta.horario = {
-            ...(currentMeta.horario || {}),
-            hora_inicio: input.horaInicio !== undefined ? input.horaInicio : currentMeta.horario?.hora_inicio,
-            hora_fin: input.horaFin !== undefined ? input.horaFin : currentMeta.horario?.hora_fin,
-            es_recurrente: true,
-            dias_recurrentes:
-              input.diasRecurrentes !== undefined
-                ? input.diasRecurrentes
-                : currentMeta.horario?.dias_recurrentes || [],
-            fecha_limite_vigencia:
-              input.fechaLimiteVigencia !== undefined
-                ? input.fechaLimiteVigencia
-                : currentMeta.horario?.fecha_limite_vigencia || null,
-          };
-        } else if (input.esRecurrente === false) {
-          delete currentMeta.horario;
-        }
-      }
-
-      updatePayload.metadata_hospedaje = Object.keys(currentMeta).length > 0 ? currentMeta : null;
     }
+
+    updatePayload.metadata_hospedaje = currentMeta;
 
 
     try {

@@ -52,6 +52,7 @@ export default async function AdminDashboardPage({
     .from("eventos")
     .select(`
       id,
+      created_at,
       negocio_id,
       zona_id,
       titulo,
@@ -85,6 +86,7 @@ export default async function AdminDashboardPage({
       .from("eventos")
       .select(`
         id,
+        created_at,
         negocio_id,
         zona_id,
         titulo,

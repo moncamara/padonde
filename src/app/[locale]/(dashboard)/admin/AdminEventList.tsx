@@ -45,6 +45,8 @@ export interface EventoAdminItem {
   zona_id?: string;
   zonaSlug?: string;
   zonaNombre?: string;
+  created_at?: string;
+  updated_at?: string;
   negocio?: {
     id?: string;
     nombre: string;
@@ -58,6 +60,24 @@ export interface EventoAdminItem {
   metadata_hospedaje?: any | null;
   es_recurrente?: boolean;
   dias_recurrentes?: number[];
+}
+
+export function getEventoTimestampActividad(ev: EventoAdminItem): number {
+  const meta = ev.metadata_hospedaje as Record<string, any> | null;
+  if (meta?.ultima_edicion) {
+    const t = new Date(meta.ultima_edicion).getTime();
+    if (!isNaN(t)) return t;
+  }
+  if (ev.updated_at) {
+    const t = new Date(ev.updated_at).getTime();
+    if (!isNaN(t)) return t;
+  }
+  if (ev.created_at) {
+    const t = new Date(ev.created_at).getTime();
+    if (!isNaN(t)) return t;
+  }
+  const t = new Date(ev.fecha_inicio).getTime();
+  return isNaN(t) ? 0 : t;
 }
 
 interface AdminEventListProps {
@@ -220,14 +240,10 @@ export function AdminEventList({
         return a.titulo.localeCompare(b.titulo);
       }
       if (criterioOrden === "antiguos") {
-        const tA = (a as any).created_at ? new Date((a as any).created_at).getTime() : new Date(a.fecha_inicio).getTime();
-        const tB = (b as any).created_at ? new Date((b as any).created_at).getTime() : new Date(b.fecha_inicio).getTime();
-        return tA - tB;
+        return getEventoTimestampActividad(a) - getEventoTimestampActividad(b);
       }
-      // "recientes" (por defecto): del más reciente al más antiguo según creación o última fecha
-      const tA = (a as any).created_at ? new Date((a as any).created_at).getTime() : new Date(a.fecha_inicio).getTime();
-      const tB = (b as any).created_at ? new Date((b as any).created_at).getTime() : new Date(b.fecha_inicio).getTime();
-      return tB - tA;
+      // "recientes" (por defecto): del más reciente al más antiguo según última edición o fecha de creación
+      return getEventoTimestampActividad(b) - getEventoTimestampActividad(a);
     });
   }, [listaBase, busqueda, criterioOrden]);
 
@@ -710,10 +726,25 @@ export function AdminEventList({
           negocios={negocios}
           onClose={() => setEventoAEditar(null)}
           onSaved={(eventoActualizado) => {
+            const ahoraIso = new Date().toISOString();
             setListaEventos((prev) =>
-              prev.map((e) =>
-                e.id === eventoActualizado.id ? ({ ...e, ...eventoActualizado } as EventoAdminItem) : e
-              )
+              prev.map((e) => {
+                if (e.id === eventoActualizado.id) {
+                  const metaActualizado = {
+                    ...(e.metadata_hospedaje || {}),
+                    ...(eventoActualizado.metadata_hospedaje || {}),
+                    ultima_edicion: ahoraIso,
+                  };
+                  return {
+                    ...e,
+                    ...eventoActualizado,
+                    created_at: e.created_at || ahoraIso,
+                    updated_at: ahoraIso,
+                    metadata_hospedaje: metaActualizado,
+                  } as EventoAdminItem;
+                }
+                return e;
+              })
             );
           }}
           onDeleted={(idEliminado) => {
