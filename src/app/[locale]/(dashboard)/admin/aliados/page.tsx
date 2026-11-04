@@ -6,6 +6,7 @@ import { AdminAliadosList, type AliadoItem } from "./AdminAliadosList";
 import { ModalKitProspeccion } from "./ModalKitProspeccion";
 import { ModalDifusionWhatsApp } from "./ModalDifusionWhatsApp";
 import { ModalActualizarAnalytics } from "./ModalActualizarAnalytics";
+import { ModalReporteGeneralPaDonde } from "./ModalReporteGeneralPaDonde";
 import { ModalSincronizarGoogle } from "./ModalSincronizarGoogle";
 import type { MetricaHistoricaAliado } from "@/lib/constants/vistasAnalyticsHistoricas";
 import type { Metadata } from "next";
@@ -301,10 +302,14 @@ export default async function AdminAliadosPage({
               negociosRegistrados={negociosList}
               ultimaActualizacion={ga4Config?.ultimaActualizacion || ga4ConfigRow?.updated_at}
             />
+            <ModalReporteGeneralPaDonde
+              aliados={aliados}
+              ga4Config={ga4Config}
+            />
             <ModalSincronizarGoogle ultimaSincronizacion={ultimaSyncGoogle} />
             <ModalDifusionWhatsApp aliados={aliados} />
             <ModalKitProspeccion />
-            <Link href="/admin/nuevo" className="w-full sm:col-span-2 lg:col-span-2">
+            <Link href="/admin/nuevo" className="w-full">
               <Button size="sm" className="w-full h-full shadow-xs py-2 px-3 text-xs flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap">
                 <span>+</span>
                 <span>Publicar Plan / Nuevo Aliado</span>
