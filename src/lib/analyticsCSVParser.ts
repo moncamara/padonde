@@ -152,15 +152,36 @@ export function procesarCSVAnalytics(
   let headerIndex = -1;
   let delimitador = ",";
 
-  // 1. Extraer metadatos de cabecera y ubicar la fila de títulos de columna
-  for (let i = 0; i < Math.min(lineas.length, 40); i++) {
+  // 1. Extraer metadatos de fechas (pueden estar en cualquier línea inicial o comentarios #)
+  for (let i = 0; i < Math.min(lineas.length, 60); i++) {
     const l = lineas[i];
     if (l.includes("Fecha de inicio:") || l.includes("Start date:")) {
-      fechaInicio = l.split(":")[1]?.trim();
+      const raw = l.split(":")[1]?.trim();
+      if (raw && raw.length === 8 && /^\d{8}$/.test(raw)) {
+        fechaInicio = `${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}`;
+      } else if (raw) {
+        fechaInicio = raw;
+      }
     }
-    if (l.includes("Fecha de finalización:") || l.includes("End date:")) {
-      fechaFin = l.split(":")[1]?.trim();
+    if (
+      l.includes("Fecha de finalización:") ||
+      l.includes("Fecha de fin:") ||
+      l.includes("End date:")
+    ) {
+      const raw = l.split(":")[1]?.trim();
+      if (raw && raw.length === 8 && /^\d{8}$/.test(raw)) {
+        fechaFin = `${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}`;
+      } else if (raw) {
+        fechaFin = raw;
+      }
     }
+  }
+
+  // 2. Ubicar la fila de títulos de columna (omitiendo comentarios #)
+  for (let i = 0; i < Math.min(lineas.length, 60); i++) {
+    const l = lineas[i];
+    // CRÍTICO: Las líneas de metadatos de GA4 comienzan con '#' -> Omitir al buscar la fila de encabezados
+    if (l.startsWith("#")) continue;
 
     // Detectar fila de encabezados (soporte en español e inglés)
     const lLower = l.toLowerCase();
@@ -352,7 +373,7 @@ export function procesarCSVAnalytics(
       else if (tLower.includes("casa maya")) aliadoMatch = { id: "casa-maya", nombre: "Casa Maya Mendihuaca" };
       else if (tLower.includes("pepe mojito")) aliadoMatch = { id: "pepe-mojito", nombre: "Pepe Mojito Bar" };
       else if (tLower.includes("amora")) aliadoMatch = { id: "amora", nombre: "Amora Cocina Saludable" };
-      else if (tLower.includes("silocibe") || tLower.includes("cora fest")) aliadoMatch = { id: "silocibe", nombre: "Silocibe Gastrobar" };
+      else if (tLower.includes("silocibe") || tLower.includes("cora fest")) aliadoMatch = { id: "silocibe", nombre: "Silocibe Gastrobar Y Mirador" };
       else if (tLower.includes("casa cora")) aliadoMatch = { id: "casa-cora", nombre: "Casa Cora Minca" };
       else if (tLower.includes("feeling bar")) aliadoMatch = { id: "feeling-bar", nombre: "Feeling Bar Minca" };
       else if (tLower.includes("koko & chiqui") || tLower.includes("pan artesanal")) aliadoMatch = { id: "koko", nombre: "Pan Artesanal Koko & Chiqui" };
@@ -373,15 +394,15 @@ export function procesarCSVAnalytics(
       else if (tLower.includes("duni café") || tLower.includes("duni cafe")) aliadoMatch = { id: "duni", nombre: "Duni Café Minca" };
       else if (tLower.includes("la veranda")) aliadoMatch = { id: "veranda", nombre: "La Veranda Hotels" };
       else if (tLower.includes("río elemento") || tLower.includes("rio elemento")) aliadoMatch = { id: "rio-elemento", nombre: "Río Elemento Minca" };
-      else if (tLower.includes("astra mendihuaca")) aliadoMatch = { id: "astra", nombre: "Astra Mendihuaca Beach" };
-      else if (tLower.includes("tribu hostal")) aliadoMatch = { id: "tribu", nombre: "Tribu Hostal Minca" };
-      else if (tLower.includes("mompe beach")) aliadoMatch = { id: "mompe", nombre: "Mompe Beach" };
+      else if (tLower.includes("astra mendihuaca") || tLower.includes("astra")) aliadoMatch = { id: "astra", nombre: "Astra Mendihuaca Beach" };
+      else if (tLower.includes("tribu hostal") || tLower.includes("tribu")) aliadoMatch = { id: "tribu", nombre: "Tribu Hostal Minca" };
+      else if (tLower.includes("mompe beach") || tLower.includes("the mompe")) aliadoMatch = { id: "mompe", nombre: "The Mompe Beach hostal" };
       else if (tLower.includes("dreams come true")) aliadoMatch = { id: "dreams-come-true", nombre: "Dreams Come True 44" };
-      else if (tLower.includes("la ilusión") || tLower.includes("la ilusion")) aliadoMatch = { id: "la-ilusion", nombre: "La Ilusión" };
+      else if (tLower.includes("la ilusión") || tLower.includes("la ilusion") || tLower.includes("the illusion") || tLower.includes("l'illusion") || tLower.includes("die illusion")) aliadoMatch = { id: "la-ilusion", nombre: "La Ilusión" };
       else if (tLower.includes("luma")) aliadoMatch = { id: "luma", nombre: "Luma Hostal" };
       else if (tLower.includes("casa del mono")) aliadoMatch = { id: "casa-mono", nombre: "La Casa del Mono" };
       else if (tLower.includes("entre río y fuego") || tLower.includes("entre rio y fuego")) aliadoMatch = { id: "rio-fuego", nombre: "Entre Río y Fuego Lodge" };
-      else if (tLower.includes("kakaw")) aliadoMatch = { id: "kakaw", nombre: "Kakaw — Museo del Cacao" };
+      else if (tLower.includes("kakaw") || tLower.includes("museo del cacao")) aliadoMatch = { id: "kakaw", nombre: "Kakaw — Museo del Cacao" };
       else if (tLower.includes("moana surf")) aliadoMatch = { id: "moana", nombre: "Moana Surf Club Mendihuaca" };
       else if (tLower.includes("bururake")) aliadoMatch = { id: "bururake", nombre: "Bururake" };
       else if (tLower.includes("don samuel")) aliadoMatch = { id: "don-samuel", nombre: "Restaurante Don Samuel" };
@@ -393,7 +414,14 @@ export function procesarCSVAnalytics(
       else if (tLower.includes("la cumbre")) aliadoMatch = { id: "la-cumbre", nombre: "Hostal La Cumbre" };
       else if (tLower.includes("dhamma gutti")) aliadoMatch = { id: "dhamma-gutti", nombre: "Dhamma Gutti (Vipassana)" };
       else if (tLower.includes("las mulatas")) aliadoMatch = { id: "mulatas", nombre: "Las Mulatas Villa" };
-      else if (tLower.includes("aluna arte")) aliadoMatch = { id: "aluna", nombre: "Aluna Arte Ancestral" };
+      else if (tLower.includes("aluna arte") || tLower.includes("aluna")) aliadoMatch = { id: "aluna", nombre: "Aluna Arte Ancestral" };
+      else if (tLower.includes("aventura 4x4") || tLower.includes("trochero")) aliadoMatch = { id: "aventura-4x4", nombre: "Trochero Aventura 4X4 Minca" };
+      else if (tLower.includes("cattleya")) aliadoMatch = { id: "cattleya", nombre: "Cattleya Fast Food & Souvenirs" };
+      else if (tLower.includes("juanda birder") || tLower.includes("juanda")) aliadoMatch = { id: "juanda", nombre: "Juanda Birder Minca" };
+      else if (tLower.includes("gelato nevao") || tLower.includes("gelato")) aliadoMatch = { id: "gelato", nombre: "Gelato Nevao" };
+      else if (tLower.includes("mi cielito")) aliadoMatch = { id: "mi-cielito", nombre: "Restaurante y Heladería Mi Cielito" };
+      else if (tLower.includes("mendihuaca beach restobar") || (tLower.includes("sunset session") && tLower.includes("mendihuaca"))) aliadoMatch = { id: "mendihuaca-restobar", nombre: "Mendihuaca Beach Restobar" };
+      else if (tLower.includes("zirumake")) aliadoMatch = { id: "zirumake", nombre: "Zirumake Tayrona" };
     }
 
     if (aliadoMatch) {
