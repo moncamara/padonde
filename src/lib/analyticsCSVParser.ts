@@ -153,12 +153,12 @@ export function procesarCSVAnalytics(
   let delimitador = ",";
 
   // 1. Extraer metadatos de cabecera y ubicar la fila de títulos de columna
-  for (let i = 0; i < Math.min(lineas.length, 30); i++) {
+  for (let i = 0; i < Math.min(lineas.length, 40); i++) {
     const l = lineas[i];
-    if (l.includes("Fecha de inicio:")) {
+    if (l.includes("Fecha de inicio:") || l.includes("Start date:")) {
       fechaInicio = l.split(":")[1]?.trim();
     }
-    if (l.includes("Fecha de finalización:")) {
+    if (l.includes("Fecha de finalización:") || l.includes("End date:")) {
       fechaFin = l.split(":")[1]?.trim();
     }
 
@@ -166,11 +166,24 @@ export function procesarCSVAnalytics(
     const lLower = l.toLowerCase();
     if (
       lLower.includes("título de página") ||
+      lLower.includes("titulo de pagina") ||
       lLower.includes("page title") ||
-      lLower.includes("clase de pantalla")
+      lLower.includes("clase de pantalla") ||
+      lLower.includes("screen class") ||
+      lLower.includes("ruta de la página") ||
+      lLower.includes("page path")
     ) {
       headerIndex = i;
-      if (l.includes(";") && !l.includes(",")) delimitador = ";";
+      const comas = (l.match(/,/g) || []).length;
+      const puntosYComas = (l.match(/;/g) || []).length;
+      const tabs = (l.match(/\t/g) || []).length;
+      if (puntosYComas > comas && puntosYComas > tabs) {
+        delimitador = ";";
+      } else if (tabs > comas && tabs > puntosYComas) {
+        delimitador = "\t";
+      } else {
+        delimitador = ",";
+      }
       break;
     }
   }
@@ -193,20 +206,56 @@ export function procesarCSVAnalytics(
   const encabezados = parsearLineaCSV(lineas[headerIndex], delimitador).map((h) =>
     h.toLowerCase().trim()
   );
-  const idxTitulo = encabezados.findIndex(
-    (h) => h.includes("título") || h.includes("title") || h.includes("pantalla")
+
+  // Columna de título / pantalla / página
+  let idxTitulo = encabezados.findIndex(
+    (h) => (h.includes("título") || h.includes("titulo") || h.includes("title")) && (h.includes("página") || h.includes("pagina") || h.includes("page") || h.includes("pantalla") || h.includes("screen"))
   );
-  const idxVistas = encabezados.findIndex(
-    (h) => h.includes("vistas") || h.includes("views")
+  if (idxTitulo === -1) {
+    idxTitulo = encabezados.findIndex(
+      (h) => h.includes("título") || h.includes("titulo") || h.includes("title") || h.includes("pantalla") || h.includes("screen") || h.includes("página") || h.includes("pagina") || h.includes("page") || h.includes("ruta") || h.includes("path")
+    );
+  }
+
+  // Columna de vistas / visualizaciones (en GA4 en español es "Visualizaciones")
+  let idxVistas = encabezados.findIndex(
+    (h) => h === "visualizaciones" || h === "vistas" || h === "views" || h === "visitas"
   );
-  const idxUsuarios = encabezados.findIndex(
-    (h) => h.includes("usuarios") || h.includes("users")
+  if (idxVistas === -1) {
+    idxVistas = encabezados.findIndex(
+      (h) =>
+        (h.includes("visualiza") || h.includes("vistas") || h.includes("views") || h.includes("visitas")) &&
+        !h.includes("usuario") &&
+        !h.includes("user") &&
+        !h.includes("por") &&
+        !h.includes("per")
+    );
+  }
+  if (idxVistas === -1) {
+    idxVistas = encabezados.findIndex(
+      (h) => h.includes("visualiza") || h.includes("vistas") || h.includes("views") || h.includes("visitas")
+    );
+  }
+
+  // Columna de usuarios
+  let idxUsuarios = encabezados.findIndex(
+    (h) => h === "usuarios" || h === "users" || h === "total users" || h === "usuarios activos" || h === "active users"
   );
+  if (idxUsuarios === -1) {
+    idxUsuarios = encabezados.findIndex(
+      (h) => (h.includes("usuarios") || h.includes("users") || h.includes("visitantes")) && !h.includes("nuevos") && !h.includes("new")
+    );
+  }
+  if (idxUsuarios === -1) {
+    idxUsuarios = encabezados.findIndex(
+      (h) => h.includes("usuarios") || h.includes("users") || h.includes("visitantes")
+    );
+  }
 
   if (idxTitulo === -1 || idxVistas === -1) {
     return {
       exito: false,
-      error: "El formato de columnas no contiene 'Título de página' o 'Vistas'.",
+      error: "El formato de columnas no contiene 'Título de página' o 'Vistas / Visualizaciones'.",
       totalVistasCSV: 0,
       totalUsuariosCSV: 0,
       totalFilasProcesadas: 0,
@@ -249,11 +298,8 @@ export function procesarCSVAnalytics(
     if (cols.length < 2) continue;
 
     const titulo = cols[idxTitulo] || "";
-    // Limpiar separadores de miles si los hubiera
-    const vistas = Number(cols[idxVistas]?.replace(/[.,\s]/g, (m, offset, str) => {
-      // Si hay decimales al final de GA4
-      return "";
-    }) || cols[idxVistas]) || 0;
+    // Limpiar separadores de miles y caracteres no numéricos
+    const vistas = Number(cols[idxVistas]?.replace(/[^\d]/g, "")) || 0;
     const usuarios = idxUsuarios !== -1 ? Number(cols[idxUsuarios]?.replace(/[^\d]/g, "")) || 0 : Math.ceil(vistas * 0.6);
 
     if (!titulo || titulo === "(not set)") continue;
