@@ -180,10 +180,10 @@ export async function getEventosByZona(
     }
 
     const lista = (eventosData as unknown as (EventoConNegocio & { negocio?: { activo?: boolean } })[]) || [];
-    // En producción oculta si el negocio está inactivo; en preview local permite verlo
+    // En producción solo eventos activos y negocios activos; en preview local permite verlo
     const filtrados = opciones.preview
       ? lista
-      : lista.filter((e) => !e.negocio || e.negocio.activo !== false);
+      : lista.filter((e) => e.activo !== false && (!e.negocio || e.negocio.activo !== false));
 
     if (filtrados.length === 0) {
       return getMockEventos(zonaSlug);

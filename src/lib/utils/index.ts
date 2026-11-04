@@ -483,6 +483,78 @@ export function getDayOfWeekColombia(dateStr: string): number {
 }
 
 /**
+ * Lógica unificada de vigencia temporal de eventos (!eventoHaCaducado).
+ * Evaluada estrictamente en la zona horaria America/Bogota (UTC-5):
+ * - tipo === 'hospedaje': siempre vigente (no caduca por fecha de evento).
+ * - es_recurrente === true:
+ *    * Con fecha_limite_vigencia (en metadata_hospedaje.horario o campo nativo):
+ *      es vigente si fecha_limite_vigencia >= hoyYMDColombia.
+ *    * Sin límite de vigencia: vigente permanentemente.
+ * - es_recurrente === false (evento puntual):
+ *    * Con fecha_fin: es vigente si fecha_fin >= nowColombiaIso (o timestamp >= nowColombia.getTime()).
+ *    * Sin fecha_fin: es vigente si el día calendario de fecha_inicio >= hoyYMDColombia.
+ */
+export function esEventoVigente(
+  evento: {
+    tipo?: string | null;
+    fecha_inicio: string;
+    fecha_fin?: string | null;
+    descripcion?: string | null;
+    metadata_hospedaje?: any;
+    dias_recurrentes?: number[];
+    es_recurrente?: boolean;
+    fecha_limite_vigencia?: string | null;
+  },
+  nowColombia: Date = new Date()
+): boolean {
+  // 1. Si tipo === 'hospedaje': siempre es vigente (no caduca por fecha de evento)
+  if (evento.tipo === "hospedaje") {
+    return true;
+  }
+
+  const hoyYMDColombia = getFechaYMDColombia(nowColombia);
+  const nowColombiaIso = nowColombia.toISOString();
+
+  // 2. Extraer recurrencia y evaluar vigencia
+  const rec = extraerRecurrencia(
+    evento.descripcion,
+    evento.metadata_hospedaje,
+    evento.dias_recurrentes
+  );
+  const esRecurrente = Boolean(
+    evento.es_recurrente ||
+    rec.esRecurrente ||
+    evento.metadata_hospedaje?.horario?.es_recurrente
+  );
+
+  if (esRecurrente) {
+    const fechaLimite =
+      evento.fecha_limite_vigencia ||
+      evento.metadata_hospedaje?.horario?.fecha_limite_vigencia ||
+      null;
+
+    if (fechaLimite) {
+      return fechaLimite >= hoyYMDColombia;
+    }
+    // Si no tiene límite de vigencia: es vigente de forma permanente
+    return true;
+  }
+
+  // 3. Si es_recurrente === false (evento puntual):
+  if (evento.fecha_fin) {
+    const timeFin = new Date(evento.fecha_fin).getTime();
+    if (!isNaN(timeFin)) {
+      return timeFin >= nowColombia.getTime();
+    }
+    return evento.fecha_fin >= nowColombiaIso;
+  }
+
+  // Si no tiene fecha_fin: es vigente si el día calendario de fecha_inicio es igual o posterior al día actual en Colombia
+  const ymdInicio = getFechaYMDDesdeISO(evento.fecha_inicio);
+  return ymdInicio >= hoyYMDColombia;
+}
+
+/**
  * Verifica si la fecha de un evento coincide con el filtro de tiempo seleccionado.
  * Soporta eventos puntuales, rangos continuos y experiencias recurrentes por días de semana.
  * Todos los cálculos se evalúan estrictamente en el huso horario de Colombia (UTC-5).

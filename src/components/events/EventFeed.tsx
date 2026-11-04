@@ -14,6 +14,7 @@ import {
 import { useSwipeCategoryNav } from "@/hooks/useSwipeCategoryNav";
 import {
   eventoCoincideConFiltroTiempo,
+  esEventoVigente,
   getFechaYMDDesdeISO,
   getMinutosDelDiaColombia,
 } from "@/lib/utils";
@@ -186,22 +187,30 @@ export function EventFeed({ eventos, zona, configTerritorial }: EventFeedProps) 
   const { eventosFiltrados, esEnOtrasFechas } = useMemo(() => {
     const now = nowRef.current;
 
-    // 1. Filtrar por categoría seleccionada
+    // 1. Regla Mandatoria de Estado (Pre-Filtro Inmediato):
+    // Ningún evento inactivo entra al array público ni a la búsqueda
+    const eventosDisponibles = eventos.filter((e) => e.activo !== false);
+
+    // 2. Lógica Unificada de Vigencia Temporal (!eventoHaCaducado):
+    // Restringir estrictamente a eventos vigentes evaluados en hora de Colombia (America/Bogota)
+    const eventosBuscables = eventosDisponibles.filter((e) => esEventoVigente(e, now));
+
+    // 3. Filtrar por categoría seleccionada
     const porCategoria =
       filtroCategoria === null
-        ? eventos
-        : eventos.filter((e) =>
+        ? eventosBuscables
+        : eventosBuscables.filter((e) =>
             e.categorias?.length
               ? e.categorias.includes(filtroCategoria)
               : e.tipo === filtroCategoria
           );
 
-    // 2. Filtrar por texto de búsqueda
+    // 4. Pipeline de Búsqueda Textual sobre eventos activos y vigentes:
     const coincidentesBusqueda = !queryNorm
       ? porCategoria
       : porCategoria.filter((e) => eventoCoincideConBusqueda(e, queryNorm));
 
-    // 3. Filtrar por fecha con validación null-safe de recurrencia y huso horario Colombia
+    // 5. Filtrar por fecha con validación null-safe de recurrencia y huso horario Colombia
     const coincidentesEnFecha = coincidentesBusqueda.filter((e) => {
       if (filtroCategoria === "hospedaje") {
         return e.categorias?.length ? e.categorias.includes("hospedaje") : e.tipo === "hospedaje";
@@ -219,8 +228,8 @@ export function EventFeed({ eventos, zona, configTerritorial }: EventFeedProps) 
       );
     });
 
-    // 4. Fallback inteligente: si hay búsqueda activa pero no hay eventos en esta fecha,
-    // pero sí en otras fechas, mostramos los de otras fechas con aviso amigable
+    // 6. Fallback inteligente: si hay búsqueda activa pero no hay eventos en esta fecha puntual,
+    // pero sí en otras fechas vigentes/futuras, mostramos los de otras fechas con aviso amigable
     let listaAFiltrar = coincidentesEnFecha;
     let fallbackOtrasFechas = false;
 
