@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/routing";
 import { getCategoria } from "@/constants";
-import { formatPrecio, getEtiquetaHorario } from "@/lib/utils";
+import { formatPrecio, getEtiquetaHorario, obtenerFotoPortada } from "@/lib/utils";
 import { getEventoTraducido } from "@/lib/translations/eventosTraducciones";
 import type { EventoConNegocio } from "@/lib/types";
 import { trackEvent } from "@/lib/analytics";
@@ -51,27 +51,8 @@ export function EventCard({ evento: rawEvento, zona, priority = false }: EventCa
     evento.tipo === "hospedaje" ||
     (evento.categorias?.length ? evento.categorias.includes("hospedaje") : false);
 
-  // Rotación Diaria de Portadas solo para Eventos (los hospedajes mantienen su foto fija)
-  const fotoPortadaHoy = (() => {
-    if (esHospedaje || !evento.imagen_url) {
-      return evento.imagen_url;
-    }
-
-    const todasLasFotos = [
-      evento.imagen_url,
-      ...(evento.metadata_hospedaje?.galeria_fotos || (evento as any)?.galeria_fotos || []),
-    ].filter(Boolean) as string[];
-
-    if (todasLasFotos.length <= 1) {
-      return evento.imagen_url;
-    }
-
-    const diaDelAno = Math.floor(
-      (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24)
-    );
-    const indiceFoto = (diaDelAno + (evento.id.charCodeAt(0) || 0)) % todasLasFotos.length;
-    return todasLasFotos[indiceFoto] || evento.imagen_url;
-  })();
+  // Foto de portada: configurable mediante ROTACION_PORTADAS_CONFIG (estática fija por defecto)
+  const fotoPortada = obtenerFotoPortada(evento);
 
   const esDestacado = Boolean(evento.destacado || (evento as any).es_destacado);
 
@@ -102,9 +83,9 @@ export function EventCard({ evento: rawEvento, zona, priority = false }: EventCa
 
       {/* 2. Contenedor de Imagen / Flyer 100% limpio y visible */}
       <div className="relative aspect-[16/10] sm:aspect-[16/9] w-full overflow-hidden bg-stone-100">
-        {fotoPortadaHoy ? (
+        {fotoPortada ? (
           <Image
-            src={fotoPortadaHoy}
+            src={fotoPortada}
             alt={evento.titulo}
             fill
             sizes="(max-width: 640px) 100vw, 640px"

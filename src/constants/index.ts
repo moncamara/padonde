@@ -211,4 +211,34 @@ export function getCategoriaCTA(
   return { label, icon, mensajeTemplate };
 }
 
+// ─── Configuración de Rotación de Portadas ──────────────────────────────────
+
+export type RotacionPortadasConfig = {
+  /**
+   * Si está activa, rota de forma determinista la portada de los eventos
+   * entre su imagen_url principal y las fotos de su galería.
+   * Por defecto: false (imágenes fijas estáticas en producción).
+   */
+  activa: boolean;
+  /**
+   * Intervalo en días para cambiar de fotografía (1 = rotación diaria, 3 = cada 3 días, 7 = semanal)
+   */
+  intervaloDias: number;
+  /**
+   * Si es true, rota también las portadas de hospedajes (por defecto false para estabilidad en alojamientos)
+   */
+  incluirHospedajes: boolean;
+};
+
+/**
+ * Interruptor global para rotación dinámica de fotos en la cartelera.
+ * Mantener en activa: false para producción a fin de preservar la estabilidad visual,
+ * rendimiento óptimo y almacenamiento en caché.
+ */
+export const ROTACION_PORTADAS_CONFIG: RotacionPortadasConfig = {
+  activa: false,
+  intervaloDias: 1,
+  incluirHospedajes: false,
+};
+
 

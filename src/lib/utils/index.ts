@@ -1,5 +1,5 @@
 import type { CategoriaEvento } from "@/lib/types";
-import { COMISION_BOLETERIA } from "@/constants";
+import { COMISION_BOLETERIA, ROTACION_PORTADAS_CONFIG, type RotacionPortadasConfig } from "@/constants";
 
 // ─── Fechas y Zona Horaria (Colombia UTC-5) ──────────────────────────────────
 export const TIMEZONE_COLOMBIA = "America/Bogota";
@@ -997,6 +997,61 @@ export function proyectarProximaFechaEvento(
       fechaFin: null,
     };
   }
+}
+
+/**
+ * Determina la foto de portada a renderizar para una tarjeta de evento o ficha.
+ * - Si ROTACION_PORTADAS_CONFIG.activa === false: retorna de inmediato la imagen principal fija (evento.imagen_url).
+ * - Si ROTACION_PORTADAS_CONFIG.activa === true: rota deterministamente entre la imagen principal y las fotos
+ *   de su galería según el intervalo de días configurado.
+ */
+export function obtenerFotoPortada(
+  evento: {
+    id: string;
+    tipo?: string | null;
+    categorias?: string[] | null;
+    imagen_url: string | null;
+    metadata_hospedaje?: any;
+    galeria_fotos?: string[];
+  },
+  config: RotacionPortadasConfig = ROTACION_PORTADAS_CONFIG
+): string | null {
+  if (!evento.imagen_url) return null;
+
+  // 1. Si la rotación está inactiva (por defecto en producción), retornar imagen fija
+  if (!config.activa) {
+    return evento.imagen_url;
+  }
+
+  // 2. No rotar hospedajes a menos que se configure explícitamente
+  const esHospedaje =
+    evento.tipo === "hospedaje" ||
+    (evento.categorias?.length ? evento.categorias.includes("hospedaje") : false);
+
+  if (esHospedaje && !config.incluirHospedajes) {
+    return evento.imagen_url;
+  }
+
+  // 3. Obtener galería completa de fotos
+  const todasLasFotos = [
+    evento.imagen_url,
+    ...(evento.metadata_hospedaje?.galeria_fotos || (evento as any)?.galeria_fotos || []),
+  ].filter(Boolean) as string[];
+
+  if (todasLasFotos.length <= 1) {
+    return evento.imagen_url;
+  }
+
+  // 4. Calcular índice según el ciclo de días configurado
+  const intervalo = Math.max(1, config.intervaloDias || 1);
+  const diaDelAno = Math.floor(
+    (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24)
+  );
+  const cicloRotacion = Math.floor(diaDelAno / intervalo);
+  const seed = evento.id.charCodeAt(0) || 0;
+  const indiceFoto = (cicloRotacion + seed) % todasLasFotos.length;
+
+  return todasLasFotos[indiceFoto] || evento.imagen_url;
 }
 
 
