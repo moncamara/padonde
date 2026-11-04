@@ -76,6 +76,16 @@ function detectarIdiomaTitulo(titulo: string): string {
   return "Español";
 }
 
+// Función auxiliar para sanitizar cualquier texto antes de comparar (inmune a tildes, diacríticos Unicode NFD y mayúsculas)
+export function sanitizar(texto: string): string {
+  if (!texto) return "";
+  return texto
+    .normalize("NFD")                     // Descompone caracteres con tildes (ej: Ti\u0301tulo -> T + i + \u0301 + tulo)
+    .replace(/[\u0300-\u036f]/g, "")     // Remueve todas las tildes y diacríticos
+    .toLowerCase()
+    .trim();
+}
+
 // Extraer el nombre de un aliado de un título de página de PaDónde
 function extraerCandidatoNegocio(titulo: string): string {
   // Patrón común: "Evento — Nombre Negocio (Zona) | PaDónde"
@@ -145,59 +155,71 @@ export function procesarCSVAnalytics(
     };
   }
 
-  const lineas = csvContenido.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  // 1. Normalizar saltos de línea (\r\n -> \n, \r -> \n) y limpiar espacios
+  const lineas = csvContenido
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
 
   let fechaInicio: string | undefined;
   let fechaFin: string | undefined;
   let headerIndex = -1;
   let delimitador = ",";
 
-  // 1. Extraer metadatos de fechas (pueden estar en cualquier línea inicial o comentarios #)
+  // 2. Extraer metadatos de fechas (pueden estar en cualquier línea inicial o comentarios #)
   for (let i = 0; i < Math.min(lineas.length, 60); i++) {
     const l = lineas[i];
-    if (l.includes("Fecha de inicio:") || l.includes("Start date:")) {
-      const raw = l.split(":")[1]?.trim();
-      if (raw && raw.length === 8 && /^\d{8}$/.test(raw)) {
-        fechaInicio = `${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}`;
-      } else if (raw) {
-        fechaInicio = raw;
+    if (l.startsWith("#")) {
+      const lSanitizada = sanitizar(l);
+      if (lSanitizada.includes("fecha de inicio") || lSanitizada.includes("start date")) {
+        const raw = l.split(":")[1]?.trim();
+        if (raw && raw.length === 8 && /^\d{8}$/.test(raw)) {
+          fechaInicio = `${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}`;
+        } else if (raw) {
+          fechaInicio = raw;
+        }
       }
-    }
-    if (
-      l.includes("Fecha de finalización:") ||
-      l.includes("Fecha de fin:") ||
-      l.includes("End date:")
-    ) {
-      const raw = l.split(":")[1]?.trim();
-      if (raw && raw.length === 8 && /^\d{8}$/.test(raw)) {
-        fechaFin = `${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}`;
-      } else if (raw) {
-        fechaFin = raw;
+      if (
+        lSanitizada.includes("fecha de finalizacion") ||
+        lSanitizada.includes("fecha de fin") ||
+        lSanitizada.includes("end date")
+      ) {
+        const raw = l.split(":")[1]?.trim();
+        if (raw && raw.length === 8 && /^\d{8}$/.test(raw)) {
+          fechaFin = `${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}`;
+        } else if (raw) {
+          fechaFin = raw;
+        }
       }
     }
   }
 
-  // 2. Ubicar la fila de títulos de columna (omitiendo comentarios #)
-  for (let i = 0; i < Math.min(lineas.length, 60); i++) {
-    const l = lineas[i];
-    // CRÍTICO: Las líneas de metadatos de GA4 comienzan con '#' -> Omitir al buscar la fila de encabezados
-    if (l.startsWith("#")) continue;
+  // 3. Encontrar la fila real de encabezados (ignorando líneas que empiezan con #)
+  for (let i = 0; i < lineas.length; i++) {
+    const lineaLimpia = lineas[i].trim();
+    if (!lineaLimpia || lineaLimpia.startsWith("#")) continue;
 
-    // Detectar fila de encabezados (soporte en español e inglés)
-    const lLower = l.toLowerCase();
+    // Sanitizamos la línea completa para buscar 'titulo de pagina' y 'vistas' sin importar tildes ni Unicode NFD
+    const lineaSanitizada = sanitizar(lineaLimpia);
     if (
-      lLower.includes("título de página") ||
-      lLower.includes("titulo de pagina") ||
-      lLower.includes("page title") ||
-      lLower.includes("clase de pantalla") ||
-      lLower.includes("screen class") ||
-      lLower.includes("ruta de la página") ||
-      lLower.includes("page path")
+      (lineaSanitizada.includes("titulo de pagina") ||
+        lineaSanitizada.includes("page title") ||
+        lineaSanitizada.includes("clase de pantalla") ||
+        lineaSanitizada.includes("screen class") ||
+        lineaSanitizada.includes("ruta de la pagina") ||
+        lineaSanitizada.includes("page path")) &&
+      (lineaSanitizada.includes("vistas") ||
+        lineaSanitizada.includes("views") ||
+        lineaSanitizada.includes("visualizaciones") ||
+        lineaSanitizada.includes("usuarios") ||
+        lineaSanitizada.includes("users"))
     ) {
       headerIndex = i;
-      const comas = (l.match(/,/g) || []).length;
-      const puntosYComas = (l.match(/;/g) || []).length;
-      const tabs = (l.match(/\t/g) || []).length;
+      const comas = (lineaLimpia.match(/,/g) || []).length;
+      const puntosYComas = (lineaLimpia.match(/;/g) || []).length;
+      const tabs = (lineaLimpia.match(/\t/g) || []).length;
       if (puntosYComas > comas && puntosYComas > tabs) {
         delimitador = ";";
       } else if (tabs > comas && tabs > puntosYComas) {
@@ -209,10 +231,23 @@ export function procesarCSVAnalytics(
     }
   }
 
+  // Si no se encontró por combinación estricta, buscar fila que contenga título o página
+  if (headerIndex === -1) {
+    for (let i = 0; i < lineas.length; i++) {
+      const lineaLimpia = lineas[i].trim();
+      if (!lineaLimpia || lineaLimpia.startsWith("#")) continue;
+      const lSan = sanitizar(lineaLimpia);
+      if (lSan.includes("titulo de pagina") || lSan.includes("page title") || lSan.includes("clase de pantalla")) {
+        headerIndex = i;
+        break;
+      }
+    }
+  }
+
   if (headerIndex === -1) {
     return {
       exito: false,
-      error: "No se encontró el encabezado de 'Título de página' en el archivo CSV de Google Analytics.",
+      error: "El formato de columnas no contiene 'Título de página' o 'Vistas / Visualizaciones'.",
       totalVistasCSV: 0,
       totalUsuariosCSV: 0,
       totalFilasProcesadas: 0,
@@ -223,53 +258,52 @@ export function procesarCSVAnalytics(
     };
   }
 
-  // 2. Índices de columnas
-  const encabezados = parsearLineaCSV(lineas[headerIndex], delimitador).map((h) =>
-    h.toLowerCase().trim()
+  // 4. Mapear índices de columnas de forma tolerante y sanitizada
+  const columnasRaw = parsearLineaCSV(lineas[headerIndex], delimitador);
+  const columnas = columnasRaw.map((col) => sanitizar(col.replace(/^["']|["']$/g, "")));
+
+  const idxTitulo = columnas.findIndex(
+    (c) =>
+      c.includes("titulo de pagina") ||
+      c.includes("page title") ||
+      c.includes("clase de pantalla") ||
+      c.includes("screen class") ||
+      c.includes("titulo") ||
+      c.includes("title") ||
+      c.includes("ruta de la pagina") ||
+      c.includes("page path")
   );
 
-  // Columna de título / pantalla / página
-  let idxTitulo = encabezados.findIndex(
-    (h) => (h.includes("título") || h.includes("titulo") || h.includes("title")) && (h.includes("página") || h.includes("pagina") || h.includes("page") || h.includes("pantalla") || h.includes("screen"))
-  );
-  if (idxTitulo === -1) {
-    idxTitulo = encabezados.findIndex(
-      (h) => h.includes("título") || h.includes("titulo") || h.includes("title") || h.includes("pantalla") || h.includes("screen") || h.includes("página") || h.includes("pagina") || h.includes("page") || h.includes("ruta") || h.includes("path")
-    );
-  }
-
-  // Columna de vistas / visualizaciones (en GA4 en español es "Visualizaciones")
-  let idxVistas = encabezados.findIndex(
-    (h) => h === "visualizaciones" || h === "vistas" || h === "views" || h === "visitas"
+  let idxVistas = columnas.findIndex(
+    (c) => c === "vistas" || c === "views" || c === "visualizaciones" || c === "visitas"
   );
   if (idxVistas === -1) {
-    idxVistas = encabezados.findIndex(
-      (h) =>
-        (h.includes("visualiza") || h.includes("vistas") || h.includes("views") || h.includes("visitas")) &&
-        !h.includes("usuario") &&
-        !h.includes("user") &&
-        !h.includes("por") &&
-        !h.includes("per")
+    idxVistas = columnas.findIndex(
+      (c) =>
+        (c.includes("vistas") || c.includes("views") || c.includes("visualiza") || c.includes("visitas")) &&
+        !c.includes("usuario") &&
+        !c.includes("user") &&
+        !c.includes("por") &&
+        !c.includes("per")
     );
   }
   if (idxVistas === -1) {
-    idxVistas = encabezados.findIndex(
-      (h) => h.includes("visualiza") || h.includes("vistas") || h.includes("views") || h.includes("visitas")
+    idxVistas = columnas.findIndex(
+      (c) => c.includes("vistas") || c.includes("views") || c.includes("visualiza") || c.includes("visitas")
     );
   }
 
-  // Columna de usuarios
-  let idxUsuarios = encabezados.findIndex(
-    (h) => h === "usuarios" || h === "users" || h === "total users" || h === "usuarios activos" || h === "active users"
+  let idxUsuarios = columnas.findIndex(
+    (c) => c === "usuarios" || c === "users" || c === "total users" || c === "usuarios activos" || c === "active users"
   );
   if (idxUsuarios === -1) {
-    idxUsuarios = encabezados.findIndex(
-      (h) => (h.includes("usuarios") || h.includes("users") || h.includes("visitantes")) && !h.includes("nuevos") && !h.includes("new")
+    idxUsuarios = columnas.findIndex(
+      (c) => (c.includes("usuario") || c.includes("user")) && !c.includes("nuevos") && !c.includes("new")
     );
   }
   if (idxUsuarios === -1) {
-    idxUsuarios = encabezados.findIndex(
-      (h) => h.includes("usuarios") || h.includes("users") || h.includes("visitantes")
+    idxUsuarios = columnas.findIndex(
+      (c) => c.includes("usuario") || c.includes("user")
     );
   }
 
@@ -303,7 +337,7 @@ export function procesarCSVAnalytics(
   const listaNormalizada = negociosRegistrados.map((n) => ({
     id: n.id,
     nombre: n.nombre,
-    norm: n.nombre.toLowerCase().trim(),
+    norm: sanitizar(n.nombre),
   }));
 
   let totalVistasCSV = 0;
@@ -330,25 +364,25 @@ export function procesarCSVAnalytics(
     filasDatos++;
 
     // Descartar pantallas generales de la app (home, cartelera general, panel admin, cotizador)
-    const tLower = titulo.toLowerCase();
+    const tSanitizado = sanitizar(titulo);
     const esPantallaGeneral =
-      tLower.includes("cartelera de minca") ||
-      tLower.includes("cartelera de mendihuaca") ||
-      tLower.includes("panel de control") ||
-      tLower.includes("cotizador") ||
-      tLower.includes("aliados y planes") ||
-      tLower.includes("puntos qr") ||
-      tLower.includes("configuración territorial") ||
-      tLower.includes("gestión de hospedajes") ||
-      tLower.includes("acceso administrador") ||
-      tLower.includes("info útil & servicios");
+      tSanitizado.includes("cartelera de minca") ||
+      tSanitizado.includes("cartelera de mendihuaca") ||
+      tSanitizado.includes("panel de control") ||
+      tSanitizado.includes("cotizador") ||
+      tSanitizado.includes("aliados y planes") ||
+      tSanitizado.includes("puntos qr") ||
+      tSanitizado.includes("configuracion territorial") ||
+      tSanitizado.includes("gestion de hospedajes") ||
+      tSanitizado.includes("acceso administrador") ||
+      tSanitizado.includes("info util");
 
     if (esPantallaGeneral) {
       continue;
     }
 
     const idioma = detectarIdiomaTitulo(titulo);
-    const candidato = extraerCandidatoNegocio(titulo).toLowerCase().trim();
+    const candidato = sanitizar(extraerCandidatoNegocio(titulo));
 
     // Buscar coincidencia con la lista de aliados registrados
     let aliadoMatch: { id: string; nombre: string } | null = null;
@@ -358,70 +392,70 @@ export function procesarCSVAnalytics(
       if (
         candidato.includes(al.norm) ||
         al.norm.includes(candidato) ||
-        tLower.includes(al.norm)
+        tSanitizado.includes(al.norm)
       ) {
         aliadoMatch = al;
         break;
       }
     }
 
-    // B. Heurística para casos especiales (nombres cortos o marcas conocidas)
+    // B. Heurística para casos especiales (nombres cortos o marcas conocidas, inmune a tildes)
     if (!aliadoMatch) {
-      if (tLower.includes("brisas del mar")) aliadoMatch = { id: "brisas", nombre: "Restaurante Brisas Del Mar" };
-      else if (tLower.includes("canúmake") || tLower.includes("canumake")) aliadoMatch = { id: "canumake", nombre: "Canúmake Minca" };
-      else if (tLower.includes("jungle joe")) aliadoMatch = { id: "jungle-joe", nombre: "Jungle Joe Minca" };
-      else if (tLower.includes("casa maya")) aliadoMatch = { id: "casa-maya", nombre: "Casa Maya Mendihuaca" };
-      else if (tLower.includes("pepe mojito")) aliadoMatch = { id: "pepe-mojito", nombre: "Pepe Mojito Bar" };
-      else if (tLower.includes("amora")) aliadoMatch = { id: "amora", nombre: "Amora Cocina Saludable" };
-      else if (tLower.includes("silocibe") || tLower.includes("cora fest")) aliadoMatch = { id: "silocibe", nombre: "Silocibe Gastrobar Y Mirador" };
-      else if (tLower.includes("casa cora")) aliadoMatch = { id: "casa-cora", nombre: "Casa Cora Minca" };
-      else if (tLower.includes("feeling bar")) aliadoMatch = { id: "feeling-bar", nombre: "Feeling Bar Minca" };
-      else if (tLower.includes("koko & chiqui") || tLower.includes("pan artesanal")) aliadoMatch = { id: "koko", nombre: "Pan Artesanal Koko & Chiqui" };
-      else if (tLower.includes("rancho de la luna")) aliadoMatch = { id: "rancho-luna", nombre: "Rancho de la Luna Minca" };
-      else if (tLower.includes("setena")) aliadoMatch = { id: "setena", nombre: "SeTena Tierra Húmeda Ecolodge" };
-      else if (tLower.includes("jam birding")) aliadoMatch = { id: "jam-birding", nombre: "Jam Birding Minca" };
-      else if (tLower.includes("casa aney")) aliadoMatch = { id: "casa-aney", nombre: "Casa Aney Minca" };
-      else if (tLower.includes("minkanta")) aliadoMatch = { id: "minkanta", nombre: "Minkanta" };
-      else if (tLower.includes("puerto alto")) aliadoMatch = { id: "puerto-alto", nombre: "Puerto Alto" };
-      else if (tLower.includes("rancho de puiro")) aliadoMatch = { id: "rancho-puiro", nombre: "Restaurante Rancho de Puiro" };
-      else if (tLower.includes("nuevo sabor")) aliadoMatch = { id: "nuevo-sabor", nombre: "Pizza Nuevo Sabor" };
-      else if (tLower.includes("trekker glamping")) aliadoMatch = { id: "trekker", nombre: "Trekker Glamping" };
-      else if (tLower.includes("la miga")) aliadoMatch = { id: "la-miga", nombre: "La Miga Panadería" };
-      else if (tLower.includes("velero relax")) aliadoMatch = { id: "velero-relax", nombre: "Hostal Velero Relax" };
-      else if (tLower.includes("el bosque") || tLower.includes("casa loma")) aliadoMatch = { id: "el-bosque", nombre: "El Bosque (antes Casa Loma)" };
-      else if (tLower.includes("arena beach")) aliadoMatch = { id: "arena-beach", nombre: "Arena Beach" };
-      else if (tLower.includes("la frecuencia")) aliadoMatch = { id: "la-frecuencia", nombre: "Finca La Frecuencia" };
-      else if (tLower.includes("duni café") || tLower.includes("duni cafe")) aliadoMatch = { id: "duni", nombre: "Duni Café Minca" };
-      else if (tLower.includes("la veranda")) aliadoMatch = { id: "veranda", nombre: "La Veranda Hotels" };
-      else if (tLower.includes("río elemento") || tLower.includes("rio elemento")) aliadoMatch = { id: "rio-elemento", nombre: "Río Elemento Minca" };
-      else if (tLower.includes("astra mendihuaca") || tLower.includes("astra")) aliadoMatch = { id: "astra", nombre: "Astra Mendihuaca Beach" };
-      else if (tLower.includes("tribu hostal") || tLower.includes("tribu")) aliadoMatch = { id: "tribu", nombre: "Tribu Hostal Minca" };
-      else if (tLower.includes("mompe beach") || tLower.includes("the mompe")) aliadoMatch = { id: "mompe", nombre: "The Mompe Beach hostal" };
-      else if (tLower.includes("dreams come true")) aliadoMatch = { id: "dreams-come-true", nombre: "Dreams Come True 44" };
-      else if (tLower.includes("la ilusión") || tLower.includes("la ilusion") || tLower.includes("the illusion") || tLower.includes("l'illusion") || tLower.includes("die illusion")) aliadoMatch = { id: "la-ilusion", nombre: "La Ilusión" };
-      else if (tLower.includes("luma")) aliadoMatch = { id: "luma", nombre: "Luma Hostal" };
-      else if (tLower.includes("casa del mono")) aliadoMatch = { id: "casa-mono", nombre: "La Casa del Mono" };
-      else if (tLower.includes("entre río y fuego") || tLower.includes("entre rio y fuego")) aliadoMatch = { id: "rio-fuego", nombre: "Entre Río y Fuego Lodge" };
-      else if (tLower.includes("kakaw") || tLower.includes("museo del cacao")) aliadoMatch = { id: "kakaw", nombre: "Kakaw — Museo del Cacao" };
-      else if (tLower.includes("moana surf")) aliadoMatch = { id: "moana", nombre: "Moana Surf Club Mendihuaca" };
-      else if (tLower.includes("bururake")) aliadoMatch = { id: "bururake", nombre: "Bururake" };
-      else if (tLower.includes("don samuel")) aliadoMatch = { id: "don-samuel", nombre: "Restaurante Don Samuel" };
-      else if (tLower.includes("bob marley")) aliadoMatch = { id: "bob-marley", nombre: "Bob Marley Beach Hostal" };
-      else if (tLower.includes("the sunset")) aliadoMatch = { id: "the-sunset", nombre: "Cabaña The Sunset Mendihuaca Beach" };
-      else if (tLower.includes("el almendrón") || tLower.includes("el almendron")) aliadoMatch = { id: "almendron", nombre: "El Almendrón" };
-      else if (tLower.includes("jac de minca") || tLower.includes("comité cultural")) aliadoMatch = { id: "jac-minca", nombre: "JAC de Minca & Comité Cultural" };
-      else if (tLower.includes("cacao cultural")) aliadoMatch = { id: "cacao-cultural", nombre: "Cacao Cultural" };
-      else if (tLower.includes("la cumbre")) aliadoMatch = { id: "la-cumbre", nombre: "Hostal La Cumbre" };
-      else if (tLower.includes("dhamma gutti")) aliadoMatch = { id: "dhamma-gutti", nombre: "Dhamma Gutti (Vipassana)" };
-      else if (tLower.includes("las mulatas")) aliadoMatch = { id: "mulatas", nombre: "Las Mulatas Villa" };
-      else if (tLower.includes("aluna arte") || tLower.includes("aluna")) aliadoMatch = { id: "aluna", nombre: "Aluna Arte Ancestral" };
-      else if (tLower.includes("aventura 4x4") || tLower.includes("trochero")) aliadoMatch = { id: "aventura-4x4", nombre: "Trochero Aventura 4X4 Minca" };
-      else if (tLower.includes("cattleya")) aliadoMatch = { id: "cattleya", nombre: "Cattleya Fast Food & Souvenirs" };
-      else if (tLower.includes("juanda birder") || tLower.includes("juanda")) aliadoMatch = { id: "juanda", nombre: "Juanda Birder Minca" };
-      else if (tLower.includes("gelato nevao") || tLower.includes("gelato")) aliadoMatch = { id: "gelato", nombre: "Gelato Nevao" };
-      else if (tLower.includes("mi cielito")) aliadoMatch = { id: "mi-cielito", nombre: "Restaurante y Heladería Mi Cielito" };
-      else if (tLower.includes("mendihuaca beach restobar") || (tLower.includes("sunset session") && tLower.includes("mendihuaca"))) aliadoMatch = { id: "mendihuaca-restobar", nombre: "Mendihuaca Beach Restobar" };
-      else if (tLower.includes("zirumake")) aliadoMatch = { id: "zirumake", nombre: "Zirumake Tayrona" };
+      if (tSanitizado.includes("brisas del mar")) aliadoMatch = { id: "brisas", nombre: "Restaurante Brisas Del Mar" };
+      else if (tSanitizado.includes("canumake")) aliadoMatch = { id: "canumake", nombre: "Canúmake Minca" };
+      else if (tSanitizado.includes("jungle joe")) aliadoMatch = { id: "jungle-joe", nombre: "Jungle Joe Minca" };
+      else if (tSanitizado.includes("casa maya")) aliadoMatch = { id: "casa-maya", nombre: "Casa Maya Mendihuaca" };
+      else if (tSanitizado.includes("pepe mojito")) aliadoMatch = { id: "pepe-mojito", nombre: "Pepe Mojito Bar" };
+      else if (tSanitizado.includes("amora")) aliadoMatch = { id: "amora", nombre: "Amora Cocina Saludable" };
+      else if (tSanitizado.includes("silocibe") || tSanitizado.includes("cora fest")) aliadoMatch = { id: "silocibe", nombre: "Silocibe Gastrobar Y Mirador" };
+      else if (tSanitizado.includes("casa cora")) aliadoMatch = { id: "casa-cora", nombre: "Casa Cora Minca" };
+      else if (tSanitizado.includes("feeling bar")) aliadoMatch = { id: "feeling-bar", nombre: "Feeling Bar Minca" };
+      else if (tSanitizado.includes("koko & chiqui") || tSanitizado.includes("pan artesanal")) aliadoMatch = { id: "koko", nombre: "Pan Artesanal Koko & Chiqui" };
+      else if (tSanitizado.includes("rancho de la luna")) aliadoMatch = { id: "rancho-luna", nombre: "Rancho de la Luna Minca" };
+      else if (tSanitizado.includes("setena")) aliadoMatch = { id: "setena", nombre: "SeTena Tierra Húmeda Ecolodge" };
+      else if (tSanitizado.includes("jam birding")) aliadoMatch = { id: "jam-birding", nombre: "Jam Birding Minca" };
+      else if (tSanitizado.includes("casa aney")) aliadoMatch = { id: "casa-aney", nombre: "Casa Aney Minca" };
+      else if (tSanitizado.includes("minkanta")) aliadoMatch = { id: "minkanta", nombre: "Minkanta" };
+      else if (tSanitizado.includes("puerto alto")) aliadoMatch = { id: "puerto-alto", nombre: "Puerto Alto" };
+      else if (tSanitizado.includes("rancho de puiro")) aliadoMatch = { id: "rancho-puiro", nombre: "Restaurante Rancho de Puiro" };
+      else if (tSanitizado.includes("nuevo sabor")) aliadoMatch = { id: "nuevo-sabor", nombre: "Pizza Nuevo Sabor" };
+      else if (tSanitizado.includes("trekker glamping")) aliadoMatch = { id: "trekker", nombre: "Trekker Glamping" };
+      else if (tSanitizado.includes("la miga")) aliadoMatch = { id: "la-miga", nombre: "La Miga Panadería" };
+      else if (tSanitizado.includes("velero relax")) aliadoMatch = { id: "velero-relax", nombre: "Hostal Velero Relax" };
+      else if (tSanitizado.includes("el bosque") || tSanitizado.includes("casa loma")) aliadoMatch = { id: "el-bosque", nombre: "El Bosque (antes Casa Loma)" };
+      else if (tSanitizado.includes("arena beach")) aliadoMatch = { id: "arena-beach", nombre: "Arena Beach" };
+      else if (tSanitizado.includes("la frecuencia")) aliadoMatch = { id: "la-frecuencia", nombre: "Finca La Frecuencia" };
+      else if (tSanitizado.includes("duni cafe")) aliadoMatch = { id: "duni", nombre: "Duni Café Minca" };
+      else if (tSanitizado.includes("la veranda")) aliadoMatch = { id: "veranda", nombre: "La Veranda Hotels" };
+      else if (tSanitizado.includes("rio elemento")) aliadoMatch = { id: "rio-elemento", nombre: "Río Elemento Minca" };
+      else if (tSanitizado.includes("astra mendihuaca") || tSanitizado.includes("astra")) aliadoMatch = { id: "astra", nombre: "Astra Mendihuaca Beach" };
+      else if (tSanitizado.includes("tribu hostal") || tSanitizado.includes("tribu")) aliadoMatch = { id: "tribu", nombre: "Tribu Hostal Minca" };
+      else if (tSanitizado.includes("mompe beach") || tSanitizado.includes("the mompe")) aliadoMatch = { id: "mompe", nombre: "The Mompe Beach hostal" };
+      else if (tSanitizado.includes("dreams come true")) aliadoMatch = { id: "dreams-come-true", nombre: "Dreams Come True 44" };
+      else if (tSanitizado.includes("la ilusion") || tSanitizado.includes("the illusion") || tSanitizado.includes("l'illusion") || tSanitizado.includes("die illusion")) aliadoMatch = { id: "la-ilusion", nombre: "La Ilusión" };
+      else if (tSanitizado.includes("luma")) aliadoMatch = { id: "luma", nombre: "Luma Hostal" };
+      else if (tSanitizado.includes("casa del mono")) aliadoMatch = { id: "casa-mono", nombre: "La Casa del Mono" };
+      else if (tSanitizado.includes("entre rio y fuego")) aliadoMatch = { id: "rio-fuego", nombre: "Entre Río y Fuego Lodge" };
+      else if (tSanitizado.includes("kakaw") || tSanitizado.includes("museo del cacao")) aliadoMatch = { id: "kakaw", nombre: "Kakaw — Museo del Cacao" };
+      else if (tSanitizado.includes("moana surf")) aliadoMatch = { id: "moana", nombre: "Moana Surf Club Mendihuaca" };
+      else if (tSanitizado.includes("bururake")) aliadoMatch = { id: "bururake", nombre: "Bururake" };
+      else if (tSanitizado.includes("don samuel")) aliadoMatch = { id: "don-samuel", nombre: "Restaurante Don Samuel" };
+      else if (tSanitizado.includes("bob marley")) aliadoMatch = { id: "bob-marley", nombre: "Bob Marley Beach Hostal" };
+      else if (tSanitizado.includes("the sunset")) aliadoMatch = { id: "the-sunset", nombre: "Cabaña The Sunset Mendihuaca Beach" };
+      else if (tSanitizado.includes("el almendron")) aliadoMatch = { id: "almendron", nombre: "El Almendrón" };
+      else if (tSanitizado.includes("jac de minca") || tSanitizado.includes("comite cultural")) aliadoMatch = { id: "jac-minca", nombre: "JAC de Minca & Comité Cultural" };
+      else if (tSanitizado.includes("cacao cultural")) aliadoMatch = { id: "cacao-cultural", nombre: "Cacao Cultural" };
+      else if (tSanitizado.includes("la cumbre")) aliadoMatch = { id: "la-cumbre", nombre: "Hostal La Cumbre" };
+      else if (tSanitizado.includes("dhamma gutti")) aliadoMatch = { id: "dhamma-gutti", nombre: "Dhamma Gutti (Vipassana)" };
+      else if (tSanitizado.includes("las mulatas")) aliadoMatch = { id: "mulatas", nombre: "Las Mulatas Villa" };
+      else if (tSanitizado.includes("aluna arte") || tSanitizado.includes("aluna")) aliadoMatch = { id: "aluna", nombre: "Aluna Arte Ancestral" };
+      else if (tSanitizado.includes("aventura 4x4") || tSanitizado.includes("trochero")) aliadoMatch = { id: "aventura-4x4", nombre: "Trochero Aventura 4X4 Minca" };
+      else if (tSanitizado.includes("cattleya")) aliadoMatch = { id: "cattleya", nombre: "Cattleya Fast Food & Souvenirs" };
+      else if (tSanitizado.includes("juanda birder") || tSanitizado.includes("juanda")) aliadoMatch = { id: "juanda", nombre: "Juanda Birder Minca" };
+      else if (tSanitizado.includes("gelato nevao") || tSanitizado.includes("gelato")) aliadoMatch = { id: "gelato", nombre: "Gelato Nevao" };
+      else if (tSanitizado.includes("mi cielito")) aliadoMatch = { id: "mi-cielito", nombre: "Restaurante y Heladería Mi Cielito" };
+      else if (tSanitizado.includes("mendihuaca beach restobar") || (tSanitizado.includes("sunset session") && tSanitizado.includes("mendihuaca"))) aliadoMatch = { id: "mendihuaca-restobar", nombre: "Mendihuaca Beach Restobar" };
+      else if (tSanitizado.includes("zirumake")) aliadoMatch = { id: "zirumake", nombre: "Zirumake Tayrona" };
     }
 
     if (aliadoMatch) {
@@ -486,4 +520,74 @@ export function procesarCSVAnalytics(
     resumenAliados,
     paginasNoAsignadas,
   };
+}
+
+/**
+ * Algoritmo ligero e inmune a tildes (Unicode NFD) y retornos de carro
+ * solicitado específicamente para extracción directa de filas y métricas de GA4.
+ */
+export function parseAnalyticsCSV(contenidoCSV: string) {
+  // 1. Normalizar saltos de línea (\r\n -> \n, \r -> \n) y limpiar espacios
+  const lineas = contenidoCSV.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
+
+  // 2. Extraer fechas del encabezado comentado (# Fecha de inicio: YYYYMMDD)
+  let fechaInicio = "";
+  let fechaFin = "";
+  for (const l of lineas) {
+    if (l.startsWith("#")) {
+      const lSan = sanitizar(l);
+      if (lSan.includes("fecha de inicio:")) fechaInicio = l.split(":")[1]?.trim() || "";
+      if (lSan.includes("fecha de finalizacion:") || lSan.includes("fecha de fin:")) fechaFin = l.split(":")[1]?.trim() || "";
+    }
+  }
+
+  // 3. Encontrar la fila real de encabezados (ignorando líneas que empiezan con #)
+  let indiceEncabezado = -1;
+  let columnas: string[] = [];
+
+  for (let i = 0; i < lineas.length; i++) {
+    const lineaLimpia = lineas[i].trim();
+    if (!lineaLimpia || lineaLimpia.startsWith("#")) continue;
+
+    // Sanitizamos la línea completa para buscar 'titulo de pagina' y 'vistas' sin importar tildes
+    const lineaSanitizada = sanitizar(lineaLimpia);
+    if (
+      (lineaSanitizada.includes("titulo de pagina") || lineaSanitizada.includes("page title")) &&
+      (lineaSanitizada.includes("vistas") || lineaSanitizada.includes("views") || lineaSanitizada.includes("visualizaciones"))
+    ) {
+      indiceEncabezado = i;
+      columnas = lineas[i].split(",").map((col) => sanitizar(col.replace(/^["']|["']$/g, "")));
+      break;
+    }
+  }
+
+  if (indiceEncabezado === -1) {
+    throw new Error("El formato de columnas no contiene 'Título de página' o 'Vistas / Visualizaciones'.");
+  }
+
+  // 4. Mapear índices de columnas de forma tolerante
+  const idxTitulo = columnas.findIndex((c) => c.includes("titulo de pagina") || c.includes("page title"));
+  const idxVistas = columnas.findIndex((c) => c.includes("vistas") || c.includes("views") || c.includes("visualizaciones"));
+  const idxUsuarios = columnas.findIndex((c) => c.includes("usuarios") || c.includes("users"));
+
+  // 5. Procesar filas de datos
+  const resultados = [];
+  for (let i = indiceEncabezado + 1; i < lineas.length; i++) {
+    const linea = lineas[i].trim();
+    if (!linea || linea.startsWith("#")) continue;
+
+    // Parser CSV simple considerando comillas
+    const matches = linea.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || linea.split(",");
+    const valores = matches.map((m) => m.replace(/^"|"$/g, "").trim());
+
+    const titulo = valores[idxTitulo];
+    const vistas = parseInt(valores[idxVistas]?.replace(/\./g, "") || "0", 10);
+    const usuarios = idxUsuarios !== -1 ? parseInt(valores[idxUsuarios]?.replace(/\./g, "") || "0", 10) : 0;
+
+    if (titulo && !isNaN(vistas)) {
+      resultados.push({ titulo, vistas, usuarios });
+    }
+  }
+
+  return { fechaInicio, fechaFin, datos: resultados };
 }
