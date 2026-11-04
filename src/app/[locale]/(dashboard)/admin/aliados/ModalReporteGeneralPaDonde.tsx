@@ -190,14 +190,11 @@ export function ModalReporteGeneralPaDonde({
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="w-full h-full px-3 py-2 rounded-xl text-xs font-sans font-semibold bg-emerald-50 border border-emerald-300 hover:border-emerald-500 hover:bg-emerald-100/60 text-emerald-900 transition-all flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer active:scale-95 whitespace-nowrap"
-        title="Ver el Reporte General de Impacto y Rendimiento Ejecutivo de toda la plataforma PaDónde"
+        className="w-full h-10 px-3 py-2 rounded-xl text-xs font-sans font-semibold bg-emerald-50 border border-emerald-300 hover:border-emerald-500 hover:bg-emerald-100/60 text-emerald-900 transition-all flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer active:scale-95 min-w-0"
+        title={`Ver el Reporte General de Impacto de PaDónde (${metricasGlobales.totalVistas.toLocaleString()} vistas reales registradas)`}
       >
-        <span>📈</span>
-        <span>Reporte Global PaDónde</span>
-        <span className="text-[10px] bg-emerald-200/80 text-emerald-800 px-1.5 py-0.2 rounded-full font-bold hidden sm:inline">
-          {metricasGlobales.totalVistas.toLocaleString()} vistas
-        </span>
+        <span className="shrink-0 text-sm">📈</span>
+        <span className="truncate">Reporte Global PaDónde</span>
       </button>
 
       {/* Modal Dialog con Portal montado en document.body */}
@@ -304,36 +301,36 @@ export function ModalReporteGeneralPaDonde({
                   </div>
 
                   {/* Fila de detalles institucionales */}
-                  <div className="text-[11px] text-cream/90 space-y-1.5 pt-1 font-sans border-t border-cream/15">
-                    <div className="flex items-center justify-between">
-                      <span>🗓️ <strong>Periodo del informe:</strong></span>
-                      <span className="font-medium text-white">
+                  <div className="text-[11px] text-cream/90 space-y-2 pt-1 font-sans border-t border-cream/15">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-0.5 sm:gap-2">
+                      <span className="text-cream/80">🗓️ <strong>Periodo del informe:</strong></span>
+                      <span className="font-medium text-white sm:text-right">
                         del {metricasGlobales.fechaIni} al {metricasGlobales.fechaFin}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span>⏱️ <strong>Tiempo al aire analizado:</strong></span>
-                      <span className="font-medium text-emerald-300">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-0.5 sm:gap-2">
+                      <span className="text-cream/80">⏱️ <strong>Tiempo al aire analizado:</strong></span>
+                      <span className="font-medium text-emerald-300 sm:text-right">
                         {metricasGlobales.diasAnalizados} días (~{metricasGlobales.promedioDiario} visitas/día)
                       </span>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span>📍 <strong>Destinos con tracción:</strong></span>
-                      <span className="text-white font-medium">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-0.5 sm:gap-2">
+                      <span className="text-cream/80">📍 <strong>Destinos con tracción:</strong></span>
+                      <span className="text-white font-medium sm:text-right">
                         Minca ({metricasGlobales.destinos.Minca}), Mendihuaca ({metricasGlobales.destinos.Mendihuaca})
                         {metricasGlobales.destinos.Tayrona > 0 ? `, Tayrona (${metricasGlobales.destinos.Tayrona})` : ""}
                         {metricasGlobales.destinos.Taganga > 0 ? `, Taganga (${metricasGlobales.destinos.Taganga})` : ""}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span>🌍 <strong>Idiomas de turistas detectados:</strong></span>
-                      <span className="text-emerald-300 font-medium">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-0.5 sm:gap-2">
+                      <span className="text-cream/80">🌍 <strong>Idiomas de turistas detectados:</strong></span>
+                      <span className="text-emerald-300 font-medium sm:text-right">
                         Español, Inglés, Francés, Alemán
                       </span>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span>💬 <strong>Conversión directa a negocios:</strong></span>
-                      <span className="text-emerald-300 font-medium">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-0.5 sm:gap-2">
+                      <span className="text-cream/80">💬 <strong>Conversión directa a negocios:</strong></span>
+                      <span className="text-emerald-300 font-medium sm:text-right">
                         {metricasGlobales.totalClicsWhatsApp} reservas iniciadas vía WhatsApp
                       </span>
                     </div>

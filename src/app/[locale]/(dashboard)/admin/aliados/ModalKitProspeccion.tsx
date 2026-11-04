@@ -120,14 +120,15 @@ export function ModalKitProspeccion({ zonaInicial = "minca" }: ModalKitProspecci
   return (
     <>
       {/* Botón de apertura en el panel */}
-      <Button
+      <button
         type="button"
         onClick={() => setAbierto(true)}
-        className="w-full h-full bg-emerald-700 hover:bg-emerald-800 text-white font-sans text-xs font-semibold px-3 py-2 rounded-xl shadow-xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 transition-all whitespace-nowrap"
+        className="w-full h-10 bg-emerald-700 hover:bg-emerald-800 text-white font-sans text-xs font-semibold px-3 py-2 rounded-xl shadow-xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 transition-all min-w-0"
+        title="Abrir Kit de Prospección comercial y plantillas para nuevos aliados"
       >
-        <span>📲</span>
-        <span>Kit de Prospección</span>
-      </Button>
+        <span className="shrink-0 text-sm">📲</span>
+        <span className="truncate">Kit de Prospección</span>
+      </button>
 
       {/* Modal montado directamente en document.body para quedar encima de todo */}
       {mounted && abierto && createPortal(

@@ -122,16 +122,11 @@ export function ModalActualizarAnalytics({
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="w-full h-full px-3 py-2 rounded-xl text-xs font-sans font-semibold bg-white border border-stone-light/90 hover:border-forest/40 hover:bg-forest/5 text-forest transition-all flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer active:scale-95 whitespace-nowrap"
-        title="Subir exportación CSV de Google Analytics 4 para actualizar visitas reales de todos los comercios"
+        className="w-full h-10 px-3 py-2 rounded-xl text-xs font-sans font-semibold bg-white border border-stone-light/90 hover:border-forest/40 hover:bg-forest/5 text-forest transition-all flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer active:scale-95 min-w-0"
+        title={`Subir exportación CSV de Google Analytics 4${fechaSyncTexto ? ` (Última: ${fechaSyncTexto})` : ""}`}
       >
-        <span>📊</span>
-        <span>Sincronizar Analytics</span>
-        {fechaSyncTexto && (
-          <span className="text-[10px] text-stone font-normal hidden sm:inline">
-            ({fechaSyncTexto})
-          </span>
-        )}
+        <span className="shrink-0 text-sm">📊</span>
+        <span className="truncate">Sincronizar Analytics</span>
       </button>
 
       {/* Modal Dialog montado directamente en document.body mediante Portal */}

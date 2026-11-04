@@ -279,9 +279,9 @@ export default async function AdminAliadosPage({
       <AdminNav userEmail={user?.email} />
 
       <main className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-4 sm:space-y-6">
-        {/* Banner principal con Kit de Prospección */}
-        <div className="bg-white/70 backdrop-blur-sm p-4 sm:p-6 lg:p-7 rounded-2xl sm:rounded-3xl border border-stone-light/80 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          <div className="max-w-xl space-y-1">
+        {/* Banner principal con Kit de Prospección y Acciones Estratégicas */}
+        <div className="bg-white/80 backdrop-blur-sm p-4 sm:p-6 lg:p-7 rounded-2xl sm:rounded-3xl border border-stone-light/80 shadow-xs flex flex-col xl:flex-row xl:items-center justify-between gap-6">
+          <div className="space-y-1.5 xl:max-w-md 2xl:max-w-lg shrink-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="font-serif text-xl sm:text-2xl lg:text-3xl text-forest font-bold">
                 Aliados Comerciales y Planes B2B
@@ -290,14 +290,14 @@ export default async function AdminAliadosPage({
                 Paso 2: Monetización
               </span>
             </div>
-            <p className="font-sans text-xs sm:text-sm text-stone mt-1 leading-relaxed">
+            <p className="font-sans text-xs sm:text-sm text-stone leading-relaxed">
               Gestiona acuerdos con hostales, restaurantes, guías y aliados turísticos en cada destino.
               Controla renovaciones y genera mensajes de cobro por WhatsApp en 1 clic.
             </p>
           </div>
 
-          {/* Cuadrícula balanceada para botones de acción en desktop */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 w-full lg:w-auto lg:min-w-[540px] xl:min-w-[620px]">
+          {/* Cuadrícula balanceada para botones de acción: 1 col móvil, 2 cols tablet, 3 cols desktop */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 w-full xl:w-auto xl:min-w-[580px] 2xl:min-w-[660px]">
             <ModalActualizarAnalytics
               negociosRegistrados={negociosList}
               ultimaActualizacion={ga4Config?.ultimaActualizacion || ga4ConfigRow?.updated_at}
@@ -309,10 +309,10 @@ export default async function AdminAliadosPage({
             <ModalSincronizarGoogle ultimaSincronizacion={ultimaSyncGoogle} />
             <ModalDifusionWhatsApp aliados={aliados} />
             <ModalKitProspeccion />
-            <Link href="/admin/nuevo" className="w-full">
-              <Button size="sm" className="w-full h-full shadow-xs py-2 px-3 text-xs flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap">
-                <span>+</span>
-                <span>Publicar Plan / Nuevo Aliado</span>
+            <Link href="/admin/nuevo" className="w-full min-w-0">
+              <Button size="sm" className="w-full h-10 shadow-xs py-2 px-3 text-xs flex items-center justify-center gap-1.5 cursor-pointer min-w-0">
+                <span className="shrink-0 text-base font-bold leading-none">+</span>
+                <span className="truncate">Publicar Plan / Nuevo Aliado</span>
               </Button>
             </Link>
           </div>

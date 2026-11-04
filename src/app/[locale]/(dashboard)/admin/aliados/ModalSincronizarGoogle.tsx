@@ -61,11 +61,11 @@ export function ModalSincronizarGoogle({
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="w-full h-full py-2 px-3 rounded-xl text-xs font-semibold bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 border border-amber-300/80 transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap active:scale-95"
+        className="w-full h-10 py-2 px-3 rounded-xl text-xs font-semibold bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 border border-amber-300/80 transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 min-w-0"
         title="Sincronizar calificaciones y reseñas de Google Maps con Gemini AI"
       >
-        <span>⭐</span>
-        <span>Sincronizar Google</span>
+        <span className="shrink-0 text-sm">⭐</span>
+        <span className="truncate">Sincronizar Google</span>
       </button>
 
       {mounted && isOpen && createPortal(

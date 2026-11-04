@@ -346,14 +346,15 @@ Para mantener tu vitrina con visibilidad destacada y continuar recibiendo turist
     <>
       {/* Botón Disparador en el Panel (si no se oculta) */}
       {!ocultarBotonTrigger && (
-        <Button
+        <button
+          type="button"
           onClick={() => setAbiertoInterno(true)}
-          className="w-full h-full bg-emerald-700 hover:bg-emerald-800 text-white font-semibold py-2 px-3 text-xs rounded-xl shadow-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 whitespace-nowrap"
+          className="w-full h-10 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold py-2 px-3 text-xs rounded-xl shadow-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 min-w-0"
           title="Abrir Centro de Mensajes Masivos de WhatsApp para seleccionar uno, varios o todos los aliados"
         >
-          <span>📢</span>
-          <span>Mensajes Masivos WhatsApp</span>
-        </Button>
+          <span className="shrink-0 text-sm">📢</span>
+          <span className="truncate">Mensajes Masivos WhatsApp</span>
+        </button>
       )}
 
       {/* Modal Pantalla Completa / Drawer */}
