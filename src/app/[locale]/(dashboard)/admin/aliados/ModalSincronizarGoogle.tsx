@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "@/i18n/routing";
 import { sincronizarReputacionGoogleAction } from "../actions";
 
@@ -13,7 +14,12 @@ export function ModalSincronizarGoogle({
 }: ModalSincronizarGoogleProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const [detalles, setDetalles] = useState<
     { id: string; nombre: string; rating: number; reviews: number }[] | null
   >(null);
@@ -62,11 +68,19 @@ export function ModalSincronizarGoogle({
         <span>Sincronizar Google</span>
       </button>
 
-      {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-stone-200 space-y-5 max-h-[90vh] overflow-y-auto">
+      {mounted && isOpen && createPortal(
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setIsOpen(false)}
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-stone-200 space-y-5 my-auto max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-150"
+          >
             {/* Cabecera */}
-            <div className="flex items-start justify-between gap-3 border-b border-stone-100 pb-3">
+            <div className="flex items-start justify-between gap-3 border-b border-stone-100 pb-3 shrink-0">
               <div>
                 <div className="flex items-center gap-2">
                   <span className="text-xl">⭐</span>
@@ -178,7 +192,8 @@ export function ModalSincronizarGoogle({
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

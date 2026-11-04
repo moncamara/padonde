@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useTransition, useRef } from "react";
+import { useState, useTransition, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "@/i18n/routing";
 import { procesarCSVAnalytics, type ResultadoProcesamientoGA4 } from "@/lib/analyticsCSVParser";
 import { guardarMetricasGA4Action } from "../actions";
@@ -19,7 +20,12 @@ export function ModalActualizarAnalytics({
 }: ModalActualizarAnalyticsProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const [mostrarGuia, setMostrarGuia] = useState(false);
   const [modoManual, setModoManual] = useState(false);
   const [csvTexto, setCsvTexto] = useState("");
@@ -128,12 +134,20 @@ export function ModalActualizarAnalytics({
         )}
       </button>
 
-      {/* Modal Dialog */}
-      {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/50 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-stone-light flex flex-col max-h-[90vh] overflow-hidden">
-            {/* Cabecera del Modal */}
-            <div className="p-4 sm:p-5 border-b border-stone-light/70 flex items-center justify-between">
+      {/* Modal Dialog montado directamente en document.body mediante Portal */}
+      {mounted && isOpen && createPortal(
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setIsOpen(false)}
+          className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-5 bg-black/60 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-150"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-stone-light flex flex-col my-auto max-h-[92vh] overflow-hidden animate-in zoom-in-95 duration-150"
+          >
+            {/* Cabecera del Modal (Fija arriba) */}
+            <div className="p-4 sm:p-5 border-b border-stone-light/70 bg-white flex items-center justify-between shrink-0">
               <div>
                 <div className="flex items-center gap-2">
                   <span className="text-xl">📊</span>
@@ -381,8 +395,8 @@ export function ModalActualizarAnalytics({
               )}
             </div>
 
-            {/* Pie de Acciones */}
-            <div className="p-4 sm:p-5 border-t border-stone-light/70 bg-stone-50/50 flex items-center justify-end gap-2">
+            {/* Pie de Acciones (Fijo abajo) */}
+            <div className="p-4 sm:p-5 border-t border-stone-light/70 bg-stone-50/50 flex items-center justify-end gap-2 shrink-0">
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
@@ -402,7 +416,8 @@ export function ModalActualizarAnalytics({
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
