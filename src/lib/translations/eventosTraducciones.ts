@@ -749,25 +749,6 @@ export async function getEventoTraducidoAsync<
     return tradSync;
   }
 
-  // 3. Traducir automáticamente en el servidor
-  try {
-    const traduccionesAuto = await traducirEventoCompleto(evento.titulo, evento.descripcion);
-    const tradAuto = traduccionesAuto[locale as "en" | "de" | "fr"];
-    if (tradAuto && tradAuto.titulo) {
-      return {
-        ...evento,
-        titulo: tradAuto.titulo,
-        descripcion: tradAuto.descripcion,
-        traducciones: {
-          ...(evento.traducciones || {}),
-          ...traduccionesAuto,
-        },
-      };
-    }
-  } catch (err) {
-    console.warn("[getEventoTraducidoAsync] Error en traducción automática:", err);
-  }
-
-  // 4. Fallback seguro al texto original
+  // 3. Fallback seguro e instantáneo al texto original (cero llamadas de red ni CPU en SSR)
   return evento;
 }

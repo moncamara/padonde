@@ -13,12 +13,16 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createClient();
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    // Solo consultar Supabase Auth si realmente existe una cookie de sesión (evita latencia y CPU inútil)
+    const hasAuthCookie = request.cookies.getAll().some((c) => c.name.startsWith("sb-") && c.name.endsWith("-auth-token"));
+    if (hasAuthCookie) {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-    if (user) {
-      return NextResponse.json({ success: true, recorded: false, reason: "admin_session" });
+      if (user) {
+        return NextResponse.json({ success: true, recorded: false, reason: "admin_session" });
+      }
     }
 
     const body = await request.json().catch(() => ({}));

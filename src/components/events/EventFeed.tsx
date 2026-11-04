@@ -147,39 +147,6 @@ export function EventFeed({ eventos, zona, configTerritorial }: EventFeedProps) 
     };
   }, []);
 
-  // Pre-calentamiento progresivo y de baja prioridad para disponibilidad 100% offline en la montaña
-  useEffect(() => {
-    if (typeof window === "undefined" || !("caches" in window) || !navigator.onLine) return;
-
-    // En desarrollo local, NO ejecutar pre-calentamiento para no saturar Turbopack con compilaciones SSR en segundo plano
-    if (process.env.NODE_ENV === "development") return;
-
-    const warmUp = () => {
-      // Pre-calentar únicamente las 3 tarjetas superiores con cadencia espaciada
-      const toWarm = eventos.slice(0, 3);
-      toWarm.forEach((evento, i) => {
-        setTimeout(() => {
-          if (navigator.onLine) {
-            const path = `/${locale}/${zona}/${evento.id}`;
-            // 1. Precachear HTML de navegación
-            fetch(path, { priority: "low" as any }).catch(() => {});
-            // 2. Precachear payload RSC para que la transición client-side funcione offline
-            fetch(`${path}?_rsc`, {
-              headers: { RSC: "1" },
-              priority: "low" as any,
-            }).catch(() => {});
-          }
-        }, 1500 + i * 500);
-      });
-    };
-
-    if ("requestIdleCallback" in window) {
-      (window as any).requestIdleCallback(warmUp, { timeout: 4000 });
-    } else {
-      setTimeout(warmUp, 3000);
-    }
-  }, [eventos, zona, locale]);
-
   const nowRef = useRef(new Date());
   const queryNorm = normalizarTexto(busqueda);
 

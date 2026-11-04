@@ -26,8 +26,8 @@ interface ZonaPageProps {
   params: Promise<{ locale: string; zona: ZonaSlug }>;
 }
 
-// Revalidación ISR cada 5 minutos (300s) en el Edge CDN de Vercel con purga instantánea en publicaciones
-export const revalidate = 300;
+// Revalidación ISR cada 1 hora (3600s) en el Edge CDN de Vercel con purga instantánea en publicaciones
+export const revalidate = 3600;
 
 export function generateStaticParams() {
   const zonas: ZonaSlug[] = ["minca", "mendihuaca"];

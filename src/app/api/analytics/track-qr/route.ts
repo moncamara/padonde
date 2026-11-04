@@ -34,12 +34,16 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createClient();
 
-    // 1. Identificar si es escaneo de prueba del administrador
+    // 1. Identificar si es escaneo de prueba del administrador (solo consulta auth si hay cookies)
     const isAdminCookie = request.cookies.get("padonde_admin_device")?.value === "true";
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    const esPruebaAdmin = Boolean(user || isAdminCookie);
+    let esPruebaAdmin = isAdminCookie;
+    const hasAuthCookie = request.cookies.getAll().some((c) => c.name.startsWith("sb-") && c.name.endsWith("-auth-token"));
+    if (!esPruebaAdmin && hasAuthCookie) {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) esPruebaAdmin = true;
+    }
     const userAgentFinal = esPruebaAdmin ? `[PRUEBA_ADMIN] ${userAgentConLang}` : userAgentConLang;
 
     // 2. Antifraude: Verificar si este dispositivo ya había escaneado este punto

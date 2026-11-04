@@ -39,8 +39,8 @@ interface EventoDetailPageProps {
   params: Promise<{ locale: string; zona: ZonaSlug; id: string }>;
 }
 
-// Revalidación cada 10 minutos (600s) en el Edge CDN de Vercel con purga on-demand al editar
-export const revalidate = 600;
+// Revalidación cada 1 hora (3600s) en el Edge CDN de Vercel con purga on-demand al editar
+export const revalidate = 3600;
 export const dynamicParams = true;
 
 export async function generateStaticParams() {
