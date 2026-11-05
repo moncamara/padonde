@@ -422,13 +422,13 @@ export function ServiciosList({ servicios, zonaNombre, zonaSlug }: ServiciosList
                   </span>
                 </div>
 
-                {/* Badges de características / servicios (wrap de máximo 2 líneas) */}
+                {/* Badges de características / servicios (Layout flexible fluido sin recortes) */}
                 {servicio.servicios_tags && servicio.servicios_tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 pt-1 max-h-[72px] overflow-hidden">
+                  <div className="flex flex-wrap gap-2 w-full h-auto pt-1">
                     {servicio.servicios_tags.map((tag, idx) => (
                       <span
                         key={idx}
-                        className="inline-flex items-center px-2.5 py-1 rounded-lg bg-stone-light/30 text-forest text-xs font-medium"
+                        className="inline-flex items-center py-1.5 px-3 rounded-xl bg-stone-light/30 text-forest text-xs font-medium leading-normal"
                       >
                         {tag}
                       </span>
