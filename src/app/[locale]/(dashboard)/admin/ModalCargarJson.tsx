@@ -64,6 +64,9 @@ const EJEMPLO_JSON_EVENTO = {
   instagram: "lacasonaminca",
   zonaSlug: "minca",
   googleMapsUrl: "https://maps.google.com/?cid=123456789",
+  googleRating: 4.8,
+  googleReviewsCount: 85,
+  googleReviewUrl: "https://search.google.com/local/writereview?placeid=...",
   imagenPortadaUrl:
     "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/hospedajes/magic-green-portada-piscina.webp",
 };
@@ -311,7 +314,7 @@ export function ModalCargarJson({
               setJsonText(e.target.value);
               if (errorParse) setErrorParse(null);
             }}
-            placeholder={`{\n  "nombreNegocio": "...",\n  "whatsapp": "...",\n  "titulo": "...",\n  ${
+            placeholder={`{\n  "nombreNegocio": "...",\n  "whatsapp": "...",\n  "titulo": "...",\n  "googleMapsUrl": "https://maps.google.com/...",\n  "googleRating": 4.9,\n  "googleReviewsCount": 120,\n  ${
               tipo === "hospedaje" ? '"habitaciones": [...]' : '"categoria": "..."'
             }\n}`}
             className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-3 text-xs font-mono text-stone-800 focus:outline-none focus:border-forest focus:bg-white resize-y leading-relaxed"

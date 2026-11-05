@@ -849,8 +849,48 @@ export function EventUpsertForm({
     if (parsed.precio_cop !== undefined && parsed.precio_cop !== null) {
       setPrice(parsed.precio_cop.toString());
     }
-    if (parsed.nombreNegocio && !businessName) setBusinessName(parsed.nombreNegocio);
-    if (parsed.businessName && !businessName) setBusinessName(parsed.businessName);
+
+    // 1. Detección y vinculación inteligente de Aliado
+    const nombreNegocioJson = parsed.nombreNegocio || parsed.businessName;
+    let aliadoEncontrado: AliadoResumen | undefined = undefined;
+
+    if (nombreNegocioJson) {
+      setBusinessName(nombreNegocioJson);
+
+      const normJson = nombreNegocioJson
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .trim();
+
+      aliadoEncontrado = (aliados || []).find((a) => {
+        const normA = a.nombre
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase()
+          .trim();
+        return (
+          normA === normJson ||
+          normA.includes(normJson) ||
+          normJson.includes(normA)
+        );
+      });
+
+      if (aliadoEncontrado) {
+        setSelectedAliadoId(aliadoEncontrado.id);
+        // Si el JSON no trae whatsapp o instagram explícito, heredarlo del aliado
+        if (!parsed.whatsapp && aliadoEncontrado.whatsapp) {
+          setWhatsapp(aliadoEncontrado.whatsapp);
+        }
+        if (!parsed.instagram && aliadoEncontrado.instagram) {
+          setInstagram(aliadoEncontrado.instagram);
+        }
+        if (!parsed.zonaSlug && aliadoEncontrado.zonaSlug) {
+          setZonaSlug(aliadoEncontrado.zonaSlug);
+        }
+      }
+    }
+
     if (parsed.whatsapp) {
       let clean = String(parsed.whatsapp).replace(/\D/g, "");
       if (clean.length === 10 && clean.startsWith("3")) clean = `57${clean}`;
@@ -865,6 +905,87 @@ export function EventUpsertForm({
     if (parsed.fechaLimiteVigencia) {
       setFechaLimiteVigencia(parsed.fechaLimiteVigencia);
       setTieneLimiteVigencia(true);
+    }
+
+    // 2. Google Maps URL
+    const maps =
+      parsed.googleMapsUrl ||
+      parsed.google_maps_url ||
+      parsed.mapsUrl ||
+      parsed.maps_url ||
+      parsed.googleMaps ||
+      parsed.mapUrl;
+    if (maps) {
+      setMapsUrl(String(maps).trim());
+    } else if (aliadoEncontrado?.google_maps_url) {
+      setMapsUrl(aliadoEncontrado.google_maps_url);
+    }
+
+    // 3. Calificación Google (Rating)
+    let ratingVal =
+      parsed.googleRating ??
+      parsed.google_rating ??
+      parsed.rating ??
+      parsed.calificacion ??
+      parsed.calificacionGoogle;
+
+    // Si no viene en campos directos, intentar extraer de la descripción (ej: "⭐ 4.9 en Google" o "⭐ 4.9")
+    if ((ratingVal === undefined || ratingVal === null) && parsed.descripcion) {
+      const matchRating = String(parsed.descripcion).match(
+        /(?:⭐|rating|calificaci[oó]n|google)?\s*([1-5](?:[.,]\d))\s*(?:⭐|\/5|\s*en Google|\s*de 5|\s*\()/i
+      );
+      if (matchRating && matchRating[1]) {
+        ratingVal = matchRating[1].replace(",", ".");
+      }
+    }
+
+    if (ratingVal !== undefined && ratingVal !== null && ratingVal !== "") {
+      setRatingGoogle(String(ratingVal));
+    } else if (aliadoEncontrado?.google_rating) {
+      setRatingGoogle(aliadoEncontrado.google_rating.toString());
+    }
+
+    // 4. Total de Reseñas / Opiniones Google
+    let reviewsVal =
+      parsed.googleReviewsCount ??
+      parsed.google_reviews_count ??
+      parsed.google_total_reviews ??
+      parsed.reviewsCount ??
+      parsed.totalReviews ??
+      parsed.total_reviews ??
+      parsed.opiniones ??
+      parsed.reseñas ??
+      parsed.resenas;
+
+    // Si no viene en campos directos, extraer de la descripción (ej: "(120+ reseñas)" o "120 reseñas")
+    if ((reviewsVal === undefined || reviewsVal === null) && parsed.descripcion) {
+      const matchReviews = String(parsed.descripcion).match(
+        /\(?\s*(\d+)\+?\s*(?:reseñas?|resenas?|opiniones|reviews)\s*\)?/i
+      );
+      if (matchReviews && matchReviews[1]) {
+        reviewsVal = matchReviews[1];
+      }
+    }
+
+    if (reviewsVal !== undefined && reviewsVal !== null && reviewsVal !== "") {
+      setReviewsGoogle(String(reviewsVal));
+    } else if (aliadoEncontrado?.google_total_reviews) {
+      setReviewsGoogle(aliadoEncontrado.google_total_reviews.toString());
+    }
+
+    // 5. Enlace Directo para Reseña
+    const reviewUrl =
+      parsed.googleReviewUrl ||
+      parsed.google_review_url ||
+      parsed.reviewUrl ||
+      parsed.google_review;
+    if (reviewUrl) {
+      setGoogleReviewUrl(String(reviewUrl).trim());
+    } else if (aliadoEncontrado?.google_review_url) {
+      setGoogleReviewUrl(aliadoEncontrado.google_review_url);
+    } else if (maps) {
+      const autoReview = extraerGoogleReviewUrl(String(maps).trim());
+      if (autoReview) setGoogleReviewUrl(autoReview);
     }
 
     const cat = parsed.categoria || parsed.tipo;
