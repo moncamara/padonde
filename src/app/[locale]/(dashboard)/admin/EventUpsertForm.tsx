@@ -1572,11 +1572,11 @@ export function EventUpsertForm({
               </button>
             </div>
             <textarea
-              rows={3}
+              rows={6}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe la experiencia, qué incluye, el ambiente o requisitos especiales..."
-              className="w-full p-2.5 text-xs bg-white rounded-xl border border-stone-light/80 text-forest outline-none focus:ring-1 focus:ring-forest leading-relaxed"
+              className="w-full p-3 text-xs bg-white rounded-xl border border-stone-light/80 text-forest outline-none focus:ring-1 focus:ring-forest leading-relaxed min-h-[150px] resize-y"
             />
           </div>
         </div>
