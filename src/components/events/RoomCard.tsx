@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback } from "react";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 import type { HabitacionHospedaje } from "@/lib/types";
 
 interface RoomCardProps {
@@ -26,10 +27,22 @@ export function RoomCard({
   tPerNight,
 }: RoomCardProps) {
   const { id, titulo, precio_noche_cop, fotos, badges, descripcion } = habitacion;
+  const tCard = useTranslations("eventCard");
   const galleryRef = useRef<HTMLDivElement>(null);
   const [canLeft, setCanLeft] = useState(false);
   const [canRight, setCanRight] = useState(Boolean(fotos && fotos.length > 1));
   const [photoIndex, setPhotoIndex] = useState(0);
+
+  // Insignia Estática Null-Safe: "🌿 Recomendado por locales"
+  const esRecomendadoLocal = Boolean(
+    habitacion.es_recomendado_local ||
+    habitacion.badge_local ||
+    (Array.isArray(badges) &&
+      badges.some((b: any) => {
+        const texto = typeof b === "object" ? b?.texto || "" : String(b || "");
+        return /recomendado.*local|local.*recomendado/i.test(texto);
+      }))
+  );
 
   const checkScroll = useCallback(() => {
     const el = galleryRef.current;
@@ -83,6 +96,16 @@ export function RoomCard({
             </div>
           )}
         </div>
+
+        {/* Insignia Estática: Recomendado por locales con backdrop-blur y contraste solar */}
+        {esRecomendadoLocal && (
+          <div className="absolute top-2 left-2 z-10 pointer-events-none">
+            <span className="bg-emerald-950/80 backdrop-blur-md text-emerald-100 text-[10px] font-sans font-semibold px-2 py-0.5 rounded-full border border-emerald-400/40 shadow-xs flex items-center gap-1">
+              <span>🌿</span>
+              <span>{tCard("recommendedByLocals")}</span>
+            </span>
+          </div>
+        )}
 
         {/* Flechas semitransparentes flotantes */}
         {fotos && fotos.length > 1 && (

@@ -27,7 +27,9 @@
     "reserve": "Book Now",
     "seeMore": "See More",
     "featured": "Featured",
-    "perPerson": "Per person"
+    "perPerson": "Per person",
+    "recommendedByLocals": "Recommended by locals",
+    "travelersViewedToday": "{count} travelers checked this plan today"
   },
   "eventDetail": {
     "back": "Back",

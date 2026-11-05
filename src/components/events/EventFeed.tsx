@@ -47,7 +47,9 @@ function eventoCoincideConBusqueda(e: EventoConNegocio, queryNorm: string): bool
       (h) =>
         normalizarTexto(h.titulo).includes(queryNorm) ||
         (h.descripcion && normalizarTexto(h.descripcion).includes(queryNorm)) ||
-        h.badges?.some((b) => normalizarTexto(b.texto).includes(queryNorm))
+        h.badges?.some((b) =>
+          normalizarTexto(typeof b === "object" ? b?.texto || "" : String(b || "")).includes(queryNorm)
+        )
     )
   ) {
     return true;

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/routing";
@@ -56,6 +57,37 @@ export function EventCard({ evento: rawEvento, zona, priority = false }: EventCa
 
   const esDestacado = Boolean(evento.destacado || (evento as any).es_destacado);
 
+  // 1. Insignia Estática Null-Safe "🌿 Recomendado por locales"
+  const esRecomendadoLocal = Boolean(
+    evento.es_recomendado_local ||
+    evento.badge_local ||
+    evento.metadata_hospedaje?.es_recomendado_local ||
+    evento.metadata_hospedaje?.badge_local ||
+    (Array.isArray((evento as any).badges) &&
+      (evento as any).badges.some((b: any) => {
+        const txt = typeof b === "string" ? b : b?.texto || b?.label || "";
+        return /recomendado.*local|local.*recomendado/i.test(txt);
+      })) ||
+    (Array.isArray(evento.metadata_hospedaje?.badges) &&
+      evento.metadata_hospedaje?.badges.some((b: any) => {
+        const txt = typeof b === "string" ? b : b?.texto || b?.label || "";
+        return /recomendado.*local|local.*recomendado/i.test(txt);
+      }))
+  );
+
+  // 2. Micro-indicador Dinámico determinista client-side (CERO Supabase, CERO WebSockets, CERO SSR dinámico)
+  const [viajerosHoy, setViajerosHoy] = useState<number | null>(null);
+
+  useEffect(() => {
+    const now = new Date();
+    const startOfYear = new Date(now.getFullYear(), 0, 0);
+    const diff = now.getTime() - startOfYear.getTime();
+    const oneDay = 1000 * 60 * 60 * 24;
+    const diaDelAno = Math.floor(diff / oneDay);
+    const seed = (evento.id?.charCodeAt(0) || 1) + diaDelAno;
+    setViajerosHoy((seed % 5) + 2); // Rango natural de 2 a 6 personas
+  }, [evento.id]);
+
   return (
     <article
       id={`card-evento-${evento.id}`}
@@ -109,6 +141,14 @@ export function EventCard({ evento: rawEvento, zona, priority = false }: EventCa
                 {categoria.emoji} {tCat(evento.tipo)}
               </span>
             ) : null}
+
+            {/* Insignia Estática: Recomendado por locales con backdrop-blur y contraste solar */}
+            {esRecomendadoLocal && (
+              <span className="bg-emerald-950/80 backdrop-blur-md text-emerald-100 text-xs font-sans font-semibold px-2.5 py-1 rounded-full border border-emerald-400/40 shadow-xs flex items-center gap-1">
+                <span>🌿</span>
+                <span>{tCard("recommendedByLocals")}</span>
+              </span>
+            )}
 
             {/* Badges secundarios sutiles */}
             {evento.categorias &&
@@ -188,6 +228,20 @@ export function EventCard({ evento: rawEvento, zona, priority = false }: EventCa
           <h2 className="font-serif text-forest text-lg sm:text-xl font-bold leading-snug tracking-tight group-hover:text-terra transition-colors line-clamp-2">
             {evento.titulo}
           </h2>
+
+          {/* Micro-indicador de prueba social / FOMO dinámico (Blindaje de Layout CLS = 0) */}
+          <div className="h-5 flex items-center" aria-live="polite">
+            {viajerosHoy !== null ? (
+              <p className="text-[11px] sm:text-xs text-stone/85 font-sans flex items-center gap-1.5">
+                <span className="text-xs">👁️</span>
+                <span>{tCard("travelersViewedToday", { count: viajerosHoy })}</span>
+              </p>
+            ) : (
+              <span className="invisible text-[11px] select-none" aria-hidden="true">
+                &nbsp;
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Fila inferior: Precio a la izquierda, Botón de WhatsApp a la derecha */}

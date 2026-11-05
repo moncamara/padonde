@@ -82,6 +82,9 @@ export type Evento = {
   /** Atributos directos de recurrencia (compatibilidad null-safe) */
   es_recurrente?: boolean;
   dias_recurrentes?: number[];
+  /** Insignia Social Proof / Recomendado por locales */
+  es_recomendado_local?: boolean;
+  badge_local?: boolean;
   // Relación — se incluye en queries con JOIN
   negocio?: {
     id?: string;
@@ -110,7 +113,9 @@ export type HabitacionHospedaje = {
   precio_noche_cop: number;
   capacidad_max: number;
   fotos: string[];
-  badges: BadgeHabitacion[];
+  badges: (BadgeHabitacion | string)[];
+  es_recomendado_local?: boolean;
+  badge_local?: boolean;
 };
 
 export type GoogleReputacion = {
@@ -142,6 +147,9 @@ export type HospedajeMetadata = {
   horario?: HorarioExperiencia; // Horario limpio y recurrencia para experiencias gastronómicas, bares y miradores
   posicion_portada?: string;  // Enfoque vertical de la portada (ej: "20%", "50%", "80%")
   posicionPortada?: string;   // Alias camelCase de compatibilidad
+  es_recomendado_local?: boolean;
+  badge_local?: boolean;
+  badges?: (string | BadgeHabitacion)[];
 };
 
 // ─── Tipos de Servicios Esenciales e Info Útil ────────────────────────────────

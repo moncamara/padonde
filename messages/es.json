@@ -27,7 +27,9 @@
     "reserve": "Reservar",
     "seeMore": "Ver más",
     "featured": "Destacado",
-    "perPerson": "Por persona"
+    "perPerson": "Por persona",
+    "recommendedByLocals": "Recomendado por locales",
+    "travelersViewedToday": "{count} viajeros consultaron este plan hoy"
   },
   "eventDetail": {
     "back": "Atrás",

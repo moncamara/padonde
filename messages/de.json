@@ -27,7 +27,9 @@
     "reserve": "Buchen",
     "seeMore": "Mehr erfahren",
     "featured": "Empfohlen",
-    "perPerson": "Pro Person"
+    "perPerson": "Pro Person",
+    "recommendedByLocals": "Von Einheimischen empfohlen",
+    "travelersViewedToday": "{count} Reisende haben diesen Plan heute angesehen"
   },
   "eventDetail": {
     "back": "Zurück",
