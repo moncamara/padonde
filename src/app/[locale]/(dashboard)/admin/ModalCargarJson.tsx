@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { procesarUrlsFotosAction } from "./actions";
+import { extraerGoogleReviewUrl } from "@/lib/utils";
 
 export interface ModalCargarJsonProps {
   isOpen: boolean;
@@ -63,7 +64,8 @@ const EJEMPLO_JSON_EVENTO = {
   whatsapp: "573135605428",
   instagram: "mincabirding",
   zonaSlug: "minca",
-  googleMapsUrl: "https://maps.google.com/?cid=15837769121887535664",
+  googleMapsUrl:
+    "https://www.google.com/maps/place/Moto+Minca/@11.143406,-74.1172912,17z/data=!4m6!3m5!1s0x8ef4f17b1cb7eeeb:0xb782dc7668d0ecea!8m2!3d11.143406!4d-74.1172912!16s%2Fg%2F11g4dl54rb",
   googleRating: 4.9,
   googleReviewsCount: 120,
   googleReviewUrl: "https://search.google.com/local/writereview?placeid=...",
@@ -81,6 +83,31 @@ export function ModalCargarJson({
   const [jsonText, setJsonText] = useState("");
   const [errorParse, setErrorParse] = useState<string | null>(null);
   const [isEjecutando, setIsEjecutando] = useState(false);
+
+  // Análisis en tiempo real del enlace de Google Maps para feedback visual inmediato
+  const analisisGoogleMaps = (() => {
+    if (!jsonText.trim()) return null;
+    try {
+      const parsed = JSON.parse(jsonText.trim());
+      if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return null;
+      const url =
+        parsed.googleMapsUrl ||
+        parsed.google_maps_url ||
+        parsed.mapsUrl ||
+        parsed.maps_url ||
+        parsed.googleMaps;
+      if (!url || typeof url !== "string") {
+        return { estado: "ausente" as const };
+      }
+      const reviewUrl = extraerGoogleReviewUrl(url.trim());
+      if (reviewUrl) {
+        return { estado: "valido" as const, url: url.trim(), reviewUrl };
+      }
+      return { estado: "incompleto" as const, url: url.trim() };
+    } catch {
+      return null;
+    }
+  })();
 
   if (!isOpen) return null;
 
@@ -328,11 +355,56 @@ export function ModalCargarJson({
             </div>
           )}
 
-          {/* Banner explicativo del prefill */}
-          <div className="p-3 bg-amber-50/70 border border-amber-200/80 rounded-xl text-[11px] text-amber-900 leading-relaxed flex items-start gap-2">
-            <span className="text-sm shrink-0 mt-0.5">💡</span>
-            <div>
-              <strong>Pre-población segura en memoria:</strong> El formulario se completará con los campos recibidos sin guardar en base de datos. Si el JSON incluye fotos externas, se optimizarán a WebP en Supabase Storage automáticamente sin errores de CORS.
+          {/* Validación en tiempo real del enlace de Google Maps */}
+          {analisisGoogleMaps && (
+            <div className="animate-in fade-in duration-150">
+              {analisisGoogleMaps.estado === "valido" ? (
+                <div className="p-3 bg-emerald-50 border border-emerald-200/90 rounded-2xl text-xs flex items-start gap-2.5">
+                  <span className="text-base shrink-0 mt-0.5">⭐</span>
+                  <div className="space-y-1 text-emerald-950">
+                    <div className="font-bold flex items-center gap-1.5 flex-wrap">
+                      <span>Enlace de Google Maps verificado con éxito</span>
+                      <span className="bg-emerald-200 text-emerald-900 text-[10px] font-mono px-2 py-0.5 rounded-full font-semibold">
+                        Ficha & Estrellas OK
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-emerald-900 leading-relaxed">
+                      Detectó el identificador único de la ficha. Al aplicar este JSON, el mapa se abrirá correctamente y los turistas podrán calificar con 5 estrellas con un solo toque.
+                    </p>
+                  </div>
+                </div>
+              ) : analisisGoogleMaps.estado === "incompleto" ? (
+                <div className="p-3 bg-amber-50 border border-amber-200/90 rounded-2xl text-xs flex items-start gap-2.5">
+                  <span className="text-base shrink-0 mt-0.5">⚠️</span>
+                  <div className="space-y-1.5 text-amber-950">
+                    <div className="font-bold">
+                      Atención: El enlace de Google Maps parece genérico o sin identificador de ficha
+                    </div>
+                    <p className="text-[11px] text-amber-900 leading-relaxed">
+                      Para que el mapa y el botón de estrellas de opiniones funcionen de forma óptima:
+                    </p>
+                    <div className="text-[11px] bg-amber-100/80 p-2 rounded-xl font-mono text-amber-950 break-all leading-normal">
+                      Copia la URL completa del navegador: <code>https://www.google.com/maps/place/NombreNegocio/@...</code> (o la que incluye <code>?cid=...</code>)
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          )}
+
+          {/* Banner explicativo del prefill y Google Maps */}
+          <div className="p-3.5 bg-stone-50 border border-stone-200 rounded-2xl text-[11px] text-stone-700 leading-relaxed space-y-2">
+            <div className="flex items-start gap-2">
+              <span className="text-sm shrink-0 mt-0.5">💡</span>
+              <div>
+                <strong>Pre-población segura en memoria:</strong> El formulario se completará con los campos recibidos sin guardar en base de datos hasta que hagas clic en Publicar.
+              </div>
+            </div>
+            <div className="flex items-start gap-2 pt-2 border-t border-stone-200/70">
+              <span className="text-sm shrink-0 mt-0.5">📍</span>
+              <div>
+                <strong>¿Qué enlace de Google Maps debe ir aquí?</strong> Abre el negocio en Google Maps desde el navegador web y copia la URL completa de la barra de direcciones (debe contener <code>/maps/place/</code> o <code>?cid=</code>). Nuestro sistema identificará la ficha automáticamente para activar el mapa y el botón directo de reseñas con 5 estrellas.
+              </div>
             </div>
           </div>
         </div>

@@ -2541,15 +2541,44 @@ export function EventUpsertForm({
             <input
               type="url"
               value={mapsUrl}
-              onChange={(e) => setMapsUrl(e.target.value)}
-              placeholder="https://maps.app.goo.gl/..."
+              onChange={(e) => {
+                const val = e.target.value;
+                setMapsUrl(val);
+                const autoReview = extraerGoogleReviewUrl(val);
+                if (autoReview && !googleReviewUrl) {
+                  setGoogleReviewUrl(autoReview);
+                }
+              }}
+              placeholder="https://www.google.com/maps/place/NombreNegocio/@... o con ?cid=..."
               className="w-full p-2.5 text-xs bg-white rounded-xl border border-stone-light/80 text-forest outline-none focus:ring-1 focus:ring-forest"
             />
+            {mapsUrl.trim() && (
+              <div className="mt-1.5">
+                {extraerGoogleReviewUrl(mapsUrl) ? (
+                  <div className="flex items-center gap-1.5 text-[11px] text-emerald-800 bg-emerald-50 px-2.5 py-1.5 rounded-xl border border-emerald-200">
+                    <span>⭐</span>
+                    <span>
+                      <strong>Ficha identificada con éxito:</strong> Conecta el mapa y activa las estrellas de calificación para los clientes.
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex items-start gap-1.5 text-[11px] text-amber-800 bg-amber-50 px-2.5 py-1.5 rounded-xl border border-amber-200">
+                    <span className="shrink-0 mt-0.5">ℹ️</span>
+                    <span>
+                      <strong>Recomendación:</strong> Para apuntar a las estrellas de opiniones, usa el enlace completo de la ficha (debe decir <code>/maps/place/...</code> o tener <code>?cid=...</code>).
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+            <p className="text-[11px] text-stone mt-1 leading-relaxed">
+              📍 Abre el perfil del negocio en Google Maps desde el navegador y copia la URL completa de la barra de direcciones (ej. <code>https://www.google.com/maps/place/Nombre/@...</code>).
+            </p>
           </div>
 
           <div className="sm:col-span-2">
             <label className="block text-xs font-semibold text-forest mb-1">
-              Enlace Directo para Dejar Reseña en Google <span className="text-stone font-normal">(opcional)</span>
+              Enlace Directo para Dejar Reseña en Google <span className="text-stone font-normal">(opcional - generado automáticamente)</span>
             </label>
             <input
               type="url"
@@ -2558,6 +2587,9 @@ export function EventUpsertForm({
               placeholder="https://search.google.com/local/writereview?placeid=... o https://g.page/r/..."
               className="w-full p-2.5 text-xs bg-white rounded-xl border border-stone-light/80 text-forest outline-none focus:ring-1 focus:ring-forest"
             />
+            <p className="text-[10px] text-stone mt-0.5">
+              Si dejas este campo en blanco, se genera automáticamente a partir del enlace de Google Maps anterior.
+            </p>
           </div>
         </div>
       </div>
