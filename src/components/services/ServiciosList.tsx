@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import type { CategoriaServicioEsencial, ServicioEsencial } from "@/lib/types";
 import { CarouselWrapper } from "@/components/ui/CarouselWrapper";
@@ -34,12 +34,158 @@ const CATEGORIAS_CONFIG: Array<{
   { id: "general", emoji: "ℹ️", labelKey: "categories.general" },
 ];
 
+/**
+ * Carrusel Táctil Ultraliviano para Fichas de Servicios
+ * Utiliza CSS Scroll-Snap nativo sin librerías externas (0 dependencias)
+ */
+function ServicePhotoCarousel({
+  fotos,
+  nombreComercial,
+  videoUrl,
+  watchReelLabel = "Ver Reel",
+  onPlayVideo,
+}: {
+  fotos: string[];
+  nombreComercial: string;
+  videoUrl?: string | null;
+  watchReelLabel?: string;
+  onPlayVideo?: () => void;
+}) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const handleScroll = () => {
+    if (!scrollRef.current) return;
+    const { scrollLeft, clientWidth } = scrollRef.current;
+    if (clientWidth > 0) {
+      const idx = Math.round(scrollLeft / clientWidth);
+      setCurrentIndex(Math.min(Math.max(0, idx), fotos.length - 1));
+    }
+  };
+
+  const scrollPrev = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollBy({ left: -scrollRef.current.clientWidth, behavior: "smooth" });
+    }
+  };
+
+  const scrollNext = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollBy({ left: scrollRef.current.clientWidth, behavior: "smooth" });
+    }
+  };
+
+  if (fotos.length === 0) {
+    return (
+      <div className="relative aspect-[16/10] sm:aspect-[16/9] w-full rounded-2xl overflow-hidden bg-gradient-to-br from-forest/80 to-stone/80 flex items-center justify-center text-4xl border border-stone-light/60">
+        🌿
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative aspect-[16/10] sm:aspect-[16/9] w-full rounded-2xl overflow-hidden bg-stone-100 border border-stone-light/60 group select-none">
+      {/* Contenedor Scroll-Snap Nativo */}
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="flex w-full h-full overflow-x-auto snap-x snap-mandatory no-scrollbar scroll-smooth"
+        style={{
+          WebkitOverflowScrolling: "touch",
+        }}
+      >
+        {fotos.map((foto, idx) => (
+          <div
+            key={idx}
+            className="w-full h-full shrink-0 snap-start relative overflow-hidden"
+            style={{ scrollSnapAlign: "start" }}
+          >
+            <img
+              src={foto}
+              alt={`${nombreComercial} - Foto ${idx + 1}`}
+              width={640}
+              height={400}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              loading={idx === 0 ? "eager" : "lazy"}
+              decoding="async"
+            />
+          </div>
+        ))}
+      </div>
+
+      {/* Flechas de navegación en Desktop (hover) */}
+      {fotos.length > 1 && (
+        <>
+          {currentIndex > 0 && (
+            <button
+              type="button"
+              onClick={scrollPrev}
+              className="hidden sm:flex absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/40 hover:bg-black/70 text-white items-center justify-center text-xs backdrop-blur-xs transition-all z-10 cursor-pointer shadow-xs active:scale-90"
+              aria-label="Foto anterior"
+            >
+              ‹
+            </button>
+          )}
+          {currentIndex < fotos.length - 1 && (
+            <button
+              type="button"
+              onClick={scrollNext}
+              className="hidden sm:flex absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/40 hover:bg-black/70 text-white items-center justify-center text-xs backdrop-blur-xs transition-all z-10 cursor-pointer shadow-xs active:scale-90"
+              aria-label="Siguiente foto"
+            >
+              ›
+            </button>
+          )}
+        </>
+      )}
+
+      {/* Botón flotante para reproducir Reel si tiene video */}
+      {videoUrl && onPlayVideo && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/25 pointer-events-none group-hover:bg-black/35 transition-colors z-10">
+          <button
+            type="button"
+            onClick={onPlayVideo}
+            className="pointer-events-auto px-4 py-2 rounded-full bg-forest/90 hover:bg-forest text-cream text-xs font-semibold flex items-center gap-2 shadow-lg backdrop-blur-sm cursor-pointer active:scale-95 transition-all"
+          >
+            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+            <span>🎬 {watchReelLabel}</span>
+          </button>
+        </div>
+      )}
+
+      {/* Indicadores y Contador superpuestos (sin restar altura a la tarjeta) */}
+      {fotos.length > 1 && (
+        <>
+          {/* Indicadores Dots tenues centrados */}
+          <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex items-center gap-1 px-2 py-1 rounded-full bg-black/30 backdrop-blur-xs pointer-events-none z-10">
+            {fotos.map((_, i) => (
+              <span
+                key={i}
+                className={`h-1.5 rounded-full transition-all duration-200 ${
+                  currentIndex === i ? "w-3 bg-white" : "w-1.5 bg-white/50"
+                }`}
+              />
+            ))}
+          </div>
+
+          {/* Badge translúcido con conteo (ej. 📷 1/3) en la esquina inferior derecha */}
+          <div className="absolute bottom-2.5 right-2.5 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-xs text-white text-[10px] font-sans font-medium pointer-events-none z-10 flex items-center gap-1">
+            <span>📷</span>
+            <span>
+              {currentIndex + 1}/{fotos.length}
+            </span>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export function ServiciosList({ servicios, zonaNombre, zonaSlug }: ServiciosListProps) {
   const t = useTranslations("essentialServices");
   const locale = useLocale();
   const [categoriaActiva, setCategoriaActiva] = useState<string>("todas");
   const [videoActivoId, setVideoActivoId] = useState<string | null>(null);
-  const [fotoSeleccionada, setFotoSeleccionada] = useState<Record<string, string>>({});
   const [tarifarioActivo, setTarifarioActivo] = useState<TarifarioTransporte | null>(() => {
     if (typeof window !== "undefined") {
       try {
@@ -137,11 +283,6 @@ export function ServiciosList({ servicios, zonaNombre, zonaSlug }: ServiciosList
               t("defaultWhatsAppMessage", { zona: zonaNombre });
             const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(defaultMsg)}`;
 
-            const mainPhoto =
-              fotoSeleccionada[servicio.id] ||
-              servicio.imagen_lugar_url ||
-              servicio.metadata_comercial?.imagenes?.[0] ||
-              null;
             const todasFotos = Array.from(
               new Set([
                 ...(servicio.imagen_lugar_url ? [servicio.imagen_lugar_url] : []),
@@ -149,7 +290,7 @@ export function ServiciosList({ servicios, zonaNombre, zonaSlug }: ServiciosList
               ])
             ).filter(Boolean);
             const videoUrl = servicio.metadata_comercial?.video_url || null;
-            const tieneMedia = Boolean(mainPhoto || videoUrl);
+            const tieneMedia = Boolean(todasFotos.length > 0 || videoUrl);
 
             const origin =
               typeof window !== "undefined"
@@ -219,9 +360,9 @@ export function ServiciosList({ servicios, zonaNombre, zonaSlug }: ServiciosList
                   </div>
                 </div>
 
-                {/* Bloque Multimedia (Foto y/o Reel) */}
+                {/* Bloque Multimedia: Carrusel Táctil Ultraliviano o Reproductor Reel */}
                 {tieneMedia && (
-                  <div className="space-y-2">
+                  <div>
                     {videoActivoId === servicio.id && videoUrl ? (
                       <div className="space-y-2">
                         <div className="flex items-center justify-between px-1">
@@ -239,82 +380,18 @@ export function ServiciosList({ servicios, zonaNombre, zonaSlug }: ServiciosList
                         </div>
                         <EventVideoPlayer
                           videoUrl={videoUrl}
-                          posterUrl={mainPhoto}
+                          posterUrl={todasFotos[0] || null}
                           title={servicio.nombre_comercial}
                         />
                       </div>
                     ) : (
-                      <div className="relative aspect-[16/10] sm:aspect-[16/9] w-full rounded-2xl overflow-hidden bg-stone-100 group border border-stone-light/60">
-                        {mainPhoto ? (
-                          <img
-                            src={mainPhoto}
-                            alt={servicio.nombre_comercial}
-                            width={640}
-                            height={400}
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                            loading="lazy"
-                            decoding="async"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-gradient-to-br from-forest/80 to-stone/80 flex items-center justify-center text-4xl">
-                            🌿
-                          </div>
-                        )}
-
-                        {/* Botón flotante para reproducir Reel si tiene video */}
-                        {videoUrl && (
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/25 group-hover:bg-black/35 transition-colors">
-                            <button
-                              type="button"
-                              onClick={() => setVideoActivoId(servicio.id)}
-                              className="px-4 py-2 rounded-full bg-forest/90 hover:bg-forest text-cream text-xs font-semibold flex items-center gap-2 shadow-lg backdrop-blur-sm cursor-pointer active:scale-95 transition-all"
-                            >
-                              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-                              <span>🎬 {t("watchReel")}</span>
-                            </button>
-                          </div>
-                        )}
-
-                        {/* Contador de fotos si hay más de una */}
-                        {todasFotos.length > 1 && (
-                          <div className="absolute bottom-2.5 right-2.5 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-sm text-white text-[10px] font-sans font-medium pointer-events-none">
-                            📷 {todasFotos.length}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Tiras de miniaturas si hay múltiples fotos y no está reproduciendo el video */}
-                    {videoActivoId !== servicio.id && todasFotos.length > 1 && (
-                      <div className="flex items-center gap-2 overflow-x-auto py-1 no-scrollbar">
-                        {todasFotos.map((foto, idx) => (
-                          <button
-                            key={idx}
-                            type="button"
-                            onClick={() =>
-                              setFotoSeleccionada((prev) => ({
-                                ...prev,
-                                [servicio.id]: foto,
-                              }))
-                            }
-                            className={`relative w-14 h-11 rounded-xl overflow-hidden border shrink-0 transition-all cursor-pointer ${
-                              mainPhoto === foto
-                                ? "border-forest ring-2 ring-forest/30"
-                                : "border-stone-light/70 opacity-70 hover:opacity-100"
-                            }`}
-                          >
-                            <img
-                              src={foto}
-                              alt=""
-                              width={56}
-                              height={44}
-                              className="w-full h-full object-cover"
-                              loading="lazy"
-                              decoding="async"
-                            />
-                          </button>
-                        ))}
-                      </div>
+                      <ServicePhotoCarousel
+                        fotos={todasFotos}
+                        nombreComercial={servicio.nombre_comercial}
+                        videoUrl={videoUrl}
+                        watchReelLabel={t("watchReel")}
+                        onPlayVideo={() => setVideoActivoId(servicio.id)}
+                      />
                     )}
                   </div>
                 )}
@@ -324,7 +401,7 @@ export function ServiciosList({ servicios, zonaNombre, zonaSlug }: ServiciosList
                   {servicio.subtitulo}
                 </p>
 
-                {/* Horario de atención con indicador activo */}
+                {/* Horario de atención con indicador activo en verde */}
                 <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-forest/5 border border-forest/15 font-sans">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
                   <span className="text-forest text-xs font-semibold">
@@ -335,9 +412,9 @@ export function ServiciosList({ servicios, zonaNombre, zonaSlug }: ServiciosList
                   </span>
                 </div>
 
-                {/* Tags de características / servicios */}
+                {/* Badges de características / servicios (wrap de máximo 2 líneas) */}
                 {servicio.servicios_tags && servicio.servicios_tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 pt-1">
+                  <div className="flex flex-wrap gap-1.5 pt-1 max-h-[72px] overflow-hidden">
                     {servicio.servicios_tags.map((tag, idx) => (
                       <span
                         key={idx}
@@ -349,32 +426,12 @@ export function ServiciosList({ servicios, zonaNombre, zonaSlug }: ServiciosList
                   </div>
                 )}
 
-                {/* Dirección y Google Maps */}
-                <div className="pt-2 border-t border-stone-light/60 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs font-sans">
-                  <div className="flex items-start gap-1.5 text-stone flex-1">
-                    <span className="text-terra shrink-0">📍</span>
-                    <span className="leading-snug">
-                      {servicio.direccion_referencia}
-                    </span>
-                  </div>
-
-                  {servicio.google_maps_url && (
-                    <a
-                      href={servicio.google_maps_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => {
-                        trackServicioEsencialMapsClick({
-                          servicioId: rawServicio.id,
-                          nombreComercial: rawServicio.nombre_comercial,
-                          categoria: rawServicio.categoria,
-                        });
-                      }}
-                      className="text-terra hover:text-terra-dark font-medium underline underline-offset-2 shrink-0 self-start sm:self-auto"
-                    >
-                      {t("openInMaps")}
-                    </a>
-                  )}
+                {/* Dirección y referencia */}
+                <div className="pt-2 border-t border-stone-light/60 flex items-start gap-1.5 text-xs font-sans text-stone">
+                  <span className="text-terra shrink-0">📍</span>
+                  <span className="leading-snug">
+                    {servicio.direccion_referencia}
+                  </span>
                 </div>
 
                 {/* Tarifario oficial si existe (ej. 4x4, mototaxis) */}
@@ -421,7 +478,7 @@ export function ServiciosList({ servicios, zonaNombre, zonaSlug }: ServiciosList
                   </div>
                 )}
 
-                {/* Botones de acción: WhatsApp y Compartir ficha */}
+                {/* Botones de acción canónicos: WhatsApp y Cómo llegar (Google Maps) */}
                 <div className="pt-1 flex items-center gap-2">
                   {servicio.boton_whatsapp_activo !== false ? (
                     <a
@@ -448,14 +505,41 @@ export function ServiciosList({ servicios, zonaNombre, zonaSlug }: ServiciosList
                     </div>
                   )}
 
-                  <ShareButton
-                    title={shareTitle}
-                    text={shareText}
-                    url={cardUrl}
-                    zonaNombre={zonaNombre}
-                    variant="header"
-                    className="!h-11 sm:!h-12 !px-3.5 sm:!px-4 !rounded-2xl border-stone-light hover:border-forest/40 bg-white shadow-2xs text-xs font-semibold"
-                  />
+                  {servicio.google_maps_url ? (
+                    <a
+                      href={servicio.google_maps_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => {
+                        trackServicioEsencialMapsClick({
+                          servicioId: rawServicio.id,
+                          nombreComercial: rawServicio.nombre_comercial,
+                          categoria: rawServicio.categoria,
+                        });
+                      }}
+                      className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 py-3 px-4 rounded-2xl border border-stone-light/80 hover:border-forest/40 bg-white hover:bg-stone-50 text-forest font-sans text-xs sm:text-sm font-semibold shadow-2xs active:scale-[0.98] transition-all"
+                    >
+                      <span>📍</span>
+                      <span>
+                        {locale === "en"
+                          ? "Directions"
+                          : locale === "fr"
+                          ? "Itinéraire"
+                          : locale === "de"
+                          ? "Route"
+                          : "Cómo llegar"}
+                      </span>
+                    </a>
+                  ) : (
+                    <ShareButton
+                      title={shareTitle}
+                      text={shareText}
+                      url={cardUrl}
+                      zonaNombre={zonaNombre}
+                      variant="header"
+                      className="!h-11 sm:!h-12 !px-3.5 sm:!px-4 !rounded-2xl border-stone-light hover:border-forest/40 bg-white shadow-2xs text-xs font-semibold"
+                    />
+                  )}
                 </div>
               </article>
             );
