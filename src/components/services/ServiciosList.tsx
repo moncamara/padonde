@@ -113,27 +113,37 @@ function ServicePhotoCarousel({
         ))}
       </div>
 
-      {/* Flechas de navegación en Desktop (hover) */}
+      {/* Flechas circulares oscuras de navegación (idénticas a la galería de detalle de eventos) */}
       {fotos.length > 1 && (
         <>
           {currentIndex > 0 && (
             <button
               type="button"
-              onClick={scrollPrev}
-              className="hidden sm:flex absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/40 hover:bg-black/70 text-white items-center justify-center text-xs backdrop-blur-xs transition-all z-10 cursor-pointer shadow-xs active:scale-90"
+              onClick={(e) => {
+                e.stopPropagation();
+                scrollPrev();
+              }}
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/45 hover:bg-black/75 text-white backdrop-blur-md border border-white/20 flex items-center justify-center transition-all active:scale-90 cursor-pointer shadow-md"
               aria-label="Foto anterior"
             >
-              ‹
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
             </button>
           )}
           {currentIndex < fotos.length - 1 && (
             <button
               type="button"
-              onClick={scrollNext}
-              className="hidden sm:flex absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/40 hover:bg-black/70 text-white items-center justify-center text-xs backdrop-blur-xs transition-all z-10 cursor-pointer shadow-xs active:scale-90"
+              onClick={(e) => {
+                e.stopPropagation();
+                scrollNext();
+              }}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/45 hover:bg-black/75 text-white backdrop-blur-md border border-white/20 flex items-center justify-center transition-all active:scale-90 cursor-pointer shadow-md"
               aria-label="Siguiente foto"
             >
-              ›
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
             </button>
           )}
         </>
