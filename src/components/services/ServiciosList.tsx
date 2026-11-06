@@ -338,43 +338,18 @@ export function ServiciosList({ servicios, zonaNombre, zonaSlug }: ServiciosList
               t("defaultWhatsAppMessage", { zona: zonaNombre });
             const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(defaultMsg)}`;
 
-            // Normalización exhaustiva de fotos con fallback seguro según arquitectura
-            const fotosArray: string[] = (
+            // Extracción normalizada y limpia del array de fotos
+            const fotos: string[] = (
               servicio.fotos ||
-              servicio.galeria_fotos ||
               servicio.metadata_comercial?.fotos ||
               servicio.metadata_comercial?.imagenes ||
-              rawServicio.fotos ||
-              rawServicio.galeria_fotos ||
-              rawServicio.metadata_comercial?.fotos ||
-              rawServicio.metadata_comercial?.imagenes ||
-              (servicio.imagen_url ? [servicio.imagen_url] : null) ||
               (servicio.imagen_lugar_url ? [servicio.imagen_lugar_url] : null) ||
-              (rawServicio.imagen_url ? [rawServicio.imagen_url] : null) ||
-              (rawServicio.imagen_lugar_url ? [rawServicio.imagen_lugar_url] : null) ||
+              (servicio.imagen_url ? [servicio.imagen_url] : []) ||
               []
-            );
-
-            // Fusión garantizada sin duplicados preservando portada
-            const fotoIndividual =
-              servicio.imagen_lugar_url ||
-              servicio.imagen_url ||
-              rawServicio.imagen_lugar_url ||
-              rawServicio.imagen_url ||
-              null;
-
-            const todasFotos: string[] = Array.from(
-              new Set([
-                ...(fotoIndividual ? [fotoIndividual] : []),
-                ...(Array.isArray(fotosArray) ? fotosArray : [fotosArray]),
-              ])
             ).filter(Boolean);
 
-            const videoUrl =
-              servicio.metadata_comercial?.video_url ||
-              rawServicio.metadata_comercial?.video_url ||
-              null;
-            const tieneMedia = Boolean(todasFotos.length > 0 || videoUrl);
+            const videoUrl = servicio.metadata_comercial?.video_url || null;
+            const tieneMedia = Boolean(fotos.length > 0 || videoUrl);
 
             const origin =
               typeof window !== "undefined"
@@ -470,13 +445,13 @@ export function ServiciosList({ servicios, zonaNombre, zonaSlug }: ServiciosList
                         </div>
                         <EventVideoPlayer
                           videoUrl={videoUrl}
-                          posterUrl={todasFotos[0] || null}
+                          posterUrl={fotos[0] || null}
                           title={servicio.nombre_comercial}
                         />
                       </div>
                     ) : (
                       <ServicePhotoCarousel
-                        fotos={todasFotos}
+                        fotos={fotos}
                         nombreComercial={servicio.nombre_comercial}
                         videoUrl={videoUrl}
                         posicionPortada={

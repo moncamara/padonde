@@ -274,7 +274,28 @@ export async function getServiciosEsencialesByZona(
 
     let queryEsenciales = supabase
       .from("servicios_esenciales")
-      .select("*")
+      .select(`
+        id,
+        zona_id,
+        categoria,
+        nombre_comercial,
+        subtitulo,
+        logo_url,
+        imagen_lugar_url,
+        whatsapp,
+        mensaje_whatsapp_default,
+        google_maps_url,
+        direccion_referencia,
+        horario_apertura,
+        servicios_tags,
+        destacado_patrocinado,
+        tipo_acuerdo,
+        orden_prioridad,
+        activo,
+        boton_whatsapp_activo,
+        metadata_comercial,
+        created_at
+      `)
       .eq("zona_id", zonaId);
     if (!opciones.preview) queryEsenciales = queryEsenciales.eq("activo", true);
     const { data, error } = await queryEsenciales.order("orden_prioridad", { ascending: true });
