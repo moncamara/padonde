@@ -9,6 +9,10 @@ import { formatPrecio, getEtiquetaHorario, obtenerFotoPortada } from "@/lib/util
 import { getEventoTraducido } from "@/lib/translations/eventosTraducciones";
 import type { EventoConNegocio } from "@/lib/types";
 import { trackEvent } from "@/lib/analytics";
+import {
+  calcularVisualizacionesDiarias,
+  type SocialProofResult,
+} from "@/utils/socialProofTracker";
 
 interface EventCardProps {
   evento: EventoConNegocio;
@@ -76,16 +80,11 @@ export function EventCard({ evento: rawEvento, zona, priority = false }: EventCa
   );
 
   // 2. Micro-indicador Dinámico determinista client-side (CERO Supabase, CERO WebSockets, CERO SSR dinámico)
-  const [viajerosHoy, setViajerosHoy] = useState<number | null>(null);
+  const [socialProof, setSocialProof] = useState<SocialProofResult | null>(null);
 
   useEffect(() => {
-    const now = new Date();
-    const startOfYear = new Date(now.getFullYear(), 0, 0);
-    const diff = now.getTime() - startOfYear.getTime();
-    const oneDay = 1000 * 60 * 60 * 24;
-    const diaDelAno = Math.floor(diff / oneDay);
-    const seed = (evento.id?.charCodeAt(0) || 1) + diaDelAno;
-    setViajerosHoy((seed % 5) + 2); // Rango natural de 2 a 6 personas
+    const baseAyer = ((evento.id?.charCodeAt(0) || 1) % 3) + 2;
+    setSocialProof(calcularVisualizacionesDiarias(evento.id, baseAyer));
   }, [evento.id]);
 
   return (
@@ -231,10 +230,10 @@ export function EventCard({ evento: rawEvento, zona, priority = false }: EventCa
 
           {/* Micro-indicador de prueba social / FOMO dinámico (Blindaje de Layout CLS = 0) */}
           <div className="h-5 flex items-center" aria-live="polite">
-            {viajerosHoy !== null ? (
+            {socialProof !== null ? (
               <p className="text-[11px] sm:text-xs text-stone/85 font-sans flex items-center gap-1.5">
                 <span className="text-xs">👁️</span>
-                <span>{tCard("travelersViewedToday", { count: viajerosHoy })}</span>
+                <span>{tCard("travelersViewedToday", { count: socialProof.viajerosHoy })}</span>
               </p>
             ) : (
               <span className="invisible text-[11px] select-none" aria-hidden="true">

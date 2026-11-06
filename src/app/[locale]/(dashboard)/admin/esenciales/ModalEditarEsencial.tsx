@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useTransition } from "react";
 import type { CategoriaServicioEsencial, ServicioEsencial } from "@/lib/types";
-import { uploadEventImage, uploadEventVideo } from "@/lib/supabase/storage";
+import { GaleriaVitrinaManager } from "@/components/admin/GaleriaVitrinaManager";
 import { guardarServicioEsencialAction } from "../actions";
 
 interface ModalEditarEsencialProps {
@@ -82,29 +82,33 @@ export function ModalEditarEsencial({
     (servicio?.metadata_comercial as any)?.tarifario_id || ""
   );
 
-  // Estados de Fotos y Video/Reel
-  const [imagenLugarUrl, setImagenLugarUrl] = useState(
-    servicio?.imagen_lugar_url || servicio?.metadata_comercial?.imagenes?.[0] || ""
-  );
-  const [imagenes, setImagenes] = useState<string[]>(
-    servicio?.metadata_comercial?.imagenes || (servicio?.imagen_lugar_url ? [servicio.imagen_lugar_url] : [])
-  );
-  const [videoUrl, setVideoUrl] = useState(
-    servicio?.metadata_comercial?.video_url || ""
-  );
-  const [archivoFoto, setArchivoFoto] = useState<File | null>(null);
-  const [previewFoto, setPreviewFoto] = useState<string | null>(
-    servicio?.imagen_lugar_url || servicio?.metadata_comercial?.imagenes?.[0] || null
-  );
-  const [archivoVideo, setArchivoVideo] = useState<File | null>(null);
-  const [videoNombre, setVideoNombre] = useState<string | null>(null);
-  const [subiendoArchivos, setSubiendoArchivos] = useState(false);
+  // Estados de Fotos, Encuadre (Focal Point) y Video/Reel Homologados
+  const getFotosIniciales = (s: ServicioEsencial | null): string[] => {
+    if (!s) return [];
+    const list: string[] = [];
+    const mainImg = s.imagen_lugar_url || s.metadata_comercial?.imagenes?.[0];
+    if (mainImg) list.push(mainImg);
+    (s.metadata_comercial?.imagenes || []).forEach((f) => {
+      if (f && !list.includes(f)) list.push(f);
+    });
+    return list;
+  };
+
+  const [fotos, setFotos] = useState<string[]>(() => getFotosIniciales(servicio));
+  const [posicionPortada, setPosicionPortada] = useState<string>(() => {
+    return (
+      servicio?.metadata_comercial?.posicion_portada ||
+      (servicio?.metadata_comercial as any)?.posicionPortada ||
+      "50%"
+    );
+  });
+  const [videoUrl, setVideoUrl] = useState<string>(() => {
+    return servicio?.metadata_comercial?.video_url || "";
+  });
 
   useEffect(() => {
     if (servicio) {
-      setZonaSlug(
-        slugDeZona(servicio?.zona_id)
-      );
+      setZonaSlug(slugDeZona(servicio?.zona_id));
       setCategoria(servicio.categoria || "efectivo");
       setNombreComercial(servicio.nombre_comercial || "");
       setSubtitulo(servicio.subtitulo || "");
@@ -128,14 +132,13 @@ export function ModalEditarEsencial({
           : "");
       setTarifarioId(initialTarifarioId);
 
-      const mainImg = servicio.imagen_lugar_url || servicio.metadata_comercial?.imagenes?.[0] || "";
-      setImagenLugarUrl(mainImg);
-      setPreviewFoto(mainImg || null);
-      setImagenes(servicio.metadata_comercial?.imagenes || (mainImg ? [mainImg] : []));
+      setFotos(getFotosIniciales(servicio));
+      setPosicionPortada(
+        servicio.metadata_comercial?.posicion_portada ||
+        (servicio.metadata_comercial as any)?.posicionPortada ||
+        "50%"
+      );
       setVideoUrl(servicio.metadata_comercial?.video_url || "");
-      setArchivoFoto(null);
-      setArchivoVideo(null);
-      setVideoNombre(null);
     } else {
       setZonaSlug("minca");
       setCategoria("efectivo");
@@ -153,55 +156,13 @@ export function ModalEditarEsencial({
       setActivo(true);
       setBotonWhatsappActivo(true);
       setTarifarioId("");
-      setImagenLugarUrl("");
-      setPreviewFoto(null);
-      setImagenes([]);
+      setFotos([]);
+      setPosicionPortada("50%");
       setVideoUrl("");
-      setArchivoFoto(null);
-      setArchivoVideo(null);
-      setVideoNombre(null);
     }
   }, [servicio, isOpen]);
 
   if (!isOpen) return null;
-
-  function handleFotoPrincipalChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (file) {
-      setArchivoFoto(file);
-      setPreviewFoto(URL.createObjectURL(file));
-    }
-  }
-
-  async function handleAgregarFotoGaleria(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
-    setSubiendoArchivos(true);
-    try {
-      const nuevasUrls: string[] = [];
-      for (const f of files) {
-        const url = await uploadEventImage(f);
-        if (url) nuevasUrls.push(url);
-      }
-      setImagenes((prev) => [...prev, ...nuevasUrls]);
-    } catch (err) {
-      console.error("Error subiendo foto a la galería:", err);
-    } finally {
-      setSubiendoArchivos(false);
-    }
-  }
-
-  function handleQuitarFotoGaleria(index: number) {
-    setImagenes((prev) => prev.filter((_, i) => i !== index));
-  }
-
-  function handleVideoChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (file) {
-      setArchivoVideo(file);
-      setVideoNombre(file.name);
-    }
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -221,60 +182,43 @@ export function ModalEditarEsencial({
       .map((t) => t.trim())
       .filter(Boolean);
 
-    setSubiendoArchivos(true);
-    try {
-      let finalFoto = imagenLugarUrl;
-      if (archivoFoto) {
-        const uploaded = await uploadEventImage(archivoFoto);
-        if (uploaded) finalFoto = uploaded;
-      }
+    const finalFoto = fotos[0] || null;
+    const finalImagenes = [...fotos];
 
-      let finalVideo = videoUrl;
-      if (archivoVideo) {
-        const uploadedVid = await uploadEventVideo(archivoVideo);
-        if (uploadedVid) finalVideo = uploadedVid;
-      }
-
-      const finalImagenes = Array.from(new Set([finalFoto, ...imagenes])).filter(Boolean) as string[];
-
-      startTransition(async () => {
-        const res = await guardarServicioEsencialAction({
-          id: servicio?.id,
-          zonaSlug,
-          categoria,
-          nombreComercial,
-          subtitulo,
-          imagenLugarUrl: finalFoto || (finalImagenes[0] ?? null),
-          imagenes: finalImagenes,
-          videoUrl: finalVideo || null,
-          whatsapp,
-          mensajeWhatsappDefault: mensajeWhatsapp || null,
-          direccionReferencia: direccion,
-          googleMapsUrl: mapsUrl || null,
-          horarioApertura: horario,
-          serviciosTags: tagsArray,
-          destacadoPatrocinado: destacado,
-          tipoAcuerdo,
-          ordenPrioridad: orden,
-          activo,
-          botonWhatsappActivo,
-          tarifarioId: tarifarioId || null,
-        });
-
-        setSubiendoArchivos(false);
-        if (!res.success) {
-          setErrorMsg(res.error || "Ocurrió un error al guardar.");
-        } else {
-          if (res.servicio) {
-            onSaved?.(res.servicio);
-          }
-          onClose();
-        }
+    startTransition(async () => {
+      const res = await guardarServicioEsencialAction({
+        id: servicio?.id,
+        zonaSlug,
+        categoria,
+        nombreComercial,
+        subtitulo,
+        imagenLugarUrl: finalFoto,
+        imagenes: finalImagenes,
+        posicionPortada: posicionPortada || "50%",
+        videoUrl: videoUrl.trim() || null,
+        whatsapp,
+        mensajeWhatsappDefault: mensajeWhatsapp || null,
+        direccionReferencia: direccion,
+        googleMapsUrl: mapsUrl || null,
+        horarioApertura: horario,
+        serviciosTags: tagsArray,
+        destacadoPatrocinado: destacado,
+        tipoAcuerdo,
+        ordenPrioridad: orden,
+        activo,
+        botonWhatsappActivo,
+        tarifarioId: tarifarioId || null,
       });
-    } catch (err: any) {
-      setSubiendoArchivos(false);
-      setErrorMsg(err?.message || "Error al procesar archivos multimedia.");
-    }
+
+      if (!res.success) {
+        setErrorMsg(res.error || "Ocurrió un error al guardar.");
+      } else {
+        if (res.servicio) {
+          onSaved?.(res.servicio);
+        }
+        onClose();
+      }
+    });
   };
 
   return (
@@ -496,149 +440,18 @@ export function ModalEditarEsencial({
             </p>
           </div>
 
-          {/* Fila Multimedia: Foto Principal, Galería y Reel Vertical */}
-          <div className="space-y-4 p-4 rounded-2xl bg-stone-light/20 border border-stone-light/70">
-            <div>
-              <h4 className="font-semibold text-forest text-xs flex items-center justify-between">
-                <span className="flex items-center gap-1.5">
-                  <span>📸</span> Fotos y Video / Reel del Servicio (Opcional)
-                </span>
-                {subiendoArchivos && (
-                  <span className="text-[10px] text-terra animate-pulse font-medium">
-                    Subiendo archivo...
-                  </span>
-                )}
-              </h4>
-              <p className="text-stone text-[11px] mt-0.5">
-                Añade foto de portada, fotos del lugar y un video o reel vertical para que los viajeros conozcan el negocio.
-              </p>
-            </div>
-
-            {/* 1. Foto de Portada Principal */}
-            <div className="space-y-1.5">
-              <label className="block text-stone font-medium text-[11px]">
-                Foto de Portada Principal:
-              </label>
-              <div className="flex items-center gap-3">
-                {previewFoto ? (
-                  <div className="relative w-20 h-16 rounded-xl overflow-hidden border border-stone-light shrink-0">
-                    <img
-                      src={previewFoto}
-                      alt="Portada"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                ) : (
-                  <div className="w-20 h-16 rounded-xl bg-stone-100 border border-dashed border-stone-light flex items-center justify-center text-xl text-stone shrink-0">
-                    📷
-                  </div>
-                )}
-                <div className="space-y-1 flex-1">
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    onChange={handleFotoPrincipalChange}
-                    className="block w-full text-xs text-stone file:mr-2.5 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-forest/10 file:text-forest hover:file:bg-forest/20 cursor-pointer"
-                  />
-                  {imagenLugarUrl && !archivoFoto && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] text-emerald-700 font-medium">✓ Foto actual cargada</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setImagenLugarUrl("");
-                          setPreviewFoto(null);
-                        }}
-                        className="text-[10px] text-red-600 hover:underline cursor-pointer"
-                      >
-                        Quitar
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* 2. Galería de Fotos Adicionales */}
-            <div className="space-y-1.5 pt-2 border-t border-stone-light/60">
-              <label className="block text-stone font-medium text-[11px]">
-                Fotos adicionales del lugar ({imagenes.length}):
-              </label>
-              {imagenes.length > 0 && (
-                <div className="flex items-center gap-2 overflow-x-auto py-1">
-                  {imagenes.map((url, idx) => (
-                    <div key={idx} className="relative w-16 h-14 rounded-lg overflow-hidden border border-stone-light shrink-0 group">
-                      <img src={url} alt={`Foto ${idx + 1}`} className="w-full h-full object-cover" />
-                      <button
-                        type="button"
-                        onClick={() => handleQuitarFotoGaleria(idx)}
-                        className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-black/70 text-white text-[10px] flex items-center justify-center hover:bg-red-600 cursor-pointer"
-                        title="Eliminar foto"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <input
-                type="file"
-                multiple
-                accept="image/jpeg,image/png,image/webp"
-                onChange={handleAgregarFotoGaleria}
-                className="block w-full text-xs text-stone file:mr-2.5 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[11px] file:font-medium file:bg-stone-light/40 file:text-forest hover:file:bg-stone-light cursor-pointer"
-              />
-            </div>
-
-            {/* 3. Video o Reel Vertical (Opcional) */}
-            <div className="space-y-1.5 pt-2 border-t border-stone-light/60">
-              <label className="block text-stone font-medium text-[11px] flex items-center justify-between">
-                <span className="flex items-center gap-1.5">
-                  <span>🎬</span> Video / Reel vertical (Opcional)
-                </span>
-                {videoUrl && !archivoVideo && (
-                  <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-medium">
-                    ✓ Video activo
-                  </span>
-                )}
-              </label>
-
-              <input
-                type="file"
-                accept="video/mp4,video/quicktime,video/webm"
-                onChange={handleVideoChange}
-                className="block w-full text-xs text-stone file:mr-2.5 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-terra/10 file:text-terra hover:file:bg-terra/20 cursor-pointer"
-              />
-
-              {videoNombre ? (
-                <p className="text-[11px] text-forest font-medium">
-                  Nuevo video seleccionado: {videoNombre}
-                </p>
-              ) : videoUrl ? (
-                <div className="flex items-center justify-between text-xs pt-0.5">
-                  <a
-                    href={videoUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-terra hover:underline truncate max-w-[200px] text-[11px]"
-                  >
-                    Ver video actual ↗
-                  </a>
-                  <button
-                    type="button"
-                    onClick={() => setVideoUrl("")}
-                    className="text-red-600 hover:text-red-700 font-medium text-[11px] cursor-pointer"
-                  >
-                    Quitar video
-                  </button>
-                </div>
-              ) : (
-                <p className="text-[10px] text-stone">
-                  Formato recomendado: MP4 vertical de WhatsApp o Instagram Reels.
-                </p>
-              )}
-            </div>
-          </div>
+          {/* Módulo Homologado: Fotografía y Galería de Vitrina con Focal Point */}
+          <GaleriaVitrinaManager
+            fotos={fotos}
+            onChangeFotos={setFotos}
+            posicionPortada={posicionPortada}
+            onChangePosicionPortada={setPosicionPortada}
+            videoUrl={videoUrl}
+            onChangeVideoUrl={setVideoUrl}
+            maxFotos={6}
+            titulo="Fotografía y Galería de Vitrina"
+            subtitulo="Arrastra las fotos para definir el orden. La primera foto define automáticamente la Portada destacada."
+          />
 
           {/* Fila Modelo de Negocio / Acuerdo y Prioridad */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-stone-light/60">

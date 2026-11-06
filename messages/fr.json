@@ -149,6 +149,7 @@
     "infoUtil": "Infos Pratiques",
     "openNow": "Ouvert aujourd'hui",
     "officialPoint": "Point Officiel",
+    "travelersViewedToday": "{count} voyageurs ont consulté aujourd'hui",
     "availableServices": "Services disponibles :",
     "addressTitle": "Localisation :",
     "openInMaps": "Ouvrir dans Maps ↗",

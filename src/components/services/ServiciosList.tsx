@@ -14,11 +14,53 @@ import {
 import { DrawerTarifarioTransporte } from "./DrawerTarifarioTransporte";
 import { getTarifarioPorId } from "@/data/tarifas";
 import type { TarifarioTransporte } from "@/data/tarifas/types";
+import {
+  calcularVisualizacionesDiarias,
+  type SocialProofResult,
+} from "@/utils/socialProofTracker";
 
 interface ServiciosListProps {
   servicios: ServicioEsencial[];
   zonaNombre: string;
   zonaSlug?: string;
+}
+
+/**
+ * Micro-indicador determinista de prueba social para fichas de servicios
+ */
+function ServicioSocialProofIndicator({
+  servicioId,
+  vistosAyerBase,
+}: {
+  servicioId: string;
+  vistosAyerBase?: number;
+}) {
+  const t = useTranslations("essentialServices");
+  const [proof, setProof] = useState<SocialProofResult | null>(null);
+
+  useEffect(() => {
+    setProof(calcularVisualizacionesDiarias(servicioId, vistosAyerBase));
+  }, [servicioId, vistosAyerBase]);
+
+  if (!proof) {
+    return (
+      <div className="h-5 flex items-center select-none invisible" aria-hidden="true">
+        &nbsp;
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="h-5 flex items-center font-sans text-xs text-stone"
+      aria-live="polite"
+    >
+      <span className="inline-flex items-center gap-1.5 text-stone/85 text-[11px] font-sans">
+        <span className="text-xs">👁️</span>
+        <span>{t("travelersViewedToday", { count: proof.viajerosHoy })}</span>
+      </span>
+    </div>
+  );
 }
 
 const CATEGORIAS_CONFIG: Array<{
@@ -42,12 +84,14 @@ function ServicePhotoCarousel({
   fotos,
   nombreComercial,
   videoUrl,
+  posicionPortada = "50%",
   watchReelLabel = "Ver Reel",
   onPlayVideo,
 }: {
   fotos: string[];
   nombreComercial: string;
   videoUrl?: string | null;
+  posicionPortada?: string;
   watchReelLabel?: string;
   onPlayVideo?: () => void;
 }) {
@@ -106,6 +150,7 @@ function ServicePhotoCarousel({
               width={640}
               height={400}
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              style={idx === 0 ? { objectPosition: `center ${posicionPortada || "50%"}` } : undefined}
               loading={idx === 0 ? "eager" : "lazy"}
               decoding="async"
             />
@@ -342,6 +387,12 @@ export function ServiciosList({ servicios, zonaNombre, zonaSlug }: ServiciosList
                     <h3 className="font-serif text-xl sm:text-2xl font-bold text-forest leading-tight pt-1">
                       {servicio.nombre_comercial}
                     </h3>
+
+                    {/* Micro-indicador de visualizaciones diarias (Social Proof determinista) */}
+                    <ServicioSocialProofIndicator
+                      servicioId={servicio.id}
+                      vistosAyerBase={((servicio.id.charCodeAt(0) || 1) % 3) + 2}
+                    />
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
@@ -399,6 +450,11 @@ export function ServiciosList({ servicios, zonaNombre, zonaSlug }: ServiciosList
                         fotos={todasFotos}
                         nombreComercial={servicio.nombre_comercial}
                         videoUrl={videoUrl}
+                        posicionPortada={
+                          servicio.metadata_comercial?.posicion_portada ||
+                          (servicio.metadata_comercial as any)?.posicionPortada ||
+                          "50%"
+                        }
                         watchReelLabel={t("watchReel")}
                         onPlayVideo={() => setVideoActivoId(servicio.id)}
                       />

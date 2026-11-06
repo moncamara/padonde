@@ -150,6 +150,7 @@
     "infoUtil": "Essential Info",
     "openNow": "Open today",
     "officialPoint": "Official Point",
+    "travelersViewedToday": "{count} travelers checked today",
     "availableServices": "Available services:",
     "addressTitle": "Location:",
     "openInMaps": "Open in Maps ↗",

@@ -1664,6 +1664,7 @@ export interface GuardarServicioEsencialInput {
   imagenLugarUrl?: string | null;
   imagenes?: string[];
   videoUrl?: string | null;
+  posicionPortada?: string | null;
   whatsapp: string;
   mensajeWhatsappDefault?: string | null;
   googleMapsUrl?: string | null;
@@ -1752,6 +1753,7 @@ export async function guardarServicioEsencialAction(
       metadata_comercial: {
         imagenes: imagenesValidas,
         video_url: input.videoUrl?.trim() || null,
+        posicion_portada: input.posicionPortada?.trim() || "50%",
         ...(input.tarifarioId?.trim() ? { tarifario_id: input.tarifarioId.trim() } : {}),
       },
     };

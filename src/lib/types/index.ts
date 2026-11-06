@@ -164,6 +164,8 @@ export type CategoriaServicioEsencial =
 export type MetadataComercialServicio = {
   imagenes?: string[];
   video_url?: string | null;
+  posicion_portada?: string;
+  posicionPortada?: string;
   [key: string]: any;
 };
 
