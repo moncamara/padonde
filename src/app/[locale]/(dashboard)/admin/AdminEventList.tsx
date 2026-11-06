@@ -664,15 +664,16 @@ export function AdminEventList({
                     </button>
                   )}
 
-                  <Link
-                    href={`/${ev.zonaSlug || "minca"}/${ev.id}`}
+                  <a
+                    href={`/es/${ev.zonaSlug || "minca"}/${ev.id}`}
                     target="_blank"
-                    className="text-xs text-stone hover:text-forest px-2.5 py-1.5 rounded-xl border border-stone-light/60 bg-white/70 hover:bg-white transition-colors flex items-center gap-1 shrink-0"
-                    title="Ver en la web pública"
+                    rel="noopener noreferrer"
+                    className="text-xs text-forest hover:text-white px-2.5 py-1.5 rounded-xl border border-forest/20 bg-forest/5 hover:bg-forest transition-colors flex items-center gap-1.5 font-medium font-sans shadow-2xs shrink-0 cursor-pointer"
+                    title="Abrir ficha pública del plan en una nueva pestaña"
                   >
                     <span>👁️</span>
-                    <span className="sm:hidden font-sans">Ver</span>
-                  </Link>
+                    <span className="font-sans">Ver Ficha Pública</span>
+                  </a>
                 </div>
               </div>
             </article>

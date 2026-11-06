@@ -567,7 +567,8 @@ export function eventoCoincideConFiltroTiempo(
   descripcion?: string | null,
   tipo?: string | null,
   metadata?: any,
-  diasRecurrentesDirectos?: number[]
+  diasRecurrentesDirectos?: number[],
+  esRecurrenteDirecto?: boolean
 ): boolean {
   // Los hospedajes y alojamientos tienen disponibilidad permanente (todo el año).
   // Coinciden con cualquier día del calendario (hoy, mañana, días específicos, todos).
@@ -578,6 +579,9 @@ export function eventoCoincideConFiltroTiempo(
   }
 
   const rec = extraerRecurrencia(descripcion, metadata, diasRecurrentesDirectos);
+  const esRecurrente = Boolean(
+    esRecurrenteDirecto ?? (rec.esRecurrente || metadata?.horario?.es_recurrente)
+  );
   const ymdInicio = getFechaYMDDesdeISO(fechaInicioIso);
   const ymdFin = fechaFinIso ? getFechaYMDDesdeISO(fechaFinIso) : null;
   const hoyYMD = getFechaYMDColombia(now);
@@ -589,30 +593,32 @@ export function eventoCoincideConFiltroTiempo(
   const metaHorario = metadata?.horario;
   const fechaLimiteVigencia =
     metaHorario?.fecha_limite_vigencia ||
-    (rec.esRecurrente && ymdFin && ymdFin > ymdInicio + 1 ? ymdFin : null);
+    (esRecurrente && ymdFin && ymdFin > ymdInicio + 1 ? ymdFin : null);
 
-  // Caso especial: Planes futuros más allá del rango de 7 días visible en la barra
+  // Caso especial: Planes futuros más allá de la ventana inmediata de 7 días (>= hoy + 7 días)
   if (filtro === "proximos") {
-    // La barra muestra 7 días individuales: hoy (día 0) hasta hoy + 6 días
-    const limiteBarra = new Date(now);
-    limiteBarra.setDate(limiteBarra.getDate() + 6);
-    const limiteBarraYMD = getFechaYMDColombia(limiteBarra);
+    // La ventana inmediata actual de la cartelera cubre hoy (día 0) hasta hoy + 6 días (7 días en total).
+    // Anclamos al mediodía de Colombia para total inmunidad a variaciones horarias o medianoche (UTC-5).
+    const fechaNoon = new Date(`${hoyYMD}T12:00:00-05:00`);
+    fechaNoon.setDate(fechaNoon.getDate() + 7);
+    const limite7DiasYMD = getFechaYMDColombia(fechaNoon);
 
-    // Las actividades recurrentes semanales/diarias ya se muestran en la barra de 7 días.
-    // Solo aparecen en "Próximos" si su fecha ancla inicial aún no ha comenzado y arranca después de los 7 días.
-    if (rec.esRecurrente) {
+    // 1. Las actividades recurrentes semanales/diarias ya se muestran en la ventana inmediata de la cartelera.
+    // Solo aparecen en "Próximamente" si su fecha ancla inicial aún no ha comenzado y arranca >= hoy + 7 días
+    if (esRecurrente) {
       if (fechaLimiteVigencia && fechaLimiteVigencia < hoyYMD) return false;
       if (!fechaLimiteVigencia && ymdFin && ymdFin < hoyYMD) return false;
-      return ymdInicio > limiteBarraYMD;
+      return ymdInicio >= limite7DiasYMD;
     }
 
-    // Eventos que inician después del rango de 7 días visible
-    if (ymdInicio > limiteBarraYMD) {
+    // 2. Eventos no recurrentes (es_recurrente === false):
+    // Inician en la fecha posterior a la ventana inmediata actual (>= hoy + 7 días)
+    if (ymdInicio >= limite7DiasYMD) {
       return true;
     }
 
-    // Eventos especiales de varios días (no diarios) que se extienden más allá de los 7 días
-    if (!rec.esRecurrente && ymdFin && ymdFin > limiteBarraYMD) {
+    // Eventos especiales de varios días (no recurrentes) vigentes en el futuro que se extienden más allá de la ventana inmediata
+    if (ymdFin && ymdFin >= limite7DiasYMD && ymdFin >= hoyYMD) {
       return true;
     }
 
@@ -620,7 +626,7 @@ export function eventoCoincideConFiltroTiempo(
   }
 
   if (filtro === "todos") {
-    if (rec.esRecurrente) {
+    if (esRecurrente) {
       // 1. Si cuenta con fecha límite de vigencia explícita y ya expiró, no mostrar
       if (fechaLimiteVigencia && fechaLimiteVigencia < hoyYMD) {
         return false;
@@ -674,7 +680,8 @@ export function eventoCoincideConFiltroTiempo(
         descripcion,
         tipo,
         metadata,
-        diasRecurrentesDirectos
+        diasRecurrentesDirectos,
+        esRecurrenteDirecto
       ) ||
       eventoCoincideConFiltroTiempo(
         fechaInicioIso,
@@ -684,7 +691,8 @@ export function eventoCoincideConFiltroTiempo(
         descripcion,
         tipo,
         metadata,
-        diasRecurrentesDirectos
+        diasRecurrentesDirectos,
+        esRecurrenteDirecto
       )
     );
   }

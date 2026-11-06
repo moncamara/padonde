@@ -4,7 +4,7 @@
     "today": "Heute",
     "tomorrow": "Morgen",
     "weekend": "Wochenende",
-    "upcoming": "Später im Monat",
+    "upcoming": "Demnächst / Später",
     "searchPlaceholder": "Suche Ort, Event, Essen, Yoga...",
     "clearSearch": "Suche löschen",
     "searchResultsCount": "{count} {count, plural, one {Ergebnis} other {Ergebnisse}} für „{query}“",

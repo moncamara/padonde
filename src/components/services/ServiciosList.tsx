@@ -31,16 +31,18 @@ interface ServiciosListProps {
 function ServicioSocialProofIndicator({
   servicioId,
   vistosAyerBase,
+  createdAt,
 }: {
   servicioId: string;
   vistosAyerBase?: number;
+  createdAt?: string | null;
 }) {
   const t = useTranslations("essentialServices");
   const [proof, setProof] = useState<SocialProofResult | null>(null);
 
   useEffect(() => {
-    setProof(calcularVisualizacionesDiarias(servicioId, vistosAyerBase));
-  }, [servicioId, vistosAyerBase]);
+    setProof(calcularVisualizacionesDiarias(servicioId, vistosAyerBase, createdAt));
+  }, [servicioId, vistosAyerBase, createdAt]);
 
   if (!proof) {
     return (
@@ -396,6 +398,7 @@ export function ServiciosList({ servicios, zonaNombre, zonaSlug }: ServiciosList
                     <ServicioSocialProofIndicator
                       servicioId={servicio.id}
                       vistosAyerBase={((servicio.id.charCodeAt(0) || 1) % 3) + 2}
+                      createdAt={(servicio as any).fecha_creacion || servicio.created_at}
                     />
                   </div>
 

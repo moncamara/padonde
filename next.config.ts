@@ -48,6 +48,20 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  async redirects() {
+    return [
+      {
+        source: "/admin/eventos",
+        destination: "/es/admin",
+        permanent: true,
+      },
+      {
+        source: "/:locale/admin/eventos",
+        destination: "/:locale/admin",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default withNextIntl(nextConfig);

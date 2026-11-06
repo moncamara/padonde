@@ -79,7 +79,7 @@ export function EventFilters({
     });
 
     // 3. Días específicos siguientes de la semana (ej: Martes, Miércoles, Jueves...)
-    for (let i = 2; i <= 5; i++) {
+    for (let i = 2; i <= 6; i++) {
       const dia = new Date(hoyColombia);
       dia.setDate(dia.getDate() + i);
       const ymd = getFechaYMDColombia(dia);
@@ -110,6 +110,14 @@ export function EventFilters({
       emoji: "🎉",
       titulo: tFilters("weekend"),
       subtitulo: locale === "en" ? "Saturday & Sunday" : locale === "fr" ? "Samedi et dimanche" : locale === "de" ? "Samstag & Sonntag" : "Sábado y domingo",
+    });
+
+    // 5. Próximamente / Más adelante (eventos posteriores a la ventana inmediata actual)
+    lista.push({
+      id: "proximos",
+      emoji: "🗓️",
+      titulo: locale === "en" ? "Coming Soon / Later" : locale === "fr" ? "Prochainement / Plus tard" : locale === "de" ? "Demnächst / Später" : "Próximamente / Más adelante",
+      subtitulo: locale === "en" ? "Plans in upcoming weeks" : locale === "fr" ? "Événements des semaines à venir" : locale === "de" ? "Events in den kommenden Wochen" : "Eventos a 1 o más semanas vista",
     });
 
     return lista;
@@ -211,8 +219,10 @@ export function EventFilters({
               {esFechaFiltrada ? "✕" : "▾"}
             </span>
           </div>
-          <span className="font-bold tracking-tight text-[11px] truncate max-w-[74px]">
-            {fechaActual.titulo}
+          <span className="font-bold tracking-tight text-[11px] truncate max-w-[74px] sm:max-w-[80px]">
+            {fechaActual.id === "proximos"
+              ? (locale === "en" ? "Upcoming" : "Próximamente")
+              : fechaActual.titulo}
           </span>
         </button>
       </div>

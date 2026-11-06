@@ -68,6 +68,15 @@ export function FeedTabsContainer({
       setTabActiva(nuevaTab);
       try {
         sessionStorage.setItem("padonde_tab_activa", nuevaTab);
+        if (typeof window !== "undefined") {
+          const url = new URL(window.location.href);
+          if (nuevaTab === "servicios") {
+            url.searchParams.set("tab", "servicios");
+          } else {
+            url.searchParams.delete("tab");
+          }
+          window.history.replaceState(null, "", url.toString());
+        }
       } catch {}
       trackTabChange(nuevaTab, zonaNombre);
     }

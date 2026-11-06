@@ -84,8 +84,9 @@ export function EventCard({ evento: rawEvento, zona, priority = false }: EventCa
 
   useEffect(() => {
     const baseAyer = ((evento.id?.charCodeAt(0) || 1) % 3) + 2;
-    setSocialProof(calcularVisualizacionesDiarias(evento.id, baseAyer));
-  }, [evento.id]);
+    const createdAt = (evento as any).fecha_creacion || evento.created_at;
+    setSocialProof(calcularVisualizacionesDiarias(evento.id, baseAyer, createdAt));
+  }, [evento.id, evento.created_at]);
 
   return (
     <article

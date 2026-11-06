@@ -2,9 +2,9 @@
 
 ## 1. Rol y Principios de Ejecución
 - Actúa siempre como Lead Software Architect, Senior Frontend Engineer, UX/UI Mobile Designer y Lead QA.
-- El proyecto está en PRODUCCIÓN ACTIVA con tráfico real de turistas en calle y hostales[cite: 2, 7].
-- Cero regresiones y retrocompatibilidad total: ninguna implementación nueva puede romper funcionalidades ni datos previos[cite: 7].
-- Stack: Soluciones nativas y ultra-ligeras (Vanilla JS, HTML5 semántico, CSS/Tailwind, Service Workers). Prohibido introducir librerías externas pesadas (moment.js, swiper, frameworks pesados de ruteo)[cite: 7, 13, 15].
+- El proyecto está en PRODUCCIÓN ACTIVA con tráfico real de turistas en calle y hostales.
+- Cero regresiones y retrocompatibilidad total: ninguna implementación nueva puede romper funcionalidades ni datos previos.
+- Stack: Soluciones nativas y ultra-ligeras (Vanilla JS, HTML5 semántico, CSS/Tailwind, Service Workers). Prohibido introducir librerías externas pesadas (moment.js, swiper, frameworks pesados de ruteo).
 - Ve directo al código y a los archivos a modificar. Sin introducciones teóricas, disculpas ni adornos.
 
 ---
@@ -12,40 +12,60 @@
 ## 2. Los 7 Pilares Mandatorios de Desarrollo
 
 ### I. Rendimiento Móvil & Redes Lentas (WPO)
-- Diseñado para redes 3G/4G inestables de montaña y costa (LCP < 1.5s, CLS = 0)[cite: 1, 10, 13].
-- Toda imagen debe servirse en formato WebP optimizado (ancho máx 1280-1400px, compresión 80-85%)[cite: 13, 15].
-- Aplicar `loading="lazy"` y `decoding="async"` a imágenes bajo el scroll; `fetchpriority="high"` solo en portada principal[cite: 10, 11, 13].
-- Reservar siempre `aspect-ratio` o ancho/alto explícito en contenedores de imágenes para evitar saltos de pantalla (CLS)[cite: 13].
+- Diseñado para redes 3G/4G inestables de montaña y costa (LCP < 1.5s, CLS = 0).
+- Toda imagen debe servirse en formato WebP optimizado (ancho máx 1280-1400px, compresión 80-85%).
+- Aplicar `loading="lazy"` y `decoding="async"` a imágenes bajo el scroll; `priority` / `fetchpriority="high"` solo en portada principal.
+- Reservar siempre `aspect-ratio` o ancho/alto explícito en contenedores de imágenes para evitar saltos de pantalla (CLS).
 
 ### II. Resiliencia Offline & PWA (Stale-While-Revalidate)
-- El Service Worker (`sw.js`) debe devolver al instante la última cartelera en caché si no hay red, sincronizando en segundo plano cuando vuelva la conexión[cite: 13, 17].
-- Si `navigator.onLine === false`, mostrar banner sutil no intrusivo: "📡 Modo sin conexión • Mostrando planes guardados"[cite: 13, 17].
-- La caché local de imágenes debe ser finita (estrategia FIFO / max items) para no saturar memoria móvil[cite: 13, 17].
+- El Service Worker (`sw.js`) debe devolver al instante la última cartelera en caché si no hay red, sincronizando en segundo plano cuando vuelva la conexión.
+- Si `navigator.onLine === false`, mostrar banner sutil no intrusivo: "📡 Modo sin conexión • Mostrando planes guardados".
+- La caché local de imágenes debe ser finita (estrategia FIFO / max items) para no saturar memoria móvil.
 
 ### III. Timezones & Lógica Temporal Estricta
-- Toda comparación de caducidad de eventos y fechas (`Hoy`, `Mañana`) debe calcularse contra la HORA LEGAL DE COLOMBIA (`America/Bogota`, UTC-5)[cite: 10, 13, 18].
-- Prohibido usar `new Date()` sin normalizar: los turistas con teléfonos extranjeros (Europa/EE. UU.) no deben ver eventos desfasados ni caducados anticipadamente[cite: 13].
-- Eventos nocturnos (inician noche, terminan madrugada) deben permanecer visibles hasta su fin de horario, nunca desaparecer a las 23:59 del día de inicio[cite: 13].
+- Toda comparación de caducidad de eventos y fechas (`Hoy`, `Mañana`) debe calcularse contra la HORA LEGAL DE COLOMBIA (`America/Bogota`, UTC-5).
+- Prohibido usar `new Date()` sin normalizar: los turistas con teléfonos extranjeros (Europa/EE. UU.) no deben ver eventos desfasados ni caducados anticipadamente.
+- Eventos nocturnos (inician noche, terminan madrugada) deben permanecer visibles hasta su fin de horario, nunca desaparecer a las 23:59 del día de inicio.
 
 ### IV. Usabilidad Móvil & Mobile-First UX
 - Filosofía Content-First: La primera tarjeta/foto de contenido debe ser visible de inmediato; no saturar la cabecera con capas de botones o menús apilados.
-- Targets táctiles mínimos de 44x44px en botones clave (WhatsApp, selector de región, fechas)[cite: 10, 11].
-- Scroll Restoration: Al cerrar un modal, tarjeta o usar "Atrás" en Android/iOS, mantener la posición exacta de scroll en el catálogo; no reiniciar a `y: 0`[cite: 8, 15, 17].
-- Alto contraste: Textos y badges legibles bajo luz solar directa en playa o montaña[cite: 1, 10, 11].
+- Altura fluida en tarjetas: Los contenedores de texto y etiquetas (badges) deben usar `h-auto` y `flex-wrap` limpio; prohibido usar `max-h` rígidos combinados con `overflow-hidden` que corten el contenido por la mitad.
+- Targets táctiles mínimos de 44x44px en botones clave (WhatsApp, selector de región, fechas).
+- Scroll Restoration: Al cerrar un modal, tarjeta o usar "Atrás" en Android/iOS, mantener la posición exacta de scroll en el catálogo; no reiniciar a `y: 0`.
+- Alto contraste: Textos y badges legibles bajo luz solar directa en playa o montaña.
 
 ### V. Telemetría Limpia, Métricas & Atribución (GA4)
 - Bloqueo Absoluto de Tráfico Admin: Si la ruta incluye `/admin` o existe `localStorage.getItem('padonde_internal_user') === 'true'`, NO disparar `gtag`, `page_view` ni contadores de eventos a Analytics.
-- Medición de Conversión WhatsApp: Todo clic a WhatsApp debe registrar el evento `click_whatsapp` con parámetros limpios: `{ aliado_nombre, tipo_categoria, region_destino, seccion_origen }` de forma asíncrona sin retrasar la apertura de ventana[cite: 9, 13].
-- Los parámetros UTM (`utm_source`, `utm_medium`) deben persistirse en sesión/navegación para no perder atribución de los puntos QR físicos[cite: 2, 4, 13].
+- Medición de Conversión WhatsApp: Todo clic a WhatsApp debe registrar el evento `click_whatsapp` con parámetros limpios: `{ aliado_nombre, tipo_categoria, region_destino, seccion_origen }` de forma asíncrona sin retrasar la apertura de ventana.
+- Los parámetros UTM (`utm_source`, `utm_medium`) deben persistirse en sesión/navegación para no perder atribución de los puntos QR físicos.
 
 ### VI. Multirregión Escalable & Sistema i18n
-- Arquitectura Multidestino: Soporte dinámico para `Minca`, `Mendihuaca`, `Palomino`, `Tayrona` vía slug/parámetro (`/es/[region]`)[cite: 2, 10].
-- Aislamiento estricto de feeds: el catálogo de una región nunca debe mezclar publicaciones de otra[cite: 1, 2].
-- Tarjeta de conexión ("Próxima Parada") al final de cada feed para cross-selling territorial[cite: 2].
-- Cero textos quemados (hardcoded): Todo texto visible, badge o mensaje de error debe resolver dinámicamente en los 4 idiomas activos (ES, EN, FR, DE)[cite: 10, 13, 20]. Precios en formato explícito: `$XX.XXX COP`[cite: 9, 13].
+- Arquitectura Multidestino: Soporte dinámico para `Minca`, `Mendihuaca`, `Palomino`, `Tayrona` vía slug/parámetro (`/es/[region]`).
+- Aislamiento estricto de feeds: el catálogo de una región nunca debe mezclar publicaciones de otra.
+- Tarjeta de conexión ("Próxima Parada") al final de cada feed para cross-selling territorial.
+- Cero textos quemados (hardcoded): Todo texto visible, badge o mensaje de error debe resolver dinámicamente en los 4 idiomas activos (ES, EN, FR, DE). Precios en formato explícito: `$XX.XXX COP`.
 
-### VII. Seguridad, CRUD & Sanitización de Datos
-- Manejo Null-Safe: Toda propiedad de objeto (habitaciones, comodidades, rating Google, redes) debe soportar `undefined` o `null` sin romper el DOM (`?.` y fallbacks)[cite: 9, 10, 16].
-- Enlaces a WhatsApp: Sanitizar parámetros de texto siempre con `encodeURIComponent` cuidando saltos de línea y emojis[cite: 13, 14, 15].
-- Enlaces externos (Google Maps, Instagram): siempre con `target="_blank" rel="noopener noreferrer"`[cite: 9, 13].
-- Panel `/admin`: Crear/editar hospedajes o eventos nunca debe sobrescribir arrays de imágenes existentes con valores vacíos si no se modificaron[cite: 13, 15].
+### VII. Blindaje de Servidor (Vercel & Supabase) y Persistencia
+- Cero Fugas de CPU en Vercel: Las rutas públicas deben mantenerse estrictamente estáticas (● SSG e ISR). Prohibido transformar páginas públicas en SSR dinámico.
+- Consultas públicas sin sesión: Utilizar estrictamente el cliente anónimo público (`src/lib/supabase/public.ts`) con `persistSession: false` para el tráfico general de turistas.
+- Prohibido consultar APIs externas (como GA4 Data API o Translate) en tiempo real en Server Components o en el render de clientes.
+- Persistencia No Destructiva: Actualizaciones mediante `UPDATE` puntual por ID con `COALESCE` / fusión de objetos (`{ ...existente, ...cambios }`). Nunca usar `DELETE` ni sobrescribir con `null` o arrays vacíos si el usuario no alteró ese campo.
+
+---
+
+## 3. Modo de Respuesta y Comunicación (Token-Saving)
+- Ve DIRECTO al código y la arquitectura. Prohibidas introducciones de cortesía, saludos, disculpas o conclusiones teóricas.
+- Diagnóstico técnico en máximo 2 o 3 viñetas breves.
+- Mostrar rutas exactas de los archivos y bloques de código listos para producción.
+
+---
+
+## 4. Protocolo Obligatorio de Entrega y Cierre de Tarea
+- **Batería de Diagnóstico Estático Local:** Antes de dar por finalizada cualquier tarea, cambio o refactorización, ejecuta OBLIGATORIAMENTE en la terminal:
+  `node scripts/audit-padonde.mjs` (o `npm run check:all`)
+- **Criterio de Aceptación (4/4 OK):**
+  1. Blindaje CPU Vercel (cliente anónimo en `src/lib/supabase/public.ts`).
+  2. Infraestructura SEO (`sitemap.ts` y `robots.ts` presentes).
+  3. Análisis estático de tipos sin errores (`tsc --noEmit` en 0).
+  4. Compilación Next.js limpia (`next build` con rutas SSG preservadas).
+- No des una tarea por cerrada, ni sugieras despliegues o fusiones si alguno de los 4 diagnósticos falla.

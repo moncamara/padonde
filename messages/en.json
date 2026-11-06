@@ -4,7 +4,7 @@
     "today": "Today",
     "tomorrow": "Tomorrow",
     "weekend": "Weekend",
-    "upcoming": "Later this month",
+    "upcoming": "Coming Soon / Later",
     "searchPlaceholder": "Search place, event, food, yoga...",
     "clearSearch": "Clear search",
     "searchResultsCount": "{count} {count, plural, one {result} other {results}} for \"{query}\"",

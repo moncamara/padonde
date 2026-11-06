@@ -193,7 +193,8 @@ export function EventFeed({ eventos, zona, configTerritorial }: EventFeedProps) 
         e.descripcion,
         e.tipo,
         e.metadata_hospedaje,
-        e.dias_recurrentes
+        e.dias_recurrentes,
+        e.es_recurrente
       );
     });
 
