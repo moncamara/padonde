@@ -1752,8 +1752,10 @@ export async function guardarServicioEsencialAction(
           : true,
       metadata_comercial: {
         imagenes: imagenesValidas,
+        fotos: imagenesValidas,
         video_url: input.videoUrl?.trim() || null,
         posicion_portada: input.posicionPortada?.trim() || "50%",
+        posicionPortada: input.posicionPortada?.trim() || "50%",
         ...(input.tarifarioId?.trim() ? { tarifario_id: input.tarifarioId.trim() } : {}),
       },
     };
@@ -1822,8 +1824,19 @@ export async function guardarServicioEsencialAction(
       servicioGuardado = inserted as ServicioEsencial;
     }
 
-    revalidatePath(`/[locale]/admin/esenciales`, "page");
-    revalidatePath(`/[locale]/${input.zonaSlug}`, "page");
+    // Revalidación profunda de caché ISR y páginas públicas
+    const slug = input.zonaSlug || "minca";
+    revalidatePath("/[locale]/[region]", "page");
+    revalidatePath("/[locale]/[region]/servicios", "page");
+    revalidatePath("/es/minca");
+    revalidatePath("/es/admin/esenciales");
+    revalidatePath("/[locale]/admin/esenciales", "page");
+    revalidatePath("/[locale]/(public)/[zona]", "page");
+    ["es", "en", "de", "fr"].forEach((loc) => {
+      revalidatePath(`/${loc}/${slug}`);
+      revalidatePath(`/${loc}/${slug}?tab=servicios`);
+      revalidatePath(`/${loc}/admin/esenciales`);
+    });
 
     return { success: true, servicio: servicioGuardado };
   } catch (err: any) {
@@ -1859,8 +1872,18 @@ export async function toggleActivoServicioEsencialAction(
       return { success: false, error: error.message };
     }
 
-    revalidatePath(`/[locale]/admin/esenciales`, "page");
-    revalidatePath(`/[locale]/${zonaSlug}`, "page");
+    const slug = zonaSlug || "minca";
+    revalidatePath("/[locale]/[region]", "page");
+    revalidatePath("/[locale]/[region]/servicios", "page");
+    revalidatePath("/es/minca");
+    revalidatePath("/es/admin/esenciales");
+    revalidatePath("/[locale]/admin/esenciales", "page");
+    revalidatePath("/[locale]/(public)/[zona]", "page");
+    ["es", "en", "de", "fr"].forEach((loc) => {
+      revalidatePath(`/${loc}/${slug}`);
+      revalidatePath(`/${loc}/${slug}?tab=servicios`);
+      revalidatePath(`/${loc}/admin/esenciales`);
+    });
 
     return { success: true };
   } catch (err: any) {
@@ -1893,8 +1916,18 @@ export async function toggleBotonWhatsappServicioEsencialAction(
       return { success: false, error: error.message };
     }
 
-    revalidatePath(`/[locale]/admin/esenciales`, "page");
-    revalidatePath(`/[locale]/${zonaSlug}`, "page");
+    const slug = zonaSlug || "minca";
+    revalidatePath("/[locale]/[region]", "page");
+    revalidatePath("/[locale]/[region]/servicios", "page");
+    revalidatePath("/es/minca");
+    revalidatePath("/es/admin/esenciales");
+    revalidatePath("/[locale]/admin/esenciales", "page");
+    revalidatePath("/[locale]/(public)/[zona]", "page");
+    ["es", "en", "de", "fr"].forEach((loc) => {
+      revalidatePath(`/${loc}/${slug}`);
+      revalidatePath(`/${loc}/${slug}?tab=servicios`);
+      revalidatePath(`/${loc}/admin/esenciales`);
+    });
 
     return { success: true };
   } catch (err: any) {
@@ -1935,8 +1968,18 @@ export async function eliminarServicioEsencialAction(
       }
     }
 
-    revalidatePath(`/[locale]/admin/esenciales`, "page");
-    revalidatePath(`/[locale]/${zonaSlug}`, "page");
+    const slug = zonaSlug || "minca";
+    revalidatePath("/[locale]/[region]", "page");
+    revalidatePath("/[locale]/[region]/servicios", "page");
+    revalidatePath("/es/minca");
+    revalidatePath("/es/admin/esenciales");
+    revalidatePath("/[locale]/admin/esenciales", "page");
+    revalidatePath("/[locale]/(public)/[zona]", "page");
+    ["es", "en", "de", "fr"].forEach((loc) => {
+      revalidatePath(`/${loc}/${slug}`);
+      revalidatePath(`/${loc}/${slug}?tab=servicios`);
+      revalidatePath(`/${loc}/admin/esenciales`);
+    });
 
     return { success: true };
   } catch (err: any) {

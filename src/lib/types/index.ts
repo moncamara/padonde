@@ -163,6 +163,7 @@ export type CategoriaServicioEsencial =
 
 export type MetadataComercialServicio = {
   imagenes?: string[];
+  fotos?: string[];
   video_url?: string | null;
   posicion_portada?: string;
   posicionPortada?: string;
@@ -177,6 +178,9 @@ export type ServicioEsencial = {
   subtitulo: string;
   logo_url: string | null;
   imagen_lugar_url: string | null;
+  imagen_url?: string | null;
+  fotos?: string[];
+  galeria_fotos?: string[];
   whatsapp: string;
   mensaje_whatsapp_default: string | null;
   google_maps_url: string | null;

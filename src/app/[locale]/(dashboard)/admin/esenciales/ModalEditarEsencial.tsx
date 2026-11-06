@@ -86,10 +86,25 @@ export function ModalEditarEsencial({
   const getFotosIniciales = (s: ServicioEsencial | null): string[] => {
     if (!s) return [];
     const list: string[] = [];
-    const mainImg = s.imagen_lugar_url || s.metadata_comercial?.imagenes?.[0];
+    const mainImg =
+      s.imagen_lugar_url ||
+      s.imagen_url ||
+      s.metadata_comercial?.imagenes?.[0] ||
+      s.metadata_comercial?.fotos?.[0];
     if (mainImg) list.push(mainImg);
-    (s.metadata_comercial?.imagenes || []).forEach((f) => {
-      if (f && !list.includes(f)) list.push(f);
+
+    const candidateArrays = [
+      s.fotos,
+      s.galeria_fotos,
+      s.metadata_comercial?.fotos,
+      s.metadata_comercial?.imagenes,
+    ];
+    candidateArrays.forEach((arr) => {
+      if (Array.isArray(arr)) {
+        arr.forEach((f) => {
+          if (f && typeof f === "string" && !list.includes(f)) list.push(f);
+        });
+      }
     });
     return list;
   };

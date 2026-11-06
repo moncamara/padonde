@@ -338,13 +338,42 @@ export function ServiciosList({ servicios, zonaNombre, zonaSlug }: ServiciosList
               t("defaultWhatsAppMessage", { zona: zonaNombre });
             const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(defaultMsg)}`;
 
-            const todasFotos = Array.from(
+            // Normalización exhaustiva de fotos con fallback seguro según arquitectura
+            const fotosArray: string[] = (
+              servicio.fotos ||
+              servicio.galeria_fotos ||
+              servicio.metadata_comercial?.fotos ||
+              servicio.metadata_comercial?.imagenes ||
+              rawServicio.fotos ||
+              rawServicio.galeria_fotos ||
+              rawServicio.metadata_comercial?.fotos ||
+              rawServicio.metadata_comercial?.imagenes ||
+              (servicio.imagen_url ? [servicio.imagen_url] : null) ||
+              (servicio.imagen_lugar_url ? [servicio.imagen_lugar_url] : null) ||
+              (rawServicio.imagen_url ? [rawServicio.imagen_url] : null) ||
+              (rawServicio.imagen_lugar_url ? [rawServicio.imagen_lugar_url] : null) ||
+              []
+            );
+
+            // Fusión garantizada sin duplicados preservando portada
+            const fotoIndividual =
+              servicio.imagen_lugar_url ||
+              servicio.imagen_url ||
+              rawServicio.imagen_lugar_url ||
+              rawServicio.imagen_url ||
+              null;
+
+            const todasFotos: string[] = Array.from(
               new Set([
-                ...(servicio.imagen_lugar_url ? [servicio.imagen_lugar_url] : []),
-                ...(servicio.metadata_comercial?.imagenes || []),
+                ...(fotoIndividual ? [fotoIndividual] : []),
+                ...(Array.isArray(fotosArray) ? fotosArray : [fotosArray]),
               ])
             ).filter(Boolean);
-            const videoUrl = servicio.metadata_comercial?.video_url || null;
+
+            const videoUrl =
+              servicio.metadata_comercial?.video_url ||
+              rawServicio.metadata_comercial?.video_url ||
+              null;
             const tieneMedia = Boolean(todasFotos.length > 0 || videoUrl);
 
             const origin =
