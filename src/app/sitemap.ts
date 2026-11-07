@@ -84,7 +84,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
       const zonaSlug =
         (ev.zonas as any)?.slug ||
-        (ev.zona_id === "zona-mendihuaca" ? "mendihuaca" : "minca");
+        (ev.zona_id === "zona-mendihuaca" || ev.zona_id === "65c773d8-658a-492d-a759-b3292eb2d935"
+          ? "mendihuaca"
+          : ev.zona_id === "zona-tayrona" || ev.zona_id === "21c8930c-5e37-44a2-b129-fe5f0e6d8899"
+          ? "tayrona"
+          : "minca");
 
       // Validar que la zona esté activa para turistas
       const zonaConfig = getZona(zonaSlug);

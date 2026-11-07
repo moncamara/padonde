@@ -16,7 +16,10 @@ declare global {
 export function isAdminDevice(): boolean {
   if (typeof window === "undefined") return false;
   try {
-    return document.cookie.includes("padonde_admin_device=true");
+    return (
+      document.cookie.includes("padonde_admin_device=true") ||
+      localStorage.getItem("padonde_internal_user") === "true"
+    );
   } catch {
     return false;
   }
@@ -86,7 +89,9 @@ export function trackWhatsAppClick(data: TrackWhatsAppClickParams) {
   let regionDestino = (data.region_destino || "").toLowerCase().trim();
   if (!regionDestino && typeof window !== "undefined") {
     const path = window.location.pathname.toLowerCase();
-    if (path.includes("/mendihuaca")) {
+    if (path.includes("/tayrona") || path.includes("/tairona")) {
+      regionDestino = "tayrona";
+    } else if (path.includes("/mendihuaca")) {
       regionDestino = "mendihuaca";
     } else if (path.includes("/minca")) {
       regionDestino = "minca";
@@ -179,7 +184,11 @@ export function trackServicioEsencialWhatsAppClick(data: {
   categoria: string;
   zonaNombre: string;
 }) {
-  const region = data.zonaNombre.toLowerCase().includes("mendihuaca") ? "mendihuaca" : "minca";
+  const region = data.zonaNombre.toLowerCase().includes("tayrona")
+    ? "tayrona"
+    : data.zonaNombre.toLowerCase().includes("mendihuaca")
+    ? "mendihuaca"
+    : "minca";
   trackWhatsAppClick({
     aliado_nombre: data.nombreComercial,
     tipo_categoria: "servicio_esencial",

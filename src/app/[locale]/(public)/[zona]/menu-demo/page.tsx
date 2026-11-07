@@ -19,7 +19,7 @@ interface MenuDemoPageProps {
 export const revalidate = 600;
 
 export function generateStaticParams() {
-  return [{ zona: "minca" }, { zona: "mendihuaca" }];
+  return [{ zona: "minca" }, { zona: "mendihuaca" }, { zona: "tayrona" }];
 }
 
 export async function generateMetadata({

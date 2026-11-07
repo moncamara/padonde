@@ -31,7 +31,7 @@ export const ZONAS: ZonaConfig[] = [
     nombre: "Parque Tayrona",
     nombreCorto: "Tayrona",
     descripcion: "Parque Nacional Natural Tayrona, playas vírgenes y naturaleza",
-    activa: false, // Fase 2 — En preparación interna en admin
+    activa: true,
   },
   {
     slug: "taganga",

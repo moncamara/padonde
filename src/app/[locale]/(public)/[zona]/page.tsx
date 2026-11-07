@@ -30,7 +30,7 @@ interface ZonaPageProps {
 export const revalidate = 3600;
 
 export function generateStaticParams() {
-  const zonas: ZonaSlug[] = ["minca", "mendihuaca"];
+  const zonas: ZonaSlug[] = ["minca", "mendihuaca", "tayrona"];
   return zonas.map((zona) => ({ zona }));
 }
 
@@ -205,7 +205,7 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
         <div className="pt-4">
           <p className="font-sans text-sm text-stone-dark inline-flex items-center justify-center gap-1.5 flex-wrap">
             <span className="text-base select-none">
-              {zonaSlug === "mendihuaca" ? "🌊" : "🌿"}
+              {zonaSlug === "mendihuaca" ? "🌊" : zonaSlug === "tayrona" ? "🌴" : "🌿"}
             </span>
             <span className="font-medium">{tFooter("cta", { zona: zona.nombre })}</span>
             <a

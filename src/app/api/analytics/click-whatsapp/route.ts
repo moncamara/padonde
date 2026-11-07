@@ -39,7 +39,11 @@ export async function POST(request: NextRequest) {
     } = body;
 
     const resolvedRegion = (region_destino || request.cookies.get("padonde_zona")?.value || "minca").toLowerCase();
-    const regionLabel = resolvedRegion.includes("mendihuaca") ? "🌊 Mendihuaca" : "🌿 Minca";
+    const regionLabel = resolvedRegion.includes("tayrona")
+      ? "🌴 Tayrona"
+      : resolvedRegion.includes("mendihuaca")
+      ? "🌊 Mendihuaca"
+      : "🌿 Minca";
 
     let negocioId = inputNegocioId;
     let resolvedAliado = aliado_nombre;

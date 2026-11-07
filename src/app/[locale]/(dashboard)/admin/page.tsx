@@ -45,6 +45,14 @@ export default async function AdminDashboardPage({
     .eq("clave", "notificaciones_telegram")
     .maybeSingle();
 
+  // 1.2 Asegurar activación oficial de la zona Tayrona en Supabase (sesión autenticada admin)
+  try {
+    await supabase
+      .from("zonas")
+      .update({ activa: true })
+      .in("slug", ["tayrona", "tairona"]);
+  } catch {}
+
   const telegramActivas = configTelegram?.valor?.activas ?? true;
 
   // 2. Cargar eventos y negocios desde Supabase

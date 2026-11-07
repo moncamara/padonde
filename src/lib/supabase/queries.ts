@@ -125,7 +125,18 @@ export async function getEventosByZona(
     if (!opciones.preview) zonaQuery = zonaQuery.eq("activa", true);
     const { data: zona, error: zonaError } = await zonaQuery.single();
 
-    if (zonaError || !zona) {
+    let zonaId = zona?.id;
+    if (!zonaId) {
+      if (zonaSlug === "tayrona" || (zonaSlug as string) === "tairona") {
+        zonaId = "21c8930c-5e37-44a2-b129-fe5f0e6d8899";
+      } else if (zonaSlug === "mendihuaca") {
+        zonaId = "65c773d8-658a-492d-a759-b3292eb2d935";
+      } else if (zonaSlug === "minca") {
+        zonaId = "a801fc4b-a6cd-41ff-9a3c-e25a726b9b69";
+      }
+    }
+
+    if (!zonaId) {
       console.warn(`Zona no encontrada en Supabase: ${zonaSlug}`);
       return getMockEventos(zonaSlug);
     }
@@ -136,7 +147,7 @@ export async function getEventosByZona(
     let queryInicial = supabase
       .from("eventos")
       .select(COLUMNAS_CON_REPUTACION_Y_TRADUCCIONES)
-      .eq("zona_id", zona.id);
+      .eq("zona_id", zonaId);
     if (!opciones.preview) {
       queryInicial = queryInicial.eq("activo", true);
     }
@@ -152,7 +163,7 @@ export async function getEventosByZona(
       let queryTrad = supabase
         .from("eventos")
         .select(COLUMNAS_CON_TRADUCCIONES)
-        .eq("zona_id", zona.id);
+        .eq("zona_id", zonaId);
       if (!opciones.preview) queryTrad = queryTrad.eq("activo", true);
       const fallbackTraducciones = await queryTrad
         .order("destacado", { ascending: false })
@@ -164,7 +175,7 @@ export async function getEventosByZona(
         let queryBase = supabase
           .from("eventos")
           .select(COLUMNAS_BASE)
-          .eq("zona_id", zona.id);
+          .eq("zona_id", zonaId);
         if (!opciones.preview) queryBase = queryBase.eq("activo", true);
         const fallbackBase = await queryBase
           .order("destacado", { ascending: false })
@@ -270,7 +281,11 @@ export async function getServiciosEsencialesByZona(
     if (!opciones.preview) zonaQuery = zonaQuery.eq("activa", true);
     const { data: zona } = await zonaQuery.single();
 
-    const zonaId = zona?.id || `zona-${zonaSlug}`;
+    const zonaId =
+      zona?.id ||
+      (zonaSlug === "tayrona" || (zonaSlug as string) === "tairona"
+        ? "21c8930c-5e37-44a2-b129-fe5f0e6d8899"
+        : `zona-${zonaSlug}`);
 
     let queryEsenciales = supabase
       .from("servicios_esenciales")

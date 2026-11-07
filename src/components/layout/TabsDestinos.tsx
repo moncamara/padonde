@@ -35,8 +35,7 @@ const DESTINOS_TABS: DestinoTabConfig[] = [
     slug: "tayrona",
     nombre: "Tayrona",
     emoji: "🌴",
-    activa: false,
-    badge: "Pronto",
+    activa: true,
   },
   {
     slug: "taganga",
