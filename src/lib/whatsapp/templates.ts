@@ -23,9 +23,9 @@ export function resolverUrlPublicacion(params: MensajeBaseParams): string {
   if (params.enlacePersonalizado) return params.enlacePersonalizado;
   const slug = params.zonaSlug || "minca";
   if (params.eventoId) {
-    return `https://www.padonde.lat/es/${slug}/${params.eventoId}`;
+    return `https://padonde.lat/es/${slug}/${params.eventoId}`;
   }
-  return `https://www.padonde.lat/es/${slug}`;
+  return `https://padonde.lat/es/${slug}`;
 }
 
 /**

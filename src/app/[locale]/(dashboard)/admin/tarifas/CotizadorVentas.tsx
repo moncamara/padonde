@@ -235,7 +235,7 @@ export function CotizadorVentas() {
         `💰 *Tarifa:* $0 COP (100% Gratuito por Alianza)\n\n` +
         `✨ *Beneficios incluidos:*\n` +
         planInfo.beneficios.map((b) => `• ${b}`).join("\n") +
-        `\n\n📲 Conoce la plataforma en vivo: https://www.padonde.lat/minca\n\n` +
+        `\n\n📲 Conoce la plataforma en vivo: https://padonde.lat/minca\n\n` +
         `¡Quedamos atentos para activar tu espacio en la app! 🚀`
       );
     }
@@ -251,7 +251,7 @@ export function CotizadorVentas() {
       planInfo.beneficios.map((b) => `• ${b}`).join("\n") +
       `\n\n🎯 *¿Por qué te conviene?*\n` +
       `${planInfo.pitch}\n\n` +
-      `📲 Mira cómo se ve en vivo en Minca: https://www.padonde.lat/minca\n\n` +
+      `📲 Mira cómo se ve en vivo en Minca: https://padonde.lat/minca\n\n` +
       `¡Avísame y te dejamos activa tu ficha hoy mismo! 🚀`
     );
   }, [planInfo, nombreContacto, nombreNegocio]);

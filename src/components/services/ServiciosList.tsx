@@ -356,7 +356,7 @@ export function ServiciosList({ servicios, zonaNombre, zonaSlug }: ServiciosList
             const origin =
               typeof window !== "undefined"
                 ? window.location.origin
-                : "https://www.padonde.lat";
+                : "https://padonde.lat";
             const cardUrl = `${origin}/${locale}/${zonaSlug || "minca"}?tab=servicios#servicio-${servicio.id}`;
             const shareTitle = `${servicio.nombre_comercial} - PaDónde`;
             const shareText = `${servicio.nombre_comercial} (${t(`categories.${servicio.categoria}`)}): ${servicio.subtitulo || ""} en ${zonaNombre}. Consúltalo en PaDónde:`;
@@ -368,6 +368,9 @@ export function ServiciosList({ servicios, zonaNombre, zonaSlug }: ServiciosList
               rawTarifarioId === "transporte-aventura-4x4-minca" ||
               servicio.nombre_comercial?.toLowerCase().includes("aventura 4x4")
                 ? "transporte-aventura-4x4-minca"
+                : rawTarifarioId === "transporte-minca-vip" ||
+                  servicio.nombre_comercial?.toLowerCase().includes("minca vip")
+                ? "transporte-minca-vip"
                 : rawTarifarioId;
             const tarifario = getTarifarioPorId(tarifarioId);
 

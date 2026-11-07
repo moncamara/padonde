@@ -31,7 +31,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.padonde.lat"),
+  metadataBase: new URL("https://padonde.lat"),
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -66,12 +66,12 @@ export const metadata: Metadata = {
     apple: "/apple-touch-icon.png",
   },
   alternates: {
-    canonical: "./",
+    canonical: "https://padonde.lat",
     languages: {
-      es: "/es",
-      en: "/en",
-      fr: "/fr",
-      de: "/de",
+      es: "https://padonde.lat/es",
+      en: "https://padonde.lat/en",
+      fr: "https://padonde.lat/fr",
+      de: "https://padonde.lat/de",
     },
   },
   openGraph: {
@@ -79,12 +79,12 @@ export const metadata: Metadata = {
     title: "PaDónde 🌿 Cartelera de Minca | Live Events & Tours",
     description:
       "Qué hacer hoy en Minca: eventos, música en vivo, talleres y tours. / Live tourist board: daily events, live music, workshops, wellness & local dining.",
-    url: "https://www.padonde.lat",
+    url: "https://padonde.lat",
     type: "website",
     locale: "es_CO",
     images: [
       {
-        url: "https://www.padonde.lat/og_minca.jpg",
+        url: "https://padonde.lat/og_minca.jpg",
         width: 1200,
         height: 630,
         alt: "PaDónde — Cartelera Turística de Minca",
@@ -96,7 +96,7 @@ export const metadata: Metadata = {
     title: "PaDónde — Qué hacer hoy en Minca",
     description:
       "Cartelera viva de eventos, tours y experiencias en Minca y la Sierra Nevada.",
-    images: ["https://www.padonde.lat/og_minca.jpg"],
+    images: ["https://padonde.lat/og_minca.jpg"],
   },
   robots: {
     index: true,

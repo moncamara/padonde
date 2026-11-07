@@ -592,6 +592,45 @@ Einheitliche offizielle Tariftabelle mit 69 Berg- und Fernstrecken. Finde dein Z
 Grille tarifaire officielle unifiée couvrant 69 destinations et auberges. Consultez votre destination et réservez directement via WhatsApp.`,
     },
   },
+  // 🚐 12. Minca VIP Transporte (Expresos & Destinos Costa Caribe)
+  "minca-vip": {
+    en: {
+      titulo: "🚐 Private Transfers, Airport Express & Caribbean Coast Destinations — Minca VIP",
+      descripcion: `Door-to-door private transportation and intercity express service in comfortable air-conditioned vehicles (capacity 1 to 4 passengers).
+
+🌴 POPULAR ROUTES & DESTINATIONS:
+• Santa Marta Express: Historic Center, Mamatoco, El Rodadero, Bello Horizonte, Taganga, and Simón Bolívar Airport.
+• Caribbean Beaches & Tayrona: Bahía Concha, Neguanje, Tayrona National Park, Costeño Beach, Buritaca, and Palomino.
+• Regional Intercity Routes: Riohacha, Valledupar, Ciénaga, Barranquilla, Cartagena, Barú, Mompox, and Coveñas.
+
+📋 TRANSPARENT FIXED RATES:
+Unified fixed rate card with 22 destinations. Book private door-to-door service directly via WhatsApp.`,
+    },
+    de: {
+      titulo: "🚐 Private Transfers, Flughafen-Express & Karibikküsten-Ziele — Minca VIP",
+      descripcion: `Privater Tür-zu-Tür-Fahrdienst und Überland-Expressfahrten in komfortablen, klimatisierten Fahrzeugen (Kapazität 1 bis 4 Personen).
+
+🌴 BELIEBTE STRECKEN & ZIELE:
+• Santa Marta Express: Historisches Zentrum, Mamatoco, El Rodadero, Bello Horizonte, Taganga und Flughafen Simón Bolívar.
+• Karibikstrände & Tayrona: Bahía Concha, Neguanje, Tayrona-Nationalpark, Costeño Beach, Buritaca und Palomino.
+• Regionale Überlandfahrten: Riohacha, Valledupar, Ciénaga, Barranquilla, Cartagena, Barú, Mompox und Coveñas.
+
+📋 TRANSPARENTE FESTPREISE:
+Einheitliche Tariftabelle mit 22 offiziellen Zielen. Buche deinen privaten Transfer direkt via WhatsApp.`,
+    },
+    fr: {
+      titulo: "🚐 Transferts Privés, Express Aéroport & Destinations Côte Caraïbe — Minca VIP",
+      descripcion: `Service de transport privé de porte à porte et liaisons express interurbaines en véhicules climatisés (capacité 1 à 4 passagers).
+
+🌴 TRAJETS & DESTINATIONS POPULAIRES :
+• Express Santa Marta : Centre Historique, Mamatoco, El Rodadero, Bello Horizonte, Taganga et Aéroport Simón Bolívar.
+• Plages & Tayrona : Bahía Concha, Neguanje, Parc Tayrona, Costeño Beach, Buritaca et Palomino.
+• Liaisons Régionales : Riohacha, Valledupar, Ciénaga, Barranquilla, Cartagena, Barú, Mompox et Coveñas.
+
+📋 TARIFS FIXES OFFICIELS :
+Grille tarifaire officielle unifiée avec 22 destinations. Réservez votre trajet privé directement via WhatsApp.`,
+    },
+  },
 };
 
 /**
@@ -612,6 +651,13 @@ function identificarClaveEvento(evento: {
     t.includes("cerro kennedy & rutas sierra alta")
   ) {
     return "aventura-4x4";
+  }
+  if (
+    t.includes("minca vip") ||
+    d.includes("minca vip") ||
+    t.includes("transporte vip")
+  ) {
+    return "minca-vip";
   }
   if (t.includes("amora") || d.includes("amora")) {
     return "amora";

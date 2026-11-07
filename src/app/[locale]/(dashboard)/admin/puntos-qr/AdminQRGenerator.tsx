@@ -68,7 +68,7 @@ export function AdminQRGenerator({ locale }: { locale: string }) {
   const [slugPersonalizado, setSlugPersonalizado] = useState("");
   const [zonaSeleccionada, setZonaSeleccionada] = useState("minca");
   const [copiadoSrc, setCopiadoSrc] = useState<string | null>(null);
-  const DOMINIO_OFICIAL = "https://www.padonde.lat";
+  const DOMINIO_OFICIAL = "https://padonde.lat";
   const [dominioBase, setDominioBase] = useState(DOMINIO_OFICIAL);
   const [aficheModal, setAficheModal] = useState<{
     isOpen: boolean;

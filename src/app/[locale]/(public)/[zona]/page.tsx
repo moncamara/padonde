@@ -56,19 +56,20 @@ export async function generateMetadata({ params }: ZonaPageProps): Promise<Metad
 
   const title = titles[locale] || titles.es;
   const description = descriptions[locale] || descriptions.es;
-  const canonicalUrl = `https://www.padonde.lat/${locale}/${zonaSlug}`;
-  const ogImageUrl = "https://www.padonde.lat/og_minca.jpg";
+  const canonicalUrl = `https://padonde.lat/${locale}/${zonaSlug}`;
+  const ogImageUrl = "https://padonde.lat/og_minca.jpg";
 
   return {
+    metadataBase: new URL("https://padonde.lat"),
     title,
     description,
     alternates: {
       canonical: canonicalUrl,
       languages: {
-        es: `https://www.padonde.lat/es/${zonaSlug}`,
-        en: `https://www.padonde.lat/en/${zonaSlug}`,
-        fr: `https://www.padonde.lat/fr/${zonaSlug}`,
-        de: `https://www.padonde.lat/de/${zonaSlug}`,
+        es: `https://padonde.lat/es/${zonaSlug}`,
+        en: `https://padonde.lat/en/${zonaSlug}`,
+        fr: `https://padonde.lat/fr/${zonaSlug}`,
+        de: `https://padonde.lat/de/${zonaSlug}`,
       },
     },
     openGraph: {
@@ -159,7 +160,7 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
           "@type": "ListItem",
           position: index + 1,
           name: e.titulo,
-          url: `https://www.padonde.lat/${locale}/${zonaSlug}/${e.id}`,
+          url: `https://padonde.lat/${locale}/${zonaSlug}/${e.id}`,
         })),
       },
     ],

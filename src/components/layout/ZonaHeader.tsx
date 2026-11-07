@@ -56,7 +56,7 @@ export function ZonaHeader({ zonaNombre, zonaSlug, locale }: ZonaHeaderProps) {
                 <ShareButton
                   title={`PaDónde ${zonaSlug === "mendihuaca" ? "🌊" : "🌿"} Cartelera de ${zonaNombre}`}
                   text={`Descubre planes, eventos, rumba, hospedajes en ${zonaNombre} - PaDónde`}
-                  url={`https://www.padonde.lat/${locale}/${zonaSlug}`}
+                  url={`https://padonde.lat/${locale}/${zonaSlug}`}
                   zonaNombre={zonaNombre}
                   variant="header"
                 />

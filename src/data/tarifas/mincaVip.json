@@ -1,0 +1,46 @@
+{
+  "id": "transporte-minca-vip",
+  "nombre": "Minca VIP Transporte",
+  "region": "minca",
+  "categoria": "servicios_esenciales",
+  "subcategoria": "transporte_expreso",
+  "contacto": {
+    "telefono": "+573015090754",
+    "whatsapp": "573015090754",
+    "whatsapp_url": "https://api.whatsapp.com/send?phone=573015090754&text=Hola%20Minca%20VIP%20Transporte,%20vi%20sus%20tarifas%20en%20PaD%C3%B3nde%20y%20necesito%20un%20servicio%20hacia%20"
+  },
+  "condiciones": {
+    "capacidad": "Solo ida • De 1 a 4 personas",
+    "tipo_vehiculo": "Vehículos climatizados y transporte privado",
+    "moneda": "COP"
+  },
+  "tarifas": {
+    "expresos": [
+      { "destino": "Mamatoco", "precio": 90000 },
+      { "destino": "Centro Histórico", "precio": 100000 },
+      { "destino": "Bonda", "precio": 100000 },
+      { "destino": "Rodadero", "precio": 120000 },
+      { "destino": "Bello Horizonte", "precio": 120000 },
+      { "destino": "Aeropuerto Simón Bolívar", "precio": 130000 },
+      { "destino": "Taganga", "precio": 130000 },
+      { "destino": "Bahía Concha", "precio": 200000 },
+      { "destino": "Neguanje", "precio": 200000 },
+      { "destino": "Ciénaga", "precio": 200000 },
+      { "destino": "Parque Tayrona", "precio": 250000 },
+      { "destino": "Costeño Beach", "precio": 260000 },
+      { "destino": "Buritaca", "precio": 280000 },
+      { "destino": "Río Hostal", "precio": 280000 },
+      { "destino": "Palomino", "precio": 330000 },
+      { "destino": "Barranquilla", "precio": 520000 },
+      { "destino": "Riohacha", "precio": 600000 },
+      { "destino": "Valledupar", "precio": 750000 },
+      { "destino": "Cartagena", "precio": 890000 },
+      { "destino": "Barú", "precio": 1100000 },
+      { "destino": "Mompox", "precio": 1200000 },
+      { "destino": "Coveñas", "precio": 1300000 }
+    ],
+    "minca_locales_cercanos": [],
+    "sierra_alta_y_montana": []
+  }
+}
+

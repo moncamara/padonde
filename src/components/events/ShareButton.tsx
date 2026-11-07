@@ -76,7 +76,7 @@ export function ShareButton({
         return `${origin}/${locale}${path}${search}`;
       }
     }
-    return `https://www.padonde.lat/${locale}`;
+    return `https://padonde.lat/${locale}`;
   }
 
   const finalUrl = getShareUrl();

@@ -56,7 +56,7 @@ export function AdminEsencialesList({
   const handleCopiarEnlaceFicha = async (servicio: ServicioEsencial) => {
     const zonaSlug =
       slugDeZona(servicio.zona_id);
-    const url = `https://www.padonde.lat/es/${zonaSlug}?tab=servicios#servicio-${servicio.id}`;
+    const url = `https://padonde.lat/es/${zonaSlug}?tab=servicios#servicio-${servicio.id}`;
     try {
       await navigator.clipboard.writeText(url);
       setEnlaceCopiadoId(servicio.id);

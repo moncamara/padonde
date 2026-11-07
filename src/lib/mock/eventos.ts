@@ -52,7 +52,7 @@ export function getMockEventos(zonaSlug?: string): EventoConNegocio[] {
           maps_url: "https://maps.app.goo.gl/minca",
         },
         google_review_url: "https://search.google.com/local/writereview?placeid=ChIJplaceholder",
-        menu_url: "https://www.padonde.lat",
+        menu_url: "https://padonde.lat",
         menu_fotos: [
           "https://images.unsplash.com/photo-1544025162-d76694265947?w=1200&q=80",
           "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1200&q=80",

@@ -54,7 +54,7 @@ export function ModalKitProspeccion({ zonaInicial = "minca" }: ModalKitProspecci
       : zona === "taganga"
       ? "Taganga"
       : "Minca";
-  const urlCartelera = `https://www.padonde.lat/es/${zona}`;
+  const urlCartelera = `https://padonde.lat/es/${zona}`;
 
   // Plantillas de prospección canónicas desde templates.ts
   const plantillas: Record<CategoriaMensaje, { titulo: string; icon: string; texto: string }> = {

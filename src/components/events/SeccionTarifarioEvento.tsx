@@ -110,6 +110,17 @@ export function SeccionTarifarioEvento({
   };
 
   const totalRutas = Object.values(tarifario.tarifas).flat().length;
+  const es4x4 = tarifario.subcategoria?.includes("4x4") || tarifario.condiciones.tipo_vehiculo.toLowerCase().includes("4x4");
+
+  const descripcionDinamica = es4x4
+    ? t.descripcion
+    : locale === "en"
+    ? `Check official fixed rates for private door-to-door transfers, airport expresses, Tayrona Park, beaches, and Caribbean Coast cities.`
+    : locale === "fr"
+    ? `Consultez les tarifs officiels pour les transferts privés de porte à porte, aéroports, Parc Tayrona, plages et villes de la Côte Caraïbe.`
+    : locale === "de"
+    ? `Hier findest du die offiziellen Festpreise für private Transfers von Tür zu Tür, Expressfahrten zum Flughafen, Tayrona-Park, Stränden und Städten an der Karibikküste.`
+    : `Consulta las tarifas oficiales fijadas para traslados privados de puerta a puerta, expresos a aeropuertos, Parque Tayrona, playas y ciudades de la Costa Caribe.`;
 
   return (
     <>
@@ -117,7 +128,7 @@ export function SeccionTarifarioEvento({
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <span className="text-xl">🚙</span>
+              <span className="text-xl">{es4x4 ? "🚙" : "🚐"}</span>
               <span className="text-xs font-bold uppercase tracking-wider text-amber-900 bg-amber-200/60 px-2.5 py-0.5 rounded-full border border-amber-300">
                 {t.badge}
               </span>
@@ -130,15 +141,15 @@ export function SeccionTarifarioEvento({
         </div>
 
         <p className="font-sans text-xs sm:text-sm text-stone leading-relaxed">
-          {t.descripcion}
+          {descripcionDinamica}
         </p>
 
         <div className="flex flex-wrap items-center gap-2 text-[11px] font-sans text-amber-950 font-medium pt-1">
           <span className="bg-white/80 border border-amber-200 px-2.5 py-1 rounded-xl shadow-2xs">
-            👥 {t.capacidad}
+            👥 {tarifario.condiciones?.capacidad || t.capacidad}
           </span>
           <span className="bg-white/80 border border-amber-200 px-2.5 py-1 rounded-xl shadow-2xs">
-            🛡️ {t.tipoVehiculo}
+            🛡️ {tarifario.condiciones?.tipo_vehiculo || t.tipoVehiculo}
           </span>
           <span className="bg-white/80 border border-amber-200 px-2.5 py-1 rounded-xl shadow-2xs">
             💵 {t.preciosFijos}

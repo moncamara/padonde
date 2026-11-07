@@ -63,7 +63,7 @@ function checkBlindajeCpuVercel() {
   return true;
 }
 
-// 2. Existencia de Sitemap y Robots para SEO
+// 2. Existencia y Validación de Sitemap y Robots para SEO Canónico
 function checkSeoConfig() {
   process.stdout.write(`[2/4] ${c.bold}Infraestructura SEO (sitemap.ts & robots.ts)...${c.reset} `);
   const sitemapPath = path.join(ROOT_DIR, "src", "app", "sitemap.ts");
@@ -79,8 +79,23 @@ function checkSeoConfig() {
     return false;
   }
 
+  const sitemapContent = fs.readFileSync(sitemapPath, "utf-8");
+  const robotsContent = fs.readFileSync(robotsPath, "utf-8");
+
+  if (sitemapContent.includes("www.padonde.lat") || robotsContent.includes("www.padonde.lat")) {
+    console.log(`${c.red}FALLÓ ✕${c.reset}`);
+    console.error(`   ${c.red}Error: Se detectaron URLs con 'www.padonde.lat'. Debe usarse estrictamente 'https://padonde.lat'.${c.reset}`);
+    return false;
+  }
+
+  if (!robotsContent.includes("https://padonde.lat/sitemap.xml")) {
+    console.log(`${c.red}FALLÓ ✕${c.reset}`);
+    console.error(`   ${c.red}Error: 'src/app/robots.ts' debe declarar sitemap: 'https://padonde.lat/sitemap.xml'.${c.reset}`);
+    return false;
+  }
+
   console.log(`${c.green}OK ✓${c.reset}`);
-  console.log(`      ${c.gray}→ Metadatos dinámicos presentes para indexación orgánica.${c.reset}`);
+  console.log(`      ${c.gray}→ Dominio canónico https://padonde.lat y metadatos dinámicos validados.${c.reset}`);
   checksPassed++;
   return true;
 }

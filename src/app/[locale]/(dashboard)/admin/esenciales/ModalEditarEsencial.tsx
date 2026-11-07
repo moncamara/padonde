@@ -144,6 +144,9 @@ export function ModalEditarEsencial({
         (servicio.id === "transporte-aventura-4x4-minca" ||
         servicio.nombre_comercial?.toLowerCase().includes("aventura 4x4")
           ? "transporte-aventura-4x4-minca"
+          : servicio.id === "transporte-minca-vip" ||
+            servicio.nombre_comercial?.toLowerCase().includes("minca vip")
+          ? "transporte-minca-vip"
           : "");
       setTarifarioId(initialTarifarioId);
 
@@ -448,6 +451,9 @@ export function ModalEditarEsencial({
               <option value="">Ninguno (Ficha estándar de servicio)</option>
               <option value="transporte-aventura-4x4-minca">
                 🚙 Aventura 4X4 Minca (69 Rutas • Expresos, Pozo Azul, Marinka, Sierra Alta y Kennedy)
+              </option>
+              <option value="transporte-minca-vip">
+                🚐 Minca VIP Transporte (22 Destinos • Expresos, Aeropuertos, Tayrona y Costa Caribe)
               </option>
             </select>
             <p className="text-[10px] text-amber-900/80 leading-relaxed">

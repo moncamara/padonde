@@ -527,6 +527,9 @@ export function EventUpsertForm({
       (businessName?.toLowerCase().includes("aventura 4x4") ||
        eventTitle?.toLowerCase().includes("aventura 4x4")
         ? "transporte-aventura-4x4-minca"
+        : businessName?.toLowerCase().includes("minca vip") ||
+          eventTitle?.toLowerCase().includes("minca vip")
+        ? "transporte-minca-vip"
         : "")
     );
   });
@@ -2493,6 +2496,9 @@ export function EventUpsertForm({
             <option value="transporte-aventura-4x4-minca">
               🚙 Aventura 4X4 Minca (69 Rutas • Expresos, Cerro Kennedy, Cascadas y Sierra Alta)
             </option>
+            <option value="transporte-minca-vip">
+              🚐 Minca VIP Transporte (22 Destinos • Expresos, Aeropuertos, Tayrona y Costa Caribe)
+            </option>
           </select>
         </div>
       </div>
@@ -2739,7 +2745,7 @@ export function EventUpsertForm({
           isOpen={mostrarHabladorMesa}
           onClose={() => setMostrarHabladorMesa(false)}
           puntoNombre={businessName || eventTitle}
-          urlDestino={`https://www.padonde.lat/es/${zonaSlug}?tab=servicios#evento-${initialEvento.id}`}
+          urlDestino={`https://padonde.lat/es/${zonaSlug}?tab=servicios#evento-${initialEvento.id}`}
           tipoContenido="menu_restaurante"
         />
       )}

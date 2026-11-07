@@ -81,25 +81,26 @@ export async function generateMetadata({ params }: EventoDetailPageProps): Promi
   const descripcionLimpia = limpiarDescripcionRecurrencia(evento.descripcion) ||
     `${evento.titulo} en ${evento.negocio.nombre}, ${nombreZona}. Consulta horarios y reserva directa por WhatsApp.`;
 
-  const canonicalUrl = `https://www.padonde.lat/${locale}/${zonaSlug}/${id}`;
+  const canonicalUrl = `https://padonde.lat/${locale}/${zonaSlug}/${id}`;
   const title = `${evento.titulo} — ${evento.negocio.nombre} (${nombreZona})`;
 
   const absoluteImageUrl = evento.imagen_url
     ? evento.imagen_url.startsWith("http")
       ? evento.imagen_url
-      : `https://www.padonde.lat${evento.imagen_url.startsWith("/") ? "" : "/"}${evento.imagen_url}`
-    : "https://www.padonde.lat/og_minca.jpg";
+      : `https://padonde.lat${evento.imagen_url.startsWith("/") ? "" : "/"}${evento.imagen_url}`
+    : "https://padonde.lat/og_minca.jpg";
 
   return {
+    metadataBase: new URL("https://padonde.lat"),
     title,
     description: descripcionLimpia.slice(0, 160),
     alternates: {
       canonical: canonicalUrl,
       languages: {
-        es: `https://www.padonde.lat/es/${zonaSlug}/${id}`,
-        en: `https://www.padonde.lat/en/${zonaSlug}/${id}`,
-        fr: `https://www.padonde.lat/fr/${zonaSlug}/${id}`,
-        de: `https://www.padonde.lat/de/${zonaSlug}/${id}`,
+        es: `https://padonde.lat/es/${zonaSlug}/${id}`,
+        en: `https://padonde.lat/en/${zonaSlug}/${id}`,
+        fr: `https://padonde.lat/fr/${zonaSlug}/${id}`,
+        de: `https://padonde.lat/de/${zonaSlug}/${id}`,
       },
     },
     openGraph: {
@@ -182,80 +183,173 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
         }
       : evento.metadata_hospedaje?.google_reputacion;
 
-  // Datos estructurados Schema.org para Google Events y Restaurant Rich Snippets
-  const isRestaurante = evento.tipo === "comida";
-  const restaurantJsonLd = isRestaurante
-    ? {
-        "@context": "https://schema.org",
-        "@type": "Restaurant",
-        name: evento.negocio.nombre,
-        description: descripcionLimpia,
-        image: evento.imagen_url ? [evento.imagen_url] : [],
-        url: `https://www.padonde.lat/${locale}/${zonaSlug}/${evento.id}`,
-        telephone: `+${evento.negocio.whatsapp.replace(/\D/g, "")}`,
-        address: {
-          "@type": "PostalAddress",
-          addressLocality: zona.nombre,
-          addressRegion: "Magdalena",
-          addressCountry: "CO",
-        },
-        priceRange: evento.precio ? `${evento.precio} COP` : "$$",
-        ...(evento.metadata_hospedaje?.menu_url || (evento.metadata_hospedaje?.menu_fotos && evento.metadata_hospedaje.menu_fotos.length > 0)
-          ? { hasMenu: evento.metadata_hospedaje?.menu_url || `https://www.padonde.lat/${locale}/${zonaSlug}/${evento.id}` }
-          : {}),
-        ...(googleReputacion?.rating
-          ? {
-              aggregateRating: {
-                "@type": "AggregateRating",
-                ratingValue: googleReputacion.rating,
-                reviewCount: googleReputacion.total_reviews || 1,
-              },
-            }
-          : {}),
-      }
-    : null;
+  // Extracción segura de coordenadas geográficas desde Google Maps URL (si existen)
+  const mapsUrlForGeo = googleReputacion?.maps_url || evento.negocio?.google_maps_url || "";
+  let geoCoordinates: { latitude: number; longitude: number } | null = null;
+  const geoMatch =
+    mapsUrlForGeo.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) ||
+    mapsUrlForGeo.match(/[?&]q=(-?\d+\.\d+),(-?\d+\.\d+)/) ||
+    mapsUrlForGeo.match(/[?&]ll=(-?\d+\.\d+),(-?\d+\.\d+)/);
+  if (geoMatch && geoMatch[1] && geoMatch[2]) {
+    const lat = parseFloat(geoMatch[1]);
+    const lng = parseFloat(geoMatch[2]);
+    if (!isNaN(lat) && !isNaN(lng)) {
+      geoCoordinates = { latitude: lat, longitude: lng };
+    }
+  }
 
-  const eventJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Event",
-    name: evento.titulo,
-    description: descripcionLimpia,
-    startDate: evento.fecha_inicio,
-    endDate: evento.fecha_fin || evento.fecha_inicio,
-    eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
-    eventStatus: "https://schema.org/EventScheduled",
-    image: evento.imagen_url ? [evento.imagen_url] : [],
-    location: {
-      "@type": "Place",
-      name: evento.negocio.nombre,
+  // Rango de precios para hospedajes
+  let priceRangeLodging = "$$";
+  if (evento.metadata_hospedaje?.habitaciones && evento.metadata_hospedaje.habitaciones.length > 0) {
+    const preciosHab = evento.metadata_hospedaje.habitaciones
+      .map((h) => h.precio_noche_cop)
+      .filter((p) => typeof p === "number" && p > 0);
+    if (preciosHab.length > 0) {
+      const min = Math.min(...preciosHab);
+      const max = Math.max(...preciosHab);
+      priceRangeLodging = min === max ? `${min} COP` : `${min} - ${max} COP`;
+    }
+  } else if (evento.precio) {
+    priceRangeLodging = `${evento.precio} COP`;
+  }
+
+  // Datos estructurados Schema.org para Google (LodgingBusiness / Restaurant / Event)
+  const isHospedaje = evento.tipo === "hospedaje";
+  const isRestaurante = evento.tipo === "comida";
+
+  let structuredData: Record<string, any>;
+
+  if (isHospedaje) {
+    structuredData = {
+      "@context": "https://schema.org",
+      "@type": "LodgingBusiness",
+      name: evento.negocio?.nombre || evento.titulo,
+      description: descripcionLimpia,
+      image: evento.imagen_url ? [evento.imagen_url] : [],
+      url: `https://padonde.lat/${locale}/${zonaSlug}/${evento.id}`,
+      telephone: `+${evento.negocio.whatsapp.replace(/\D/g, "")}`,
+      priceRange: priceRangeLodging,
       address: {
         "@type": "PostalAddress",
         addressLocality: zona.nombre,
         addressRegion: "Magdalena",
         addressCountry: "CO",
       },
-    },
-    organizer: {
-      "@type": "Organization",
+      ...(geoCoordinates
+        ? {
+            geo: {
+              "@type": "GeoCoordinates",
+              latitude: geoCoordinates.latitude,
+              longitude: geoCoordinates.longitude,
+            },
+          }
+        : {}),
+      ...(evento.metadata_hospedaje?.check_in_hora
+        ? { checkinTime: evento.metadata_hospedaje.check_in_hora }
+        : {}),
+      ...(evento.metadata_hospedaje?.check_out_hora
+        ? { checkoutTime: evento.metadata_hospedaje.check_out_hora }
+        : {}),
+      ...(googleReputacion?.rating
+        ? {
+            aggregateRating: {
+              "@type": "AggregateRating",
+              ratingValue: googleReputacion.rating,
+              reviewCount: googleReputacion.total_reviews || 1,
+            },
+          }
+        : {}),
+    };
+  } else if (isRestaurante) {
+    structuredData = {
+      "@context": "https://schema.org",
+      "@type": "Restaurant",
       name: evento.negocio.nombre,
-      url: `https://wa.me/${evento.negocio.whatsapp.replace(/\D/g, "")}`,
-    },
-    offers: {
-      "@type": "Offer",
-      price: evento.precio ?? 0,
-      priceCurrency: evento.precio_moneda || "COP",
-      url: `https://www.padonde.lat/${locale}/${zonaSlug}/${evento.id}`,
-      availability: "https://schema.org/InStock",
-    },
-    ...(evento.metadata_hospedaje?.menu_url ? { hasMenu: evento.metadata_hospedaje.menu_url } : {}),
-  };
+      description: descripcionLimpia,
+      image: evento.imagen_url ? [evento.imagen_url] : [],
+      url: `https://padonde.lat/${locale}/${zonaSlug}/${evento.id}`,
+      telephone: `+${evento.negocio.whatsapp.replace(/\D/g, "")}`,
+      address: {
+        "@type": "PostalAddress",
+        addressLocality: zona.nombre,
+        addressRegion: "Magdalena",
+        addressCountry: "CO",
+      },
+      priceRange: evento.precio ? `${evento.precio} COP` : "$$",
+      ...(evento.metadata_hospedaje?.menu_url || (evento.metadata_hospedaje?.menu_fotos && evento.metadata_hospedaje.menu_fotos.length > 0)
+        ? { hasMenu: evento.metadata_hospedaje?.menu_url || `https://padonde.lat/${locale}/${zonaSlug}/${evento.id}` }
+        : {}),
+      ...(googleReputacion?.rating
+        ? {
+            aggregateRating: {
+              "@type": "AggregateRating",
+              ratingValue: googleReputacion.rating,
+              reviewCount: googleReputacion.total_reviews || 1,
+            },
+          }
+        : {}),
+      ...(geoCoordinates
+        ? {
+            geo: {
+              "@type": "GeoCoordinates",
+              latitude: geoCoordinates.latitude,
+              longitude: geoCoordinates.longitude,
+            },
+          }
+        : {}),
+    };
+  } else {
+    structuredData = {
+      "@context": "https://schema.org",
+      "@type": "Event",
+      name: evento.titulo,
+      description: descripcionLimpia,
+      startDate: evento.fecha_inicio,
+      endDate: evento.fecha_fin || evento.fecha_inicio,
+      eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+      eventStatus: "https://schema.org/EventScheduled",
+      image: evento.imagen_url ? [evento.imagen_url] : [],
+      location: {
+        "@type": "Place",
+        name: evento.negocio.nombre,
+        address: {
+          "@type": "PostalAddress",
+          addressLocality: zona.nombre,
+          addressRegion: "Magdalena",
+          addressCountry: "CO",
+        },
+        ...(geoCoordinates
+          ? {
+              geo: {
+                "@type": "GeoCoordinates",
+                latitude: geoCoordinates.latitude,
+                longitude: geoCoordinates.longitude,
+              },
+            }
+          : {}),
+      },
+      organizer: {
+        "@type": "Organization",
+        name: evento.negocio.nombre,
+        url: `https://wa.me/${evento.negocio.whatsapp.replace(/\D/g, "")}`,
+      },
+      offers: {
+        "@type": "Offer",
+        price: evento.precio ?? 0,
+        priceCurrency: evento.precio_moneda || "COP",
+        url: `https://padonde.lat/${locale}/${zonaSlug}/${evento.id}`,
+        availability: "https://schema.org/InStock",
+      },
+      ...(evento.metadata_hospedaje?.menu_url ? { hasMenu: evento.metadata_hospedaje.menu_url } : {}),
+    };
+  }
 
   return (
     <DetailSlideWrapper zonaSlug={zonaSlug}>
-      {/* Datos estructurados JSON-LD para Google Search Events y Restaurantes */}
+      {/* Datos estructurados JSON-LD Schema.org para indexación estática inmediata */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(restaurantJsonLd || eventJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
 
       {/* 1. Header flotante sobre la foto con botón atrás, selector de idioma y compartir */}
@@ -271,7 +365,7 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
             <ShareButton
               title={evento.titulo}
               text={`${evento.titulo} en ${evento.negocio.nombre} (${zona.nombre}) — PaDónde 🌿`}
-              url={`https://www.padonde.lat/${locale}/${zonaSlug}/${id}`}
+              url={`https://padonde.lat/${locale}/${zonaSlug}/${id}`}
               zonaNombre={zona.nombre}
               variant="detail"
             />
@@ -516,13 +610,16 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
             );
           })()}
 
-          {/* Tarifario Oficial de Rutas y Excursiones (ej. Aventura 4X4) */}
+          {/* Tarifario Oficial de Rutas y Excursiones (ej. Aventura 4X4, Minca VIP) */}
           {(() => {
             const tarifarioId =
               (evento.metadata_hospedaje as Record<string, any>)?.tarifario_id ||
               (evento.negocio?.nombre?.toLowerCase().includes("aventura 4x4") ||
                evento.titulo?.toLowerCase().includes("aventura 4x4")
                 ? "transporte-aventura-4x4-minca"
+                : evento.negocio?.nombre?.toLowerCase().includes("minca vip") ||
+                  evento.titulo?.toLowerCase().includes("minca vip")
+                ? "transporte-minca-vip"
                 : undefined);
             const tarifario = tarifarioId ? getTarifarioPorId(tarifarioId) : null;
             if (!tarifario) return null;

@@ -178,7 +178,7 @@ export function DrawerTarifarioTransporte({
           {/* Condiciones claras y selector de personas */}
           <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-stone pt-1">
             <p className="flex items-center gap-1.5 font-medium">
-              <span>🚙</span>
+              <span>{tarifario.subcategoria?.includes("4x4") || tarifario.condiciones.tipo_vehiculo.toLowerCase().includes("4x4") ? "🚙" : "🚐"}</span>
               <span>{tarifario.condiciones.tipo_vehiculo}</span>
               <span>•</span>
               <span className="text-emerald-800 font-semibold">{t.capacidad}</span>
@@ -229,10 +229,15 @@ export function DrawerTarifarioTransporte({
             )}
           </div>
 
-          {/* Pills de Categorías de Rutas */}
+          {/* Pills de Categorías de Rutas (solo categorías con destinos) */}
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-1">
-            {(["todas", "sierra_alta_y_montana", "minca_locales_cercanos", "expresos"] as TabCategoria[]).map(
-              (catKey) => {
+            {(["todas", "sierra_alta_y_montana", "minca_locales_cercanos", "expresos"] as TabCategoria[])
+              .filter((catKey) => {
+                if (catKey === "todas") return true;
+                const count = (tarifario.tarifas[catKey] || []).length;
+                return count > 0;
+              })
+              .map((catKey) => {
                 const conf = categoriasConfig[catKey];
                 const isSelected = categoriaActiva === catKey;
                 const count =
@@ -262,8 +267,7 @@ export function DrawerTarifarioTransporte({
                     </span>
                   </button>
                 );
-              }
-            )}
+              })}
           </div>
         </div>
 

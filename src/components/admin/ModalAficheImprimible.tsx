@@ -39,10 +39,10 @@ export function ModalAficheImprimible({
   // Sanitizar URL destino
   const urlSeguraDestino = (
     urlDestino ||
-    `https://www.padonde.lat/es/minca?src=${srcParam || "punto-fisico"}`
+    `https://padonde.lat/es/minca?src=${srcParam || "punto-fisico"}`
   ).replace(
     /^https?:\/\/(localhost(:\d+)?|127\.0\.0\.1(:\d+)?)/,
-    "https://www.padonde.lat"
+    "https://padonde.lat"
   );
 
   const qrImageUrlSegura =

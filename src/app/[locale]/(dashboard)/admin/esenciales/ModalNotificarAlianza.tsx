@@ -24,7 +24,7 @@ export function generarMensajeRestauranteComercial(
     negocioNombre: nombreComercial,
     zonaSlug,
     zonaNombre,
-    enlacePersonalizado: `https://www.padonde.lat/es/${zonaSlug}?tab=servicios${anchor}`,
+    enlacePersonalizado: `https://padonde.lat/es/${zonaSlug}?tab=servicios${anchor}`,
   });
 }
 
@@ -39,7 +39,7 @@ export function generarMensajeComercioServicios(
     negocioNombre: nombreComercial,
     zonaSlug,
     zonaNombre,
-    enlacePersonalizado: `https://www.padonde.lat/es/${zonaSlug}?tab=servicios${anchor}`,
+    enlacePersonalizado: `https://padonde.lat/es/${zonaSlug}?tab=servicios${anchor}`,
   });
 }
 
@@ -64,7 +64,7 @@ export function ModalNotificarAlianza({
       ? servicio.zona_id.replace("zona-", "")
       : "minca";
   const destino = zonaNombre || (zonaSlug === "mendihuaca" ? "Mendihuaca" : "Minca");
-  const urlPublicacion = `https://www.padonde.lat/es/${zonaSlug}?tab=servicios#servicio-${servicio.id}`;
+  const urlPublicacion = `https://padonde.lat/es/${zonaSlug}?tab=servicios#servicio-${servicio.id}`;
 
   const plantillaInicial = useMemo<OpcionPlantilla>(() => {
     if (servicio.categoria === "comercio" || servicio.categoria === "transporte" || servicio.categoria === "efectivo" || servicio.categoria === "salud") {

@@ -26,7 +26,7 @@ export async function generateMetadata({
   params,
   searchParams,
 }: MenuDemoPageProps): Promise<Metadata> {
-  const { locale } = await params;
+  const { locale, zona } = await params;
   const search = searchParams ? await searchParams : {};
 
   let nombre = "Lazy Cat Minca";
@@ -54,9 +54,21 @@ export async function generateMetadata({
     de: `Digitale Speisekarte · ${nombre} | PaDónde`,
   };
 
+  const canonicalUrl = `https://padonde.lat/${locale}/${zona}/menu-demo`;
+
   return {
+    metadataBase: new URL("https://padonde.lat"),
     title: titles[locale] || titles.es,
     description: `Descubre la carta gastronómica de ${nombre} en Minca. ${subtitulo}`,
+    alternates: {
+      canonical: canonicalUrl,
+      languages: {
+        es: `https://padonde.lat/es/${zona}/menu-demo`,
+        en: `https://padonde.lat/en/${zona}/menu-demo`,
+        fr: `https://padonde.lat/fr/${zona}/menu-demo`,
+        de: `https://padonde.lat/de/${zona}/menu-demo`,
+      },
+    },
   };
 }
 

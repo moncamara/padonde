@@ -179,10 +179,12 @@ export function EventCard({ evento: rawEvento, zona, priority = false }: EventCa
             {Boolean(
               (evento.metadata_hospedaje as Record<string, any>)?.tarifario_id ||
               evento.negocio?.nombre?.toLowerCase().includes("aventura 4x4") ||
-              evento.titulo?.toLowerCase().includes("aventura 4x4")
+              evento.titulo?.toLowerCase().includes("aventura 4x4") ||
+              evento.negocio?.nombre?.toLowerCase().includes("minca vip") ||
+              evento.titulo?.toLowerCase().includes("minca vip")
             ) && (
               <span className="bg-amber-400 text-amber-950 text-xs font-sans font-bold px-2.5 py-1 rounded-full border border-amber-300 shadow-xs flex items-center gap-1">
-                📋 Tarifas 4x4
+                📋 {evento.negocio?.nombre?.toLowerCase().includes("aventura 4x4") || evento.titulo?.toLowerCase().includes("aventura 4x4") ? "Tarifas 4x4" : "Tarifario Oficial"}
               </span>
             )}
           </div>
@@ -250,14 +252,18 @@ export function EventCard({ evento: rawEvento, zona, priority = false }: EventCa
             {Boolean(
               (evento.metadata_hospedaje as Record<string, any>)?.tarifario_id ||
               evento.negocio?.nombre?.toLowerCase().includes("aventura 4x4") ||
-              evento.titulo?.toLowerCase().includes("aventura 4x4")
+              evento.titulo?.toLowerCase().includes("aventura 4x4") ||
+              evento.negocio?.nombre?.toLowerCase().includes("minca vip") ||
+              evento.titulo?.toLowerCase().includes("minca vip")
             ) && (!evento.precio || evento.precio === 0) ? (
               <>
                 <span className="text-forest font-sans font-bold text-base tracking-tight">
                   Tarifario Oficial
                 </span>
                 <span className="text-stone text-[10px] font-sans">
-                  69 rutas • 1 a 4 personas
+                  {evento.negocio?.nombre?.toLowerCase().includes("minca vip") || evento.titulo?.toLowerCase().includes("minca vip")
+                    ? "22 destinos • 1 a 4 personas"
+                    : "69 rutas • 1 a 4 personas"}
                 </span>
               </>
             ) : (
