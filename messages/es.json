@@ -188,6 +188,30 @@
     "backOnline": "De nuevo en línea · Cartelera actualizada"
   },
   "crossSelling": {
+    "badge": "🧭 Próximo Destino",
+    "tayrona": {
+      "title": "¿Hacia la playa o la montaña?",
+      "desc": "Continúa tu viaje hacia las olas de Mendihuaca o sube al clima fresco de la Sierra en Minca."
+    },
+    "mendihuaca": {
+      "title": "¿Selva virgen o clima fresco?",
+      "desc": "Descubre los senderos y playas del Parque Tayrona, o sube a los ríos puros y fincas de Minca."
+    },
+    "minca": {
+      "title": "¿Bajas a la costa Caribe?",
+      "desc": "Conecta con los senderos y eco-lodges del Tayrona, o disfruta del surf y atardeceres en Mendihuaca."
+    },
+    "destinos": {
+      "tayrona": {
+        "label": "Tayrona"
+      },
+      "mendihuaca": {
+        "label": "Mendihuaca"
+      },
+      "minca": {
+        "label": "Minca"
+      }
+    },
     "mincaToMendiBadge": "🌊 Próximo Destino • Costa & Playa",
     "mincaToMendiTitle": "¿Bajas a la costa? Explora qué hacer en Mendihuaca",
     "mincaToMendiDesc": "Playas vírgenes, surf en el río y el mar, cócteles al atardecer y cabañas frente a las olas.",

@@ -188,6 +188,30 @@
     "backOnline": "Wieder online · Kalender aktualisiert"
   },
   "crossSelling": {
+    "badge": "🧭 Nächstes Reiseziel",
+    "tayrona": {
+      "title": "Zum Strand oder in die Berge?",
+      "desc": "Reise weiter zu den Wellen von Mendihuaca oder genieße das kühle Bergklima der Sierra in Minca."
+    },
+    "mendihuaca": {
+      "title": "Unberührter Dschungel oder kühles Bergklima?",
+      "desc": "Entdecke die Pfade und Strände des Tayrona-Parks oder die klaren Flüsse und Farmen in Minca."
+    },
+    "minca": {
+      "title": "Geht es hinunter an die Karibikküste?",
+      "desc": "Entdecke Pfade und Öko-Lodges im Tayrona oder genieße Surfen und Sonnenuntergänge in Mendihuaca."
+    },
+    "destinos": {
+      "tayrona": {
+        "label": "Tayrona"
+      },
+      "mendihuaca": {
+        "label": "Mendihuaca"
+      },
+      "minca": {
+        "label": "Minca"
+      }
+    },
     "mincaToMendiBadge": "🌊 Nächstes Reiseziel • Küste & Strand",
     "mincaToMendiTitle": "Geht es an die Küste? Entdecke Mendihuaca",
     "mincaToMendiDesc": "Unberührte Strände, Surfen im Fluss und Meer, Cocktails bei Sonnenuntergang und Strandhütten.",

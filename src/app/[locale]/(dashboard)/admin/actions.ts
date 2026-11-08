@@ -1553,6 +1553,7 @@ export async function guardarHospedajeAction(input: GuardarHospedajeInput) {
       await supabase
         .from("negocios")
         .update({
+          zona_id: zona.id,
           nombre: nombreLimpio,
           whatsapp: cleanPhone || undefined,
           instagram: input.instagram?.trim() || null,

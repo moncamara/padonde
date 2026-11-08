@@ -158,7 +158,7 @@ export function InstallPrompt() {
             <div className="text-center mb-4">
               <div className="w-12 h-12 mx-auto rounded-2xl overflow-hidden shadow-md mb-2">
                 <img
-                  src="/icon-192.png"
+                  src="/icon-192x192.png"
                   alt="PaDónde"
                   className="w-full h-full object-cover"
                   width={48}
@@ -230,7 +230,7 @@ export function InstallPrompt() {
             <div className="text-center mb-4">
               <div className="w-12 h-12 mx-auto rounded-2xl overflow-hidden shadow-md mb-2">
                 <img
-                  src="/icon-192.png"
+                  src="/icon-192x192.png"
                   alt="PaDónde"
                   className="w-full h-full object-cover"
                   width={48}

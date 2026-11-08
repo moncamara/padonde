@@ -45,12 +45,31 @@ export default async function AdminDashboardPage({
     .eq("clave", "notificaciones_telegram")
     .maybeSingle();
 
-  // 1.2 Asegurar activación oficial de la zona Tayrona en Supabase (sesión autenticada admin)
+  // 1.2 Asegurar activación oficial de la zona Tayrona y saneamiento de Zirumake en Supabase (sesión autenticada admin)
   try {
     await supabase
       .from("zonas")
       .update({ activa: true })
       .in("slug", ["tayrona", "tairona"]);
+
+    // Saneamiento de zona para el aliado Zirumake
+    await supabase
+      .from("negocios")
+      .update({ zona_id: "21c8930c-5e37-44a2-b129-fe5f0e6d8899" })
+      .ilike("nombre", "%zirumake%")
+      .neq("zona_id", "21c8930c-5e37-44a2-b129-fe5f0e6d8899");
+
+    // Saneamiento de título y zona para el hospedaje de Zirumake
+    await supabase
+      .from("eventos")
+      .update({
+        titulo: "Hostal Zirumake Tayrona 🌿🏊",
+        zona_id: "21c8930c-5e37-44a2-b129-fe5f0e6d8899",
+        descripcion:
+          "Hospedaje ecológico y descanso en plena naturaleza a pocos minutos de la entrada El Zaino del Parque Nacional Natural Tayrona. Disfruta de piscina, cabañas privadas, ambiente selvático y tranquilidad absoluta.",
+      })
+      .eq("id", "33dcb70c-3ab7-459b-98d0-bf907e6755e2")
+      .ilike("titulo", "%Minca%");
   } catch {}
 
   const telegramActivas = configTelegram?.valor?.activas ?? true;

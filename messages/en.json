@@ -188,6 +188,30 @@
     "backOnline": "Back online · Board updated"
   },
   "crossSelling": {
+    "badge": "🧭 Next Destination",
+    "tayrona": {
+      "title": "Heading to the beach or the mountain?",
+      "desc": "Continue your journey to the waves of Mendihuaca or head up to the fresh climate of the Sierra in Minca."
+    },
+    "mendihuaca": {
+      "title": "Untamed jungle or cool mountain air?",
+      "desc": "Discover the trails and beaches of Tayrona Park, or head up to the pure rivers and farms of Minca."
+    },
+    "minca": {
+      "title": "Heading down to the Caribbean coast?",
+      "desc": "Connect with the trails and eco-lodges of Tayrona, or enjoy surf and sunsets in Mendihuaca."
+    },
+    "destinos": {
+      "tayrona": {
+        "label": "Tayrona"
+      },
+      "mendihuaca": {
+        "label": "Mendihuaca"
+      },
+      "minca": {
+        "label": "Minca"
+      }
+    },
     "mincaToMendiBadge": "🌊 Next Destination • Coast & Beach",
     "mincaToMendiTitle": "Heading down to the coast? Explore things to do in Mendihuaca",
     "mincaToMendiDesc": "Pristine beaches, river & sea surfing, sunset cocktails, and beachfront cabins.",

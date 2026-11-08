@@ -32,6 +32,15 @@ export default async function AdminAliadosPage({
     redirect({ href: "/admin/login", locale });
   }
 
+  // Asegurar asignación de zona Tayrona para Zirumake si estaba en Mendihuaca
+  try {
+    await supabase
+      .from("negocios")
+      .update({ zona_id: "21c8930c-5e37-44a2-b129-fe5f0e6d8899" })
+      .ilike("nombre", "%zirumake%")
+      .neq("zona_id", "21c8930c-5e37-44a2-b129-fe5f0e6d8899");
+  } catch {}
+
   // 2. Cargar negocios con sus eventos asociados
   let { data: rawNegocios, error: errNegocios } = await supabase
     .from("negocios")

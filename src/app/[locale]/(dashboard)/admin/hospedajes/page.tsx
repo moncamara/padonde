@@ -35,6 +35,26 @@ export default async function AdminHospedajesPage({
     redirect({ href: "/admin/login", locale });
   }
 
+  // Saneamiento de zona y título para Zirumake
+  try {
+    await supabase
+      .from("negocios")
+      .update({ zona_id: "21c8930c-5e37-44a2-b129-fe5f0e6d8899" })
+      .ilike("nombre", "%zirumake%")
+      .neq("zona_id", "21c8930c-5e37-44a2-b129-fe5f0e6d8899");
+
+    await supabase
+      .from("eventos")
+      .update({
+        titulo: "Hostal Zirumake Tayrona 🌿🏊",
+        zona_id: "21c8930c-5e37-44a2-b129-fe5f0e6d8899",
+        descripcion:
+          "Hospedaje ecológico y descanso en plena naturaleza a pocos minutos de la entrada El Zaino del Parque Nacional Natural Tayrona. Disfruta de piscina, cabañas privadas, ambiente selvático y tranquilidad absoluta.",
+      })
+      .eq("id", "33dcb70c-3ab7-459b-98d0-bf907e6755e2")
+      .ilike("titulo", "%Minca%");
+  } catch {}
+
   // 2. Obtener hospedajes registrados
   let { data: hospedajesData, error: hospErr } = await supabase
     .from("eventos")
