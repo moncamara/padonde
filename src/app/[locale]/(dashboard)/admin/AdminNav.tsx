@@ -24,6 +24,7 @@ export function AdminNav({ userEmail }: AdminNavProps) {
   const isCartelera = pathname === "/admin" || pathname.endsWith("/admin");
   const isHospedajes = pathname.includes("/admin/hospedajes");
   const isAliados = pathname.includes("/admin/aliados");
+  const isCobros = pathname.includes("/admin/cobros");
   const isTarifas = pathname.includes("/admin/tarifas");
   const isMenus = pathname.includes("/admin/menus");
   const isPuntosQR = pathname.includes("/admin/puntos-qr");
@@ -109,6 +110,19 @@ export function AdminNav({ userEmail }: AdminNavProps) {
           >
             <span>👥</span>
             <span>Aliados</span>
+          </Link>
+
+          <Link
+            href="/admin/cobros"
+            className={[
+              "py-1.5 px-2.5 sm:px-3 rounded-xl font-sans text-[11px] sm:text-xs font-medium transition-all text-center flex items-center justify-center gap-1 shrink-0 whitespace-nowrap",
+              isCobros
+                ? "bg-forest text-white shadow-xs font-semibold"
+                : "text-stone hover:text-forest",
+            ].join(" ")}
+          >
+            <span>💳</span>
+            <span>Cobros</span>
           </Link>
 
           <Link

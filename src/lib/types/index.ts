@@ -210,3 +210,6 @@ export type PaginatedResult<T> = {
   page: number;
   pageSize: number;
 };
+
+// ─── Submódulo Finanzas y Cobros a Aliados (/admin/cobros) ────────────────────
+export * from "./cobros";
