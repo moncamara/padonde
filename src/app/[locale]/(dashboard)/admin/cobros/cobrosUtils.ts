@@ -58,6 +58,24 @@ export function sumarMesesAFecha(fechaStr: string, meses: number): string {
 }
 
 /**
+ * Extrae y suma los montos asentados en las notas de renovación (ej. "[Renovación ... | $125.000 COP]").
+ */
+export function extraerTotalPagosDeNotas(notas: string | null | undefined): number {
+  if (!notas) return 0;
+  const regex = /\[Renovaci[oó]n[^\]]*\|\s*\$([\d.,]+)\s*COP\]/gi;
+  let total = 0;
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(notas)) !== null) {
+    const limpio = match[1].replace(/[.,\s]/g, "");
+    const valor = Number(limpio);
+    if (!Number.isNaN(valor) && valor > 0) {
+      total += valor;
+    }
+  }
+  return total;
+}
+
+/**
  * Determina si un aliado está en estado pausado / inactivo (no aceptó la propuesta o en pausa).
  */
 export function esAliadoPausadoOInactivo(aliado: {

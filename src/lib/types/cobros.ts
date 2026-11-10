@@ -83,6 +83,7 @@ export type FilaCobroCalculada = FilaCobroAliado & {
 /** Indicadores clave de rendimiento (KPIs) del módulo de cobros */
 export type KpisCobros = {
   totalPorCobrarCop: number;       // Suma de tarifas pactadas de aliados activos en estado 'por_vencer' o 'vencido'
+  totalRecaudadoCop: number;       // Suma de pagos efectivamente recibidos / aliados activos al día
   totalCarteraActivaCop: number;   // Cartera proyectada total de aliados activos
   aliadosEnCortesia: number;       // Cantidad de aliados activos disfrutando cortesía
   aliadosPorVencer: number;        // Cantidad de aliados activos que vencen en los próximos 5 días

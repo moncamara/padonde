@@ -18,6 +18,7 @@ import {
   sumarMesesAFecha,
   calcularEstadoCobroDinamico,
   esAliadoPausadoOInactivo,
+  extraerTotalPagosDeNotas,
 } from "./cobrosUtils";
 
 // ─── Server Action: Obtener Cobros y KPIs ────────────────────────────────────
@@ -42,6 +43,7 @@ export async function obtenerCobrosAliadosAction(): Promise<ObtenerCobrosResult>
         success: false,
         kpis: {
           totalPorCobrarCop: 0,
+          totalRecaudadoCop: 0,
           totalCarteraActivaCop: 0,
           aliadosEnCortesia: 0,
           aliadosPorVencer: 0,
@@ -68,6 +70,7 @@ export async function obtenerCobrosAliadosAction(): Promise<ObtenerCobrosResult>
         success: false,
         kpis: {
           totalPorCobrarCop: 0,
+          totalRecaudadoCop: 0,
           totalCarteraActivaCop: 0,
           aliadosEnCortesia: 0,
           aliadosPorVencer: 0,
@@ -87,6 +90,7 @@ export async function obtenerCobrosAliadosAction(): Promise<ObtenerCobrosResult>
 
     // 3. Evaluar estados dinámicos y acumular KPIs
     let totalPorCobrarCop = 0;
+    let totalRecaudadoCop = 0;
     let totalCarteraActivaCop = 0;
     let aliadosEnCortesia = 0;
     let aliadosPorVencer = 0;
@@ -107,11 +111,18 @@ export async function obtenerCobrosAliadosAction(): Promise<ObtenerCobrosResult>
         negocioActivo: aliado.negocio_activo,
       });
 
-      // Contadores de KPIs: EXCLUIR pausados o inactivos de la cartera a cobrar
+      // Contadores de KPIs: EXCLUIR pausados o inactivos de la cartera a cobrar y recaudos
       if (esPausado || estadoCalculado === "pausado" || estadoCalculado === "cancelado") {
         aliadosPausados++;
       } else {
         totalCarteraActivaCop += tarifa;
+
+        const montoEnNotas = extraerTotalPagosDeNotas(aliado.notas_acuerdo);
+        if (montoEnNotas > 0) {
+          totalRecaudadoCop += montoEnNotas;
+        } else if (estadoCalculado === "al_dia") {
+          totalRecaudadoCop += tarifa;
+        }
 
         switch (estadoCalculado) {
           case "vencido":
@@ -160,6 +171,7 @@ export async function obtenerCobrosAliadosAction(): Promise<ObtenerCobrosResult>
 
     const kpis: KpisCobros = {
       totalPorCobrarCop,
+      totalRecaudadoCop,
       totalCarteraActivaCop,
       aliadosEnCortesia,
       aliadosPorVencer,
@@ -181,6 +193,7 @@ export async function obtenerCobrosAliadosAction(): Promise<ObtenerCobrosResult>
       success: false,
       kpis: {
         totalPorCobrarCop: 0,
+        totalRecaudadoCop: 0,
         totalCarteraActivaCop: 0,
         aliadosEnCortesia: 0,
         aliadosPorVencer: 0,

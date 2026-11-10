@@ -107,6 +107,7 @@ export function CobrosDashboardClient({ initialData }: CobrosDashboardClientProp
 
   const kpis: KpisCobros = data.kpis || {
     totalPorCobrarCop: 0,
+    totalRecaudadoCop: 0,
     totalCarteraActivaCop: 0,
     aliadosEnCortesia: 0,
     aliadosPorVencer: 0,
@@ -256,9 +257,9 @@ export function CobrosDashboardClient({ initialData }: CobrosDashboardClientProp
       </div>
 
       {/* A. Resumen de KPIs (Tarjetas Superiores) */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
         {/* Total por Cobrar */}
-        <div className="col-span-2 sm:col-span-1 bg-gradient-to-br from-rose-50 to-amber-50/50 p-4 rounded-3xl border border-rose-200/80 shadow-2xs flex flex-col justify-between">
+        <div className="bg-gradient-to-br from-rose-50 to-amber-50/50 p-4 rounded-3xl border border-rose-200/80 shadow-2xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-semibold text-rose-800 uppercase tracking-wider">
               Por Cobrar
@@ -275,6 +276,27 @@ export function CobrosDashboardClient({ initialData }: CobrosDashboardClientProp
           </div>
           <div className="text-[10px] text-stone font-medium">
             Cartera activa total: ${kpis.totalCarteraActivaCop.toLocaleString("es-CO")}
+          </div>
+        </div>
+
+        {/* Total Recaudado / Recibido */}
+        <div className="bg-gradient-to-br from-emerald-50 to-teal-50/60 p-4 rounded-3xl border border-emerald-200/90 shadow-2xs flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold text-emerald-800 uppercase tracking-wider">
+              Recaudado / Recibido
+            </span>
+            <span className="text-base">💵</span>
+          </div>
+          <div className="my-2">
+            <div className="font-serif text-xl sm:text-2xl font-bold text-emerald-900 tracking-tight">
+              ${(kpis.totalRecaudadoCop || 0).toLocaleString("es-CO")}
+            </div>
+            <div className="text-[11px] text-emerald-700/90 font-sans mt-0.5">
+              COP efectivamente cobrados
+            </div>
+          </div>
+          <div className="text-[10px] text-emerald-800 font-medium">
+            {kpis.aliadosAlDia} {kpis.aliadosAlDia === 1 ? "aliado al día" : "aliados al día"} con pago vigente
           </div>
         </div>
 
