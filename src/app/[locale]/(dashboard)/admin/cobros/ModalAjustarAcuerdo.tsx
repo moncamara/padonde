@@ -26,6 +26,7 @@ export function ModalAjustarAcuerdo({
   const [fechaPrimerMensaje, setFechaPrimerMensaje] = useState<string>("");
   const [proximoCobro, setProximoCobro] = useState<string>("");
   const [estadoPago, setEstadoPago] = useState<EstadoPago>("en_cortesia");
+  const [negocioActivo, setNegocioActivo] = useState<boolean>(true);
   const [notas, setNotas] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -43,13 +44,30 @@ export function ModalAjustarAcuerdo({
       setProximoCobro(
         aliado.proximo_cobro ? aliado.proximo_cobro.split("T")[0] : ""
       );
-      setEstadoPago(aliado.estado_pago || "en_cortesia");
+
+      const estaInactivo =
+        aliado.negocio_activo === false ||
+        aliado.estado_pago === "pausado" ||
+        aliado.estado_pago === "cancelado" ||
+        aliado.estado_calculado === "pausado";
+
+      setNegocioActivo(!estaInactivo);
+      setEstadoPago(aliado.estado_pago || (estaInactivo ? "pausado" : "en_cortesia"));
       setNotas(aliado.notas_acuerdo || "");
       setErrorMsg(null);
     }
   }, [aliado, isOpen]);
 
   if (!isOpen || !aliado) return null;
+
+  const handleToggleActivo = (nuevoActivo: boolean) => {
+    setNegocioActivo(nuevoActivo);
+    if (!nuevoActivo) {
+      setEstadoPago("pausado");
+    } else if (estadoPago === "pausado" || estadoPago === "cancelado") {
+      setEstadoPago("al_dia");
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,6 +79,7 @@ export function ModalAjustarAcuerdo({
 
       const res = await actualizarAcuerdoComercialAction({
         negocio_id: aliado.negocio_id,
+        negocio_activo: negocioActivo,
         tarifa_pactada_cop: tarifa,
         modalidad,
         dias_cortesia: diasCortesia,
@@ -75,7 +94,9 @@ export function ModalAjustarAcuerdo({
         return;
       }
 
-      onSuccess(`Acuerdo comercial actualizado exitosamente para ${aliado.negocio_nombre}.`);
+      onSuccess(
+        `Acuerdo comercial ${negocioActivo ? "actualizado" : "pausado"} para ${aliado.negocio_nombre}.`
+      );
       onClose();
     } catch (err: any) {
       setErrorMsg(err?.message || "Ocurrió un error inesperado al guardar los cambios.");
@@ -123,6 +144,50 @@ export function ModalAjustarAcuerdo({
               ⚠️ {errorMsg}
             </div>
           )}
+
+          {/* Switch de Estado Operativo: Activo vs Pausado */}
+          <div className="p-3.5 rounded-2xl border border-stone-light/70 bg-cream/60 space-y-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-xs font-bold text-forest block">
+                  Estado en Cartera Comercial
+                </span>
+                <span className="text-[11px] text-stone font-sans">
+                  {negocioActivo
+                    ? "Aliado activo en seguimiento y cobros periódicos"
+                    : "Pausado o no aceptó propuesta (excluido del Total por Cobrar)"}
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => handleToggleActivo(true)}
+                className={`p-2 rounded-xl border text-xs font-sans font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  negocioActivo
+                    ? "bg-emerald-600 text-white border-emerald-600 shadow-xs font-semibold"
+                    : "bg-white text-stone border-stone-light/60 hover:bg-stone-50"
+                }`}
+              >
+                <span>🟢</span>
+                <span>Activo</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleToggleActivo(false)}
+                className={`p-2 rounded-xl border text-xs font-sans font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  !negocioActivo
+                    ? "bg-stone-700 text-white border-stone-700 shadow-xs font-semibold"
+                    : "bg-white text-stone border-stone-light/60 hover:bg-stone-50"
+                }`}
+              >
+                <span>⏸️</span>
+                <span>Pausado / No Aceptó</span>
+              </button>
+            </div>
+          </div>
 
           {/* Tarifa Pactada y Atajos Rápidos */}
           <div>
@@ -224,33 +289,43 @@ export function ModalAjustarAcuerdo({
             </div>
           </div>
 
-          {/* Estado Forzado Manual */}
+          {/* Estado Específico del Acuerdo */}
           <div>
             <label className="block text-xs font-semibold text-forest mb-1">
-              Estado Base Guardado
+              Ciclo de Pago
             </label>
             <select
               value={estadoPago}
-              onChange={(e) => setEstadoPago(e.target.value as EstadoPago)}
+              onChange={(e) => {
+                const val = e.target.value as EstadoPago;
+                setEstadoPago(val);
+                if (val === "pausado" || val === "cancelado") {
+                  setNegocioActivo(false);
+                } else {
+                  setNegocioActivo(true);
+                }
+              }}
               className="w-full px-3 py-2 rounded-xl border border-stone-light/80 text-xs font-sans font-medium focus:border-forest focus:ring-1 focus:ring-forest outline-hidden bg-white text-stone-dark"
             >
               <option value="en_cortesia">En Cortesía</option>
               <option value="al_dia">Al Día</option>
               <option value="por_vencer">Por Vencer</option>
               <option value="vencido">Vencido</option>
+              <option value="pausado">⏸️ Pausado / No Aceptó</option>
+              <option value="cancelado">✕ Cancelado</option>
             </select>
           </div>
 
           {/* Notas del Acuerdo */}
           <div>
             <label className="block text-xs font-semibold text-forest mb-1">
-              Condiciones Especiales o Notas
+              Condiciones Especiales o Motivo de Pausa
             </label>
             <textarea
               rows={3}
               value={notas}
               onChange={(e) => setNotas(e.target.value)}
-              placeholder="Ej: Acordado pago trimestral anticipado. Incluye afiche QR en recepción y destacados quincenales."
+              placeholder="Ej: No aceptó propuesta inicial por temporada baja. Volver a contactar en diciembre."
               className="w-full p-3 rounded-xl border border-stone-light/80 text-xs font-sans focus:border-forest focus:ring-1 focus:ring-forest outline-hidden bg-white text-stone-dark resize-none"
             />
           </div>

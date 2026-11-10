@@ -17,6 +17,7 @@ import {
   getHoyColombia,
   sumarMesesAFecha,
   calcularEstadoCobroDinamico,
+  esAliadoPausadoOInactivo,
 } from "./cobrosUtils";
 
 // ─── Server Action: Obtener Cobros y KPIs ────────────────────────────────────
@@ -24,6 +25,7 @@ import {
 /**
  * Consulta la vista `vista_cobros_aliados`, computa en tiempo real los estados y
  * genera los KPIs consolidados de tesorería y cartera para el módulo /admin/cobros.
+ * Excluye del 'Total por Cobrar' y cartera activa a los aliados inactivos o pausados.
  */
 export async function obtenerCobrosAliadosAction(): Promise<ObtenerCobrosResult> {
   try {
@@ -45,6 +47,8 @@ export async function obtenerCobrosAliadosAction(): Promise<ObtenerCobrosResult>
           aliadosPorVencer: 0,
           aliadosVencidos: 0,
           aliadosAlDia: 0,
+          aliadosPausados: 0,
+          totalAliadosActivos: 0,
           totalAliados: 0,
         },
         aliados: [],
@@ -69,6 +73,8 @@ export async function obtenerCobrosAliadosAction(): Promise<ObtenerCobrosResult>
           aliadosPorVencer: 0,
           aliadosVencidos: 0,
           aliadosAlDia: 0,
+          aliadosPausados: 0,
+          totalAliadosActivos: 0,
           totalAliados: 0,
         },
         aliados: [],
@@ -86,12 +92,11 @@ export async function obtenerCobrosAliadosAction(): Promise<ObtenerCobrosResult>
     let aliadosPorVencer = 0;
     let aliadosVencidos = 0;
     let aliadosAlDia = 0;
+    let aliadosPausados = 0;
 
     const aliadosCalculados: FilaCobroCalculada[] = filas.map((aliado) => {
       const tarifa = Number(aliado.tarifa_pactada_cop) || 0;
-      if (aliado.negocio_activo) {
-        totalCarteraActivaCop += tarifa;
-      }
+      const esPausado = esAliadoPausadoOInactivo(aliado);
 
       const { estadoCalculado, diasRestantes, diasTranscurridos } = calcularEstadoCobroDinamico({
         estadoGuardado: aliado.estado_pago,
@@ -99,24 +104,31 @@ export async function obtenerCobrosAliadosAction(): Promise<ObtenerCobrosResult>
         diasCortesia: aliado.dias_cortesia,
         proximoCobro: aliado.proximo_cobro,
         hoyColombia: hoy,
+        negocioActivo: aliado.negocio_activo,
       });
 
-      // Contadores de KPIs
-      switch (estadoCalculado) {
-        case "vencido":
-          aliadosVencidos++;
-          totalPorCobrarCop += tarifa;
-          break;
-        case "por_vencer":
-          aliadosPorVencer++;
-          totalPorCobrarCop += tarifa;
-          break;
-        case "en_cortesia":
-          aliadosEnCortesia++;
-          break;
-        case "al_dia":
-          aliadosAlDia++;
-          break;
+      // Contadores de KPIs: EXCLUIR pausados o inactivos de la cartera a cobrar
+      if (esPausado || estadoCalculado === "pausado" || estadoCalculado === "cancelado") {
+        aliadosPausados++;
+      } else {
+        totalCarteraActivaCop += tarifa;
+
+        switch (estadoCalculado) {
+          case "vencido":
+            aliadosVencidos++;
+            totalPorCobrarCop += tarifa;
+            break;
+          case "por_vencer":
+            aliadosPorVencer++;
+            totalPorCobrarCop += tarifa;
+            break;
+          case "en_cortesia":
+            aliadosEnCortesia++;
+            break;
+          case "al_dia":
+            aliadosAlDia++;
+            break;
+        }
       }
 
       return {
@@ -127,19 +139,24 @@ export async function obtenerCobrosAliadosAction(): Promise<ObtenerCobrosResult>
       };
     });
 
-    // 4. Ordenamiento inteligente: Urgencias primero (vencidos -> por_vencer -> cortesía -> al día)
+    // 4. Ordenamiento inteligente: Urgencias activas primero, pausados al final
     const prioridadEstado: Record<EstadoPago, number> = {
       vencido: 1,
       por_vencer: 2,
       en_cortesia: 3,
       al_dia: 4,
+      pausado: 5,
+      cancelado: 6,
     };
 
     aliadosCalculados.sort((a, b) => {
-      const diffPrioridad = prioridadEstado[a.estado_calculado] - prioridadEstado[b.estado_calculado];
+      const diffPrioridad =
+        (prioridadEstado[a.estado_calculado] || 99) - (prioridadEstado[b.estado_calculado] || 99);
       if (diffPrioridad !== 0) return diffPrioridad;
       return a.dias_restantes - b.dias_restantes;
     });
+
+    const totalAliadosActivos = Math.max(0, aliadosCalculados.length - aliadosPausados);
 
     const kpis: KpisCobros = {
       totalPorCobrarCop,
@@ -148,6 +165,8 @@ export async function obtenerCobrosAliadosAction(): Promise<ObtenerCobrosResult>
       aliadosPorVencer,
       aliadosVencidos,
       aliadosAlDia,
+      aliadosPausados,
+      totalAliadosActivos,
       totalAliados: aliadosCalculados.length,
     };
 
@@ -167,6 +186,8 @@ export async function obtenerCobrosAliadosAction(): Promise<ObtenerCobrosResult>
         aliadosPorVencer: 0,
         aliadosVencidos: 0,
         aliadosAlDia: 0,
+        aliadosPausados: 0,
+        totalAliadosActivos: 0,
         totalAliados: 0,
       },
       aliados: [],
@@ -179,6 +200,7 @@ export async function obtenerCobrosAliadosAction(): Promise<ObtenerCobrosResult>
 
 /**
  * Modifica o inserta los parámetros comerciales de un aliado (tarifa, modalidad, cortesía, etc.).
+ * También permite alternar el estado activo/pausado del negocio en PaDónde.
  */
 export async function actualizarAcuerdoComercialAction(
   payload: UpsertAcuerdoComercialPayload
@@ -200,7 +222,25 @@ export async function actualizarAcuerdoComercialAction(
       return { success: false, error: "El ID del negocio aliado es obligatorio." };
     }
 
-    // 2. Preparar campos de actualización
+    // 2. Si se solicitó pausar o cambiar negocio_activo, actualizar tabla negocios
+    if (payload.negocio_activo !== undefined) {
+      const { error: negError } = await supabase
+        .from("negocios")
+        .update({ activo: payload.negocio_activo })
+        .eq("id", payload.negocio_id);
+
+      if (negError) {
+        console.error("[actualizarAcuerdoComercialAction] Error al actualizar negocios.activo:", negError);
+      }
+    } else if (payload.estado_pago === "pausado" || payload.estado_pago === "cancelado") {
+      // Si se marca pausado y no se envió negocio_activo, pausar el negocio
+      await supabase
+        .from("negocios")
+        .update({ activo: false })
+        .eq("id", payload.negocio_id);
+    }
+
+    // 3. Preparar campos de actualización de acuerdos_comerciales
     const updateData: Record<string, any> = {
       negocio_id: payload.negocio_id,
       updated_at: new Date().toISOString(),
@@ -238,7 +278,8 @@ export async function actualizarAcuerdoComercialAction(
       }
     }
 
-    // 3. Ejecutar upsert en acuerdos_comerciales
+    // 4. Ejecutar upsert en acuerdos_comerciales con manejo seguro de constraint
+    let savedData: any = null;
     const { data, error } = await supabase
       .from("acuerdos_comerciales")
       .upsert(updateData, { onConflict: "negocio_id" })
@@ -246,22 +287,107 @@ export async function actualizarAcuerdoComercialAction(
       .single();
 
     if (error) {
-      console.error("[actualizarAcuerdoComercialAction] Error en upsert:", error);
-      return { success: false, error: `Error al actualizar acuerdo: ${error.message}` };
+      // Si la BD tiene el constraint original sin 'pausado', guardar sin modificar estado_pago
+      if (error.message.includes("check constraint") && updateData.estado_pago === "pausado") {
+        delete updateData.estado_pago;
+        const fallbackRes = await supabase
+          .from("acuerdos_comerciales")
+          .upsert(updateData, { onConflict: "negocio_id" })
+          .select()
+          .single();
+
+        if (fallbackRes.error) {
+          return { success: false, error: fallbackRes.error.message };
+        }
+        savedData = fallbackRes.data;
+      } else {
+        console.error("[actualizarAcuerdoComercialAction] Error en upsert:", error);
+        return { success: false, error: `Error al actualizar acuerdo: ${error.message}` };
+      }
+    } else {
+      savedData = data;
     }
 
-    // 4. Revalidar rutas administrativas
+    // 5. Revalidar rutas administrativas
     revalidatePath("/admin/cobros");
     revalidatePath("/[locale]/(dashboard)/admin/cobros", "page");
     revalidatePath("/admin/aliados");
 
     return {
       success: true,
-      acuerdo: data as AcuerdoComercial,
+      acuerdo: savedData as AcuerdoComercial,
     };
   } catch (err: any) {
     console.error("[actualizarAcuerdoComercialAction] Error inesperado:", err);
     return { success: false, error: err?.message || "Error al actualizar acuerdo comercial." };
+  }
+}
+
+// ─── Server Action: Alternar Estado Activo / Pausado ────────────────────────
+
+/**
+ * Alterna rápidamente el estado activo/pausado de un aliado (para reactivación rápida o pausar).
+ */
+export async function alternarEstadoActivoAliadoAction(
+  negocioId: string,
+  activo: boolean
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = await createClient();
+
+    // 1. Verificar sesión
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return { success: false, error: "No autorizado. Inicia sesión en el panel." };
+    }
+
+    // 2. Actualizar estado en negocios
+    const { error: negError } = await supabase
+      .from("negocios")
+      .update({ activo })
+      .eq("id", negocioId);
+
+    if (negError) {
+      return { success: false, error: `Error al actualizar aliado: ${negError.message}` };
+    }
+
+    // 3. Si se reactiva, actualizar estado del acuerdo si estaba en 'pausado'
+    if (activo) {
+      await supabase
+        .from("acuerdos_comerciales")
+        .update({
+          estado_pago: "al_dia",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("negocio_id", negocioId)
+        .eq("estado_pago", "pausado");
+    } else {
+      // Si se pausa, intentar poner 'pausado'
+      try {
+        await supabase
+          .from("acuerdos_comerciales")
+          .update({
+            estado_pago: "pausado",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("negocio_id", negocioId);
+      } catch {
+        // Ignorar si el constraint aún no tiene el enum
+      }
+    }
+
+    // 4. Revalidar rutas
+    revalidatePath("/admin/cobros");
+    revalidatePath("/[locale]/(dashboard)/admin/cobros", "page");
+    revalidatePath("/admin/aliados");
+
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || "Error inesperado al alternar estado." };
   }
 }
 
@@ -312,8 +438,6 @@ export async function registrarRenovacionPagoAction(
     const mesesASumar = modalidad === "mensual" ? 1 : 3;
 
     // 3. Determinar fecha base para el nuevo ciclo
-    // Si la fecha actual de cobro aún no ha vencido, extendemos a partir de esa fecha.
-    // Si ya estaba vencida, extendemos a partir de la fecha de pago (hoy por defecto).
     const hoy = getHoyColombia();
     const fechaPago = input.fechaPago ? input.fechaPago.split("T")[0] : hoy;
     const proximoCobroActual = acuerdoActual.proximo_cobro ? acuerdoActual.proximo_cobro.split("T")[0] : hoy;
@@ -331,7 +455,7 @@ export async function registrarRenovacionPagoAction(
       ? `${notaPago}\n${acuerdoActual.notas_acuerdo}`
       : notaPago;
 
-    // 5. Actualizar registro en acuerdos_comerciales
+    // 5. Actualizar registro en acuerdos_comerciales y reactivar negocio si estaba inactivo
     const { data: acuerdoActualizado, error: updateError } = await supabase
       .from("acuerdos_comerciales")
       .update({
@@ -348,6 +472,12 @@ export async function registrarRenovacionPagoAction(
       console.error("[registrarRenovacionPagoAction] Error al actualizar pago:", updateError);
       return { success: false, error: `Error al registrar pago: ${updateError.message}` };
     }
+
+    // Asegurar que el negocio quede activo
+    await supabase
+      .from("negocios")
+      .update({ activo: true })
+      .eq("id", acuerdoActual.negocio_id);
 
     // 6. Revalidar caché administrativa
     revalidatePath("/admin/cobros");

@@ -58,11 +58,26 @@ export function sumarMesesAFecha(fechaStr: string, meses: number): string {
 }
 
 /**
+ * Determina si un aliado está en estado pausado / inactivo (no aceptó la propuesta o en pausa).
+ */
+export function esAliadoPausadoOInactivo(aliado: {
+  negocio_activo?: boolean;
+  estado_pago?: string;
+  estado_calculado?: string;
+}): boolean {
+  if (aliado.negocio_activo === false) return true;
+  if (aliado.estado_pago === "pausado" || aliado.estado_pago === "cancelado") return true;
+  if (aliado.estado_calculado === "pausado" || aliado.estado_calculado === "cancelado") return true;
+  return false;
+}
+
+/**
  * Evalúa en tiempo de ejecución el estado real del ciclo de pago según las reglas:
- * 1. Si hoy > proximo_cobro y no se ha renovado ➔ 'vencido'.
- * 2. Si faltan entre 0 y 5 días para proximo_cobro ➔ 'por_vencer'.
- * 3. Si hoy < proximo_cobro y días transcurridos <= dias_cortesia (o estado persistido en_cortesia) ➔ 'en_cortesia'.
- * 4. De lo contrario (o si fue renovado y no está por vencer) ➔ 'al_dia'.
+ * 1. Si negocio_activo === false o estadoGuardado === 'pausado'/'cancelado' ➔ 'pausado'.
+ * 2. Si hoy > proximo_cobro y no se ha renovado ➔ 'vencido'.
+ * 3. Si faltan entre 0 y 5 días para proximo_cobro ➔ 'por_vencer'.
+ * 4. Si hoy < proximo_cobro y días transcurridos <= dias_cortesia (o estado persistido en_cortesia) ➔ 'en_cortesia'.
+ * 5. De lo contrario (o si fue renovado y no está por vencer) ➔ 'al_dia'.
  */
 export function calcularEstadoCobroDinamico(params: {
   estadoGuardado: EstadoPago;
@@ -70,6 +85,7 @@ export function calcularEstadoCobroDinamico(params: {
   diasCortesia: number;
   proximoCobro: string;
   hoyColombia?: string;
+  negocioActivo?: boolean;
 }): {
   estadoCalculado: EstadoPago;
   diasRestantes: number;
@@ -84,7 +100,13 @@ export function calcularEstadoCobroDinamico(params: {
 
   let estadoCalculado: EstadoPago;
 
-  if (diasRestantes < 0) {
+  if (
+    params.negocioActivo === false ||
+    params.estadoGuardado === "pausado" ||
+    params.estadoGuardado === "cancelado"
+  ) {
+    estadoCalculado = "pausado";
+  } else if (diasRestantes < 0) {
     // La fecha de vencimiento ya pasó
     estadoCalculado = "vencido";
   } else if (diasRestantes <= 5) {
@@ -106,4 +128,3 @@ export function calcularEstadoCobroDinamico(params: {
     diasTranscurridos,
   };
 }
-

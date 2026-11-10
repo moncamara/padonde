@@ -9,7 +9,13 @@ import type { Negocio, PlanNegocio } from "./index";
 export type ModalidadCobro = "trimestral" | "mensual";
 
 /** Estado del ciclo de cobro del aliado */
-export type EstadoPago = "en_cortesia" | "al_dia" | "por_vencer" | "vencido";
+export type EstadoPago =
+  | "en_cortesia"
+  | "al_dia"
+  | "por_vencer"
+  | "vencido"
+  | "pausado"
+  | "cancelado";
 
 /** Entidad Acuerdo Comercial en Supabase */
 export type AcuerdoComercial = {
@@ -20,7 +26,7 @@ export type AcuerdoComercial = {
   dias_cortesia: number;            // ej: 15
   tarifa_pactada_cop: number;       // ej: 125000
   modalidad: ModalidadCobro;        // 'trimestral' | 'mensual'
-  estado_pago: EstadoPago;          // 'en_cortesia' | 'al_dia' | 'por_vencer' | 'vencido'
+  estado_pago: EstadoPago;          // 'en_cortesia' | 'al_dia' | 'por_vencer' | 'vencido' | 'pausado' | 'cancelado'
   proximo_cobro: string;            // YYYY-MM-DD
   notas_acuerdo: string | null;     // Condiciones especiales o notas
   created_at: string;               // ISO 8601
@@ -30,6 +36,7 @@ export type AcuerdoComercial = {
 /** Payload para crear o actualizar un acuerdo comercial desde el panel administrativo */
 export type UpsertAcuerdoComercialPayload = {
   negocio_id: string;
+  negocio_activo?: boolean;
   fecha_primer_mensaje?: string;
   dias_cortesia?: number;
   tarifa_pactada_cop?: number;
@@ -75,13 +82,15 @@ export type FilaCobroCalculada = FilaCobroAliado & {
 
 /** Indicadores clave de rendimiento (KPIs) del módulo de cobros */
 export type KpisCobros = {
-  totalPorCobrarCop: number;       // Suma de tarifas pactadas de aliados en estado 'por_vencer' o 'vencido'
+  totalPorCobrarCop: number;       // Suma de tarifas pactadas de aliados activos en estado 'por_vencer' o 'vencido'
   totalCarteraActivaCop: number;   // Cartera proyectada total de aliados activos
-  aliadosEnCortesia: number;       // Cantidad de aliados disfrutando cortesía
-  aliadosPorVencer: number;        // Cantidad de aliados que vencen en los próximos 5 días
-  aliadosVencidos: number;         // Cantidad de aliados con fecha expirada
-  aliadosAlDia: number;            // Cantidad de aliados al día
-  totalAliados: number;            // Total de aliados evaluados
+  aliadosEnCortesia: number;       // Cantidad de aliados activos disfrutando cortesía
+  aliadosPorVencer: number;        // Cantidad de aliados activos que vencen en los próximos 5 días
+  aliadosVencidos: number;         // Cantidad de aliados activos con fecha expirada
+  aliadosAlDia: number;            // Cantidad de aliados activos al día
+  aliadosPausados: number;         // Cantidad de aliados inactivos o pausados (no aceptaron propuesta o en pausa)
+  totalAliadosActivos: number;     // Total de aliados activos en la cartera comercial
+  totalAliados: number;            // Total general de aliados en el directorio
 };
 
 /** Respuesta del Server Action obtenerCobrosAliadosAction */

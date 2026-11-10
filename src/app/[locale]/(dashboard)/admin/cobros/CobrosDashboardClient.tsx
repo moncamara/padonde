@@ -7,7 +7,8 @@ import type {
   ObtenerCobrosResult,
   EstadoPago,
 } from "@/lib/types";
-import { obtenerCobrosAliadosAction } from "./actions";
+import { obtenerCobrosAliadosAction, alternarEstadoActivoAliadoAction } from "./actions";
+import { esAliadoPausadoOInactivo } from "./cobrosUtils";
 import { ModalRegistrarPago } from "./ModalRegistrarPago";
 import { ModalAjustarAcuerdo } from "./ModalAjustarAcuerdo";
 
@@ -15,7 +16,7 @@ interface CobrosDashboardClientProps {
   initialData: ObtenerCobrosResult;
 }
 
-type FiltroEstadoPildora = "todos" | EstadoPago;
+type FiltroEstadoPildora = "todos" | "pausados" | EstadoPago;
 
 /**
  * Genera el mensaje oficial preformateado para WhatsApp según el estado del aliado.
@@ -111,7 +112,27 @@ export function CobrosDashboardClient({ initialData }: CobrosDashboardClientProp
     aliadosPorVencer: 0,
     aliadosVencidos: 0,
     aliadosAlDia: 0,
+    aliadosPausados: 0,
+    totalAliadosActivos: 0,
     totalAliados: 0,
+  };
+
+  const [reactivandoId, setReactivandoId] = useState<string | null>(null);
+
+  const reactivarAliado = async (aliado: FilaCobroCalculada) => {
+    if (reactivandoId) return;
+    setReactivandoId(aliado.negocio_id);
+    try {
+      const res = await alternarEstadoActivoAliadoAction(aliado.negocio_id, true);
+      if (res.success) {
+        mostrarToast(`${aliado.negocio_nombre} reactivado y de vuelta en la cartera activa ✅`, "exito");
+        refrescarDatos();
+      } else {
+        mostrarToast(res.error || "No se pudo reactivar el aliado", "error");
+      }
+    } finally {
+      setReactivandoId(null);
+    }
   };
 
   const mostrarToast = (texto: string, tipo: "exito" | "error" = "exito") => {
@@ -152,9 +173,15 @@ export function CobrosDashboardClient({ initialData }: CobrosDashboardClientProp
   // Filtrado de aliados
   const aliadosFiltrados = useMemo(() => {
     return (data.aliados || []).filter((a) => {
-      // 1. Filtro por Estado
-      if (filtroEstado !== "todos" && a.estado_calculado !== filtroEstado) {
-        return false;
+      // 1. Separación Activos vs Pausados / No Aceptaron
+      const pausado = esAliadoPausadoOInactivo(a);
+      if (filtroEstado === "pausados") {
+        if (!pausado) return false;
+      } else {
+        if (pausado) return false;
+        if (filtroEstado !== "todos" && a.estado_calculado !== filtroEstado) {
+          return false;
+        }
       }
 
       // 2. Filtro por Zona
@@ -323,7 +350,7 @@ export function CobrosDashboardClient({ initialData }: CobrosDashboardClientProp
             <div className="text-[11px] text-stone font-sans">Pago vigente</div>
           </div>
           <span className="inline-flex items-center gap-1 text-[10px] text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full font-medium w-fit">
-            {kpis.totalAliados} aliados en total
+            {kpis.totalAliadosActivos} aliados activos
           </span>
         </div>
       </div>
@@ -380,7 +407,7 @@ export function CobrosDashboardClient({ initialData }: CobrosDashboardClientProp
                 : "bg-stone-50 text-stone hover:bg-stone-100 border border-stone-light/50"
             }`}
           >
-            Todos ({data.aliados?.length || 0})
+            Todos ({kpis.totalAliadosActivos})
           </button>
 
           <button
@@ -433,6 +460,19 @@ export function CobrosDashboardClient({ initialData }: CobrosDashboardClientProp
           >
             <span>🟢</span>
             <span>Al Día ({kpis.aliadosAlDia})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFiltroEstado("pausados")}
+            className={`px-3 py-1.5 rounded-xl text-xs font-sans font-medium whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
+              filtroEstado === "pausados"
+                ? "bg-stone-700 text-white font-semibold shadow-xs"
+                : "bg-stone-100 text-stone-700 hover:bg-stone-200 border border-stone-300"
+            }`}
+          >
+            <span>⏸️</span>
+            <span>Pausados / No Aceptaron ({kpis.aliadosPausados})</span>
           </button>
         </div>
       </div>
@@ -559,11 +599,29 @@ export function CobrosDashboardClient({ initialData }: CobrosDashboardClientProp
                             Al Día ({dias}d)
                           </span>
                         )}
+                        {(aliado.estado_calculado === "pausado" || aliado.estado_calculado === "cancelado") && (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-stone-100 text-stone-700 border border-stone-300">
+                            ⏸️ Pausado / No aceptó
+                          </span>
+                        )}
                       </td>
 
                       {/* Acciones Rápidas */}
                       <td className="py-4 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
+                          {esAliadoPausadoOInactivo(aliado) && (
+                            <button
+                              type="button"
+                              onClick={() => reactivarAliado(aliado)}
+                              disabled={reactivandoId === aliado.negocio_id}
+                              className="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-[11px] shadow-2xs transition-all flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                              title="Reactivar aliado y devolverlo a la cartera activa"
+                            >
+                              <span>▶️</span>
+                              <span>{reactivandoId === aliado.negocio_id ? "Reactivando..." : "Reactivar"}</span>
+                            </button>
+                          )}
+                          {!esAliadoPausadoOInactivo(aliado) && (<>
                           {/* Botón WhatsApp */}
                           <a
                             href={waUrl}
@@ -596,6 +654,7 @@ export function CobrosDashboardClient({ initialData }: CobrosDashboardClientProp
                             <span>💵</span>
                             <span>Pago</span>
                           </button>
+                          </>)}
 
                           {/* Botón Ajustar Acuerdo */}
                           <button
@@ -661,6 +720,11 @@ export function CobrosDashboardClient({ initialData }: CobrosDashboardClientProp
                           🟢 Al día ({dias}d)
                         </span>
                       )}
+                      {(aliado.estado_calculado === "pausado" || aliado.estado_calculado === "cancelado") && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-stone-100 text-stone-700 border border-stone-300">
+                          ⏸️ Pausado
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -701,6 +765,17 @@ export function CobrosDashboardClient({ initialData }: CobrosDashboardClientProp
 
                   {/* Acciones */}
                   <div className="flex items-center gap-2 pt-1">
+                    {esAliadoPausadoOInactivo(aliado) ? (
+                    <button
+                      type="button"
+                      onClick={() => reactivarAliado(aliado)}
+                      disabled={reactivandoId === aliado.negocio_id}
+                      className="flex-1 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs text-center shadow-2xs transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
+                    >
+                      <span>▶️</span>
+                      <span>{reactivandoId === aliado.negocio_id ? "Reactivando..." : "Reactivar"}</span>
+                    </button>
+                    ) : (<>
                     <a
                       href={waUrl}
                       target="_blank"
@@ -728,6 +803,7 @@ export function CobrosDashboardClient({ initialData }: CobrosDashboardClientProp
                       <span>💵</span>
                       <span>Pago</span>
                     </button>
+                    </>)}
 
                     <button
                       type="button"
