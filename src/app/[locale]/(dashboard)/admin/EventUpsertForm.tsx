@@ -47,6 +47,7 @@ export interface AliadoResumen {
   whatsapp: string;
   instagram?: string | null;
   categoria?: string;
+  zona_id?: string;
   zonaSlug?: string;
   zonaNombre?: string;
   activo?: boolean;
@@ -148,17 +149,52 @@ export function EventUpsertForm({
     };
   }, []);
 
+  const listaAliadosDisponibles = useMemo<AliadoResumen[]>(() => {
+    const mapa = new Map<string, AliadoResumen>();
+    for (const a of aliados || []) {
+      if (a?.id) mapa.set(a.id, a);
+    }
+    for (const n of (negocios || []) as any[]) {
+      if (n?.id && !mapa.has(n.id)) {
+        mapa.set(n.id, {
+          id: n.id,
+          nombre: n.nombre,
+          whatsapp: n.whatsapp || "",
+          instagram: n.instagram || "",
+          categoria: n.categoria || "comida",
+          zona_id: n.zona_id,
+          zonaSlug:
+            n.zonaSlug ||
+            (n.zona_id === "zona-mendihuaca"
+              ? "mendihuaca"
+              : n.zona_id === "zona-tayrona"
+              ? "tayrona"
+              : n.zona_id === "zona-taganga"
+              ? "taganga"
+              : "minca"),
+          zonaNombre: n.zonaNombre,
+          activo: n.activo,
+          google_rating: n.google_rating ?? null,
+          google_total_reviews: n.google_total_reviews ?? null,
+          google_maps_url: n.google_maps_url ?? null,
+          google_review_url: n.google_review_url ?? null,
+        });
+      }
+    }
+    return Array.from(mapa.values());
+  }, [aliados, negocios]);
+
   const aliadosFiltrados = useMemo(() => {
-    if (!aliados || aliados.length === 0) return [];
+    if (!listaAliadosDisponibles || listaAliadosDisponibles.length === 0) return [];
     const q = businessName
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
       .toLowerCase()
       .trim();
 
-    if (!q) return aliados;
+    if (!q) return listaAliadosDisponibles;
 
-    return aliados.filter((a) => {
+    return listaAliadosDisponibles.filter((a) => {
       const matchNombre = a.nombre
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
@@ -169,14 +205,16 @@ export function EventUpsertForm({
       const matchCat = a.categoria ? a.categoria.toLowerCase().includes(q) : false;
       return matchNombre || matchWp || matchIg || matchCat;
     });
-  }, [aliados, businessName]);
+  }, [listaAliadosDisponibles, businessName]);
 
   function handleSelectAliado(aliado: AliadoResumen) {
     setSelectedAliadoId(aliado.id);
     setBusinessName(aliado.nombre);
-    setWhatsapp(aliado.whatsapp);
+    if (aliado.whatsapp) {
+      setWhatsapp(aliado.whatsapp);
+    }
     setInstagram(aliado.instagram || "");
-    if (aliado.categoria) {
+    if (mode === "crear" && aliado.categoria) {
       if (aliado.categoria === "hospedaje") {
         setSelectedCategories(["comida"]);
       } else {
@@ -1212,7 +1250,11 @@ export function EventUpsertForm({
           videoUrl: finalVidUrl,
           destacado: isFeatured,
           activo: isActive,
-          negocioId: selectedAliadoId || initialEvento.negocio_id,
+          negocioId: selectedAliadoId || undefined,
+          businessName: businessName.trim(),
+          whatsapp: whatsapp.trim(),
+          instagram: instagram.trim() || null,
+          zonaSlug,
           googleReputacion: googleReputacion || undefined,
           galeriaFotos: galeriaFotos.length > 0 ? galeriaFotos : undefined,
           googleReviewUrl: reviewUrlFinal,
@@ -1238,9 +1280,12 @@ export function EventUpsertForm({
 
         setGuardadoExito(true);
 
+        const finalNegocioId =
+          (res as any).negocioId || selectedAliadoId || initialEvento.negocio_id;
+
         const negocioSeleccionado =
-          aliados.find((a) => a.id === selectedAliadoId) ||
-          negocios.find((n) => n.id === selectedAliadoId);
+          listaAliadosDisponibles.find((a) => a.id === finalNegocioId) ||
+          negocios.find((n) => n.id === finalNegocioId);
 
         setTimeout(() => {
           if (onSuccess) {
@@ -1257,7 +1302,8 @@ export function EventUpsertForm({
               activo: isActive,
               imagen_url: finalImgUrl || initialEvento.imagen_url,
               video_url: finalVidUrl,
-              negocio_id: selectedAliadoId || initialEvento.negocio_id,
+              negocio_id: finalNegocioId,
+              zonaSlug,
               metadata_hospedaje: {
                 ...(initialEvento.metadata_hospedaje || {}),
                 google_reputacion: googleReputacion || undefined,
@@ -1269,13 +1315,19 @@ export function EventUpsertForm({
                 menu_tema: menuTema,
                 tarifario_id: tarifarioId || undefined,
               },
-              negocio: negocioSeleccionado
+              negocio: (res as any).negocio
+                ? (res as any).negocio
+                : negocioSeleccionado
                 ? {
                     id: negocioSeleccionado.id,
                     nombre: negocioSeleccionado.nombre,
                     whatsapp: (negocioSeleccionado as any).whatsapp || whatsapp,
                   }
-                : initialEvento.negocio,
+                : {
+                    id: finalNegocioId,
+                    nombre: businessName.trim() || initialEvento.negocio?.nombre || "",
+                    whatsapp: whatsapp.trim() || initialEvento.negocio?.whatsapp || "",
+                  },
             });
           }
           router.refresh();
@@ -1500,8 +1552,34 @@ export function EventUpsertForm({
               type="text"
               value={businessName}
               onChange={(e) => {
-                setBusinessName(e.target.value);
-                setSelectedAliadoId(null);
+                const nuevoNombre = e.target.value;
+                setBusinessName(nuevoNombre);
+                const normalizado = nuevoNombre
+                  .normalize("NFD")
+                  .replace(/[\u0300-\u036f]/g, "")
+                  .toLowerCase()
+                  .trim();
+                const matchExacto = normalizado
+                  ? listaAliadosDisponibles.find(
+                      (a) =>
+                        a.nombre
+                          .normalize("NFD")
+                          .replace(/[\u0300-\u036f]/g, "")
+                          .toLowerCase()
+                          .trim() === normalizado
+                    )
+                  : undefined;
+                if (matchExacto) {
+                  setSelectedAliadoId(matchExacto.id);
+                  if (matchExacto.whatsapp && matchExacto.id !== initialEvento?.negocio_id) {
+                    setWhatsapp(matchExacto.whatsapp);
+                  }
+                  if (matchExacto.instagram !== undefined && matchExacto.id !== initialEvento?.negocio_id) {
+                    setInstagram(matchExacto.instagram || "");
+                  }
+                } else {
+                  setSelectedAliadoId(null);
+                }
                 setIsDropdownOpen(true);
               }}
               onFocus={() => setIsDropdownOpen(true)}

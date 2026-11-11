@@ -1343,7 +1343,7 @@ export function AdminAliadosList({
       {/* Modal de Eventos y Publicaciones del Aliado */}
       {aliadoParaVerEventos && (
         <ModalEventosAliado
-          aliado={aliadoParaVerEventos}
+          aliado={aliados.find((a) => a.id === aliadoParaVerEventos.id) || aliadoParaVerEventos}
           isOpen={true}
           onClose={() => setAliadoParaVerEventos(null)}
           negociosList={negociosList}

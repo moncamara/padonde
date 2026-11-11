@@ -856,6 +856,10 @@ export interface EditarEventoAdminInput {
   destacado: boolean;
   activo: boolean;
   negocioId?: string;
+  businessName?: string;
+  whatsapp?: string;
+  instagram?: string | null;
+  zonaSlug?: string;
   googleReputacion?: {
     rating: number;
     total_reviews: number;
@@ -916,17 +920,158 @@ export async function editarEventoAdminAction(input: EditarEventoAdminInput) {
       updatePayload.video_url = input.videoUrl;
     }
 
-    if (input.negocioId) {
-      updatePayload.negocio_id = input.negocioId;
-    }
-
-    // Obtener evento actual para preservar y enriquecer metadata_hospedaje
+    // Obtener evento actual para preservar y enriquecer metadata_hospedaje y resolver negocio_id / zona_id
     const { data: currentEvent } = await supabase
       .from("eventos")
-      .select("metadata_hospedaje, negocio_id")
+      .select("metadata_hospedaje, negocio_id, zona_id")
       .eq("id", input.eventoId)
       .single();
     const currentMeta = (currentEvent?.metadata_hospedaje as Record<string, any>) || {};
+
+    // Resolver zona_id si se proporcionó zonaSlug
+    let targetZonaId: string | undefined = currentEvent?.zona_id;
+    if (input.zonaSlug) {
+      const { data: zonaRow } = await supabase
+        .from("zonas")
+        .select("id")
+        .eq("slug", input.zonaSlug)
+        .maybeSingle();
+      if (zonaRow?.id) {
+        targetZonaId = zonaRow.id;
+        updatePayload.zona_id = zonaRow.id;
+      }
+    }
+
+    // Resolver negocio_id: asegurar que si se cambia el aliado (por selección o por nombre), se vincule al negocio_id correcto en 'negocios'
+    const normalizarTexto = (txt: string) =>
+      txt
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .trim();
+
+    const cleanWa = input.whatsapp ? input.whatsapp.replace(/\D/g, "") : "";
+    const cleanIg = input.instagram !== undefined ? input.instagram?.trim() || null : undefined;
+    const nombreBuscado = input.businessName?.trim() || "";
+
+    let targetNegocioId: string | undefined = undefined;
+    let resolvedNegocio: { id: string; nombre: string; whatsapp: string } | undefined = undefined;
+
+    if (input.negocioId) {
+      const { data: negById } = await supabase
+        .from("negocios")
+        .select("id, nombre, whatsapp, instagram")
+        .eq("id", input.negocioId)
+        .maybeSingle();
+
+      if (
+        negById &&
+        (!nombreBuscado || normalizarTexto(negById.nombre) === normalizarTexto(nombreBuscado))
+      ) {
+        targetNegocioId = negById.id;
+        const esMismoNegocioOriginal = negById.id === currentEvent?.negocio_id;
+        const negUpdates: Record<string, any> = {};
+        if (cleanWa && (esMismoNegocioOriginal || !negById.whatsapp)) {
+          negUpdates.whatsapp = cleanWa;
+        }
+        if (cleanIg !== undefined && (esMismoNegocioOriginal || !negById.instagram)) {
+          negUpdates.instagram = cleanIg;
+        }
+        if (Object.keys(negUpdates).length > 0) {
+          try {
+            await supabase.from("negocios").update(negUpdates).eq("id", negById.id);
+          } catch {}
+        }
+        resolvedNegocio = {
+          id: negById.id,
+          nombre: negById.nombre,
+          whatsapp: (esMismoNegocioOriginal && cleanWa ? cleanWa : negById.whatsapp) || cleanWa,
+        };
+      }
+    }
+
+    if (!targetNegocioId && nombreBuscado) {
+      // Buscar aliado existente por nombre (insensible a mayúsculas/acentos)
+      const { data: candidatosIlike } = await supabase
+        .from("negocios")
+        .select("id, nombre, whatsapp, instagram, zona_id, activo")
+        .ilike("nombre", nombreBuscado);
+
+      let candidatos = candidatosIlike || [];
+      if (candidatos.length === 0) {
+        const { data: todosNegocios } = await supabase
+          .from("negocios")
+          .select("id, nombre, whatsapp, instagram, zona_id, activo");
+        const normBuscado = normalizarTexto(nombreBuscado);
+        candidatos = (todosNegocios || []).filter(
+          (n) => normalizarTexto(n.nombre) === normBuscado
+        );
+      }
+
+      if (candidatos.length > 0) {
+        // Priorizar el aliado de la misma zona y activo
+        const mejorCandidato =
+          candidatos.find((c) => c.zona_id === targetZonaId && c.activo !== false) ||
+          candidatos.find((c) => c.zona_id === targetZonaId) ||
+          candidatos.find((c) => c.activo !== false) ||
+          candidatos[0];
+
+        targetNegocioId = mejorCandidato.id;
+        const esMismoNegocioOriginal = mejorCandidato.id === currentEvent?.negocio_id;
+        const negUpdates: Record<string, any> = {};
+        if (cleanWa && (esMismoNegocioOriginal || !mejorCandidato.whatsapp)) {
+          negUpdates.whatsapp = cleanWa;
+        }
+        if (cleanIg !== undefined && (esMismoNegocioOriginal || !mejorCandidato.instagram)) {
+          negUpdates.instagram = cleanIg;
+        }
+        if (Object.keys(negUpdates).length > 0) {
+          try {
+            await supabase.from("negocios").update(negUpdates).eq("id", mejorCandidato.id);
+          } catch {}
+        }
+        resolvedNegocio = {
+          id: mejorCandidato.id,
+          nombre: mejorCandidato.nombre,
+          whatsapp:
+            (esMismoNegocioOriginal && cleanWa ? cleanWa : mejorCandidato.whatsapp) || cleanWa,
+        };
+      } else if (targetZonaId) {
+        // Si no existe ningún aliado con ese nombre, crearlo automáticamente en 'negocios'
+        const nuevoNegocioPayload: Record<string, any> = {
+          zona_id: targetZonaId,
+          user_id: user.id,
+          nombre: nombreBuscado,
+          categoria: categoriaPrincipal,
+          whatsapp: cleanWa,
+          instagram: cleanIg ?? null,
+          plan: input.destacado ? "pro" : "gratis",
+          activo: true,
+        };
+        const { data: nuevoNegocio } = await supabase
+          .from("negocios")
+          .insert(nuevoNegocioPayload)
+          .select("id, nombre, whatsapp")
+          .single();
+
+        if (nuevoNegocio?.id) {
+          targetNegocioId = nuevoNegocio.id;
+          resolvedNegocio = {
+            id: nuevoNegocio.id,
+            nombre: nuevoNegocio.nombre,
+            whatsapp: nuevoNegocio.whatsapp || cleanWa,
+          };
+        }
+      }
+    }
+
+    if (!targetNegocioId) {
+      targetNegocioId = input.negocioId || currentEvent?.negocio_id;
+    }
+
+    if (targetNegocioId) {
+      updatePayload.negocio_id = targetNegocioId;
+    }
 
     // Estampar siempre fecha de última edición para ordenamiento exacto en el panel admin
     currentMeta.ultima_edicion = new Date().toISOString();
@@ -972,7 +1117,6 @@ export async function editarEventoAdminAction(input: EditarEventoAdminInput) {
     }
 
     // Sincronizar reputación de Google hacia la tabla 'negocios' del aliado
-    const targetNegocioId = input.negocioId || currentEvent?.negocio_id;
     if (targetNegocioId && (input.googleReputacion !== undefined || input.googleReviewUrl !== undefined)) {
       const negSync: Record<string, any> = {};
       if (input.googleReputacion !== undefined) {
@@ -1121,13 +1265,45 @@ export async function editarEventoAdminAction(input: EditarEventoAdminInput) {
       console.warn("Advertencia: No se modificó ninguna fila en Supabase (posible política RLS).");
     }
 
+    // Registrar actividad reciente en el aliado vinculado para reflejarlo de inmediato en /admin/aliados
+    if (targetNegocioId) {
+      try {
+        const { data: cfgRow } = await supabase
+          .from("configuraciones")
+          .select("valor")
+          .eq("clave", "fechas_edicion_aliados")
+          .maybeSingle();
+
+        const mapa = (
+          cfgRow?.valor && typeof cfgRow.valor === "object" ? cfgRow.valor : {}
+        ) as Record<string, string>;
+        mapa[targetNegocioId] = new Date().toISOString();
+
+        await supabase.from("configuraciones").upsert({
+          clave: "fechas_edicion_aliados",
+          valor: mapa,
+          updated_at: new Date().toISOString(),
+        });
+      } catch {
+        // Silencioso
+      }
+    }
+
     // Revalidar inmediatamente todo el sitio y todas las rutas públicas y de administración
     revalidatePath("/", "layout");
     revalidatePath("/[locale]/admin", "page");
+    revalidatePath("/[locale]/admin/aliados", "page");
+    revalidatePath("/[locale]/admin/cobros", "page");
+    revalidatePath("/admin");
+    revalidatePath("/admin/aliados");
     revalidatePath("/[locale]/[zona]", "page");
     revalidatePath("/[locale]/[zona]/[id]", "page");
 
-    return { success: true };
+    return {
+      success: true,
+      negocioId: targetNegocioId,
+      negocio: resolvedNegocio,
+    };
   } catch (err: any) {
     console.error("Excepción en editarEventoAdminAction:", err);
     return { success: false, error: err?.message || "Error al actualizar evento." };

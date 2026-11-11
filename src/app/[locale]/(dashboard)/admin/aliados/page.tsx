@@ -15,6 +15,8 @@ export const metadata: Metadata = {
   title: "Aliados y Planes — PaDónde Admin",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminAliadosPage({
   params,
 }: {
@@ -74,7 +76,8 @@ export default async function AdminAliadosPage({
         video_url,
         metadata_hospedaje,
         zona_id,
-        descripcion
+        descripcion,
+        created_at
       )
     `)
     .order("nombre", { ascending: true });
@@ -108,7 +111,8 @@ export default async function AdminAliadosPage({
           video_url,
           metadata_hospedaje,
           zona_id,
-          descripcion
+          descripcion,
+          created_at
         )
       `)
       .order("nombre", { ascending: true });
@@ -187,6 +191,11 @@ export default async function AdminAliadosPage({
         const t = new Date(ev.created_at).getTime();
         if (t > maxTime) maxTime = t;
       }
+      const ultimaEd = (ev.metadata_hospedaje as any)?.ultima_edicion;
+      if (ultimaEd) {
+        const tEd = new Date(ultimaEd).getTime();
+        if (!isNaN(tEd) && tEd > maxTime) maxTime = tEd;
+      }
     }
 
     return {
@@ -217,7 +226,7 @@ export default async function AdminAliadosPage({
   });
 
   // 3.1 Detección inteligente de duplicados (Cero impacto en BD):
-  // Si existen registros con el mismo nombre y zona, se preserva el que tiene eventos/clics y se oculta el registro huérfano vacío
+  // Si existen registros con el mismo nombre y zona, se consolidan sus eventos/clics en el registro principal y se oculta el duplicado
   const mapaUnicos = new Map<string, AliadoItem>();
   for (const a of todosLosAliados) {
     const clave = `${a.zona_id}_${a.nombre.trim().toLowerCase()}`;
@@ -225,13 +234,30 @@ export default async function AdminAliadosPage({
     if (!existente) {
       mapaUnicos.set(clave, a);
     } else {
-      // Priorizar el que tiene más eventos o más clics
-      if (
+      const esMejorNuevo =
         a.totalEventos > existente.totalEventos ||
-        (a.totalClics || 0) > (existente.totalClics || 0)
-      ) {
-        mapaUnicos.set(clave, a);
+        (a.totalClics || 0) > (existente.totalClics || 0);
+      const base = esMejorNuevo ? a : existente;
+      const secundario = esMejorNuevo ? existente : a;
+
+      const evMap = new Map<string, any>();
+      for (const ev of base.eventos || []) evMap.set(ev.id, ev);
+      for (const ev of secundario.eventos || []) {
+        if (!evMap.has(ev.id)) evMap.set(ev.id, ev);
       }
+      const evCombinados = Array.from(evMap.values()).sort(
+        (x: any, y: any) => new Date(y.fecha_inicio).getTime() - new Date(x.fecha_inicio).getTime()
+      );
+
+      mapaUnicos.set(clave, {
+        ...base,
+        eventos: evCombinados,
+        totalEventos: evCombinados.length,
+        eventosActivos: evCombinados.filter((e: any) => e.activo).length,
+        totalClics: (base.totalClics || 0) + (secundario.totalClics || 0),
+        clics7Dias: (base.clics7Dias || 0) + (secundario.clics7Dias || 0),
+        ultimaActividad: Math.max(base.ultimaActividad || 0, secundario.ultimaActividad || 0),
+      });
     }
   }
 
@@ -243,6 +269,11 @@ export default async function AdminAliadosPage({
   const negociosList = aliados.map((a) => ({
     id: a.id,
     nombre: a.nombre,
+    whatsapp: a.whatsapp,
+    instagram: a.instagram,
+    categoria: a.categoria,
+    zonaSlug: a.zonaSlug,
+    zonaNombre: a.zonaNombre,
   }));
 
   // 4. Métricas de Monetización B2B

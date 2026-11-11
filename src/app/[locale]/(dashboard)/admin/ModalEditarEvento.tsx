@@ -1,11 +1,12 @@
 "use client";
 
-import { EventUpsertForm } from "./EventUpsertForm";
+import { EventUpsertForm, type AliadoResumen } from "./EventUpsertForm";
 import type { EventoAdminItem } from "./AdminEventList";
 
 export interface ModalEditarEventoProps {
   evento: EventoAdminItem;
   negocios: { id: string; nombre: string }[];
+  aliados?: AliadoResumen[];
   onClose: () => void;
   onSaved: (eventoActualizado: Partial<EventoAdminItem>) => void;
   onDeleted: (eventoId: string) => void;
@@ -14,6 +15,7 @@ export interface ModalEditarEventoProps {
 export function ModalEditarEvento({
   evento,
   negocios,
+  aliados = [],
   onClose,
   onSaved,
   onDeleted,
@@ -26,6 +28,7 @@ export function ModalEditarEvento({
             mode="editar"
             initialEvento={evento}
             negocios={negocios}
+            aliados={aliados}
             isModal={true}
             onClose={onClose}
             onSuccess={onSaved}

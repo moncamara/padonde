@@ -725,6 +725,7 @@ export function AdminEventList({
         <ModalEditarEvento
           evento={eventoAEditar}
           negocios={negocios}
+          aliados={aliados}
           onClose={() => setEventoAEditar(null)}
           onSaved={(eventoActualizado) => {
             const ahoraIso = new Date().toISOString();
