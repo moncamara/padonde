@@ -97,7 +97,8 @@
   },
   "footer": {
     "cta": "Do you have a business or event in {zona}?",
-    "ctaLink": "Feature your plan here →"
+    "ctaLink": "Feature your plan here →",
+    "alliesLink": "About PaDónde / Become a Partner"
   },
   "price": {
     "free": "Free",

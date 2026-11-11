@@ -202,7 +202,7 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
         {/* Módulo de Tránsito Fijo ("Próximo Destino" / Cross-Selling Minca <-> Mendihuaca) */}
         <ProximoDestinoCard zonaActual={zonaSlug} />
 
-        <div className="pt-4">
+        <div className="pt-4 space-y-2.5">
           <p className="font-sans text-sm text-stone-dark inline-flex items-center justify-center gap-1.5 flex-wrap">
             <span className="text-base select-none">
               {zonaSlug === "mendihuaca" ? "🌊" : zonaSlug === "tayrona" ? "🌴" : "🌿"}
@@ -217,6 +217,17 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
               {tFooter("ctaLink")}
             </a>
           </p>
+
+          <div>
+            <Link
+              href="/aliados"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-forest/8 hover:bg-forest/15 text-forest text-xs font-semibold transition-colors border border-forest/15"
+            >
+              <span>🤝</span>
+              <span>{tFooter("alliesLink")}</span>
+              <span aria-hidden="true">→</span>
+            </Link>
+          </div>
 
           {/* Acceso manual permanente a la instalación de la app */}
           <div className="mt-3">

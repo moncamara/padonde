@@ -97,7 +97,8 @@
   },
   "footer": {
     "cta": "¿Tienes un negocio o evento en {zona}?",
-    "ctaLink": "Publica en la cartelera →"
+    "ctaLink": "Publica en la cartelera →",
+    "alliesLink": "Conoce PaDónde / Sé Aliado"
   },
   "price": {
     "free": "Gratis",

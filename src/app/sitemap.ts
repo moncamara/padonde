@@ -48,6 +48,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   }
 
+  // 2.5 Landing institucional y de captación de aliados B2B (/aliados) en los 4 idiomas
+  for (const locale of routing.locales) {
+    entries.push({
+      url: `${baseUrl}/${locale}/aliados`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.9,
+      alternates: {
+        languages: Object.fromEntries(
+          routing.locales.map((l) => [l, `${baseUrl}/${l}/aliados`])
+        ),
+      },
+    });
+  }
+
   // 3. Fichas individuales públicas (hospedajes, comercios y eventos vigentes)
   try {
     const supabase = getPublicSupabaseClient();

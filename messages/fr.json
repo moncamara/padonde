@@ -96,7 +96,8 @@
   },
   "footer": {
     "cta": "Vous avez un commerce ou un événement à {zona} ?",
-    "ctaLink": "Publiez sur la plateforme →"
+    "ctaLink": "Publiez sur la plateforme →",
+    "alliesLink": "Découvrir PaDónde / Devenir Partenaire"
   },
   "price": {
     "free": "Gratuit",
