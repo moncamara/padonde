@@ -6,131 +6,149 @@ import { useLocale } from "next-intl";
 interface StorySlide {
   id: string;
   imageUrl: string;
-  caption?: Record<string, string>;
-}
-
-interface StoryGroup {
-  id: string;
-  labels: Record<string, string>;
-  thumbnail: string;
-  slides: StorySlide[];
+  tag: Record<string, string>;
+  caption: Record<string, string>;
 }
 
 const SLIDE_DURATION_MS = 5000;
+const SESSION_STORAGE_KEY = "padonde_stories_demo_viewed";
 
-const STORIES_DATA: StoryGroup[] = [
+const ORB_LABELS: Record<string, { title: string; badge: string }> = {
+  es: { title: "Historias de PaDónde", badge: "Novedades" },
+  en: { title: "PaDónde Stories", badge: "Highlights" },
+  fr: { title: "Stories PaDónde", badge: "À la une" },
+  de: { title: "PaDónde Stories", badge: "Highlights" },
+};
+
+const STORY_SLIDES: StorySlide[] = [
   {
-    id: "imperdibles",
-    labels: {
+    id: "slide-1",
+    imageUrl: "/stories-demo/1.jpg",
+    tag: {
       es: "✨ Imperdibles",
       en: "✨ Must-Sees",
       fr: "✨ Incontournables",
       de: "✨ Highlights",
     },
-    thumbnail: "/stories-demo/1.jpg",
-    slides: [
-      {
-        id: "imp-1",
-        imageUrl: "/stories-demo/1.jpg",
-        caption: {
-          es: "Experiencias auténticas entre la Sierra y el mar",
-          en: "Authentic experiences between mountain and sea",
-          fr: "Expériences authentiques entre montagne et mer",
-          de: "Authentische Erlebnisse zwischen Berg und Meer",
-        },
-      },
-      {
-        id: "imp-2",
-        imageUrl: "/stories-demo/2.jpg",
-        caption: {
-          es: "Planes recomendados hoy por anfitriones locales",
-          en: "Today's plans recommended by local hosts",
-          fr: "Sorties du jour recommandées par les hôtes locaux",
-          de: "Heutige Tipps von lokalen Gastgebern",
-        },
-      },
-    ],
+    caption: {
+      es: "Experiencias auténticas entre la Sierra Nevada y el mar Caribe",
+      en: "Authentic experiences between the Sierra Nevada and the Caribbean",
+      fr: "Expériences authentiques entre la Sierra Nevada et la mer des Caraïbes",
+      de: "Authentische Erlebnisse zwischen der Sierra Nevada und der Karibik",
+    },
   },
   {
-    id: "comunidad",
-    labels: {
+    id: "slide-2",
+    imageUrl: "/stories-demo/2.jpg",
+    tag: {
+      es: "✨ Imperdibles",
+      en: "✨ Must-Sees",
+      fr: "✨ Incontournables",
+      de: "✨ Highlights",
+    },
+    caption: {
+      es: "Planes recomendados hoy por anfitriones locales sin intermediarios",
+      en: "Today's plans recommended by local hosts with zero middlemen",
+      fr: "Sorties du jour recommandées par les hôtes locaux sans intermédiaire",
+      de: "Heutige Tipps von lokalen Gastgebern ohne Zwischenhändler",
+    },
+  },
+  {
+    id: "slide-3",
+    imageUrl: "/stories-demo/3.jpg",
+    tag: {
       es: "🌍 Comunidad",
       en: "🌍 Community",
       fr: "🌍 Communauté",
       de: "🌍 Community",
     },
-    thumbnail: "/stories-demo/3.jpg",
-    slides: [
-      {
-        id: "com-1",
-        imageUrl: "/stories-demo/3.jpg",
-        caption: {
-          es: "Viajeros y locales conectados sin intermediarios",
-          en: "Travelers and locals connected with zero middlemen",
-          fr: "Voyageurs et locaux connectés sans intermédiaire",
-          de: "Reisende und Einheimische direkt vernetzt",
-        },
-      },
-      {
-        id: "com-2",
-        imageUrl: "/stories-demo/4.jpg",
-        caption: {
-          es: "Cultura viva, bienestar, gastronomía y música",
-          en: "Living culture, wellness, dining & live music",
-          fr: "Culture vivante, bien-être, gastronomie et musique",
-          de: "Lebendige Kultur, Wellness, Gastronomie & Musik",
-        },
-      },
-    ],
+    caption: {
+      es: "Viajeros y anfitriones conectados directamente por WhatsApp",
+      en: "Travelers and hosts connected directly via WhatsApp",
+      fr: "Voyageurs et hôtes connectés directement sur WhatsApp",
+      de: "Reisende und Gastgeber direkt über WhatsApp vernetzt",
+    },
   },
   {
-    id: "destinos",
-    labels: {
+    id: "slide-4",
+    imageUrl: "/stories-demo/4.jpg",
+    tag: {
+      es: "🌍 Comunidad",
+      en: "🌍 Community",
+      fr: "🌍 Communauté",
+      de: "🌍 Community",
+    },
+    caption: {
+      es: "Cultura viva, bienestar, gastronomía local y música en vivo",
+      en: "Living culture, wellness, local dining & live music",
+      fr: "Culture vivante, bien-être, gastronomie locale et musique live",
+      de: "Lebendige Kultur, Wellness, lokale Gastronomie & Live-Musik",
+    },
+  },
+  {
+    id: "slide-5",
+    imageUrl: "/stories-demo/5.jpg",
+    tag: {
       es: "🏔️ Destinos",
       en: "🏔️ Destinations",
       fr: "🏔️ Destinations",
       de: "🏔️ Reiseziele",
     },
-    thumbnail: "/stories-demo/5.jpg",
-    slides: [
-      {
-        id: "dest-1",
-        imageUrl: "/stories-demo/5.jpg",
-        caption: {
-          es: "De las cascadas de Minca a las olas de Mendihuaca",
-          en: "From Minca's waterfalls to Mendihuaca's waves",
-          fr: "Des cascades de Minca aux vagues de Mendihuaca",
-          de: "Von Mincas Wasserfällen zu Mendihuacas Wellen",
-        },
-      },
-      {
-        id: "dest-2",
-        imageUrl: "/stories-demo/6.jpg",
-        caption: {
-          es: "Explora la ruta completa Minca ⇄ Mendihuaca ⇄ Tayrona",
-          en: "Explore the full route Minca ⇄ Mendihuaca ⇄ Tayrona",
-          fr: "Explorez l'itinéraire Minca ⇄ Mendihuaca ⇄ Tayrona",
-          de: "Entdecke die Route Minca ⇄ Mendihuaca ⇄ Tayrona",
-        },
-      },
-    ],
+    caption: {
+      es: "De las cascadas frescas de Minca a las olas de Mendihuaca",
+      en: "From Minca's fresh waterfalls to Mendihuaca's waves",
+      fr: "Des cascades fraîches de Minca aux vagues de Mendihuaca",
+      de: "Von Mincas frischen Wasserfällen zu Mendihuacas Wellen",
+    },
+  },
+  {
+    id: "slide-6",
+    imageUrl: "/stories-demo/6.jpg",
+    tag: {
+      es: "🏔️ Destinos",
+      en: "🏔️ Destinations",
+      fr: "🏔️ Destinations",
+      de: "🏔️ Reiseziele",
+    },
+    caption: {
+      es: "Explora la ruta completa Minca ⇄ Mendihuaca ⇄ Parque Tayrona",
+      en: "Explore the full route Minca ⇄ Mendihuaca ⇄ Tayrona Park",
+      fr: "Explorez l'itinéraire complet Minca ⇄ Mendihuaca ⇄ Parc Tayrona",
+      de: "Entdecke die komplette Route Minca ⇄ Mendihuaca ⇄ Tayrona-Park",
+    },
   },
 ];
 
 export function TouristStories() {
   const locale = useLocale();
-  const [activeStoryIndex, setActiveStoryIndex] = useState<number | null>(null);
+  const [isOpen, setIsOpen] = useState<boolean>(false);
   const [activeSlideIndex, setActiveSlideIndex] = useState<number>(0);
   const [progress, setProgress] = useState<number>(0);
   const [isPaused, setIsPaused] = useState<boolean>(false);
-  const [viewedIds, setViewedIds] = useState<Record<string, boolean>>({});
+  const [isViewed, setIsViewed] = useState<boolean>(false);
 
   const pointerDownTimeRef = useRef<number>(0);
   const elapsedBeforePauseRef = useRef<number>(0);
   const lastFrameTimeRef = useRef<number | null>(null);
 
+  // Recuperar estado "Visto" desde sessionStorage
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem(SESSION_STORAGE_KEY) === "true") {
+        setIsViewed(true);
+      }
+    } catch {}
+  }, []);
+
+  const markAsViewed = useCallback(() => {
+    setIsViewed(true);
+    try {
+      sessionStorage.setItem(SESSION_STORAGE_KEY, "true");
+    } catch {}
+  }, []);
+
   const closeViewer = useCallback(() => {
-    setActiveStoryIndex(null);
+    setIsOpen(false);
     setActiveSlideIndex(0);
     setProgress(0);
     setIsPaused(false);
@@ -139,58 +157,31 @@ export function TouristStories() {
   }, []);
 
   const goToNextSlide = useCallback(() => {
-    if (activeStoryIndex === null) return;
-    const currentGroup = STORIES_DATA[activeStoryIndex];
-    if (!currentGroup) {
-      closeViewer();
-      return;
-    }
-
     elapsedBeforePauseRef.current = 0;
     lastFrameTimeRef.current = null;
     setProgress(0);
 
-    // Si hay más slides dentro de la misma burbuja, avanzar al siguiente slide
-    if (activeSlideIndex < currentGroup.slides.length - 1) {
+    if (activeSlideIndex < STORY_SLIDES.length - 1) {
       setActiveSlideIndex((prev) => prev + 1);
-      return;
-    }
-
-    // Marcar la burbuja actual como vista
-    setViewedIds((prev) => ({ ...prev, [currentGroup.id]: true }));
-
-    // Pasar automáticamente a la siguiente burbuja o cerrar al terminar la última
-    if (activeStoryIndex < STORIES_DATA.length - 1) {
-      setActiveStoryIndex((prev) => (prev !== null ? prev + 1 : null));
-      setActiveSlideIndex(0);
     } else {
+      markAsViewed();
       closeViewer();
     }
-  }, [activeStoryIndex, activeSlideIndex, closeViewer]);
+  }, [activeSlideIndex, closeViewer, markAsViewed]);
 
   const goToPrevSlide = useCallback(() => {
-    if (activeStoryIndex === null) return;
-
     elapsedBeforePauseRef.current = 0;
     lastFrameTimeRef.current = null;
     setProgress(0);
 
     if (activeSlideIndex > 0) {
       setActiveSlideIndex((prev) => prev - 1);
-      return;
     }
+  }, [activeSlideIndex]);
 
-    if (activeStoryIndex > 0) {
-      const prevStoryIdx = activeStoryIndex - 1;
-      const prevGroup = STORIES_DATA[prevStoryIdx];
-      setActiveStoryIndex(prevStoryIdx);
-      setActiveSlideIndex(prevGroup ? prevGroup.slides.length - 1 : 0);
-    }
-  }, [activeStoryIndex, activeSlideIndex]);
-
-  // Temporizador de auto-avance cada 5 segundos con soporte de pausa al mantener presionado
+  // Temporizador de auto-avance cada 5 segundos con pausa al mantener presionado
   useEffect(() => {
-    if (activeStoryIndex === null) return;
+    if (!isOpen) return;
 
     let rafId: number;
 
@@ -220,11 +211,11 @@ export function TouristStories() {
 
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
-  }, [activeStoryIndex, activeSlideIndex, isPaused, goToNextSlide]);
+  }, [isOpen, activeSlideIndex, isPaused, goToNextSlide]);
 
   // Soporte de teclado (Escape, flechas izquierda/derecha)
   useEffect(() => {
-    if (activeStoryIndex === null) return;
+    if (!isOpen) return;
 
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
@@ -238,15 +229,16 @@ export function TouristStories() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [activeStoryIndex, closeViewer, goToNextSlide, goToPrevSlide]);
+  }, [isOpen, closeViewer, goToNextSlide, goToPrevSlide]);
 
-  const handleOpenStory = (index: number) => {
+  const handleOpenOrb = () => {
     elapsedBeforePauseRef.current = 0;
     lastFrameTimeRef.current = null;
     setProgress(0);
     setIsPaused(false);
     setActiveSlideIndex(0);
-    setActiveStoryIndex(index);
+    setIsOpen(true);
+    markAsViewed();
   };
 
   const handlePointerDown = () => {
@@ -258,7 +250,6 @@ export function TouristStories() {
     const holdDuration = performance.now() - pointerDownTimeRef.current;
     setIsPaused(false);
 
-    // Si mantuvo presionado (> 200ms), solo reanuda el progreso sin cambiar de slide
     if (holdDuration > 200) return;
 
     const rect = e.currentTarget.getBoundingClientRect();
@@ -272,75 +263,79 @@ export function TouristStories() {
     }
   };
 
-  const activeGroup =
-    activeStoryIndex !== null ? STORIES_DATA[activeStoryIndex] : null;
-  const activeSlide =
-    activeGroup && activeGroup.slides[activeSlideIndex]
-      ? activeGroup.slides[activeSlideIndex]
-      : null;
+  const orbCopy = ORB_LABELS[locale] || ORB_LABELS.es;
+  const activeSlide = STORY_SLIDES[activeSlideIndex] || STORY_SLIDES[0];
 
   return (
     <>
-      {/* Fila horizontal compacta de burbujas (56px–62px) */}
-      <section
-        aria-label="Historias destacadas del destino"
-        className="flex items-center justify-center sm:justify-start gap-4 sm:gap-5 py-0.5 px-1 overflow-x-auto no-scrollbar select-none"
+      {/* Burbuja Flotante Única (Floating Story Orb) — 0px de impacto vertical en la cabecera */}
+      <button
+        type="button"
+        onClick={handleOpenOrb}
+        aria-label={orbCopy.title}
+        title={orbCopy.title}
+        className="fixed bottom-5 right-4 z-40 group flex flex-col items-center cursor-pointer select-none focus:outline-none"
       >
-        {STORIES_DATA.map((story, idx) => {
-          const label = story.labels[locale] || story.labels.es;
-          const isViewed = Boolean(viewedIds[story.id]);
+        <div
+          className={[
+            "relative w-14 h-14 rounded-full p-[2.5px] shadow-lg transition-all duration-200 group-hover:scale-105 group-active:scale-95",
+            isViewed
+              ? "bg-stone-300/90 opacity-90"
+              : "bg-gradient-to-tr from-[#1B382B] via-[#144D34] to-amber-500",
+          ].join(" ")}
+        >
+          {/* Insignia superior discreta (✨ + contador 6) */}
+          <span
+            className={[
+              "absolute -top-1 -right-1 z-10 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold leading-none shadow-xs border flex items-center gap-0.5",
+              isViewed
+                ? "bg-stone-200 text-stone-700 border-white"
+                : "bg-amber-400 text-[#1B382B] border-[#FBF9F5]",
+            ].join(" ")}
+          >
+            <span>✨</span>
+            <span>{STORY_SLIDES.length}</span>
+          </span>
 
-          return (
-            <button
-              key={story.id}
-              type="button"
-              onClick={() => handleOpenStory(idx)}
-              className="group flex flex-col items-center gap-1 shrink-0 cursor-pointer focus:outline-none"
-            >
-              {/* Anillo degradado de marca: Verde Bosque (#1B382B) y Ámbar (#F59E0B) */}
-              <div
-                className={[
-                  "w-[58px] h-[58px] sm:w-[62px] sm:h-[62px] rounded-full p-[2.5px] transition-transform duration-150 group-active:scale-95",
-                  isViewed
-                    ? "bg-stone-300"
-                    : "bg-gradient-to-tr from-[#1B382B] via-[#144D34] to-amber-500 shadow-2xs",
-                ].join(" ")}
-              >
-                <div className="w-full h-full rounded-full bg-cream p-[2px] overflow-hidden">
-                  <img
-                    src={story.thumbnail}
-                    alt={label}
-                    width={58}
-                    height={58}
-                    loading="lazy"
-                    decoding="async"
-                    className="w-full h-full rounded-full object-cover group-hover:scale-105 transition-transform duration-200"
-                  />
-                </div>
-              </div>
+          <div className="w-full h-full rounded-full bg-cream p-[2px] overflow-hidden">
+            <img
+              src="/stories-demo/1.jpg"
+              alt={orbCopy.title}
+              width={56}
+              height={56}
+              loading="lazy"
+              decoding="async"
+              className="w-full h-full rounded-full object-cover"
+            />
+          </div>
 
-              <span className="font-sans text-[11px] font-semibold text-forest tracking-tight leading-tight max-w-[82px] truncate">
-                {label}
-              </span>
-            </button>
-          );
-        })}
-      </section>
+          {/* Micro-etiqueta inferior superpuesta sin ocupar flujo */}
+          <span
+            className={[
+              "absolute -bottom-1.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full text-[9px] font-bold tracking-tight whitespace-nowrap shadow-xs border",
+              isViewed
+                ? "bg-white/95 text-stone-600 border-stone-300"
+                : "bg-[#1B382B] text-[#FBF9F5] border-amber-400/70",
+            ].join(" ")}
+          >
+            {orbCopy.badge}
+          </span>
+        </div>
+      </button>
 
-      {/* Visor Modal a Pantalla Completa — Montaje 100% condicional (0 descargas ocultas al inicio) */}
-      {activeStoryIndex !== null && activeGroup && activeSlide && (
+      {/* Visor Modal a Pantalla Completa — Montaje 100% condicional (0 KB descargados al inicio) */}
+      {isOpen && activeSlide && (
         <div
           role="dialog"
           aria-modal="true"
-          aria-label={activeGroup.labels[locale] || activeGroup.labels.es}
+          aria-label={orbCopy.title}
           className="fixed inset-0 z-50 bg-black/95 backdrop-blur-xs flex items-center justify-center overscroll-contain select-none animate-in fade-in duration-150"
         >
           <div className="relative w-full h-full max-w-md max-h-[100dvh] sm:max-h-[90vh] sm:rounded-3xl overflow-hidden bg-stone-950 flex flex-col justify-between shadow-2xl">
-            {/* Barra superior segmentada de progreso + Cabecera de la burbuja + Botón cerrar (✕) */}
-            <div className="relative z-20 pt-3 px-3 pb-6 bg-gradient-to-b from-black/75 via-black/35 to-transparent space-y-2.5">
-              {/* Segmentos de progreso */}
-              <div className="flex items-center gap-1.5">
-                {activeGroup.slides.map((slide, sIdx) => {
+            {/* Barra superior segmentada (6 slides) + Cabecera + Botón cerrar (✕) */}
+            <div className="relative z-20 pt-3 px-3 pb-6 bg-gradient-to-b from-black/80 via-black/40 to-transparent space-y-2.5">
+              <div className="flex items-center gap-1">
+                {STORY_SLIDES.map((slide, sIdx) => {
                   let barWidth = "0%";
                   if (sIdx < activeSlideIndex) {
                     barWidth = "100%";
@@ -362,19 +357,23 @@ export function TouristStories() {
                 })}
               </div>
 
-              {/* Info de la burbuja activa y botón discreto de cierre (✕) */}
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2.5 min-w-0">
                   <img
-                    src={activeGroup.thumbnail}
+                    src="/stories-demo/1.jpg"
                     alt=""
                     width={32}
                     height={32}
                     className="w-8 h-8 rounded-full object-cover border border-amber-400/80 shrink-0"
                   />
-                  <span className="font-sans text-xs sm:text-sm font-bold text-white truncate drop-shadow-xs">
-                    {activeGroup.labels[locale] || activeGroup.labels.es}
-                  </span>
+                  <div className="min-w-0">
+                    <span className="font-sans text-xs sm:text-sm font-bold text-white block truncate drop-shadow-xs">
+                      {activeSlide.tag[locale] || activeSlide.tag.es}
+                    </span>
+                    <span className="font-sans text-[10px] text-white/75 block truncate">
+                      PaDónde • {activeSlideIndex + 1}/{STORY_SLIDES.length}
+                    </span>
+                  </div>
                 </div>
 
                 <button
@@ -391,7 +390,7 @@ export function TouristStories() {
               </div>
             </div>
 
-            {/* Imagen central del slide + Superficie interactiva (1/3 izq retrocede, 2/3 der avanza, hold pausa) */}
+            {/* Imagen central del slide + Superficie táctil (1/3 izq retrocede, 2/3 der avanza, mantener presionado pausa) */}
             <div
               onPointerDown={handlePointerDown}
               onPointerUp={handlePointerUp}
@@ -405,29 +404,22 @@ export function TouristStories() {
               <img
                 key={activeSlide.id}
                 src={activeSlide.imageUrl}
-                alt={
-                  activeSlide.caption?.[locale] ||
-                  activeSlide.caption?.es ||
-                  activeGroup.labels.es
-                }
+                alt={activeSlide.caption[locale] || activeSlide.caption.es}
                 decoding="async"
                 draggable={false}
                 className="w-full h-full object-cover"
               />
             </div>
 
-            {/* Pie del slide con leyenda de alto contraste */}
-            {activeSlide.caption && (
-              <div className="relative z-20 p-4 sm:p-5 pt-10 bg-gradient-to-t from-black/85 via-black/45 to-transparent pointer-events-none">
-                <p className="font-sans text-xs sm:text-sm font-medium text-white text-center leading-relaxed drop-shadow-xs">
-                  {activeSlide.caption[locale] || activeSlide.caption.es}
-                </p>
-              </div>
-            )}
+            {/* Pie del slide con leyenda */}
+            <div className="relative z-20 p-4 sm:p-5 pt-10 bg-gradient-to-t from-black/85 via-black/45 to-transparent pointer-events-none">
+              <p className="font-sans text-xs sm:text-sm font-medium text-white text-center leading-relaxed drop-shadow-xs">
+                {activeSlide.caption[locale] || activeSlide.caption.es}
+              </p>
+            </div>
           </div>
         </div>
       )}
     </>
   );
 }
-
