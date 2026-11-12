@@ -5,6 +5,7 @@ import { useTranslations, useLocale } from "next-intl";
 import { EventFeed } from "@/components/events/EventFeed";
 import { ServiciosList } from "@/components/services/ServiciosList";
 import { TabsDestinos } from "@/components/layout/TabsDestinos";
+import { TouristStories } from "@/components/layout/TouristStories";
 import type { EventoConNegocio, ServicioEsencial } from "@/lib/types";
 import type { TerritorialUXConfig } from "@/constants";
 import { trackTabChange } from "@/lib/analytics";
@@ -83,9 +84,12 @@ export function FeedTabsContainer({
   };
 
   return (
-    <div className="space-y-4 sm:space-y-5">
+    <div className="space-y-3.5 sm:space-y-4">
       {/* 1. Selector Multizona Horizontal (Minca, Mendihuaca, etc.) */}
       <TabsDestinos zonaActiva={zona} locale={locale} />
+
+      {/* 1.5 Círculos tipo Historias (Stories) compactos debajo del selector de destino */}
+      <TouristStories />
 
       {/* 2. Switcher Superior de Pestañas (Cartelera vs. Info Útil) */}
       <div className="flex items-center gap-1 p-1 bg-stone-light/50 rounded-2xl border border-stone-light/70 max-w-sm mx-auto shadow-2xs">
