@@ -9,6 +9,7 @@ interface ShareButtonProps {
   text?: string;
   url?: string;
   zonaNombre?: string;
+  imagenPortadaUrl?: string | null;
   variant?: "header" | "detail" | "icon" | "full";
   className?: string;
 }
@@ -39,6 +40,7 @@ export function ShareButton({
   text,
   url,
   zonaNombre,
+  imagenPortadaUrl,
   variant = "header",
   className = "",
 }: ShareButtonProps) {
@@ -47,6 +49,13 @@ export function ShareButton({
 
   const [modalOpen, setModalOpen] = useState(false);
   const [copiado, setCopiado] = useState(false);
+  const [canNativeShare, setCanNativeShare] = useState(false);
+  const [igLoading, setIgLoading] = useState(false);
+  const [igToastVisible, setIgToastVisible] = useState(false);
+
+  useEffect(() => {
+    setCanNativeShare(typeof navigator !== "undefined" && typeof navigator.share === "function");
+  }, []);
 
   // Cerrar modal con tecla ESC
   useEffect(() => {
@@ -99,6 +108,14 @@ export function ShareButton({
     e.preventDefault();
     e.stopPropagation();
 
+    // Si hay imagen de portada de evento, abrimos el menú para ofrecer "Subir a Historia de Instagram"
+    // junto con el botón nativo de compartir (navigator.share) y Copiar enlace.
+    if (imagenPortadaUrl) {
+      setModalOpen(true);
+      trackEvent("share_modal_open", { title, url: finalUrl });
+      return;
+    }
+
     // 1. En dispositivos móviles con Web Share API nativa (iOS y Android),
     // abre la hoja del sistema donde el usuario puede elegir Facebook, WhatsApp, Instagram, etc.
     if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
@@ -121,6 +138,76 @@ export function ShareButton({
     // 2. Si no tiene navigator.share (Escritorio) o falló, abrimos el modal de opciones
     setModalOpen(true);
     trackEvent("share_modal_open", { title, url: finalUrl });
+  };
+
+  const handleNativeShareFromModal = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (typeof navigator === "undefined" || typeof navigator.share !== "function") return;
+    try {
+      await navigator.share({
+        title,
+        text: shareText,
+        url: finalUrl,
+      });
+      trackEvent("share_native_success", { title, url: finalUrl });
+      setModalOpen(false);
+    } catch {
+      // Usuario canceló o no disponible
+    }
+  };
+
+  const handleSubirHistoriaInstagram = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!imagenPortadaUrl || igLoading) return;
+
+    setIgLoading(true);
+    const cleanCanonicalUrl = finalUrl.split("?")[0].split("#")[0];
+
+    const copiarEnlace = async () => {
+      try {
+        if (typeof navigator !== "undefined" && navigator.clipboard) {
+          await navigator.clipboard.writeText(cleanCanonicalUrl);
+        }
+      } catch {
+        // Silencioso en caso de restricción de permisos
+      }
+    };
+
+    const descargarPortada = async () => {
+      try {
+        const res = await fetch(imagenPortadaUrl, { mode: "cors" });
+        if (!res.ok) throw new Error("fetch_failed");
+        const blob = await res.blob();
+        const mime = blob.type || "";
+        const ext = mime.includes("webp")
+          ? "webp"
+          : mime.includes("png")
+          ? "png"
+          : "jpg";
+
+        const blobUrl = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = blobUrl;
+        link.download = `evento-padonde.${ext}`;
+        link.style.display = "none";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 2500);
+      } catch {
+        // Fallback seguro para Safari/iOS o CORS: abrir imagen en nueva pestaña limpia sin errores en consola
+        if (typeof window !== "undefined") {
+          window.open(imagenPortadaUrl, "_blank", "noopener,noreferrer");
+        }
+      }
+    };
+
+    await Promise.allSettled([copiarEnlace(), descargarPortada()]);
+
+    trackEvent("share_instagram_story", { title, url: cleanCanonicalUrl });
+    setIgLoading(false);
+    setIgToastVisible(true);
+    setTimeout(() => setIgToastVisible(false), 6000);
   };
 
   const handleCopiarEnlace = async (e: React.MouseEvent) => {
@@ -189,7 +276,7 @@ export function ShareButton({
         </button>
       )}
 
-      {/* Modal / Menú Elegante de Compartir (para Escritorio o fallback) */}
+      {/* Modal / Menú Elegante de Compartir */}
       {modalOpen && (
         <div
           role="dialog"
@@ -228,6 +315,72 @@ export function ShareButton({
 
             {/* Opciones directas */}
             <div className="space-y-2.5 pt-1">
+              {/* 0. Subir a Historia de Instagram (1 toque) */}
+              {imagenPortadaUrl && (
+                <button
+                  type="button"
+                  onClick={handleSubirHistoriaInstagram}
+                  disabled={igLoading}
+                  className="w-full flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-fuchsia-50 via-rose-50 to-amber-50 hover:from-fuchsia-100/80 hover:via-rose-100/80 hover:to-amber-100/80 border border-rose-200/90 text-rose-950 font-sans text-xs sm:text-sm font-medium transition-all group shadow-2xs cursor-pointer active:scale-[0.99] disabled:opacity-60"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="w-5 h-5"
+                        aria-hidden="true"
+                      >
+                        <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+                      </svg>
+                    </span>
+                    <div className="text-left">
+                      <p className="font-bold text-rose-950">
+                        {igLoading ? "Preparando foto y enlace..." : "Subir a Historia de Instagram"}
+                      </p>
+                      <p className="text-[11px] text-rose-800/80 font-normal">
+                        Guarda la portada y copia el enlace para el sticker 🔗
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-rose-700 font-bold group-hover:translate-x-0.5 transition-transform text-sm">
+                    →
+                  </span>
+                </button>
+              )}
+
+              {/* Compartir nativo del dispositivo (WhatsApp, chats, etc.) cuando está disponible */}
+              {canNativeShare && (
+                <button
+                  type="button"
+                  onClick={handleNativeShareFromModal}
+                  className="w-full flex items-center justify-between p-3 rounded-2xl bg-forest text-white hover:bg-forest-dark font-sans text-xs sm:text-sm font-medium transition-all group shadow-2xs cursor-pointer active:scale-[0.99]"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+                      <ShareIcon className="w-4 h-4 text-white" />
+                    </span>
+                    <div className="text-left">
+                      <p className="font-bold text-white">
+                        Compartir en WhatsApp y chats
+                      </p>
+                      <p className="text-[11px] text-white/80 font-normal">
+                        Abrir menú nativo de tu dispositivo
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-white font-bold group-hover:translate-x-0.5 transition-transform text-sm">
+                    →
+                  </span>
+                </button>
+              )}
+
               {/* 1. WhatsApp */}
               <a
                 href={whatsappUrl}
@@ -314,6 +467,17 @@ export function ShareButton({
               {t("close")}
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Toast visible durante 6 segundos tras preparar Historia de Instagram */}
+      {igToastVisible && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-5 left-1/2 -translate-x-1/2 z-[80] w-[calc(100%-2rem)] max-w-md bg-[#1B382B] text-white px-4 py-3.5 rounded-2xl shadow-2xl border border-emerald-400/30 text-xs sm:text-sm font-sans font-medium leading-snug animate-in fade-in slide-in-from-bottom-4 duration-200"
+        >
+          ✅ Foto guardada y enlace copiado. Abre Instagram &gt; Tu Historia, elige la foto y pega el link con el sticker 🔗
         </div>
       )}
     </>

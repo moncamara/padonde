@@ -380,8 +380,9 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
             <ShareButton
               title={evento.titulo}
               text={`${evento.titulo} en ${evento.negocio.nombre} (${zona.nombre}) — PaDónde 🌿`}
-              url={`https://padonde.lat/${locale}/${zonaSlug}/${id}`}
+              url={`https://www.padonde.lat/${locale}/${zonaSlug}/${id}`}
               zonaNombre={zona.nombre}
+              imagenPortadaUrl={evento.imagen_url || undefined}
               variant="detail"
             />
           </div>
