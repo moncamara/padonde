@@ -139,10 +139,8 @@ export async function POST(request: NextRequest) {
 
       lines.push(`🗺️ <b>Destino:</b> ${regionLabel}`);
 
-      // Disparar Telegram en segundo plano (fire-and-forget)
-      void sendTelegramNotification(lines.join("\n")).catch((err) => {
-        console.warn("Aviso al despachar notificación Telegram:", err);
-      });
+      // Esperar despacho a Telegram antes de cerrar la función serverless (sendBeacon en cliente no bloquea WhatsApp)
+      await sendTelegramNotification(lines.join("\n"));
     } catch (notifErr) {
       console.warn("Error formateando notificación Telegram:", notifErr);
     }
