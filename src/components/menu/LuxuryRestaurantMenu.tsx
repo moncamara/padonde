@@ -9,6 +9,7 @@ import {
   type IdiomaCodigo,
 } from "@/data/menus/lazyCatMenu";
 import { TEMAS_MENU, LISTA_TEMAS, type TemaMenuId } from "./menuThemes";
+import { normalizarTextoBusqueda } from "@/lib/utils/text";
 import "./luxury-menu.css";
 
 interface LuxuryRestaurantMenuProps {
@@ -351,12 +352,7 @@ export function LuxuryRestaurantMenu({
   });
 
   // Normalizador para búsqueda insensible a mayúsculas, minúsculas y tildes
-  const normalizar = (texto: string) =>
-    (texto || "")
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .trim();
+  const normalizar = normalizarTextoBusqueda;
 
   // Obtener descripción de un plato soportando descripcion / descripciones / ingredientes
   const getDescripcionPlato = (item: any, idm: IdiomaCodigo): string | null => {

@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import type { AliadoResumen } from "./EventUpsertForm";
+import { normalizarTextoBusqueda } from "@/lib/utils/text";
 
 export type AliadoConVerticales = AliadoResumen & {
   eventosCount?: number;
@@ -48,14 +49,14 @@ export function AliadoSelectorField({
   }, [aliados, selectedNegocioId]);
 
   const aliadosFiltrados = useMemo(() => {
-    const q = busqueda.trim().toLowerCase();
+    const q = normalizarTextoBusqueda(busqueda);
     if (!q) return aliados.slice(0, 20);
     return aliados
       .filter((a) => {
-        const nom = (a.nombre || "").toLowerCase();
-        const wa = (a.whatsapp || "").toLowerCase();
-        const ig = (a.instagram || "").toLowerCase();
-        const zona = (a.zonaNombre || a.zonaSlug || "").toLowerCase();
+        const nom = normalizarTextoBusqueda(a.nombre);
+        const wa = normalizarTextoBusqueda(a.whatsapp);
+        const ig = normalizarTextoBusqueda(a.instagram);
+        const zona = normalizarTextoBusqueda(a.zonaNombre || a.zonaSlug);
         return nom.includes(q) || wa.includes(q) || ig.includes(q) || zona.includes(q);
       })
       .slice(0, 25);
@@ -65,13 +66,13 @@ export function AliadoSelectorField({
   const posibleDuplicado = useMemo(() => {
     if (modo !== "nuevo" || selectedNegocioId) return null;
     const tel10 = normalizarTelefono10(whatsappActual);
-    const nomLower = nombreActual.trim().toLowerCase();
+    const nomLower = normalizarTextoBusqueda(nombreActual);
     if (tel10.length < 7 && nomLower.length < 3) return null;
 
     return (
       aliados.find((a) => {
         const aTel10 = normalizarTelefono10(a.whatsapp);
-        const aNom = (a.nombre || "").trim().toLowerCase();
+        const aNom = normalizarTextoBusqueda(a.nombre);
         if (tel10.length >= 7 && aTel10 && aTel10 === tel10) return true;
         if (nomLower.length >= 4 && aNom === nomLower) return true;
         return false;

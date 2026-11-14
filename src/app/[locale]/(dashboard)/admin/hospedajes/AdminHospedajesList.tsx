@@ -13,6 +13,7 @@ import {
 import { ToggleDestacadoButton } from "../ToggleDestacadoButton";
 import { parsearLineaRapida, buscarCoincidenciaHospedaje } from "@/lib/hospedajeParser";
 import type { AliadoConVerticales } from "../AliadoSelectorField";
+import { normalizarTextoBusqueda } from "@/lib/utils/text";
 
 
 
@@ -72,15 +73,15 @@ export function AdminHospedajesList({
       });
     }
 
-    // Buscador por texto libre
+    // Buscador por texto libre (insensible a tildes y diacríticos)
     if (busqueda.trim()) {
-      const q = busqueda.trim().toLowerCase();
+      const q = normalizarTextoBusqueda(busqueda);
       resultado = resultado.filter((h) => {
-        const titulo = (h.titulo || "").toLowerCase();
-        const negocio = (h.negocio?.nombre || h.nombreNegocio || "").toLowerCase();
-        const wa = (h.negocio?.whatsapp || h.whatsapp || "").toLowerCase();
-        const contacto = (h.metadata_hospedaje?.contacto_propietario || "").toLowerCase();
-        const zona = (h.zonas?.nombre || h.zonaNombre || "").toLowerCase();
+        const titulo = normalizarTextoBusqueda(h.titulo);
+        const negocio = normalizarTextoBusqueda(h.negocio?.nombre || h.nombreNegocio);
+        const wa = normalizarTextoBusqueda(h.negocio?.whatsapp || h.whatsapp);
+        const contacto = normalizarTextoBusqueda(h.metadata_hospedaje?.contacto_propietario);
+        const zona = normalizarTextoBusqueda(h.zonas?.nombre || h.zonaNombre);
         return (
           titulo.includes(q) ||
           negocio.includes(q) ||

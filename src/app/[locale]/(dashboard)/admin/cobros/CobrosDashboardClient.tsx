@@ -8,6 +8,7 @@ import type {
   EstadoPago,
 } from "@/lib/types";
 import { obtenerCobrosAliadosAction, alternarEstadoActivoAliadoAction } from "./actions";
+import { normalizarTextoBusqueda } from "@/lib/utils/text";
 import { esAliadoPausadoOInactivo } from "./cobrosUtils";
 import { ModalRegistrarPago } from "./ModalRegistrarPago";
 import { ModalAjustarAcuerdo } from "./ModalAjustarAcuerdo";
@@ -190,13 +191,13 @@ export function CobrosDashboardClient({ initialData }: CobrosDashboardClientProp
         return false;
       }
 
-      // 3. Filtro por Búsqueda (nombre, notas, zona, whatsapp)
+      // 3. Filtro por Búsqueda (nombre, notas, zona, whatsapp - insensible a tildes)
       if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase().trim();
-        const nombre = (a.negocio_nombre || "").toLowerCase();
-        const zona = (a.zona_nombre || "").toLowerCase();
-        const notas = (a.notas_acuerdo || "").toLowerCase();
-        const tel = (a.whatsapp || "").toLowerCase();
+        const q = normalizarTextoBusqueda(searchQuery);
+        const nombre = normalizarTextoBusqueda(a.negocio_nombre);
+        const zona = normalizarTextoBusqueda(a.zona_nombre);
+        const notas = normalizarTextoBusqueda(a.notas_acuerdo);
+        const tel = normalizarTextoBusqueda(a.whatsapp);
         if (!nombre.includes(q) && !zona.includes(q) && !notas.includes(q) && !tel.includes(q)) {
           return false;
         }

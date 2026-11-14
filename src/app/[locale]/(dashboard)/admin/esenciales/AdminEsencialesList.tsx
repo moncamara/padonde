@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { CategoriaServicioEsencial, ServicioEsencial } from "@/lib/types";
+import { normalizarTextoBusqueda } from "@/lib/utils/text";
 import { ModalEditarEsencial } from "./ModalEditarEsencial";
 import { ModalNotificarAlianza } from "./ModalNotificarAlianza";
 import {
@@ -158,13 +159,13 @@ export function AdminEsencialesList({
       const pasaZona =
         filtroZona === "todas" ||
         slugDeZona(s.zona_id) === filtroZona;
-      const q = busqueda.trim().toLowerCase();
+      const q = normalizarTextoBusqueda(busqueda);
       const pasaBusqueda =
         !q ||
-        s.nombre_comercial.toLowerCase().includes(q) ||
-        (s.subtitulo && s.subtitulo.toLowerCase().includes(q)) ||
-        (s.whatsapp && s.whatsapp.includes(q)) ||
-        (s.direccion_referencia && s.direccion_referencia.toLowerCase().includes(q));
+        normalizarTextoBusqueda(s.nombre_comercial).includes(q) ||
+        normalizarTextoBusqueda(s.subtitulo).includes(q) ||
+        normalizarTextoBusqueda(s.whatsapp).includes(q) ||
+        normalizarTextoBusqueda(s.direccion_referencia).includes(q);
       return pasaCat && pasaZona && pasaBusqueda;
     })
     .sort((a, b) => {

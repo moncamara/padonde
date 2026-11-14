@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/Button";
+import { normalizarTextoBusqueda } from "@/lib/utils/text";
 import {
   formatVisualPhone,
   cleanPhoneNumber,
@@ -257,13 +258,13 @@ Para mantener tu vitrina con visibilidad destacada y continuar recibiendo turist
         if (catReal !== filtroCategoria) return false;
       }
 
-      // Filtro por texto
-      const q = busqueda.trim().toLowerCase();
+      // Filtro por texto (insensible a tildes)
+      const q = normalizarTextoBusqueda(busqueda);
       if (!q) return true;
       return (
-        a.nombre.toLowerCase().includes(q) ||
-        a.whatsapp.includes(q) ||
-        (a.categoria || "").toLowerCase().includes(q)
+        normalizarTextoBusqueda(a.nombre).includes(q) ||
+        normalizarTextoBusqueda(a.whatsapp).includes(q) ||
+        normalizarTextoBusqueda(a.categoria).includes(q)
       );
     });
   }, [aliados, filtroZona, filtroCategoria, busqueda, soloSeleccionados, seleccionados]);

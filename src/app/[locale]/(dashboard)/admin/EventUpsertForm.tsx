@@ -16,6 +16,7 @@ import {
   getFechaYMDDesdeISO,
   getFechaYMDColombia,
   extraerGoogleReviewUrl,
+  normalizarTextoBusqueda,
 } from "@/lib/utils";
 import {
   uploadEventImage,
@@ -188,23 +189,15 @@ export function EventUpsertForm({
 
   const aliadosFiltrados = useMemo(() => {
     if (!listaAliadosDisponibles || listaAliadosDisponibles.length === 0) return [];
-    const q = businessName
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .toLowerCase()
-      .trim();
+    const q = normalizarTextoBusqueda(businessName);
 
     if (!q) return listaAliadosDisponibles;
 
     return listaAliadosDisponibles.filter((a) => {
-      const matchNombre = a.nombre
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .toLowerCase()
-        .includes(q);
+      const matchNombre = normalizarTextoBusqueda(a.nombre).includes(q);
       const matchWp = a.whatsapp?.includes(q.replace(/\D/g, ""));
-      const matchIg = a.instagram ? a.instagram.toLowerCase().includes(q) : false;
-      const matchCat = a.categoria ? a.categoria.toLowerCase().includes(q) : false;
+      const matchIg = a.instagram ? normalizarTextoBusqueda(a.instagram).includes(q) : false;
+      const matchCat = a.categoria ? normalizarTextoBusqueda(a.categoria).includes(q) : false;
       return matchNombre || matchWp || matchIg || matchCat;
     });
   }, [listaAliadosDisponibles, businessName]);

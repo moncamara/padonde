@@ -1062,4 +1062,6 @@ export function obtenerFotoPortada(
   return todasLasFotos[indiceFoto] || evento.imagen_url;
 }
 
+export { normalizarTextoBusqueda } from "./text";
+
 

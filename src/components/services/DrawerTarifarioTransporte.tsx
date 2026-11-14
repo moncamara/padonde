@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { useLocale } from "next-intl";
 import type { TarifarioTransporte, ItemTarifaTransporte } from "@/data/tarifas/types";
 import { TEXTOS_TARIFARIO } from "@/data/tarifas/traducciones";
+import { normalizarTextoBusqueda } from "@/lib/utils/text";
 
 interface DrawerTarifarioTransporteProps {
   tarifario: TarifarioTransporte;
@@ -94,12 +95,7 @@ export function DrawerTarifarioTransporte({
   }, [tarifario]);
 
   // Normalizador insensible a tildes y mayúsculas
-  const normalizar = (str: string) =>
-    (str || "")
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .trim();
+  const normalizar = normalizarTextoBusqueda;
 
   // Filtrado instantáneo por nombre real del destino/hostal
   const rutasFiltradas = useMemo(() => {

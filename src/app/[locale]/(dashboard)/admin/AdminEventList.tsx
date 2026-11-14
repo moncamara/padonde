@@ -13,6 +13,7 @@ import {
   esHoy,
   getEtiquetaHorario,
   extraerRecurrencia,
+  normalizarTextoBusqueda,
   proyectarProximaFechaEvento,
 } from "@/lib/utils";
 import { ToggleActivoButton } from "./ToggleActivoButton";
@@ -213,14 +214,14 @@ export function AdminEventList({
   // 3. Filtrado por texto de búsqueda y ordenación
   const listaFiltrada = useMemo(() => {
     let res = listaBase;
-    const q = busqueda.trim().toLowerCase();
+    const q = normalizarTextoBusqueda(busqueda);
     if (q) {
       res = res.filter((ev) => {
-        const tituloMatch = ev.titulo.toLowerCase().includes(q);
-        const negocioMatch = ev.negocio?.nombre.toLowerCase().includes(q) ?? false;
+        const tituloMatch = normalizarTextoBusqueda(ev.titulo).includes(q);
+        const negocioMatch = normalizarTextoBusqueda(ev.negocio?.nombre).includes(q);
         const tipoMatch =
-          ev.tipo.toLowerCase().includes(q) ||
-          (ev.categorias && ev.categorias.some((c) => c.toLowerCase().includes(q)));
+          normalizarTextoBusqueda(ev.tipo).includes(q) ||
+          (ev.categorias && ev.categorias.some((c) => normalizarTextoBusqueda(c).includes(q)));
         return tituloMatch || negocioMatch || tipoMatch;
       });
     }

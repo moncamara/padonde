@@ -20,6 +20,7 @@ import {
 } from "@/lib/utils";
 import { trackSearch } from "@/lib/analytics";
 import { useZonaSearch } from "@/context/SearchContext";
+import { normalizarTextoBusqueda } from "@/lib/utils/text";
 
 interface EventFeedProps {
   eventos: EventoConNegocio[];
@@ -27,28 +28,20 @@ interface EventFeedProps {
   configTerritorial?: Record<string, TerritorialUXConfig>;
 }
 
-function normalizarTexto(txt: string): string {
-  return txt
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim();
-}
-
 function eventoCoincideConBusqueda(e: EventoConNegocio, queryNorm: string): boolean {
   if (!queryNorm) return true;
-  if (normalizarTexto(e.titulo).includes(queryNorm)) return true;
-  if (e.descripcion && normalizarTexto(e.descripcion).includes(queryNorm)) return true;
-  if (e.negocio?.nombre && normalizarTexto(e.negocio.nombre).includes(queryNorm)) return true;
-  if (normalizarTexto(e.tipo).includes(queryNorm)) return true;
-  if (e.categorias?.some((c) => normalizarTexto(c).includes(queryNorm))) return true;
+  if (normalizarTextoBusqueda(e.titulo).includes(queryNorm)) return true;
+  if (e.descripcion && normalizarTextoBusqueda(e.descripcion).includes(queryNorm)) return true;
+  if (e.negocio?.nombre && normalizarTextoBusqueda(e.negocio.nombre).includes(queryNorm)) return true;
+  if (normalizarTextoBusqueda(e.tipo).includes(queryNorm)) return true;
+  if (e.categorias?.some((c) => normalizarTextoBusqueda(c).includes(queryNorm))) return true;
   if (
     e.metadata_hospedaje?.habitaciones?.some(
       (h) =>
-        normalizarTexto(h.titulo).includes(queryNorm) ||
-        (h.descripcion && normalizarTexto(h.descripcion).includes(queryNorm)) ||
+        normalizarTextoBusqueda(h.titulo).includes(queryNorm) ||
+        (h.descripcion && normalizarTextoBusqueda(h.descripcion).includes(queryNorm)) ||
         h.badges?.some((b) =>
-          normalizarTexto(typeof b === "object" ? b?.texto || "" : String(b || "")).includes(queryNorm)
+          normalizarTextoBusqueda(typeof b === "object" ? b?.texto || "" : String(b || "")).includes(queryNorm)
         )
     )
   ) {
@@ -150,7 +143,7 @@ export function EventFeed({ eventos, zona, configTerritorial }: EventFeedProps) 
   }, []);
 
   const nowRef = useRef(new Date());
-  const queryNorm = normalizarTexto(busqueda);
+  const queryNorm = normalizarTextoBusqueda(busqueda);
 
   // Filtrado de eventos por categoría, búsqueda y fecha con fallback inteligente a otras fechas
   const { eventosFiltrados, esEnOtrasFechas } = useMemo(() => {

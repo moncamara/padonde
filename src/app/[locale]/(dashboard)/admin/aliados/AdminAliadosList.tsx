@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useMemo } from "react";
 import { useRouter } from "@/i18n/routing";
-import { formatFecha, formatearFechaCortaDeterminista } from "@/lib/utils";
+import { formatFecha, formatearFechaCortaDeterminista, normalizarTextoBusqueda } from "@/lib/utils";
 import {
   actualizarPlanNegocioAction,
   toggleActivoAliadoAction,
@@ -197,12 +197,12 @@ export function AdminAliadosList({
       if (filtro === "gratis" && a.plan !== "gratis") return false;
       if (filtro === "por_vencer" && est.tipo !== "por_vencer" && est.tipo !== "vencido") return false;
 
-      // 2. Búsqueda por texto
-      const q = busqueda.trim().toLowerCase();
+      // 2. Búsqueda por texto (insensible a tildes y diacríticos)
+      const q = normalizarTextoBusqueda(busqueda);
       if (!q) return true;
-      const matchNombre = a.nombre.toLowerCase().includes(q);
-      const matchCategoria = a.categoria.toLowerCase().includes(q);
-      const matchWa = a.whatsapp.includes(q);
+      const matchNombre = normalizarTextoBusqueda(a.nombre).includes(q);
+      const matchCategoria = normalizarTextoBusqueda(a.categoria).includes(q);
+      const matchWa = normalizarTextoBusqueda(a.whatsapp).includes(q);
       return matchNombre || matchCategoria || matchWa;
     });
 
