@@ -1617,6 +1617,8 @@ export async function toggleActivoAliadoAction(
 
 export interface GuardarHospedajeInput {
   id?: string; // Si viene id es edición, si no es nuevo
+  negocioId?: string | null; // Vínculo explícito a aliado existente en `negocios`
+  actualizarDatosMaestros?: boolean; // Si true, actualiza datos maestros en `negocios`
   nombreNegocio: string;
   whatsapp: string;
   instagram?: string;
@@ -1694,30 +1696,60 @@ export async function guardarHospedajeAction(input: GuardarHospedajeInput) {
       return { success: false, error: "Zona geográfica no válida o no registrada." };
     }
 
-    // 2. Buscar o crear negocio (aliado de hospedaje) con prevención estricta de duplicados
+    // 2. Buscar o crear negocio (aliado maestro) con soporte multi-vertical sin duplicar ni sobreescribir categoría
     let negocioId = "";
     let cleanPhone = input.whatsapp.replace(/\D/g, "");
     if (cleanPhone.length === 10 && cleanPhone.startsWith("3")) {
       cleanPhone = `57${cleanPhone}`;
     }
     const nombreLimpio = input.nombreNegocio.trim();
+    const instagramLimpio = input.instagram?.trim() ? input.instagram.trim().replace(/^@/, "") : null;
 
-    // 2.1 Buscar primero por teléfono exacto
-    let existingNegocio: { id: string } | null = null;
-    if (cleanPhone) {
+    const googleRatingNum =
+      input.metadataHospedaje?.google_reputacion?.rating !== undefined
+        ? Number(input.metadataHospedaje.google_reputacion.rating)
+        : null;
+    const googleReviewsNum =
+      input.metadataHospedaje?.google_reputacion?.total_reviews !== undefined
+        ? Number(input.metadataHospedaje.google_reputacion.total_reviews)
+        : null;
+    const googleMapsStr = input.metadataHospedaje?.google_reputacion?.maps_url?.trim() || null;
+    const googleReviewStr =
+      (input.metadataHospedaje?.google_review_url &&
+        (input.metadataHospedaje.google_review_url.includes("search.google.com/local/writereview") ||
+          input.metadataHospedaje.google_review_url.includes("g.page/r/")))
+        ? input.metadataHospedaje.google_review_url.trim()
+        : extraerGoogleReviewUrl(input.metadataHospedaje?.google_review_url) ||
+          extraerGoogleReviewUrl(googleMapsStr) ||
+          input.metadataHospedaje?.google_review_url?.trim() ||
+          null;
+
+    // 2.1 Si viene `negocioId` explícito desde el selector maestro, usarlo directamente
+    let existingNegocio: any = null;
+    if (input.negocioId) {
+      const { data: porId } = await supabase
+        .from("negocios")
+        .select("id, categoria, whatsapp, instagram, google_rating, google_total_reviews, google_maps_url, google_review_url")
+        .eq("id", input.negocioId)
+        .maybeSingle();
+      if (porId) existingNegocio = porId;
+    }
+
+    // 2.2 Fallback legacy: buscar por teléfono exacto si no vino negocioId
+    if (!existingNegocio && cleanPhone) {
       const { data: porTel } = await supabase
         .from("negocios")
-        .select("id")
+        .select("id, categoria, whatsapp, instagram, google_rating, google_total_reviews, google_maps_url, google_review_url")
         .eq("whatsapp", cleanPhone)
         .maybeSingle();
       if (porTel) existingNegocio = porTel;
     }
 
-    // 2.2 Si no coincidió por teléfono, buscar por nombre exacto dentro de la misma zona
+    // 2.3 Fallback legacy: buscar por nombre exacto dentro de la misma zona
     if (!existingNegocio) {
       const { data: porNombre } = await supabase
         .from("negocios")
-        .select("id")
+        .select("id, categoria, whatsapp, instagram, google_rating, google_total_reviews, google_maps_url, google_review_url")
         .eq("zona_id", zona.id)
         .ilike("nombre", nombreLimpio)
         .maybeSingle();
@@ -1726,31 +1758,85 @@ export async function guardarHospedajeAction(input: GuardarHospedajeInput) {
 
     if (existingNegocio) {
       negocioId = existingNegocio.id;
-      await supabase
-        .from("negocios")
-        .update({
-          zona_id: zona.id,
-          nombre: nombreLimpio,
-          whatsapp: cleanPhone || undefined,
-          instagram: input.instagram?.trim() || null,
-          categoria: "hospedaje",
-        })
-        .eq("id", negocioId);
+      // Solo actualizamos datos maestros si el admin lo pidió explícitamente o para rellenar campos vacíos,
+      // y NUNCA sobreescribimos `categoria` si el aliado ya tiene otra categoría principal (ej: comida/tours).
+      const negUpdates: Record<string, any> = {};
+      if (!existingNegocio.categoria) {
+        negUpdates.categoria = "hospedaje";
+      }
+      if (input.actualizarDatosMaestros) {
+        negUpdates.zona_id = zona.id;
+        negUpdates.nombre = nombreLimpio;
+        if (cleanPhone) negUpdates.whatsapp = cleanPhone;
+        negUpdates.instagram = instagramLimpio;
+      } else {
+        if (!existingNegocio.whatsapp && cleanPhone) negUpdates.whatsapp = cleanPhone;
+        if (!existingNegocio.instagram && instagramLimpio) negUpdates.instagram = instagramLimpio;
+      }
+
+      if (googleRatingNum && !Number.isNaN(googleRatingNum) && (input.actualizarDatosMaestros || existingNegocio.google_rating == null)) {
+        negUpdates.google_rating = googleRatingNum;
+      }
+      if (googleReviewsNum && !Number.isNaN(googleReviewsNum) && (input.actualizarDatosMaestros || existingNegocio.google_total_reviews == null)) {
+        negUpdates.google_total_reviews = googleReviewsNum;
+      }
+      if (googleMapsStr && (input.actualizarDatosMaestros || !existingNegocio.google_maps_url)) {
+        negUpdates.google_maps_url = googleMapsStr;
+      }
+      if (googleReviewStr && (input.actualizarDatosMaestros || !existingNegocio.google_review_url)) {
+        negUpdates.google_review_url = googleReviewStr;
+      }
+
+      if (Object.keys(negUpdates).length > 0) {
+        const { error: negUpErr } = await supabase
+          .from("negocios")
+          .update(negUpdates)
+          .eq("id", negocioId);
+        if (negUpErr && negUpErr.code === "42703") {
+          delete negUpdates.google_rating;
+          delete negUpdates.google_total_reviews;
+          delete negUpdates.google_maps_url;
+          delete negUpdates.google_review_url;
+          if (Object.keys(negUpdates).length > 0) {
+            await supabase.from("negocios").update(negUpdates).eq("id", negocioId);
+          }
+        }
+      }
     } else {
-      const { data: newNegocio, error: newNegocioError } = await supabase
+      const newNegocioPayload: Record<string, any> = {
+        zona_id: zona.id,
+        user_id: user.id, // Vinculado al admin para permitir edición y borrado
+        nombre: nombreLimpio,
+        whatsapp: cleanPhone,
+        instagram: instagramLimpio,
+        categoria: "hospedaje",
+        plan: "gratis",
+        activo: true,
+        ...(googleRatingNum && !Number.isNaN(googleRatingNum) ? { google_rating: googleRatingNum } : {}),
+        ...(googleReviewsNum && !Number.isNaN(googleReviewsNum) ? { google_total_reviews: googleReviewsNum } : {}),
+        ...(googleMapsStr ? { google_maps_url: googleMapsStr } : {}),
+        ...(googleReviewStr ? { google_review_url: googleReviewStr } : {}),
+      };
+
+      let { data: newNegocio, error: newNegocioError } = await supabase
         .from("negocios")
-        .insert({
-          zona_id: zona.id,
-          user_id: user.id, // Vinculado al admin para permitir edición y borrado
-          nombre: nombreLimpio,
-          whatsapp: cleanPhone,
-          instagram: input.instagram?.trim() || null,
-          categoria: "hospedaje",
-          plan: "gratis",
-          activo: true,
-        })
+        .insert(newNegocioPayload)
         .select("id")
         .single();
+
+      if (newNegocioError && newNegocioError.code === "42703") {
+        delete newNegocioPayload.google_rating;
+        delete newNegocioPayload.google_total_reviews;
+        delete newNegocioPayload.google_maps_url;
+        delete newNegocioPayload.google_review_url;
+        const retryRes = await supabase
+          .from("negocios")
+          .insert(newNegocioPayload)
+          .select("id")
+          .single();
+        newNegocio = retryRes.data;
+        newNegocioError = retryRes.error;
+      }
 
       if (newNegocioError || !newNegocio) {
         return { success: false, error: "Error al crear el aliado de hospedaje." };
@@ -1818,9 +1904,14 @@ export async function guardarHospedajeAction(input: GuardarHospedajeInput) {
       }
     }
 
-    // Revalidar rutas para reflejar cambios de inmediato
+    // Revalidar rutas administrativas y públicas ISR para reflejar cambios de inmediato
     revalidatePath(`/[locale]/admin/hospedajes`, "page");
+    revalidatePath(`/[locale]/admin/aliados`, "page");
+    revalidatePath(`/[locale]/admin/cobros`, "page");
     revalidatePath(`/[locale]/${input.zonaSlug}`, "page");
+    if (esEdicionReal && input.id) {
+      revalidatePath(`/[locale]/${input.zonaSlug}/${input.id}`, "page");
+    }
 
     return { success: true };
   } catch (err: any) {
@@ -1833,6 +1924,7 @@ export async function guardarHospedajeAction(input: GuardarHospedajeInput) {
 
 export interface GuardarServicioEsencialInput {
   id?: string;
+  negocioId?: string | null;
   zonaSlug: string;
   categoria: CategoriaServicioEsencial;
   nombreComercial: string;
@@ -1908,6 +2000,7 @@ export async function guardarServicioEsencialAction(
 
     const payload: Record<string, any> = {
       zona_id: zonaId,
+      ...(input.negocioId !== undefined ? { negocio_id: input.negocioId || null } : {}),
       categoria: input.categoria,
       nombre_comercial: input.nombreComercial.trim(),
       subtitulo: input.subtitulo.trim(),
@@ -1953,11 +2046,17 @@ export async function guardarServicioEsencialAction(
         .select("*")
         .single();
 
-      // Si la columna boton_whatsapp_activo o metadata_comercial aún no existen, reintentar con fallback
-      if (updateError && (updateError.message?.includes("boton_whatsapp_activo") || updateError.message?.includes("metadata_comercial"))) {
+      // Si la columna boton_whatsapp_activo, metadata_comercial o negocio_id aún no existen, reintentar con fallback
+      if (
+        updateError &&
+        (updateError.message?.includes("boton_whatsapp_activo") ||
+          updateError.message?.includes("metadata_comercial") ||
+          updateError.message?.includes("negocio_id"))
+      ) {
         const payloadFallback = { ...payload };
         if (updateError.message.includes("boton_whatsapp_activo")) delete payloadFallback.boton_whatsapp_activo;
         if (updateError.message.includes("metadata_comercial")) delete payloadFallback.metadata_comercial;
+        if (updateError.message.includes("negocio_id")) delete payloadFallback.negocio_id;
 
         const resFallback = await supabase
           .from("servicios_esenciales")
@@ -1980,11 +2079,17 @@ export async function guardarServicioEsencialAction(
         .select("*")
         .single();
 
-      // Si la columna boton_whatsapp_activo o metadata_comercial aún no existen, reintentar con fallback
-      if (insertError && (insertError.message?.includes("boton_whatsapp_activo") || insertError.message?.includes("metadata_comercial"))) {
+      // Si la columna boton_whatsapp_activo, metadata_comercial o negocio_id aún no existen, reintentar con fallback
+      if (
+        insertError &&
+        (insertError.message?.includes("boton_whatsapp_activo") ||
+          insertError.message?.includes("metadata_comercial") ||
+          insertError.message?.includes("negocio_id"))
+      ) {
         const payloadFallback = { ...payload };
         if (insertError.message.includes("boton_whatsapp_activo")) delete payloadFallback.boton_whatsapp_activo;
         if (insertError.message.includes("metadata_comercial")) delete payloadFallback.metadata_comercial;
+        if (insertError.message.includes("negocio_id")) delete payloadFallback.negocio_id;
 
         const resFallback = await supabase
           .from("servicios_esenciales")

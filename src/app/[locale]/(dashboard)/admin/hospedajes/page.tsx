@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "@/i18n/routing";
 import { AdminNav } from "../AdminNav";
 import { AdminHospedajesList } from "./AdminHospedajesList";
+import type { AliadoConVerticales } from "../AliadoSelectorField";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
@@ -147,6 +148,68 @@ export default async function AdminHospedajesPage({
   }
   const zonasCompletas = Array.from(mapaZonasAdmin.values());
 
+  // 4. Cargar catálogo maestro de aliados (negocios) con conteo de verticales para asociar sin duplicar
+  let rawNegocios: any[] = [];
+  const negociosRes = await supabase
+    .from("negocios")
+    .select(
+      "id, nombre, whatsapp, instagram, categoria, zona_id, activo, google_rating, google_total_reviews, google_maps_url, google_review_url"
+    )
+    .order("nombre", { ascending: true });
+
+  if (negociosRes.error && negociosRes.error.code === "42703") {
+    const fallbackNeg = await supabase
+      .from("negocios")
+      .select("id, nombre, whatsapp, instagram, categoria, zona_id, activo")
+      .order("nombre", { ascending: true });
+    rawNegocios = fallbackNeg.data || [];
+  } else {
+    rawNegocios = negociosRes.data || [];
+  }
+
+  const { data: eventosVerticales } = await supabase
+    .from("eventos")
+    .select("negocio_id, tipo");
+
+  const conteosPorNegocio = new Map<string, { eventos: number; hospedajes: number }>();
+  for (const ev of eventosVerticales || []) {
+    if (!ev.negocio_id) continue;
+    const prev = conteosPorNegocio.get(ev.negocio_id) || { eventos: 0, hospedajes: 0 };
+    if (ev.tipo === "hospedaje") {
+      prev.hospedajes += 1;
+    } else {
+      prev.eventos += 1;
+    }
+    conteosPorNegocio.set(ev.negocio_id, prev);
+  }
+
+  const mapaZonasById = new Map<string, { nombre: string; slug: string }>();
+  for (const z of zonasCompletas) {
+    mapaZonasById.set(z.id, { nombre: z.nombre, slug: z.slug });
+  }
+
+  const aliados: AliadoConVerticales[] = rawNegocios.map((n) => {
+    const zInfo = n.zona_id ? mapaZonasById.get(n.zona_id) : undefined;
+    const counts = conteosPorNegocio.get(n.id) || { eventos: 0, hospedajes: 0 };
+    return {
+      id: n.id,
+      nombre: n.nombre,
+      whatsapp: n.whatsapp || "",
+      instagram: n.instagram || "",
+      categoria: n.categoria || "comida",
+      zona_id: n.zona_id,
+      zonaSlug: zInfo?.slug || "minca",
+      zonaNombre: zInfo?.nombre || "Minca",
+      activo: n.activo,
+      google_rating: n.google_rating ?? null,
+      google_total_reviews: n.google_total_reviews ?? null,
+      google_maps_url: n.google_maps_url ?? null,
+      google_review_url: n.google_review_url ?? null,
+      eventosCount: counts.eventos,
+      hospedajesCount: counts.hospedajes,
+    };
+  });
+
   return (
     <div className="min-h-screen bg-cream flex flex-col">
       <AdminNav userEmail={user?.email} />
@@ -155,6 +218,7 @@ export default async function AdminHospedajesPage({
         <AdminHospedajesList
           hospedajes={(hospedajesData as any[]) || []}
           zonas={zonasCompletas}
+          aliados={aliados}
           locale={locale}
         />
       </main>

@@ -22,11 +22,13 @@ import {
 } from "@/lib/fotoUtils";
 import { buscarCoincidenciaHospedaje } from "@/lib/hospedajeParser";
 import { extraerGoogleReviewUrl } from "@/lib/utils";
+import { AliadoSelectorField, type AliadoConVerticales } from "../AliadoSelectorField";
 
 
 interface ModalEditarHospedajeProps {
   hospedaje?: any | null;
   zonas: Array<{ id: string; nombre: string; slug: string }>;
+  aliados?: AliadoConVerticales[];
   hospedajesExistentes?: any[];
   abrirConModalJson?: boolean;
   onClose: () => void;
@@ -48,6 +50,7 @@ const BADGES_DISPONIBLES: BadgeHabitacion[] = [
 export function ModalEditarHospedaje({
   hospedaje,
   zonas,
+  aliados = [],
   hospedajesExistentes = [],
   abrirConModalJson = false,
   onClose,
@@ -55,6 +58,12 @@ export function ModalEditarHospedaje({
 }: ModalEditarHospedajeProps) {
   const router = useRouter();
   const isEdicion = Boolean(hospedaje?.id && !hospedaje?.id.startsWith("temp-"));
+
+  // Vínculo explícito con la tabla maestra `negocios`
+  const [selectedNegocioId, setSelectedNegocioId] = useState<string | null>(
+    hospedaje?.negocio_id || hospedaje?.negocio?.id || null
+  );
+  const [actualizarDatosMaestros, setActualizarDatosMaestros] = useState(false);
 
   // Estados Datos Generales (Soporta registros existentes de BD o borradores del Asistente)
   const [nombreNegocio, setNombreNegocio] = useState(
@@ -734,6 +743,8 @@ export function ModalEditarHospedaje({
 
       const res = await guardarHospedajeAction({
         id: isEdicion ? hospedaje?.id : undefined,
+        negocioId: selectedNegocioId,
+        actualizarDatosMaestros,
         nombreNegocio,
         whatsapp,
         instagram,
@@ -856,6 +867,41 @@ export function ModalEditarHospedaje({
                   </p>
                 </div>
               </div>
+            )}
+
+            {aliados.length > 0 && (
+              <AliadoSelectorField
+                aliados={aliados}
+                selectedNegocioId={selectedNegocioId}
+                nombreActual={nombreNegocio}
+                whatsappActual={whatsapp}
+                actualizarDatosMaestros={actualizarDatosMaestros}
+                onToggleActualizarDatosMaestros={setActualizarDatosMaestros}
+                etiquetaContexto="hospedaje"
+                onSelectAliado={(aliado) => {
+                  setSelectedNegocioId(aliado.id);
+                  setNombreNegocio(aliado.nombre);
+                  if (aliado.whatsapp) setWhatsapp(aliado.whatsapp);
+                  setInstagram(aliado.instagram || "");
+                  if (aliado.zonaSlug) setZonaSlug(aliado.zonaSlug);
+                  if (aliado.google_rating != null) {
+                    setRatingGoogle(aliado.google_rating.toString());
+                  }
+                  if (aliado.google_total_reviews != null) {
+                    setReviewsGoogle(aliado.google_total_reviews.toString());
+                  }
+                  if (aliado.google_maps_url) {
+                    setMapsUrl(aliado.google_maps_url);
+                  }
+                  if (aliado.google_review_url) {
+                    setGoogleReviewUrl(aliado.google_review_url);
+                  }
+                }}
+                onClearAliado={() => {
+                  setSelectedNegocioId(null);
+                  setActualizarDatosMaestros(false);
+                }}
+              />
             )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 font-sans text-xs">

@@ -12,18 +12,21 @@ import {
 } from "../actions";
 import { ToggleDestacadoButton } from "../ToggleDestacadoButton";
 import { parsearLineaRapida, buscarCoincidenciaHospedaje } from "@/lib/hospedajeParser";
+import type { AliadoConVerticales } from "../AliadoSelectorField";
 
 
 
 interface AdminHospedajesListProps {
   hospedajes: any[];
   zonas: Array<{ id: string; nombre: string; slug: string }>;
+  aliados?: AliadoConVerticales[];
   locale: string;
 }
 
 export function AdminHospedajesList({
   hospedajes,
   zonas,
+  aliados = [],
   locale,
 }: AdminHospedajesListProps) {
   const router = useRouter();
@@ -640,6 +643,7 @@ export function AdminHospedajesList({
           }
           hospedaje={hospedajeEnEdicion}
           zonas={zonas}
+          aliados={aliados}
           hospedajesExistentes={listaHospedajes}
           abrirConModalJson={abrirConJson}
           onClose={() => {

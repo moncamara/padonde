@@ -40,6 +40,7 @@ import { SILOCIBE_MENU } from "@/data/menus/silocibeMenu";
 import type { EventoExtraido } from "@/lib/eventoParser";
 import type { CategoriaEvento } from "@/lib/types";
 import type { EventoAdminItem } from "./AdminEventList";
+import { AliadoSelectorField } from "./AliadoSelectorField";
 
 export interface AliadoResumen {
   id: string;
@@ -128,6 +129,7 @@ export function EventUpsertForm({
 
   // Dropdown de búsqueda de aliados
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [actualizarDatosMaestros, setActualizarDatosMaestros] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -1526,6 +1528,23 @@ export function EventUpsertForm({
             </span>
           )}
         </div>
+
+        {listaAliadosDisponibles.length > 0 && (
+          <AliadoSelectorField
+            aliados={listaAliadosDisponibles}
+            selectedNegocioId={selectedAliadoId}
+            nombreActual={businessName}
+            whatsappActual={whatsapp}
+            actualizarDatosMaestros={actualizarDatosMaestros}
+            onToggleActualizarDatosMaestros={setActualizarDatosMaestros}
+            etiquetaContexto="evento"
+            onSelectAliado={(a) => handleSelectAliado(a)}
+            onClearAliado={() => {
+              setSelectedAliadoId(null);
+              setActualizarDatosMaestros(false);
+            }}
+          />
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 font-sans">
           {/* Selector de Región / Zona */}
