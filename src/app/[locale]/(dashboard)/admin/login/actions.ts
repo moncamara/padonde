@@ -26,8 +26,8 @@ export async function loginAction(
     return { error: "Credenciales incorrectas o usuario no registrado." };
   }
 
-  // Redirigir al panel de administración una vez autenticado
-  redirect({ href: "/admin", locale });
+  // Redirigir al panel de administración (Aliados como vista principal) una vez autenticado
+  redirect({ href: "/admin/aliados", locale });
 }
 
 export async function logoutAction() {

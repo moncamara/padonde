@@ -21,7 +21,7 @@ export default async function AdminLoginPage({
   } = await supabase.auth.getUser();
 
   if (user) {
-    redirect({ href: "/admin", locale });
+    redirect({ href: "/admin/aliados", locale });
   }
 
   return (
