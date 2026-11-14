@@ -177,6 +177,14 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
       ? tPrice("consult")
       : formatPrecio(evento.precio, evento.precio_moneda);
 
+  const tienePrecioNumerico = evento.precio !== null && evento.precio > 0;
+  const esPrecioDesde =
+    tienePrecioNumerico && (evento.metadata_hospedaje as any)?.precio_desde !== false;
+  const monedaCodigo = evento.precio_moneda || "COP";
+  const precioConMoneda = tienePrecioNumerico ? `${precioDisplay} ${monedaCodigo}` : precioDisplay;
+  const desdeLabel =
+    locale === "en" ? "From" : locale === "fr" ? "À partir de" : locale === "de" ? "Ab" : "Desde";
+
   const refCode = evento.id.slice(0, 5).toUpperCase();
   const ctaConfig = getCategoriaCTA(evento.tipo, locale);
   const plantillaMensaje = ctaConfig.mensajeTemplate || tWa("message", { titulo: evento.titulo });
@@ -527,9 +535,12 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
 
             <div className="p-3.5 rounded-2xl bg-white/60 border border-stone-light/70 shadow-xs">
               <span className="text-base">🏷️</span>
-              <p className="text-xs text-stone mt-1">{tDetail("price")}</p>
+              <p className="text-xs text-stone mt-1">
+                {tDetail("price")}
+                {esPrecioDesde ? ` | ${desdeLabel}` : ""}
+              </p>
               <p className="font-sans font-semibold text-base text-forest">
-                {evento.tipo === "hospedaje" && evento.precio ? `Desde ${precioDisplay}` : precioDisplay}
+                {precioConMoneda}
               </p>
               {evento.precio !== null && evento.precio > 0 && (
                 <p className="text-[10px] text-stone">
@@ -715,9 +726,10 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
           <div>
             <p className="text-[11px] text-stone uppercase tracking-wider font-semibold">
               {tDetail("price")}
+              {esPrecioDesde ? ` | ${desdeLabel}` : ""}
             </p>
             <p className="font-serif text-lg font-bold text-forest">
-              {precioDisplay}
+              {precioConMoneda}
             </p>
           </div>
 

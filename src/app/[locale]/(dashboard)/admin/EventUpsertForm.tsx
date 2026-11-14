@@ -260,6 +260,9 @@ export function EventUpsertForm({
     }
     return "0";
   });
+  const [precioDesde, setPrecioDesde] = useState<boolean>(
+    (initialEvento?.metadata_hospedaje as any)?.precio_desde !== false
+  );
   const [description, setDescription] = useState(() =>
     initialEvento?.descripcion ? limpiarDescripcionRecurrencia(initialEvento.descripcion) : ""
   );
@@ -1205,6 +1208,7 @@ export function EventUpsertForm({
           diasRecurrentes: esRecurrente ? diasFinales : undefined,
           fechaLimiteVigencia: esRecurrente && tieneLimiteVigencia && fechaLimiteVigencia ? fechaLimiteVigencia : undefined,
           posicionPortada: posicionPortada || "50%",
+          precioDesde,
         });
 
         if (!res.success) {
@@ -1265,6 +1269,7 @@ export function EventUpsertForm({
           diasRecurrentes: esRecurrente ? diasFinales : undefined,
           fechaLimiteVigencia: esRecurrente && tieneLimiteVigencia && fechaLimiteVigencia ? fechaLimiteVigencia : undefined,
           posicionPortada: posicionPortada || "50%",
+          precioDesde,
         });
 
         if (!res.success) {
@@ -1758,6 +1763,19 @@ export function EventUpsertForm({
               </button>
             ))}
           </div>
+
+          {/* Interruptor opcional: Mostrar "Desde" (activo por defecto) */}
+          <label className="flex items-center gap-2 pt-1 text-xs text-forest cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={precioDesde}
+              onChange={(e) => setPrecioDesde(e.target.checked)}
+              className="rounded border-stone-light text-forest focus:ring-forest"
+            />
+            <span>
+              Mostrar etiqueta <strong>&quot;Desde&quot;</strong> junto al precio (ej: <em>Precio | Desde</em>)
+            </span>
+          </label>
 
           {/* Descripción */}
           <div>

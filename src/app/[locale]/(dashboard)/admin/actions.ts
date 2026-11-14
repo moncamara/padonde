@@ -50,6 +50,7 @@ export interface AdminPublishInput {
   diasRecurrentes?: number[];
   fechaLimiteVigencia?: string | null;
   posicionPortada?: string;
+  precioDesde?: boolean;
 }
 
 export interface AdminPublishResult {
@@ -258,6 +259,7 @@ export async function adminPublishEventAction(
       metadata_hospedaje: {
         ultima_edicion: new Date().toISOString(),
         ...(input.posicionPortada ? { posicion_portada: input.posicionPortada } : {}),
+        ...(input.precioDesde !== undefined ? { precio_desde: input.precioDesde } : {}),
         ...(input.googleReputacion ? { google_reputacion: input.googleReputacion } : {}),
         ...(input.galeriaFotos && input.galeriaFotos.length > 0
           ? { galeria_fotos: input.galeriaFotos.filter(Boolean) }
@@ -879,6 +881,7 @@ export interface EditarEventoAdminInput {
   diasRecurrentes?: number[];
   fechaLimiteVigencia?: string | null;
   posicionPortada?: string;
+  precioDesde?: boolean;
 }
 
 /**
@@ -1082,6 +1085,9 @@ export async function editarEventoAdminAction(input: EditarEventoAdminInput) {
       } else {
         currentMeta.posicion_portada = input.posicionPortada;
       }
+    }
+    if (input.precioDesde !== undefined) {
+      currentMeta.precio_desde = input.precioDesde;
     }
 
     if (input.googleReputacion !== undefined) {
@@ -1639,6 +1645,7 @@ export interface GuardarHospedajeInput {
     contacto_propietario?: string;
     posicion_portada?: string;
     posicionPortada?: string;
+  precioDesde?: boolean;
     habitaciones: Array<{
       id: string;
       titulo: string;
