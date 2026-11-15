@@ -11,6 +11,7 @@ import {
 import { ModalEditarAliado } from "./ModalEditarAliado";
 import { ModalEventosAliado } from "./ModalEventosAliado";
 import { ModalDifusionWhatsApp } from "./ModalDifusionWhatsApp";
+import { ModalFichaJsonAliado } from "./ModalFichaJsonAliado";
 import {
   obtenerMetricasGA4Aliado,
   calcularPeriodoReporteAliado,
@@ -35,6 +36,8 @@ export interface EventoAliadoItem {
   activo: boolean;
   destacado: boolean;
   imagen_url?: string | null;
+  video_url?: string | null;
+  metadata_hospedaje?: Record<string, any> | null;
   descripcion?: string | null;
 }
 
@@ -99,6 +102,9 @@ export function AdminAliadosList({
 
   // Estado para modal de edición completa de aliado
   const [aliadoParaEditar, setAliadoParaEditar] = useState<AliadoItem | null>(null);
+
+  // Estado para modal de ficha JSON estandarizada
+  const [aliadoParaJson, setAliadoParaJson] = useState<AliadoItem | null>(null);
 
   // Estado para confirmación de eliminación de aliado
   const [aliadoAEliminar, setAliadoAEliminar] = useState<AliadoItem | null>(null);
@@ -968,6 +974,29 @@ export function AdminAliadosList({
 
                   <button
                     type="button"
+                    onClick={() => setAliadoParaJson(aliado)}
+                    className="px-2.5 py-1.5 rounded-xl text-xs font-mono font-semibold text-[#1B382B] bg-[#FBF9F5] border border-stone-light hover:bg-stone-100 transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
+                    title="Ver, copiar o descargar ficha JSON estandarizada"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="w-3.5 h-3.5"
+                      aria-hidden="true"
+                    >
+                      <path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1" />
+                      <path d="M16 21h1a2 2 0 0 0 2-2v-5c0-1.1.9-2 2-2a2 2 0 0 1-2-2V5a2 2 0 0 0-2-2h-1" />
+                    </svg>
+                    <span>JSON</span>
+                  </button>
+
+                  <button
+                    type="button"
                     onClick={() => setAliadoAEliminar(aliado)}
                     className="p-1.5 rounded-xl text-xs text-stone/40 hover:text-red-600 hover:bg-red-50 border border-stone-light/60 hover:border-red-200 transition-colors cursor-pointer flex items-center justify-center"
                     title={`Eliminar aliado ${aliado.nombre} y sus publicaciones`}
@@ -1406,6 +1435,16 @@ export function AdminAliadosList({
           onCerrarExterno={() => setModalMasivoAbierto(false)}
           idsPreseleccionados={idsSeleccionados}
           ocultarBotonTrigger={true}
+        />
+      )}
+
+      {/* Modal de Ficha JSON Estandarizada del Aliado */}
+      {aliadoParaJson && (
+        <ModalFichaJsonAliado
+          aliado={aliadoParaJson}
+          locale={locale}
+          metricasDinamicas={metricasDinamicas}
+          onClose={() => setAliadoParaJson(null)}
         />
       )}
     </div>
