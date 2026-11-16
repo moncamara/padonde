@@ -505,17 +505,19 @@ export function ModalEditarHospedaje({
       setImagenUrl(data.portadaUrl);
     }
     setHabitaciones((prev) => {
-      return prev.map((hab) => {
-        const nuevasFotos = data.asignacionesPorHabitacion[hab.id];
+      return prev.map((hab, idx) => {
+        const habId = hab.id || `hab-${idx}`;
+        const nuevasFotos = data.asignacionesPorHabitacion[habId];
         if (nuevasFotos && nuevasFotos.length > 0) {
           const fotosActuales = hab.fotos || [];
           const agregadas = nuevasFotos.filter((f) => !fotosActuales.includes(f));
           return {
             ...hab,
+            id: habId,
             fotos: [...fotosActuales, ...agregadas],
           };
         }
-        return hab;
+        return hab.id ? hab : { ...hab, id: habId };
       });
     });
   };
@@ -622,8 +624,11 @@ export function ModalEditarHospedaje({
 
       setHabitaciones((prev) => {
         const copy = [...prev];
-        const fotosActuales = copy[indexHab].fotos || [];
-        copy[indexHab].fotos = [...fotosActuales, ...urls];
+        const fotosActuales = copy[indexHab]?.fotos || [];
+        copy[indexHab] = {
+          ...copy[indexHab],
+          fotos: [...fotosActuales, ...urls],
+        };
         return copy;
       });
     } catch {
@@ -637,8 +642,11 @@ export function ModalEditarHospedaje({
   const eliminarFotoHabitacion = (indexHab: number, fotoIndex: number) => {
     setHabitaciones((prev) => {
       const copy = [...prev];
-      const fotosActuales = copy[indexHab].fotos || [];
-      copy[indexHab].fotos = fotosActuales.filter((_: string, i: number) => i !== fotoIndex);
+      const fotosActuales = copy[indexHab]?.fotos || [];
+      copy[indexHab] = {
+        ...copy[indexHab],
+        fotos: fotosActuales.filter((_: string, i: number) => i !== fotoIndex),
+      };
       return copy;
     });
   };
@@ -647,11 +655,14 @@ export function ModalEditarHospedaje({
   const hacerFotoPortadaHabitacion = (indexHab: number, fotoIndex: number) => {
     setHabitaciones((prev) => {
       const copy = [...prev];
-      const fotosActuales = [...(copy[indexHab].fotos || [])];
+      const fotosActuales = [...(copy[indexHab]?.fotos || [])];
       if (fotoIndex > 0 && fotoIndex < fotosActuales.length) {
         const [foto] = fotosActuales.splice(fotoIndex, 1);
         fotosActuales.unshift(foto);
-        copy[indexHab].fotos = fotosActuales;
+        copy[indexHab] = {
+          ...copy[indexHab],
+          fotos: fotosActuales,
+        };
       }
       return copy;
     });
@@ -662,7 +673,7 @@ export function ModalEditarHospedaje({
     if (fromIndex === toIndex) return;
     setHabitaciones((prev) => {
       const copy = [...prev];
-      const fotosActuales = [...(copy[indexHab].fotos || [])];
+      const fotosActuales = [...(copy[indexHab]?.fotos || [])];
       if (
         fromIndex < 0 ||
         fromIndex >= fotosActuales.length ||
@@ -673,7 +684,10 @@ export function ModalEditarHospedaje({
       }
       const [fotoMovida] = fotosActuales.splice(fromIndex, 1);
       fotosActuales.splice(toIndex, 0, fotoMovida);
-      copy[indexHab].fotos = fotosActuales;
+      copy[indexHab] = {
+        ...copy[indexHab],
+        fotos: fotosActuales,
+      };
       return copy;
     });
   };
@@ -684,9 +698,12 @@ export function ModalEditarHospedaje({
     if (urls.length === 0) return;
     setHabitaciones((prev) => {
       const copy = [...prev];
-      const fotosActuales = copy[indexHab].fotos || [];
+      const fotosActuales = copy[indexHab]?.fotos || [];
       const nuevas = urls.filter((u) => !fotosActuales.includes(u));
-      copy[indexHab].fotos = [...fotosActuales, ...nuevas];
+      copy[indexHab] = {
+        ...copy[indexHab],
+        fotos: [...fotosActuales, ...nuevas],
+      };
       return copy;
     });
   };
@@ -699,9 +716,12 @@ export function ModalEditarHospedaje({
   ) => {
     setHabitaciones((prev) => {
       const copy = [...prev];
-      const fotosActuales = [...(copy[indexHab].fotos || [])];
+      const fotosActuales = [...(copy[indexHab]?.fotos || [])];
       fotosActuales[fotoIndex] = nuevaUrl;
-      copy[indexHab].fotos = fotosActuales;
+      copy[indexHab] = {
+        ...copy[indexHab],
+        fotos: fotosActuales,
+      };
       return copy;
     });
   };
@@ -734,8 +754,9 @@ export function ModalEditarHospedaje({
               googleReviewUrl.trim() ||
               undefined,
 
-        habitaciones: habitaciones.map((h) => ({
+        habitaciones: habitaciones.map((h, idx) => ({
           ...h,
+          id: h.id || `hab-${idx + 1}`,
           precio_noche_cop: Number(h.precio_noche_cop),
           capacidad_max: Number(h.capacidad_max),
         })),
@@ -1826,7 +1847,16 @@ export function ModalEditarHospedaje({
               descripcion: h.descripcion,
             }))}
             descripcionContexto={descripcion}
-            initialUrls={fotosImportadas.length > 0 ? fotosImportadas : undefined}
+            initialUrls={(() => {
+              const pool = Array.from(
+                new Set([
+                  ...fotosImportadas,
+                  ...(imagenUrl ? [imagenUrl] : []),
+                  ...habitaciones.flatMap((h) => (Array.isArray(h.fotos) ? h.fotos : [])),
+                ].filter((u): u is string => typeof u === "string" && u.trim().length > 0))
+              );
+              return pool.length > 0 ? pool : undefined;
+            })()}
             onClose={() => setMostrarClasificadorFotos(false)}
             onAplicar={handleAplicarFotosClasificadas}
           />

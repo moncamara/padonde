@@ -112,7 +112,7 @@ export function EventVideoPlayer({
           muted={isMuted}
           onTimeUpdate={handleTimeUpdate}
           onEnded={handleVideoEnded}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-contain bg-black"
         />
 
         {/* Overlay con degradado para lectura de controles */}
