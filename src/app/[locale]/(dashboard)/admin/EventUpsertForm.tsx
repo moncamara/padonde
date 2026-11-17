@@ -38,6 +38,7 @@ import { ModalAficheImprimible } from "@/components/admin/ModalAficheImprimible"
 import { LuxuryRestaurantMenu } from "@/components/menu/LuxuryRestaurantMenu";
 import { LAZY_CAT_MENU } from "@/data/menus/lazyCatMenu";
 import { SILOCIBE_MENU } from "@/data/menus/silocibeMenu";
+import { MAMO_MENU } from "@/data/menus/mamoMenu";
 import type { EventoExtraido } from "@/lib/eventoParser";
 import type { CategoriaEvento } from "@/lib/types";
 import type { EventoAdminItem } from "./AdminEventList";
@@ -532,11 +533,14 @@ export function EventUpsertForm({
     (businessName || "").toLowerCase().includes("silocibe") ||
     (eventTitle || "").toLowerCase().includes("silocibe");
 
+  const isMamo =
+    initialEvento?.id === "379566b8-036e-4b39-aaad-7a9fb8b7ae8e";
+
   const [menuInteractivo, setMenuInteractivo] = useState<boolean>(() => {
     if (initialEvento?.metadata_hospedaje?.menu_interactivo !== undefined) {
       return Boolean(initialEvento.metadata_hospedaje.menu_interactivo);
     }
-    return isLazyCat || isSilocibe;
+    return isLazyCat || isSilocibe || isMamo;
   });
 
   const [menuTema, setMenuTema] = useState<"fogon" | "sierra" | "caribe" | "oro">(() => {
@@ -582,6 +586,17 @@ export function EventUpsertForm({
         return JSON.stringify(SILOCIBE_MENU, null, 2);
       }
     }
+    if (isMamo) {
+      const rawStr = typeof raw === "string" ? raw : raw ? JSON.stringify(raw) : "";
+      if (
+        !rawStr ||
+        rawStr.includes("olaclick.app") ||
+        rawStr.includes("ChIJjSNaqonx9I4RdLlrzzu3aBs") ||
+        !rawStr.includes("https://mamo.ola.click/")
+      ) {
+        return JSON.stringify(MAMO_MENU, null, 2);
+      }
+    }
     if (raw) {
       try {
         return typeof raw === "string" ? raw : JSON.stringify(raw, null, 2);
@@ -591,6 +606,9 @@ export function EventUpsertForm({
     }
     if (isSilocibe) {
       return JSON.stringify(SILOCIBE_MENU, null, 2);
+    }
+    if (isMamo) {
+      return JSON.stringify(MAMO_MENU, null, 2);
     }
     return "";
   });
@@ -604,6 +622,12 @@ export function EventUpsertForm({
       }
       if (!parsedRaw || !Array.isArray(parsedRaw.categorias) || parsedRaw.categorias.length < 12) {
         raw = SILOCIBE_MENU;
+      }
+    }
+    if (isMamo) {
+      const rawStr = typeof raw === "string" ? raw : raw ? JSON.stringify(raw) : "";
+      if (!rawStr || rawStr.includes("olaclick.app") || rawStr.includes("ChIJjSNaqonx9I4RdLlrzzu3aBs")) {
+        raw = MAMO_MENU;
       }
     }
     if (raw && typeof raw === "object") {
@@ -712,6 +736,17 @@ export function EventUpsertForm({
         tema: menuTema,
       };
       const formatted = JSON.stringify(silocibeConTema, null, 2);
+      setMenuDataJson(formatted);
+      validarYFormatearJson(formatted);
+      return;
+    }
+
+    if (isMamo) {
+      const mamoConTema = {
+        ...MAMO_MENU,
+        tema: menuTema,
+      };
+      const formatted = JSON.stringify(mamoConTema, null, 2);
       setMenuDataJson(formatted);
       validarYFormatearJson(formatted);
       return;

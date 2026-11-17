@@ -2,6 +2,7 @@ import { setRequestLocale } from "next-intl/server";
 import { LuxuryRestaurantMenu } from "@/components/menu/LuxuryRestaurantMenu";
 import { LAZY_CAT_MENU } from "@/data/menus/lazyCatMenu";
 import { SILOCIBE_MENU } from "@/data/menus/silocibeMenu";
+import { MAMO_MENU } from "@/data/menus/mamoMenu";
 import { TEMAS_MENU, type TemaMenuId } from "@/components/menu/menuThemes";
 import { getEventoById } from "@/lib/supabase/queries";
 import type { Metadata } from "next";
@@ -88,12 +89,19 @@ export default async function MenuDemoPage({
   if (search.eventoId) {
     const isSilocibe =
       search.eventoId === "08e4bfe7-8b1c-45a0-9efb-9cb0932b8d09";
+    const isMamo =
+      search.eventoId === "379566b8-036e-4b39-aaad-7a9fb8b7ae8e";
     const evento = await getEventoById(search.eventoId);
     const dbMenu = evento?.metadata_hospedaje?.menu_data as any;
     const esMenuSilocibeIncompleto =
       isSilocibe && (!dbMenu?.categorias || dbMenu.categorias.length < 12);
+    const esMenuMamoDesactualizado =
+      isMamo &&
+      (!dbMenu?.categorias ||
+        JSON.stringify(dbMenu).includes("olaclick.app") ||
+        JSON.stringify(dbMenu).includes("ChIJjSNaqonx9I4RdLlrzzu3aBs"));
 
-    if (evento && dbMenu && !esMenuSilocibeIncompleto) {
+    if (evento && dbMenu && !esMenuSilocibeIncompleto && !esMenuMamoDesactualizado) {
       menuData = {
         ...(dbMenu as any),
         negocioNombre:
@@ -112,10 +120,16 @@ export default async function MenuDemoPage({
         pdfOriginalUrl:
           (dbMenu as any)?.pdfOriginalUrl ||
           evento.metadata_hospedaje?.menu_url ||
-          "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/eventos/silocibe-menu-oficial-minca.pdf",
+          (isSilocibe
+            ? "https://gvrroyncnrnjsaldlges.supabase.co/storage/v1/object/public/eventos/eventos/silocibe-menu-oficial-minca.pdf"
+            : isMamo
+            ? "https://mamo.ola.click/"
+            : ""),
       };
     } else if (isSilocibe) {
       menuData = SILOCIBE_MENU;
+    } else if (isMamo) {
+      menuData = MAMO_MENU;
     } else if (evento) {
       // Si el restaurante existe pero aún está pendiente de guardar su JSON personalizado
       const nombreNegocio = evento.negocio?.nombre || evento.titulo || "Restaurante";
