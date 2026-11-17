@@ -199,7 +199,21 @@ export async function getEventosByZona(
     if (filtrados.length === 0) {
       return getMockEventos(zonaSlug);
     }
-    return filtrados;
+    return [...filtrados].sort((a, b) => {
+      if (Boolean(a.destacado) !== Boolean(b.destacado)) {
+        return a.destacado ? -1 : 1;
+      }
+      if (a.destacado && b.destacado) {
+        const rawA = Number((a as any).orden_destacado ?? a.metadata_hospedaje?.orden_destacado);
+        const rawB = Number((b as any).orden_destacado ?? b.metadata_hospedaje?.orden_destacado);
+        const ordenA = Number.isFinite(rawA) && rawA > 0 ? rawA : 99;
+        const ordenB = Number.isFinite(rawB) && rawB > 0 ? rawB : 99;
+        if (ordenA !== ordenB) {
+          return ordenA - ordenB;
+        }
+      }
+      return 0;
+    });
   } catch (err) {
     console.error("Excepción en getEventosByZona:", err);
     return getMockEventos(zonaSlug);

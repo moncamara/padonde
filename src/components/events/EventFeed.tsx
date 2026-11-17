@@ -211,6 +211,15 @@ export function EventFeed({ eventos, zona, configTerritorial }: EventFeedProps) 
       if (esDestacadoA !== esDestacadoB) {
         return esDestacadoA ? -1 : 1;
       }
+      if (esDestacadoA && esDestacadoB) {
+        const rawA = Number((a as any).orden_destacado ?? a.metadata_hospedaje?.orden_destacado);
+        const rawB = Number((b as any).orden_destacado ?? b.metadata_hospedaje?.orden_destacado);
+        const ordenA = Number.isFinite(rawA) && rawA > 0 ? rawA : 99;
+        const ordenB = Number.isFinite(rawB) && rawB > 0 ? rawB : 99;
+        if (ordenA !== ordenB) {
+          return ordenA - ordenB;
+        }
+      }
 
       // 2. Si estamos mostrando otras fechas o es filtro "proximos" o "todos", orden cronológico por día
       if (fallbackOtrasFechas || filtroTiempo === "proximos" || filtroTiempo === "todos") {

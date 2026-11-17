@@ -439,6 +439,19 @@ export async function actualizarPlanNegocioAction(
   }
 }
 
+function revalidarRutasCarteleraPublica() {
+  for (const loc of ["es", "en", "fr", "de"]) {
+    for (const zonaSlug of ["minca", "mendihuaca", "tayrona"]) {
+      revalidatePath(`/${loc}/${zonaSlug}`, "page");
+    }
+  }
+  revalidatePath(`/[locale]/[zona]`, "page");
+  revalidatePath(`/[locale]/minca`, "page");
+  revalidatePath(`/[locale]/mendihuaca`, "page");
+  revalidatePath(`/[locale]/admin`, "page");
+  revalidatePath(`/[locale]/admin/hospedajes`, "page");
+}
+
 /**
  * Server Action para alternar el estado destacado de un evento (Monetización por visibilidad).
  */
@@ -464,14 +477,70 @@ export async function toggleEventoDestacadoAction(eventoId: string, nuevoEstado:
       return { success: false, error: error.message };
     }
 
-    revalidatePath(`/[locale]/admin`, "page");
-    revalidatePath(`/[locale]/admin/hospedajes`, "page");
-    revalidatePath(`/[locale]/minca`, "page");
-    revalidatePath(`/[locale]/mendihuaca`, "page");
+    revalidarRutasCarteleraPublica();
     return { success: true };
   } catch (err) {
     console.error("Excepción en toggleEventoDestacadoAction:", err);
     return { success: false };
+  }
+}
+
+/**
+ * Server Action para actualizar la posición manual (#1, #2, #3 o Auto = 99) de un evento destacado.
+ */
+export async function actualizarOrdenDestacadoAction(eventoId: string, orden: number) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: "No autenticado" };
+    }
+
+    const ordenNormalizado = [1, 2, 3].includes(Number(orden)) ? Number(orden) : 99;
+
+    const { data: evActual } = await supabase
+      .from("eventos")
+      .select("metadata_hospedaje")
+      .eq("id", eventoId)
+      .single();
+
+    const currentMeta = (evActual?.metadata_hospedaje as Record<string, any>) || {};
+    const updatedMeta = {
+      ...currentMeta,
+      orden_destacado: ordenNormalizado,
+    };
+
+    // Intentar actualizar tanto columna directa orden_destacado (si existe) como metadata_hospedaje
+    let { error } = await supabase
+      .from("eventos")
+      .update({
+        orden_destacado: ordenNormalizado,
+        metadata_hospedaje: updatedMeta,
+      } as any)
+      .eq("id", eventoId);
+
+    // Fallback retrocompatible si la columna orden_destacado aún no existe en public.eventos
+    if (error && error.code === "42703") {
+      const retry = await supabase
+        .from("eventos")
+        .update({ metadata_hospedaje: updatedMeta })
+        .eq("id", eventoId);
+      error = retry.error;
+    }
+
+    if (error) {
+      console.error("Error al actualizar orden_destacado en Supabase:", error);
+      return { success: false, error: error.message };
+    }
+
+    revalidarRutasCarteleraPublica();
+    return { success: true };
+  } catch (err: any) {
+    console.error("Excepción en actualizarOrdenDestacadoAction:", err);
+    return { success: false, error: err?.message || "Error inesperado" };
   }
 }
 

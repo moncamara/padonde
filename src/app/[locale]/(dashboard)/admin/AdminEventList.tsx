@@ -37,6 +37,7 @@ export interface EventoAdminItem {
   fecha_inicio: string;
   fecha_fin?: string | null;
   destacado: boolean;
+  orden_destacado?: number | null;
   tiene_boleteria?: boolean;
   activo: boolean;
   descripcion?: string | null;
@@ -181,9 +182,16 @@ export function AdminEventList({
     }
 
     // Ordenamiento lógico:
-    // Vigentes: destacados primero, luego del más temprano al más tarde
+    // Vigentes: destacados primero, luego por orden_destacado ASC, luego del más temprano al más tarde
     v.sort((a, b) => {
       if (a.destacado !== b.destacado) return a.destacado ? -1 : 1;
+      if (a.destacado && b.destacado) {
+        const rawA = Number(a.orden_destacado ?? a.metadata_hospedaje?.orden_destacado);
+        const rawB = Number(b.orden_destacado ?? b.metadata_hospedaje?.orden_destacado);
+        const ordA = Number.isFinite(rawA) && rawA > 0 ? rawA : 99;
+        const ordB = Number.isFinite(rawB) && rawB > 0 ? rawB : 99;
+        if (ordA !== ordB) return ordA - ordB;
+      }
       const ymdA = getFechaYMDDesdeISO(a.fecha_inicio);
       const ymdB = getFechaYMDDesdeISO(b.fecha_inicio);
       if (ymdA !== ymdB) return ymdA.localeCompare(ymdB);
@@ -232,6 +240,13 @@ export function AdminEventList({
       }
       if (criterioOrden === "cronologico") {
         if (a.destacado !== b.destacado) return a.destacado ? -1 : 1;
+        if (a.destacado && b.destacado) {
+          const rawA = Number(a.orden_destacado ?? a.metadata_hospedaje?.orden_destacado);
+          const rawB = Number(b.orden_destacado ?? b.metadata_hospedaje?.orden_destacado);
+          const ordA = Number.isFinite(rawA) && rawA > 0 ? rawA : 99;
+          const ordB = Number.isFinite(rawB) && rawB > 0 ? rawB : 99;
+          if (ordA !== ordB) return ordA - ordB;
+        }
         const ymdA = getFechaYMDDesdeISO(a.fecha_inicio);
         const ymdB = getFechaYMDDesdeISO(b.fecha_inicio);
         if (ymdA !== ymdB) return ymdA.localeCompare(ymdB);
@@ -601,7 +616,15 @@ export function AdminEventList({
               <div className="w-full sm:w-auto pt-2.5 sm:pt-0 border-t border-stone-light/50 sm:border-0 flex items-center justify-between sm:justify-end gap-2 flex-wrap sm:flex-nowrap">
                 <div className="flex items-center gap-1.5">
                   <ToggleActivoButton eventoId={ev.id} activoInicial={ev.activo} />
-                  <ToggleDestacadoButton eventoId={ev.id} destacadoInicial={ev.destacado} />
+                  <ToggleDestacadoButton
+                    eventoId={ev.id}
+                    destacadoInicial={ev.destacado}
+                    ordenInicial={
+                      ev.orden_destacado ??
+                      (ev.metadata_hospedaje as any)?.orden_destacado ??
+                      99
+                    }
+                  />
                 </div>
 
                 <div className="flex items-center gap-1.5 shrink-0 flex-wrap">

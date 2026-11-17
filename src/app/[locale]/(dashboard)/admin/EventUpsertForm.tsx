@@ -2965,7 +2965,7 @@ export function EventUpsertForm({
               .replace(/[^a-z0-9]+/g, "_")
               .replace(/^_+|_+$/g, "") || "restaurante";
           const slugKebab = slugLimpiado.replace(/_/g, "-");
-          const urlPublicaQrMesa = `https://padonde.lat/es/${zonaSlug || "minca"}/${initialEvento.id}?utm_source=mesa&utm_medium=qr_${slugLimpiado}`;
+          const urlPublicaQrMesa = `https://padonde.lat/es/${zonaSlug || "minca"}/menu-demo?eventoId=${initialEvento.id}&tema=${menuTema}&utm_source=mesa&utm_medium=qr_${slugLimpiado}`;
           const qrHighResUrl = `https://api.qrserver.com/v1/create-qr-code/?size=800x800&margin=12&data=${encodeURIComponent(
             urlPublicaQrMesa
           )}`;

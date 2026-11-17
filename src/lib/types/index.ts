@@ -73,6 +73,7 @@ export type Evento = {
   imagen_url: string | null;
   video_url?: string | null;
   destacado: boolean;              // Los planes pro/premium pueden destacar eventos
+  orden_destacado?: number | null; // Prioridad manual entre destacados (1, 2, 3 o 99 = Auto)
   tiene_boleteria: boolean;        // Si tiene venta de tickets integrada
   activo: boolean;
   created_at: string;
@@ -150,6 +151,7 @@ export type HospedajeMetadata = {
   es_recomendado_local?: boolean;
   badge_local?: boolean;
   badges?: (string | BadgeHabitacion)[];
+  orden_destacado?: number | null;
 };
 
 // ─── Tipos de Servicios Esenciales e Info Útil ────────────────────────────────
