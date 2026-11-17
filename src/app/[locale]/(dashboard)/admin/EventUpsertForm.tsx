@@ -640,6 +640,9 @@ export function EventUpsertForm({
     return null;
   });
   const [mostrarPreviewModal, setMostrarPreviewModal] = useState(false);
+  const [mostrarQrMesaModal, setMostrarQrMesaModal] = useState(false);
+  const [copiadoQrMesa, setCopiadoQrMesa] = useState(false);
+  const [descargandoQrMesa, setDescargandoQrMesa] = useState(false);
 
   const menuPreviewObj = useMemo(() => {
     const nombreNegocioActual = businessName.trim() || eventTitle.trim() || "Restaurante";
@@ -2509,16 +2512,31 @@ export function EventUpsertForm({
                     </button>
 
                     {initialEvento?.id && (
-                      <a
-                        href={`/es/${zonaSlug || "minca"}/menu-demo?eventoId=${initialEvento.id}&tema=${menuTema}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="bg-white hover:bg-stone-50 text-forest border border-stone-300 font-semibold text-xs py-2 px-3 rounded-xl shadow-2xs flex items-center gap-1.5 transition-all"
-                        title="Abrir el enlace público real que verán los comensales al escanear el QR"
-                      >
-                        <span>🔗</span>
-                        <span>Abrir Carta Pública en Vivo ↗</span>
-                      </a>
+                      <>
+                        <a
+                          href={`/es/${zonaSlug || "minca"}/menu-demo?eventoId=${initialEvento.id}&tema=${menuTema}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="bg-white hover:bg-stone-50 text-forest border border-stone-300 font-semibold text-xs py-2 px-3 rounded-xl shadow-2xs flex items-center gap-1.5 transition-all"
+                          title="Abrir el enlace público real que verán los comensales al escanear el QR"
+                        >
+                          <span>🔗</span>
+                          <span>Abrir Carta Pública en Vivo ↗</span>
+                        </a>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCopiadoQrMesa(false);
+                            setMostrarQrMesaModal(true);
+                          }}
+                          className="bg-white hover:bg-stone-50 text-forest border border-stone-300 font-semibold text-xs py-2 px-3 rounded-xl shadow-2xs flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
+                          title="Generar y descargar código QR en alta resolución para habladores de mesa"
+                        >
+                          <span>📱</span>
+                          <span>QR Mesa</span>
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>
@@ -2933,6 +2951,145 @@ export function EventUpsertForm({
           </div>
         </div>
       )}
+
+      {/* Modal QR Mesa individual en Alta Resolución */}
+      {mostrarQrMesaModal &&
+        initialEvento?.id &&
+        (() => {
+          const nombreBase = (businessName || eventTitle || "restaurante").trim();
+          const slugLimpiado =
+            nombreBase
+              .toLowerCase()
+              .normalize("NFD")
+              .replace(/[\u0300-\u036f]/g, "")
+              .replace(/[^a-z0-9]+/g, "_")
+              .replace(/^_+|_+$/g, "") || "restaurante";
+          const slugKebab = slugLimpiado.replace(/_/g, "-");
+          const urlPublicaQrMesa = `https://padonde.lat/es/${zonaSlug || "minca"}/${initialEvento.id}?utm_source=mesa&utm_medium=qr_${slugLimpiado}`;
+          const qrHighResUrl = `https://api.qrserver.com/v1/create-qr-code/?size=800x800&margin=12&data=${encodeURIComponent(
+            urlPublicaQrMesa
+          )}`;
+
+          return (
+            <div
+              className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4"
+              onClick={() => setMostrarQrMesaModal(false)}
+            >
+              <div
+                className="w-full max-w-md bg-cream border border-stone-light rounded-3xl shadow-2xl overflow-hidden flex flex-col"
+                style={{ backgroundColor: "#FBF9F5" }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Header */}
+                <div
+                  className="px-6 py-4 bg-forest text-cream flex items-center justify-between gap-3"
+                  style={{ backgroundColor: "#1B382B", color: "#FBF9F5" }}
+                >
+                  <div className="min-w-0">
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-cream/75 block">
+                      Hablador de Mesa · Alta Resolución (800×800px)
+                    </span>
+                    <h3 className="font-serif text-lg font-bold truncate text-cream">
+                      {nombreBase}
+                    </h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setMostrarQrMesaModal(false)}
+                    className="shrink-0 w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 text-cream flex items-center justify-center text-sm transition-colors cursor-pointer"
+                    title="Cerrar"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {/* Cuerpo del Modal */}
+                <div
+                  className="p-6 flex flex-col items-center space-y-4 bg-cream"
+                  style={{ backgroundColor: "#FBF9F5" }}
+                >
+                  <div className="p-4 bg-white rounded-2xl border border-stone-light shadow-sm">
+                    <img
+                      src={qrHighResUrl}
+                      alt={`Código QR para ${nombreBase}`}
+                      width={800}
+                      height={800}
+                      className="w-64 h-64 sm:w-72 sm:h-72 object-contain select-none"
+                    />
+                  </div>
+
+                  <div className="w-full text-center space-y-1">
+                    <p className="text-xs font-semibold text-forest">
+                      Archivo: <code className="font-mono">qr-menu-{slugKebab}.png</code>
+                    </p>
+                    <p
+                      className="text-[11px] font-mono text-stone bg-white px-3 py-2 rounded-xl border border-stone-light/80 break-all select-all"
+                      title={urlPublicaQrMesa}
+                    >
+                      {urlPublicaQrMesa}
+                    </p>
+                  </div>
+
+                  <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                    <button
+                      type="button"
+                      disabled={descargandoQrMesa}
+                      onClick={async () => {
+                        setDescargandoQrMesa(true);
+                        try {
+                          const res = await fetch(qrHighResUrl);
+                          const blob = await res.blob();
+                          const blobUrl = URL.createObjectURL(blob);
+                          const a = document.createElement("a");
+                          a.href = blobUrl;
+                          a.download = `qr-menu-${slugKebab}.png`;
+                          document.body.appendChild(a);
+                          a.click();
+                          document.body.removeChild(a);
+                          URL.revokeObjectURL(blobUrl);
+                        } catch {
+                          window.open(qrHighResUrl, "_blank", "noopener,noreferrer");
+                        } finally {
+                          setDescargandoQrMesa(false);
+                        }
+                      }}
+                      className="w-full px-4 py-2.5 rounded-xl text-xs font-sans font-semibold bg-forest hover:bg-forest/90 text-cream transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-xs disabled:opacity-60"
+                      style={{ backgroundColor: "#1B382B", color: "#FBF9F5" }}
+                    >
+                      <span>
+                        {descargandoQrMesa
+                          ? "⏳ Generando PNG..."
+                          : "⬇️ Descargar QR (PNG)"}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          await navigator.clipboard.writeText(urlPublicaQrMesa);
+                        } catch {
+                          // Fallback silencioso
+                        }
+                        setCopiadoQrMesa(true);
+                        setTimeout(() => setCopiadoQrMesa(false), 2200);
+                      }}
+                      className={`w-full px-4 py-2.5 rounded-xl text-xs font-sans font-semibold border transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs ${
+                        copiadoQrMesa
+                          ? "bg-emerald-600 text-white border-emerald-600"
+                          : "bg-white hover:bg-stone-50 text-forest border-stone-light"
+                      }`}
+                    >
+                      <span>
+                        {copiadoQrMesa ? "✅ ¡Enlace Copiado!" : "📋 Copiar Enlace"}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
     </form>
   );
 }
