@@ -57,7 +57,7 @@ export async function generateMetadata({ params }: ZonaPageProps): Promise<Metad
   const title = titles[locale] || titles.es;
   const description = descriptions[locale] || descriptions.es;
   const canonicalUrl = `https://padonde.lat/${locale}/${zonaSlug}`;
-  const ogImageUrl = "https://padonde.lat/og_minca.jpg";
+  const ogImageUrl = "https://padonde.lat/og-banner-padonde.jpg?v=2";
 
   return {
     metadataBase: new URL("https://padonde.lat"),
@@ -82,8 +82,8 @@ export async function generateMetadata({ params }: ZonaPageProps): Promise<Metad
         {
           url: ogImageUrl,
           width: 1200,
-          height: 630,
-          alt: `PaDónde — Cartelera Turística de ${zona.nombre}`,
+          height: 628,
+          alt: "PaDónde — Cartelera turística - Live Events & Tours | Minca, Mendihuaca, Tayrona",
         },
       ],
     },

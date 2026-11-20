@@ -89,10 +89,10 @@ export const metadata: Metadata = {
     locale: "es_CO",
     images: [
       {
-        url: "https://padonde.lat/og_minca.jpg",
+        url: "https://padonde.lat/og-banner-padonde.jpg?v=2",
         width: 1200,
-        height: 630,
-        alt: "PaDónde — Cartelera Turística de Minca",
+        height: 628,
+        alt: "PaDónde — Cartelera turística - Live Events & Tours | Minca, Mendihuaca, Tayrona",
       },
     ],
   },
@@ -101,7 +101,7 @@ export const metadata: Metadata = {
     title: "PaDónde — Qué hacer hoy en Minca",
     description:
       "Cartelera viva de eventos, tours y experiencias en Minca y la Sierra Nevada.",
-    images: ["https://padonde.lat/og_minca.jpg"],
+    images: ["https://padonde.lat/og-banner-padonde.jpg?v=2"],
   },
   robots: {
     index: true,

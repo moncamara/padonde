@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: AliadosPageProps): Promise<Me
   const { locale } = await params;
   const copy = getAliadosCopy(locale);
   const canonicalUrl = `https://padonde.lat/${locale}/aliados`;
-  const ogImageUrl = "https://padonde.lat/og_minca.jpg";
+  const ogImageUrl = "https://padonde.lat/og-banner-padonde.jpg?v=2";
 
   return {
     metadataBase: new URL("https://padonde.lat"),
@@ -53,7 +53,7 @@ export async function generateMetadata({ params }: AliadosPageProps): Promise<Me
         {
           url: ogImageUrl,
           width: 1200,
-          height: 630,
+          height: 628,
           alt: copy.metaTitle,
         },
       ],

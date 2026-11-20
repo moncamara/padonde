@@ -103,7 +103,7 @@ export async function generateMetadata({ params }: EventoDetailPageProps): Promi
     ? evento.imagen_url.startsWith("http")
       ? evento.imagen_url
       : `https://padonde.lat${evento.imagen_url.startsWith("/") ? "" : "/"}${evento.imagen_url}`
-    : "https://padonde.lat/og_minca.jpg";
+    : "https://padonde.lat/og-banner-padonde.jpg?v=2";
 
   return {
     metadataBase: new URL("https://padonde.lat"),
