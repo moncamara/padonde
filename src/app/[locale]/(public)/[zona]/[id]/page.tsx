@@ -381,6 +381,7 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
           <DetailBackButton
             fallbackUrl={`/${locale}/${zonaSlug}`}
             ariaLabel={tDetail("back")}
+            eventoId={evento.id}
           />
 
           <div className="flex items-center gap-2">

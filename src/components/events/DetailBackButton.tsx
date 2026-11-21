@@ -5,11 +5,13 @@ import { useRouter } from "next/navigation";
 interface DetailBackButtonProps {
   fallbackUrl: string;
   ariaLabel?: string;
+  eventoId?: string;
 }
 
 export function DetailBackButton({
   fallbackUrl,
   ariaLabel = "Atrás",
+  eventoId,
 }: DetailBackButtonProps) {
   const router = useRouter();
 
@@ -18,20 +20,15 @@ export function DetailBackButton({
 
     if (typeof window !== "undefined") {
       try {
-        const langSwitched = sessionStorage.getItem("padonde_detail_lang_switched");
-        if (langSwitched === "true") {
-          sessionStorage.removeItem("padonde_detail_lang_switched");
-          router.push(fallbackUrl);
-          return;
+        sessionStorage.removeItem("padonde_detail_lang_switched");
+        sessionStorage.setItem("padonde_tab_activa", "eventos");
+        if (eventoId) {
+          sessionStorage.setItem("padonde_last_card", `card-evento-${eventoId}`);
         }
       } catch {}
     }
 
-    if (typeof window !== "undefined" && window.history.length > 1) {
-      router.back();
-    } else {
-      router.push(fallbackUrl);
-    }
+    router.push(fallbackUrl, { scroll: false });
   };
 
   return (

@@ -61,23 +61,43 @@ export function EventFeed({ eventos, zona, configTerritorial }: EventFeedProps) 
   const { busqueda, setBusqueda, filtroTiempo, setFiltroTiempo } = useZonaSearch();
 
   const [filtroCategoria, setFiltroCategoriaState] = useState<CategoriaEvento | null>(null);
+  const prevZonaRef = useRef(zona);
 
   // Restaurar categoría previamente seleccionada tras la hidratación en el cliente
   useEffect(() => {
     try {
       const savedCat = sessionStorage.getItem("padonde_filtro_categoria");
+      const lastCardId = sessionStorage.getItem("padonde_last_card");
       if (savedCat) {
+        // Si venimos de regreso a una ficha específica y esa ficha no pertenece a savedCat, mostrar "Todos" para que la ficha sea visible
+        if (lastCardId && lastCardId.startsWith("card-evento-")) {
+          const targetId = lastCardId.replace("card-evento-", "");
+          const targetEv = eventos.find((e) => e.id === targetId);
+          const matchesSavedCat = targetEv
+            ? targetEv.categorias?.length
+              ? targetEv.categorias.includes(savedCat as CategoriaEvento)
+              : targetEv.tipo === savedCat
+            : true;
+          if (!matchesSavedCat) {
+            setFiltroCategoriaState(null);
+            sessionStorage.removeItem("padonde_filtro_categoria");
+            return;
+          }
+        }
         setFiltroCategoriaState(savedCat as CategoriaEvento);
       }
     } catch {}
-  }, []);
+  }, [eventos]);
 
   // Al cambiar de destino (Mendihuaca <-> Minca), reiniciar la categoría a "Todos"
   useEffect(() => {
-    setFiltroCategoriaState(null);
-    try {
-      sessionStorage.removeItem("padonde_filtro_categoria");
-    } catch {}
+    if (prevZonaRef.current !== zona) {
+      prevZonaRef.current = zona;
+      setFiltroCategoriaState(null);
+      try {
+        sessionStorage.removeItem("padonde_filtro_categoria");
+      } catch {}
+    }
   }, [zona]);
 
   const setFiltroCategoria = (c: CategoriaEvento | null) => {
