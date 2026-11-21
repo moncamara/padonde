@@ -1798,14 +1798,44 @@ export async function guardarHospedajeAction(input: GuardarHospedajeInput) {
     }
 
     if (esEdicionReal) {
+      try {
+        const traducciones = await traducirEventoCompleto(
+          input.titulo.trim(),
+          input.descripcion.trim() || null
+        );
+        datosHospedaje.traducciones = traducciones;
+      } catch {
+        // Silencioso
+      }
+
       // Actualización
-      const { error: updateError } = await supabase
+      let { data: updatedRows, error: updateError } = await supabase
         .from("eventos")
         .update(datosHospedaje)
-        .eq("id", input.id);
+        .eq("id", input.id)
+        .select("id");
+
+      if (updateError && updateError.code === "42703") {
+        delete datosHospedaje.traducciones;
+        const retry = await supabase
+          .from("eventos")
+          .update(datosHospedaje)
+          .eq("id", input.id)
+          .select("id");
+        updatedRows = retry.data;
+        updateError = retry.error;
+      }
 
       if (updateError) {
         return { success: false, error: updateError.message };
+      }
+
+      if (!updatedRows || updatedRows.length === 0) {
+        return {
+          success: false,
+          error:
+            "No se actualizó la fila en Supabase (posible restricción RLS por user_id del aliado).",
+        };
       }
     } else {
       // Creación
@@ -1818,9 +1848,20 @@ export async function guardarHospedajeAction(input: GuardarHospedajeInput) {
       }
     }
 
-    // Revalidar rutas para reflejar cambios de inmediato
+    // Revalidar rutas para reflejar cambios de inmediato en todos los idiomas
+    for (const loc of ["es", "en", "fr", "de"]) {
+      revalidatePath(`/${loc}/${input.zonaSlug}`, "page");
+      if (esEdicionReal && input.id) {
+        revalidatePath(`/${loc}/${input.zonaSlug}/${input.id}`, "page");
+      }
+    }
+    revalidatePath(`/[locale]/admin`, "page");
     revalidatePath(`/[locale]/admin/hospedajes`, "page");
+    revalidatePath(`/[locale]/admin/aliados`, "page");
     revalidatePath(`/[locale]/${input.zonaSlug}`, "page");
+    if (esEdicionReal && input.id) {
+      revalidatePath(`/[locale]/${input.zonaSlug}/${input.id}`, "page");
+    }
 
     return { success: true };
   } catch (err: any) {
@@ -3367,6 +3408,79 @@ export async function guardarConfigTerritorialAction(
     return {
       success: false,
       error: err?.message || "No se pudo guardar la configuración territorial.",
+    };
+  }
+}
+
+export interface GuardarStoriesBrujulaSolInput {
+  activa: boolean;
+  slides: string[];
+}
+
+/**
+ * Guarda la configuración de Historias Efímeras ("Brújula-Sol") generando un nuevo version_id
+ * para reactivar la mascota en los dispositivos de los usuarios y revalida las portadas SSG.
+ */
+export async function guardarStoriesBrujulaSolAction(
+  input: GuardarStoriesBrujulaSolInput
+): Promise<{ success: boolean; versionId?: string; error?: string }> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: "Usuario no autenticado." };
+    }
+
+    const slidesLimpias = Array.isArray(input.slides)
+      ? input.slides.map((s) => s.trim()).filter(Boolean).slice(0, 6)
+      : [];
+    const nuevaVersionId = Date.now().toString();
+
+    const payload = {
+      activa: Boolean(input.activa),
+      slides: slidesLimpias,
+      version_id: nuevaVersionId,
+    };
+
+    const { error: dbError } = await supabase
+      .from("configuraciones")
+      .upsert({
+        clave: "stories_brujula_sol",
+        valor: payload,
+        updated_at: new Date().toISOString(),
+      });
+
+    if (dbError) {
+      console.warn("Aviso al guardar stories_brujula_sol en Supabase:", dbError.message);
+    }
+
+    // Respaldo en archivo local en entorno de desarrollo
+    try {
+      const fs = await import("fs");
+      const path = await import("path");
+      const localPath = path.join(process.cwd(), "src", "constants", "stories_brujula_sol.json");
+      fs.writeFileSync(localPath, JSON.stringify(payload, null, 2), "utf8");
+    } catch {
+      // En Vercel el sistema de archivos es read-only; se ignora de forma segura
+    }
+
+    for (const loc of ["es", "en", "fr", "de"]) {
+      for (const z of ["minca", "mendihuaca", "tayrona"]) {
+        revalidatePath(`/${loc}/${z}`, "page");
+      }
+    }
+    revalidatePath("/[locale]/[zona]", "page");
+    revalidatePath("/[locale]/admin/historias", "page");
+
+    return { success: true, versionId: nuevaVersionId };
+  } catch (err: any) {
+    console.error("Error al guardar stories_brujula_sol:", err);
+    return {
+      success: false,
+      error: err?.message || "No se pudo guardar la configuración de Historias.",
     };
   }
 }

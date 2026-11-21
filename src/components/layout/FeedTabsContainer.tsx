@@ -5,7 +5,6 @@ import { useTranslations, useLocale } from "next-intl";
 import { EventFeed } from "@/components/events/EventFeed";
 import { ServiciosList } from "@/components/services/ServiciosList";
 import { TabsDestinos } from "@/components/layout/TabsDestinos";
-import { TouristStories } from "@/components/layout/TouristStories";
 import type { EventoConNegocio, ServicioEsencial } from "@/lib/types";
 import type { TerritorialUXConfig } from "@/constants";
 import { trackTabChange } from "@/lib/analytics";
@@ -139,9 +138,6 @@ export function FeedTabsContainer({
           zonaSlug={zona}
         />
       )}
-
-      {/* Burbuja flotante no invasiva de Historias (Floating Story Orb) */}
-      <TouristStories />
     </div>
   );
 }

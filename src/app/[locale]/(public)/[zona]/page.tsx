@@ -11,10 +11,12 @@ import { QRScanTracker } from "@/components/layout/QRScanTracker";
 import { PullToRefreshTracker } from "@/components/layout/PullToRefreshTracker";
 import { ZonaPersistence } from "@/components/layout/ZonaPersistence";
 import { ProximoDestinoCard } from "@/components/events/ProximoDestinoCard";
+import { TouristStories } from "@/components/events/TouristStories";
 import {
   getEventosByZona,
   getServiciosEsencialesByZona,
   getConfigTerritorialAsync,
+  getStoriesConfigAsync,
 } from "@/lib/supabase/queries";
 import { getZona, whatsappLink, WHATSAPP_CONTACTO } from "@/constants";
 import { esZonaEnPreview } from "@/lib/preview";
@@ -116,11 +118,12 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
   const tFooter = await getTranslations("footer");
   const tWa = await getTranslations("whatsapp");
 
-  // Obtener eventos, servicios esenciales y configuración territorial activa de la nube
-  const [eventosRaw, servicios, configTerritorial] = await Promise.all([
+  // Obtener eventos, servicios esenciales, configuración territorial e historias efímeras (100% SSG)
+  const [eventosRaw, servicios, configTerritorial, storiesConfig] = await Promise.all([
     getEventosByZona(zona.slug as ZonaSlug, { preview }),
     getServiciosEsencialesByZona(zona.slug as ZonaSlug, { preview }),
     getConfigTerritorialAsync(),
+    getStoriesConfigAsync(),
   ]);
   let eventos = eventosRaw;
 
@@ -235,6 +238,9 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
           </div>
         </div>
       </footer>
+
+      {/* Historias Efímeras con Mascota Animada Brújula-Sol (Zero-Noise UX) */}
+      <TouristStories config={storiesConfig} />
 
       {/* Acceso directo PWA discreto (sólo en móviles) */}
       <InstallPrompt />
