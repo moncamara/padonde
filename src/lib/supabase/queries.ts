@@ -369,3 +369,44 @@ export async function getConfigTerritorialAsync(): Promise<Record<string, any>> 
   return CONFIG_TERRITORIAL;
 }
 
+/**
+ * Obtiene la configuración activa de Historias Efímeras ("Brújula-Sol") desde Supabase (100% SSG)
+ * con fallback seguro al archivo local src/constants/stories_brujula_sol.json.
+ */
+export async function getStoriesConfigAsync(): Promise<{
+  activa: boolean;
+  versionId: string;
+  slides: string[];
+}> {
+  try {
+    const supabase = getPublicSupabaseClient();
+    const { data } = await supabase
+      .from("configuraciones")
+      .select("valor")
+      .eq("clave", "stories_brujula_sol")
+      .maybeSingle();
+
+    if (data?.valor && typeof data.valor === "object") {
+      const val = data.valor as Record<string, any>;
+      return {
+        activa: Boolean(val.activa),
+        versionId: String(val.version_id || val.versionId || "v1"),
+        slides: Array.isArray(val.slides) ? val.slides.filter(Boolean) : [],
+      };
+    }
+  } catch {
+    // Fallback silencioso a configuración local
+  }
+
+  try {
+    const fallback = (await import("@/constants/stories_brujula_sol.json")).default;
+    return {
+      activa: Boolean(fallback?.activa),
+      versionId: String(fallback?.version_id || "demo-v1"),
+      slides: Array.isArray(fallback?.slides) ? fallback.slides.filter(Boolean) : [],
+    };
+  } catch {
+    return { activa: false, versionId: "v1", slides: [] };
+  }
+}
+

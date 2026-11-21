@@ -3589,6 +3589,79 @@ export async function guardarConfigTerritorialAction(
   }
 }
 
+export interface GuardarStoriesBrujulaSolInput {
+  activa: boolean;
+  slides: string[];
+}
+
+/**
+ * Guarda la configuración de Historias Efímeras ("Brújula-Sol") generando un nuevo version_id
+ * para reactivar la mascota en los dispositivos de los usuarios y revalida las portadas SSG.
+ */
+export async function guardarStoriesBrujulaSolAction(
+  input: GuardarStoriesBrujulaSolInput
+): Promise<{ success: boolean; versionId?: string; error?: string }> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: "Usuario no autenticado." };
+    }
+
+    const slidesLimpias = Array.isArray(input.slides)
+      ? input.slides.map((s) => s.trim()).filter(Boolean).slice(0, 6)
+      : [];
+    const nuevaVersionId = Date.now().toString();
+
+    const payload = {
+      activa: Boolean(input.activa),
+      slides: slidesLimpias,
+      version_id: nuevaVersionId,
+    };
+
+    const { error: dbError } = await supabase
+      .from("configuraciones")
+      .upsert({
+        clave: "stories_brujula_sol",
+        valor: payload,
+        updated_at: new Date().toISOString(),
+      });
+
+    if (dbError) {
+      console.warn("Aviso al guardar stories_brujula_sol en Supabase:", dbError.message);
+    }
+
+    // Respaldo en archivo local en entorno de desarrollo
+    try {
+      const fs = await import("fs");
+      const path = await import("path");
+      const localPath = path.join(process.cwd(), "src", "constants", "stories_brujula_sol.json");
+      fs.writeFileSync(localPath, JSON.stringify(payload, null, 2), "utf8");
+    } catch {
+      // En Vercel el sistema de archivos es read-only; se ignora de forma segura
+    }
+
+    for (const loc of ["es", "en", "fr", "de"]) {
+      for (const z of ["minca", "mendihuaca", "tayrona"]) {
+        revalidatePath(`/${loc}/${z}`, "page");
+      }
+    }
+    revalidatePath("/[locale]/[zona]", "page");
+    revalidatePath("/[locale]/admin/historias", "page");
+
+    return { success: true, versionId: nuevaVersionId };
+  } catch (err: any) {
+    console.error("Error al guardar stories_brujula_sol:", err);
+    return {
+      success: false,
+      error: err?.message || "No se pudo guardar la configuración de Historias.",
+    };
+  }
+}
+
 /**
  * Alterna el estado de activación de las notificaciones de Telegram para el Super Admin.
  */
