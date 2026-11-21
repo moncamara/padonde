@@ -51,7 +51,7 @@ export function LuxuryRestaurantMenu({
     }
   }, [tema]);
 
-  const th = TEMAS_MENU[temaId];
+  const th = TEMAS_MENU[temaId] ?? TEMAS_MENU.sierra;
 
 
   // Categoría activa para scroll suave
@@ -471,6 +471,10 @@ export function LuxuryRestaurantMenu({
       className={`luxury-menu-wrapper theme-${temaId}`}
       style={{
         backgroundColor: th.bg,
+        backgroundImage:
+          temaId === "oceano_plata"
+            ? "radial-gradient(ellipse 95% 45% at 50% 0%, rgba(50, 134, 170, 0.36) 0%, rgba(0, 53, 106, 0.48) 45%, transparent 80%), radial-gradient(ellipse 70% 35% at 85% 20%, rgba(232, 208, 156, 0.14) 0%, transparent 70%), linear-gradient(180deg, #031120 0%, #06213E 48%, #031120 100%)"
+            : undefined,
         color: th.text,
         minHeight: "100vh",
         paddingBottom: "6.5rem",
@@ -596,19 +600,88 @@ export function LuxuryRestaurantMenu({
         style={{
           position: "relative",
           zIndex: 10,
-          padding: "1.15rem 1rem 0.65rem",
+          overflow: "hidden",
+          padding:
+            temaId === "oceano_plata"
+              ? "1.75rem 1.25rem 2.35rem"
+              : "1.15rem 1rem 0.65rem",
           textAlign: "center",
-          maxWidth: "48rem",
-          margin: "0 auto",
+          maxWidth: temaId === "oceano_plata" ? "54rem" : "48rem",
+          margin:
+            temaId === "oceano_plata"
+              ? "0.85rem auto 1.15rem"
+              : "0 auto",
+          background:
+            temaId === "oceano_plata"
+              ? "linear-gradient(165deg, rgba(0, 53, 106, 0.85) 0%, rgba(5, 24, 46, 0.94) 65%, rgba(8, 38, 72, 0.9) 100%)"
+              : "transparent",
+          borderRadius: temaId === "oceano_plata" ? "1.5rem" : undefined,
+          border:
+            temaId === "oceano_plata"
+              ? "1px solid rgba(232, 208, 156, 0.42)"
+              : undefined,
+          boxShadow:
+            temaId === "oceano_plata"
+              ? "0 16px 40px rgba(1, 8, 18, 0.65), inset 0 1px 0 rgba(250, 251, 253, 0.25)"
+              : undefined,
         }}
       >
+        {/* Sello de distinción costera y olas en filigrana para Océano & Espuma */}
+        {temaId === "oceano_plata" && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "0.55rem",
+              marginBottom: "0.55rem",
+            }}
+          >
+            <span
+              style={{
+                height: "1px",
+                width: "2.25rem",
+                background:
+                  "linear-gradient(90deg, transparent 0%, rgba(232, 208, 156, 0.75) 100%)",
+              }}
+            />
+            <span
+              style={{
+                fontSize: "0.62rem",
+                fontWeight: 700,
+                letterSpacing: "0.26em",
+                textTransform: "uppercase",
+                color: "#E8D09C",
+              }}
+            >
+              ✦{" "}
+              {idioma === "en"
+                ? "Coastal Haute Cuisine · Oceanfront"
+                : idioma === "fr"
+                ? "Haute Cuisine Côtière · Face à la Mer"
+                : idioma === "de"
+                ? "Küsten-Sterneküche · Direkt am Meer"
+                : "Alta Cocina Costera · Frente al Mar"}{" "}
+              ✦
+            </span>
+            <span
+              style={{
+                height: "1px",
+                width: "2.25rem",
+                background:
+                  "linear-gradient(90deg, rgba(232, 208, 156, 0.75) 0%, transparent 100%)",
+              }}
+            />
+          </div>
+        )}
+
         <h1
           className="luxury-gold-title"
           style={{
-            fontSize: "clamp(1.5rem, 4.5vw, 2.35rem)",
+            fontSize: "clamp(1.6rem, 4.6vw, 2.45rem)",
             fontWeight: 800,
             lineHeight: 1.15,
-            margin: "0 0 0.25rem",
+            margin: "0 0 0.35rem",
           }}
         >
           {menu.negocioNombre}
@@ -617,15 +690,85 @@ export function LuxuryRestaurantMenu({
         <p
           className="luxury-gold-subtitle"
           style={{
-            fontSize: "0.85rem",
+            fontSize: "0.86rem",
             margin: "0 auto 0.65rem",
-            maxWidth: "30rem",
+            maxWidth: "32rem",
             fontStyle: "italic",
-            lineHeight: 1.35,
+            lineHeight: 1.4,
+            color: temaId === "oceano_plata" ? "#DCE9EF" : undefined,
           }}
         >
           {menu.subtitulo[idioma]}
         </p>
+
+        {/* Ornamento central de olas y perla + Silueta vectorial de olas oceánicas en la base */}
+        {temaId === "oceano_plata" && (
+          <>
+            <div
+              aria-hidden="true"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "0.5rem",
+                marginTop: "0.35rem",
+                opacity: 0.9,
+              }}
+            >
+              <svg
+                width="130"
+                height="14"
+                viewBox="0 0 130 14"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M2 8C12 3 22 13 32 8C42 3 52 13 62 7"
+                  stroke="rgba(145, 187, 209, 0.75)"
+                  strokeWidth="1.2"
+                  strokeLinecap="round"
+                />
+                <circle cx="65" cy="7" r="2.3" fill="#E8D09C" />
+                <path
+                  d="M68 7C78 13 88 3 98 8C108 13 118 3 128 8"
+                  stroke="rgba(145, 187, 209, 0.75)"
+                  strokeWidth="1.2"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </div>
+
+            {/* Olas oceánicas multicapa en filigrana (nácar, azul mar y arena dorada) */}
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 1200 90"
+              preserveAspectRatio="none"
+              style={{
+                position: "absolute",
+                bottom: 0,
+                left: 0,
+                width: "100%",
+                height: "36px",
+                pointerEvents: "none",
+              }}
+            >
+              <path
+                d="M0,45 C220,85 420,5 640,45 C860,85 1040,15 1200,40 L1200,90 L0,90 Z"
+                fill="rgba(50, 134, 170, 0.22)"
+              />
+              <path
+                d="M0,58 C280,18 520,88 780,48 C960,22 1100,64 1200,52 L1200,90 L0,90 Z"
+                fill="rgba(145, 187, 209, 0.14)"
+              />
+              <path
+                d="M0,45 C220,85 420,5 640,45 C860,85 1040,15 1200,40"
+                fill="none"
+                stroke="rgba(232, 208, 156, 0.45)"
+                strokeWidth="1.6"
+              />
+            </svg>
+          </>
+        )}
 
         {/* Happy Hour: ÚNICAMENTE si el restaurante lo tiene configurado en su JSON */}
         {Boolean((menu as any).happyHour) && (

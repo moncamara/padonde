@@ -7,7 +7,7 @@
  * identidad real del lugar, no según cuánto paga.
  */
 
-export type TemaMenuId = "sierra" | "fogon" | "caribe" | "oro";
+export type TemaMenuId = "sierra" | "fogon" | "caribe" | "oro" | "oceano_plata";
 
 export interface TemaMenu {
   id: TemaMenuId;
@@ -280,6 +280,56 @@ export const TEMAS_MENU: Record<TemaMenuId, TemaMenu> = {
     halo1: "rgba(212, 175, 55, 0.12)",
     halo2: "rgba(212, 175, 55, 0.08)",
   },
+
+  oceano_plata: {
+    id: "oceano_plata",
+    nombre: "Océano & Espuma",
+    emoji: "🌊",
+    paraQuien: "Restaurantes de playa de autor, surf clubs de lujo, Casa Grande Surf, alta cocina frente al mar",
+    descripcion: "Azul ultramar abisal con olas en filigrana, nácar luminoso y destellos de arena champagne dorada.",
+    isDark: true,
+    bg: "#031120",
+    text: "#FAFBFD",
+    textMuted: "rgba(220, 233, 239, 0.68)",
+    textSoft: "#C8DFEC",
+    heading: "#F3E2BE",
+    dishTitle: "#FAFBFD",
+    accent: "#E8D09C",
+    accentMuted: "#91BBD1",
+    border: "rgba(145, 187, 209, 0.32)",
+    borderStrong: "rgba(232, 208, 156, 0.62)",
+    fontTitle: SERIF,
+    cardFrom: "rgba(9, 38, 72, 0.9)",
+    cardTo: "rgba(4, 20, 40, 0.95)",
+    cardShadow: "0 10px 30px rgba(1, 8, 18, 0.7), inset 0 1px 0 rgba(250, 251, 253, 0.18)",
+    cardHoverShadow: "0 14px 36px rgba(50, 134, 170, 0.28), inset 0 1px 0 rgba(232, 208, 156, 0.35)",
+    imageBg: "#020B16",
+    surface: "rgba(7, 30, 56, 0.88)",
+    inputBg: "rgba(3, 15, 30, 0.72)",
+    inputText: "#FAFBFD",
+    navBg: "rgba(3, 17, 32, 0.94)",
+    titleGradient: "linear-gradient(180deg, #FFFFFF 0%, #FAFBFD 42%, #E8D09C 82%, #C9A55C 100%)",
+    priceGradient: "linear-gradient(180deg, #FFFFFF 0%, #F5E6C4 52%, #D4AF6A 100%)",
+    btnGradient: "linear-gradient(135deg, #FAFBFD 0%, #F3E2BE 48%, #D4AF6A 100%)",
+    btnText: "#031120",
+    btnShadow: "0 4px 22px rgba(232, 208, 156, 0.38)",
+    secondaryBg: "rgba(50, 134, 170, 0.18)",
+    secondaryBorder: "rgba(145, 187, 209, 0.48)",
+    secondaryText: "#DCE9EF",
+    pillBg: "rgba(8, 34, 64, 0.85)",
+    pillText: "#DCE9EF",
+    pillActiveGradient: "linear-gradient(135deg, #FAFBFD 0%, #F3E2BE 48%, #D4AF6A 100%)",
+    pillActiveText: "#031120",
+    chipBg: "rgba(3, 15, 30, 0.75)",
+    chipText: "#DCE9EF",
+    chipActiveBg: "#E8D09C",
+    chipActiveText: "#031120",
+    badgeBg: "linear-gradient(135deg, rgba(50, 134, 170, 0.28) 0%, rgba(6, 28, 54, 0.92) 100%)",
+    badgeBorder: "rgba(232, 208, 156, 0.55)",
+    badgeText: "#F3E2BE",
+    halo1: "rgba(50, 134, 170, 0.28)",
+    halo2: "rgba(232, 208, 156, 0.14)",
+  },
 };
 
 export const LISTA_TEMAS: TemaMenu[] = [
@@ -287,6 +337,7 @@ export const LISTA_TEMAS: TemaMenu[] = [
   TEMAS_MENU.fogon,
   TEMAS_MENU.caribe,
   TEMAS_MENU.oro,
+  TEMAS_MENU.oceano_plata,
 ];
 
 export function esTemaValido(valor: unknown): valor is TemaMenuId {

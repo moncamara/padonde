@@ -41,7 +41,7 @@ export interface AdminPublishInput {
   menuFotos?: string[];
   googleReviewUrl?: string;
   menuInteractivo?: boolean;
-  menuTema?: "fogon" | "sierra" | "caribe" | "oro";
+  menuTema?: "fogon" | "sierra" | "caribe" | "oro" | "oceano_plata";
   menuData?: any;
   tarifarioId?: string | null;
   horaInicio?: string;
@@ -941,7 +941,7 @@ export interface EditarEventoAdminInput {
   menuFotos?: string[] | null;
   menuUrl?: string | null;
   menuInteractivo?: boolean;
-  menuTema?: "fogon" | "sierra" | "caribe" | "oro";
+  menuTema?: "fogon" | "sierra" | "caribe" | "oro" | "oceano_plata";
   menuData?: any;
   tarifarioId?: string | null;
   horaInicio?: string;
@@ -3827,7 +3827,7 @@ export async function obtenerMetricasGA4ConfigAction() {
  */
 export async function asignarTemaMenuAction(params: {
   eventoId?: string;
-  tema: "fogon" | "sierra" | "caribe" | "oro";
+  tema: "fogon" | "sierra" | "caribe" | "oro" | "oceano_plata";
 }) {
   try {
     const supabase = await createClient();

@@ -143,7 +143,7 @@ export type HospedajeMetadata = {
   menu_fotos?: string[];      // Fotos de las páginas de la carta
   google_review_url?: string; // Enlace directo para calificar en Google
   menu_interactivo?: boolean; // Carta digital interactiva multilingüe
-  menu_tema?: "fogon" | "sierra" | "caribe" | "oro"; // Tema visual de autor para la carta
+  menu_tema?: "fogon" | "sierra" | "caribe" | "oro" | "oceano_plata"; // Tema visual de autor para la carta
   menu_data?: any;            // Estructura JSON de la carta digital (categorías, platos, precios y traducciones)
   horario?: HorarioExperiencia; // Horario limpio y recurrencia para experiencias gastronómicas, bares y miradores
   posicion_portada?: string;  // Enfoque vertical de la portada (ej: "20%", "50%", "80%")

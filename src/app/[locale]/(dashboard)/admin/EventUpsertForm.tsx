@@ -543,7 +543,7 @@ export function EventUpsertForm({
     return isLazyCat || isSilocibe || isMamo;
   });
 
-  const [menuTema, setMenuTema] = useState<"fogon" | "sierra" | "caribe" | "oro">(() => {
+  const [menuTema, setMenuTema] = useState<"fogon" | "sierra" | "caribe" | "oro" | "oceano_plata">(() => {
     return (
       (initialEvento?.metadata_hospedaje?.menu_tema as any) ||
       (initialEvento?.metadata_hospedaje?.menu_data as any)?.tema ||
@@ -2407,6 +2407,7 @@ export function EventUpsertForm({
                     <option value="fogon">🔥 Fogón & Brasa</option>
                     <option value="sierra">🌿 Sierra Verde</option>
                     <option value="caribe">🌊 Caribe Boho</option>
+                    <option value="oceano_plata">🌊 Océano & Espuma</option>
                     <option value="oro">✨ Oro Colonial</option>
                   </select>
                 </div>

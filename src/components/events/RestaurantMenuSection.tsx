@@ -16,7 +16,7 @@ interface RestaurantMenuSectionProps {
   locale?: string;
   whatsappNumber?: string;
   luxuryMenuUrl?: string | null;
-  menuTema?: "fogon" | "sierra" | "caribe" | "oro" | null;
+  menuTema?: "fogon" | "sierra" | "caribe" | "oro" | "oceano_plata" | null;
 }
 
 const THEME_STYLES = {
@@ -71,6 +71,19 @@ const THEME_STYLES = {
     subtitleColor: "text-amber-100/70",
     btnBg: "from-amber-400 to-amber-500 text-black",
     btnIcon: "✨",
+  },
+  oceano_plata: {
+    emoji: "🌊",
+    badge: "🌊 Océano & Espuma",
+    titleEs: "Carta Digital Alta Mar & Nácar",
+    titleEn: "Oceanfront & Pearl Luxury Menu",
+    cardBg: "from-[#031120] via-[#00356A] to-[#06213E] border-[#E8D09C]/50 hover:border-[#E8D09C] hover:shadow-lg hover:shadow-[#3286AA]/20",
+    iconBg: "from-[#FAFBFD] via-[#F3E2BE] to-[#D4AF6A] text-[#031120]",
+    titleColor: "text-[#FAFBFD] group-hover:text-[#F3E2BE]",
+    badgeClass: "bg-[#3286AA]/25 text-[#F3E2BE] border-[#E8D09C]/45",
+    subtitleColor: "text-[#DCE9EF]",
+    btnBg: "from-[#FAFBFD] via-[#F3E2BE] to-[#D4AF6A] text-[#031120]",
+    btnIcon: "🌊",
   },
 };
 

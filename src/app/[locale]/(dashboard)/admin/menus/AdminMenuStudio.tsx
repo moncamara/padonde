@@ -96,7 +96,7 @@ export function AdminMenuStudio({ locale }: AdminMenuStudioProps) {
       )}
 
       {/* ─── Selector Visual de Temas ─── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
         {LISTA_TEMAS.map((t) => {
           const esActivo = temaActivo === t.id;
           const esRecomendadoLazyCat = t.id === "fogon";
@@ -126,7 +126,7 @@ export function AdminMenuStudio({ locale }: AdminMenuStudioProps) {
                       {t.nombre}
                     </h3>
                     <span className="text-[10px] text-stone">
-                      Fondo Oscuro Luxury
+                      {t.id === "oceano_plata" ? "Alta Mar · Nácar & Arena" : "Fondo Oscuro Luxury"}
                     </span>
                   </div>
                 </div>
@@ -145,7 +145,16 @@ export function AdminMenuStudio({ locale }: AdminMenuStudioProps) {
                     esActivo ? "bg-forest border-forest" : "border-stone-light"
                   }`}
                   style={{
-                    backgroundColor: t.id === "oro" ? "#E8C872" : t.id === "fogon" ? "#FFC93C" : t.id === "caribe" ? "#38BDF8" : "#34D399"
+                    backgroundColor:
+                      t.id === "oro"
+                        ? "#E8C872"
+                        : t.id === "fogon"
+                        ? "#FFC93C"
+                        : t.id === "oceano_plata"
+                        ? "#3286AA"
+                        : t.id === "caribe"
+                        ? "#38BDF8"
+                        : "#34D399",
                   }}
                 />
               </div>

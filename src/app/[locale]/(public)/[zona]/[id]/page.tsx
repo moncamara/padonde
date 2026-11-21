@@ -613,7 +613,7 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
               isSilocibe || isLazyCat || Boolean(meta?.menu_interactivo);
 
             const menuTema =
-              (meta?.menu_tema as "fogon" | "sierra" | "caribe" | "oro") ||
+              (meta?.menu_tema as "fogon" | "sierra" | "caribe" | "oro" | "oceano_plata") ||
               (isSilocibe ? "oro" : isLazyCat ? "fogon" : "fogon");
 
             const luxuryMenuUrl = tieneMenuInteractivo
