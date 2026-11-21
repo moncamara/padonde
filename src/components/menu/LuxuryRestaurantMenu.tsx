@@ -21,6 +21,10 @@ interface LuxuryRestaurantMenuProps {
   mostrarSelectorTema?: boolean;
   /** Modo incrustado (iframe del admin): oculta el enlace de volver. */
   embebido?: boolean;
+  /** Slug de la zona del restaurante propietario (ej: "minca", "mendihuaca"). */
+  zonaSlug?: string;
+  /** ID de la ficha del restaurante propietario para regresar directo a su detalle. */
+  eventoId?: string;
 }
 
 
@@ -30,6 +34,8 @@ export function LuxuryRestaurantMenu({
   tema,
   mostrarSelectorTema = false,
   embebido = false,
+  zonaSlug = "minca",
+  eventoId,
 }: LuxuryRestaurantMenuProps) {
   // Idioma activo: soporta ES, EN, FR, DE
   const [idioma, setIdioma] = useState<IdiomaCodigo>(() => {
@@ -194,7 +200,7 @@ export function LuxuryRestaurantMenu({
 
   const t = {
     es: {
-      volver: "← Volver a la Cartelera",
+      volver: eventoId ? `← Volver a ${menu.negocioNombre}` : "← Volver a la Cartelera",
       buscarPlato: "Buscar plato o ingrediente...",
       soloVeggie: "🌱 Solo Vegetarianos",
       soloChef: "⭐ Favoritos del Chef",
@@ -214,7 +220,7 @@ export function LuxuryRestaurantMenu({
       limpiarFiltros: "Limpiar filtros",
     },
     en: {
-      volver: "← Back to Live Board",
+      volver: eventoId ? `← Back to ${menu.negocioNombre}` : "← Back to Live Board",
       buscarPlato: "Search dishes or ingredients...",
       soloVeggie: "🌱 Vegetarian Only",
       soloChef: "⭐ Chef's Favorites",
@@ -234,7 +240,7 @@ export function LuxuryRestaurantMenu({
       limpiarFiltros: "Clear filters",
     },
     fr: {
-      volver: "← Retour à l'Agenda",
+      volver: eventoId ? `← Retour à ${menu.negocioNombre}` : "← Retour à l'Agenda",
       buscarPlato: "Rechercher un plat ou ingrédient...",
       soloVeggie: "🌱 Végétarien Uniquement",
       soloChef: "⭐ Coups de Cœur du Chef",
@@ -254,7 +260,7 @@ export function LuxuryRestaurantMenu({
       limpiarFiltros: "Effacer les filtres",
     },
     de: {
-      volver: "← Zurück zur Übersicht",
+      volver: eventoId ? `← Zurück zu ${menu.negocioNombre}` : "← Zurück zur Übersicht",
       buscarPlato: "Gericht oder Zutat suchen...",
       soloVeggie: "🌱 Nur Vegetarisch",
       soloChef: "⭐ Empfehlungen des Chefs",
@@ -274,6 +280,10 @@ export function LuxuryRestaurantMenu({
       limpiarFiltros: "Filter zurücksetzen",
     },
   }[idioma];
+
+  const urlVolver = eventoId
+    ? `/${idioma}/${zonaSlug}/${eventoId}`
+    : `/${idioma}/${zonaSlug}`;
 
   // Variables CSS del tema activo (consumidas por luxury-menu.css e inyectadas inline para evitar caché de hojas de estilo)
   const cssVars = {
@@ -555,7 +565,7 @@ export function LuxuryRestaurantMenu({
         >
           {!embebido && (
             <Link
-              href={`/${idioma}/minca`}
+              href={urlVolver}
               style={{
                 fontSize: "0.75rem",
                 fontFamily: "var(--font-playfair), Georgia, serif",

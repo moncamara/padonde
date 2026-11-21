@@ -77,13 +77,15 @@ export default async function MenuDemoPage({
   params,
   searchParams,
 }: MenuDemoPageProps) {
-  const { locale } = await params;
+  const { locale, zona } = await params;
   const search = searchParams ? await searchParams : {};
   setRequestLocale(locale);
 
   // 1. Obtener la carta y el tema configurado por el admin en la base de datos
   let temaAsignado: TemaMenuId | undefined = undefined;
   let menuData = LAZY_CAT_MENU;
+  let targetEventoId = search.eventoId || "a9cb4306-82f5-4784-b6d3-546b6d10f5ec";
+  let targetZonaSlug = zona || "minca";
 
   // A) Si viene un eventoId específico en el enlace
   if (search.eventoId) {
@@ -189,6 +191,8 @@ export default async function MenuDemoPage({
         tema={temaFinal}
         mostrarSelectorTema={!esEmbebido && mostrarSelector}
         embebido={esEmbebido}
+        zonaSlug={targetZonaSlug}
+        eventoId={targetEventoId}
       />
     </div>
   );
