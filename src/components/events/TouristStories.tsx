@@ -71,6 +71,7 @@ export function TouristStories({ config }: TouristStoriesProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const trashRef = useRef<HTMLDivElement | null>(null);
   const pointerDownTimeRef = useRef<number>(0);
+  const viewerStartXRef = useRef<number>(0);
   const lastNavRef = useRef<number>(0);
   const elapsedMsRef = useRef<number>(0);
   const dragStateRef = useRef<{
@@ -247,31 +248,11 @@ export function TouristStories({ config }: TouristStoriesProps) {
     }
   }, [isPaused, isCurrentVideo]);
 
-  // 6. Auto-avance determinista cada 5 segundos para láminas de imagen (fuera del updater de setProgress para evitar doble disparo en StrictMode)
+  // 6. Ritmo de exploración natural: las fotos permanecen estáticas para contemplarlas sin prisa; los videos avanzan en onEnded
   useEffect(() => {
     elapsedMsRef.current = 0;
     setProgress(0);
   }, [currentIndex, abierto]);
-
-  useEffect(() => {
-    if (!abierto || isPaused || isCurrentVideo) return;
-
-    const timer = window.setInterval(() => {
-      elapsedMsRef.current += TICK_INTERVAL_MS;
-      const nextProgress = Math.min(
-        100,
-        (elapsedMsRef.current / SLIDE_DURATION_MS) * 100
-      );
-      setProgress(nextProgress);
-
-      if (elapsedMsRef.current >= SLIDE_DURATION_MS) {
-        window.clearInterval(timer);
-        avanzarOSalir();
-      }
-    }, TICK_INTERVAL_MS);
-
-    return () => window.clearInterval(timer);
-  }, [abierto, isPaused, isCurrentVideo, currentIndex, avanzarOSalir]);
 
   // 7. Bloquear scroll del body y navegación con teclado cuando el visor está abierto
   useEffect(() => {
@@ -428,14 +409,29 @@ export function TouristStories({ config }: TouristStoriesProps) {
     setIsOverTrash(false);
   }
 
-  function handlePointerDown() {
+  function handlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
     pointerDownTimeRef.current = Date.now();
+    viewerStartXRef.current = e.clientX;
     setIsPaused(true);
   }
 
-  function handlePointerUp(zone: "left" | "right") {
+  function handlePointerUp(
+    e: React.PointerEvent<HTMLDivElement>,
+    zone: "left" | "right"
+  ) {
     const heldMs = Date.now() - pointerDownTimeRef.current;
+    const dx = e.clientX - viewerStartXRef.current;
     setIsPaused(false);
+
+    // Gesto de deslizamiento horizontal (swipe)
+    if (Math.abs(dx) > 36) {
+      if (dx < 0) {
+        avanzarOSalir();
+      } else {
+        retrocederOReiniciar();
+      }
+      return;
+    }
 
     if (heldMs > 350) return;
 
@@ -554,7 +550,7 @@ export function TouristStories({ config }: TouristStoriesProps) {
         </div>
       )}
 
-      {/* Visor Modal tipo Instagram Stories */}
+      {/* Visor Modal con Dial Orbital de Brújula (sin barras tipo Instagram) */}
       {abierto && (
         <div
           className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex items-center justify-center select-none"
@@ -563,38 +559,12 @@ export function TouristStories({ config }: TouristStoriesProps) {
           aria-label="Historias de PaDónde"
         >
           <div className="relative w-full h-full max-w-[430px] max-h-[92vh] sm:rounded-3xl overflow-hidden bg-black shadow-2xl flex flex-col">
-            {/* Barras de progreso segmentadas */}
-            <div className="absolute top-3 left-3 right-3 z-30 flex items-center gap-1.5 pointer-events-none">
-              {slides.map((_, idx) => {
-                const fillWidth =
-                  idx < currentIndex
-                    ? 100
-                    : idx === currentIndex
-                    ? Math.min(100, Math.max(0, progress))
-                    : 0;
-                return (
-                  <div
-                    key={idx}
-                    className="flex-1 h-1 rounded-full bg-white/30 overflow-hidden"
-                  >
-                    <div
-                      className="h-full bg-white transition-none rounded-full"
-                      style={{ width: `${fillWidth}%` }}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Cabecera con sello PaDónde, control opcional de audio en video y botón cerrar ✕ */}
-            <div className="absolute top-6 left-3.5 right-3.5 z-30 flex items-center justify-between pt-1">
-              <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md px-3 py-1 rounded-full border border-white/15 pointer-events-none">
+            {/* Cabecera editorial limpia: título PaDónde, control opcional de audio en video y botón cerrar ✕ */}
+            <div className="absolute top-4 left-3.5 right-3.5 z-30 flex items-center justify-between">
+              <div className="flex items-center gap-2 bg-black/45 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/15 pointer-events-none">
                 <span className="text-sm">{isCurrentVideo ? "🎬" : "☀️"}</span>
                 <span className="text-xs font-sans font-semibold text-white tracking-wide">
-                  PaDónde · Hoy en la Sierra
-                </span>
-                <span className="text-[10px] font-mono text-white/70">
-                  {currentIndex + 1}/{slides.length}
+                  PaDónde • Hoy en la Sierra
                 </span>
               </div>
 
@@ -658,21 +628,157 @@ export function TouristStories({ config }: TouristStoriesProps) {
                 />
               )}
 
-              {/* Zonas táctiles izquierda (1/3 retroceder) y derecha (2/3 avanzar) + mantener presionado para pausar */}
+              {/* Zonas táctiles izquierda (1/3 retroceder) y derecha (2/3 avanzar) + deslizar o mantener presionado */}
               <div className="absolute inset-0 z-20 flex bg-transparent">
                 <div
                   className="w-1/3 h-full cursor-pointer"
                   onPointerDown={handlePointerDown}
-                  onPointerUp={() => handlePointerUp("left")}
+                  onPointerUp={(e) => handlePointerUp(e, "left")}
                   onPointerCancel={() => setIsPaused(false)}
                 />
                 <div
                   className="w-2/3 h-full cursor-pointer"
                   onPointerDown={handlePointerDown}
-                  onPointerUp={() => handlePointerUp("right")}
+                  onPointerUp={(e) => handlePointerUp(e, "right")}
                   onPointerCancel={() => setIsPaused(false)}
                 />
               </div>
+
+              {/* Dial Orbital de Brújula en SVG vectorial puro (52x52px) en la base del visor */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  avanzarOSalir();
+                }}
+                aria-label={`Rumbo ${currentIndex + 1} de ${slides.length}. Toca para avanzar`}
+                title={`Lámina ${currentIndex + 1} de ${slides.length} • Toca para girar al siguiente rumbo`}
+                className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 w-[52px] h-[52px] rounded-full bg-black/45 backdrop-blur-md border border-white/20 flex items-center justify-center cursor-pointer hover:scale-105 active:scale-95 transition-transform shadow-lg focus:outline-none"
+              >
+                <svg
+                  viewBox="0 0 52 52"
+                  className="w-full h-full overflow-visible"
+                  aria-hidden="true"
+                >
+                  {/* Aro orbital fino */}
+                  <circle
+                    cx="26"
+                    cy="26"
+                    r="19"
+                    fill="none"
+                    stroke="rgba(255,255,255,0.22)"
+                    strokeWidth="1"
+                  />
+
+                  {/* Letras cardinales sutiles N · E · S · W en el aro interior */}
+                  <text
+                    x="26"
+                    y="12.5"
+                    textAnchor="middle"
+                    fill="rgba(212,175,55,0.75)"
+                    fontSize="5.2"
+                    fontWeight="700"
+                  >
+                    N
+                  </text>
+                  <text
+                    x="39.5"
+                    y="27.8"
+                    textAnchor="middle"
+                    fill="rgba(255,255,255,0.45)"
+                    fontSize="4.8"
+                    fontWeight="600"
+                  >
+                    E
+                  </text>
+                  <text
+                    x="26"
+                    y="42.5"
+                    textAnchor="middle"
+                    fill="rgba(255,255,255,0.45)"
+                    fontSize="4.8"
+                    fontWeight="600"
+                  >
+                    S
+                  </text>
+                  <text
+                    x="12.5"
+                    y="27.8"
+                    textAnchor="middle"
+                    fill="rgba(255,255,255,0.45)"
+                    fontSize="4.8"
+                    fontWeight="600"
+                  >
+                    W
+                  </text>
+
+                  {/* Nodos orbitales en el perímetro por cada lámina cargada */}
+                  {slides.map((_, idx) => {
+                    const angleDeg = (idx * 360) / Math.max(1, slides.length);
+                    const angleRad = ((angleDeg - 90) * Math.PI) / 180;
+                    const cx = 26 + 19 * Math.cos(angleRad);
+                    const cy = 26 + 19 * Math.sin(angleRad);
+                    const isActive = idx === currentIndex;
+                    const isPast = idx < currentIndex;
+
+                    return (
+                      <g key={idx}>
+                        {isActive && (
+                          <circle
+                            cx={cx}
+                            cy={cy}
+                            r="4.2"
+                            fill="rgba(212,175,55,0.28)"
+                          />
+                        )}
+                        <circle
+                          cx={cx}
+                          cy={cy}
+                          r={isActive ? "2.4" : "1.6"}
+                          fill={
+                            isActive
+                              ? "#D4AF37"
+                              : isPast
+                              ? "rgba(255,255,255,0.85)"
+                              : "rgba(255,255,255,0.35)"
+                          }
+                        />
+                      </g>
+                    );
+                  })}
+
+                  {/* Aguja de brújula dorada con rotación suave hacia el ángulo de la lámina activa */}
+                  <g
+                    className="transition-transform duration-500 ease-out"
+                    style={{
+                      transform: `rotate(${
+                        (currentIndex * 360) / Math.max(1, slides.length)
+                      }deg)`,
+                      transformOrigin: "26px 26px",
+                    }}
+                  >
+                    {/* Punta norte dorada */}
+                    <polygon
+                      points="26,13 28.4,26 26,24.2 23.6,26"
+                      fill="#D4AF37"
+                    />
+                    {/* Contrapeso sur translúcido */}
+                    <polygon
+                      points="26,37 28,26 26,27.5 24,26"
+                      fill="rgba(255,255,255,0.35)"
+                    />
+                    {/* Eje central */}
+                    <circle
+                      cx="26"
+                      cy="26"
+                      r="2"
+                      fill="#D4AF37"
+                      stroke="rgba(0,0,0,0.65)"
+                      strokeWidth="0.8"
+                    />
+                  </g>
+                </svg>
+              </button>
             </div>
           </div>
         </div>
