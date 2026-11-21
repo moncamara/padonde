@@ -41,24 +41,7 @@ export function AdminHospedajesList({
   const [criterioOrden, setCriterioOrden] = useState<CriterioOrdenHospedajes>("recientes");
 
   useEffect(() => {
-    setListaHospedajes((prev) => {
-      if (prev === hospedajes) return prev;
-      if (
-        Array.isArray(prev) &&
-        Array.isArray(hospedajes) &&
-        prev.length === hospedajes.length &&
-        prev.every(
-          (h, i) =>
-            h.id === hospedajes[i]?.id &&
-            h.activo === hospedajes[i]?.activo &&
-            h.destacado === hospedajes[i]?.destacado &&
-            h.titulo === hospedajes[i]?.titulo
-        )
-      ) {
-        return prev;
-      }
-      return hospedajes;
-    });
+    setListaHospedajes(hospedajes);
   }, [hospedajes]);
 
   // Filtrado y ordenación reactiva en tiempo real
@@ -650,6 +633,15 @@ export function AdminHospedajesList({
           onClose={() => {
             setModalAbierto(false);
             setAbrirConJson(false);
+          }}
+          onSaved={(updated) => {
+            if (!updated?.id) return;
+            setListaHospedajes((prev) =>
+              prev.map((h) => (h.id === updated.id ? { ...h, ...updated } : h))
+            );
+            setHospedajeEnEdicion((prev: any) =>
+              prev && prev.id === updated.id ? { ...prev, ...updated } : prev
+            );
           }}
           onDeleted={handleDeleted}
         />

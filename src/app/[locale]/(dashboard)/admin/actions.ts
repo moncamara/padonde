@@ -1960,14 +1960,44 @@ export async function guardarHospedajeAction(input: GuardarHospedajeInput) {
     }
 
     if (esEdicionReal) {
+      try {
+        const traducciones = await traducirEventoCompleto(
+          input.titulo.trim(),
+          input.descripcion.trim() || null
+        );
+        datosHospedaje.traducciones = traducciones;
+      } catch {
+        // Silencioso
+      }
+
       // Actualización
-      const { error: updateError } = await supabase
+      let { data: updatedRows, error: updateError } = await supabase
         .from("eventos")
         .update(datosHospedaje)
-        .eq("id", input.id);
+        .eq("id", input.id)
+        .select("id");
+
+      if (updateError && updateError.code === "42703") {
+        delete datosHospedaje.traducciones;
+        const retry = await supabase
+          .from("eventos")
+          .update(datosHospedaje)
+          .eq("id", input.id)
+          .select("id");
+        updatedRows = retry.data;
+        updateError = retry.error;
+      }
 
       if (updateError) {
         return { success: false, error: updateError.message };
+      }
+
+      if (!updatedRows || updatedRows.length === 0) {
+        return {
+          success: false,
+          error:
+            "No se actualizó la fila en Supabase (posible restricción RLS por user_id del aliado).",
+        };
       }
     } else {
       // Creación
@@ -1980,7 +2010,14 @@ export async function guardarHospedajeAction(input: GuardarHospedajeInput) {
       }
     }
 
-    // Revalidar rutas administrativas y públicas ISR para reflejar cambios de inmediato
+    // Revalidar rutas administrativas y públicas ISR para reflejar cambios de inmediato en todos los idiomas
+    for (const loc of ["es", "en", "fr", "de"]) {
+      revalidatePath(`/${loc}/${input.zonaSlug}`, "page");
+      if (esEdicionReal && input.id) {
+        revalidatePath(`/${loc}/${input.zonaSlug}/${input.id}`, "page");
+      }
+    }
+    revalidatePath(`/[locale]/admin`, "page");
     revalidatePath(`/[locale]/admin/hospedajes`, "page");
     revalidatePath(`/[locale]/admin/aliados`, "page");
     revalidatePath(`/[locale]/admin/cobros`, "page");

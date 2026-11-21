@@ -32,6 +32,7 @@ interface ModalEditarHospedajeProps {
   hospedajesExistentes?: any[];
   abrirConModalJson?: boolean;
   onClose: () => void;
+  onSaved?: (updated: any) => void;
   onDeleted?: (id: string) => void;
 }
 
@@ -54,6 +55,7 @@ export function ModalEditarHospedaje({
   hospedajesExistentes = [],
   abrirConModalJson = false,
   onClose,
+  onSaved,
   onDeleted,
 }: ModalEditarHospedajeProps) {
   const router = useRouter();
@@ -781,6 +783,23 @@ export function ModalEditarHospedaje({
         setErrorMsg(res.error || "Ocurrió un error al guardar");
         setIsGuardando(false);
         return;
+      }
+
+      if (isEdicion && hospedaje?.id) {
+        onSaved?.({
+          id: hospedaje.id,
+          titulo: titulo.trim(),
+          descripcion: descripcion.trim(),
+          imagen_url: imagenUrl || null,
+          destacado,
+          metadata_hospedaje: metadataHospedaje,
+          negocio: {
+            ...(hospedaje.negocio || {}),
+            nombre: nombreNegocio.trim(),
+            whatsapp,
+            instagram,
+          },
+        });
       }
 
       router.refresh();
