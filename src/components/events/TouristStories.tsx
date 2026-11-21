@@ -69,6 +69,7 @@ export function TouristStories({ config }: TouristStoriesProps) {
   const [isOverTrash, setIsOverTrash] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const videoReadyForVolumeUnmuteRef = useRef<boolean>(false);
   const trashRef = useRef<HTMLDivElement | null>(null);
   const pointerDownTimeRef = useRef<number>(0);
   const viewerStartXRef = useRef<number>(0);
@@ -218,18 +219,35 @@ export function TouristStories({ config }: TouristStoriesProps) {
     const videoEl = videoRef.current;
     if (!videoEl) return;
 
+    videoReadyForVolumeUnmuteRef.current = false;
     videoEl.currentTime = 0;
+    try {
+      videoEl.volume = 0.8;
+    } catch {
+      // Ignorar en dispositivos que solo controlan volumen por hardware
+    }
+
+    const readyTimer = window.setTimeout(() => {
+      videoReadyForVolumeUnmuteRef.current = true;
+    }, 200);
+
     const playPromise = videoEl.play();
     if (playPromise !== undefined) {
       playPromise.catch(() => {
         // Fallback: forzar muted si el navegador bloqueó autoplay con audio
+        videoReadyForVolumeUnmuteRef.current = false;
         videoEl.muted = true;
         setIsMuted(true);
         videoEl.play().catch(() => {});
+        window.setTimeout(() => {
+          videoReadyForVolumeUnmuteRef.current = true;
+        }, 200);
       });
     }
 
     return () => {
+      window.clearTimeout(readyTimer);
+      videoReadyForVolumeUnmuteRef.current = false;
       try {
         videoEl.pause();
       } catch {
@@ -267,6 +285,18 @@ export function TouristStories({ config }: TouristStoriesProps) {
         avanzarOSalir();
       } else if (e.key === "ArrowLeft") {
         retrocederOReiniciar();
+      } else if (e.key === "AudioVolumeUp" || e.key === "VolumeUp") {
+        if (videoRef.current) {
+          videoRef.current.muted = false;
+          if (videoRef.current.volume === 0) {
+            try {
+              videoRef.current.volume = 0.8;
+            } catch {
+              // Ignorar
+            }
+          }
+        }
+        setIsMuted(false);
       }
     };
 
@@ -559,43 +589,49 @@ export function TouristStories({ config }: TouristStoriesProps) {
           aria-label="Historias de PaDónde"
         >
           <div className="relative w-full h-full max-w-[430px] max-h-[92vh] sm:rounded-3xl overflow-hidden bg-black shadow-2xl flex flex-col">
-            {/* Cabecera editorial limpia: título PaDónde, control opcional de audio en video y botón cerrar ✕ */}
-            <div className="absolute top-4 left-3.5 right-3.5 z-30 flex items-center justify-between">
-              <div className="flex items-center gap-2 bg-black/45 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/15 pointer-events-none">
-                <span className="text-sm">{isCurrentVideo ? "🎬" : "☀️"}</span>
-                <span className="text-xs font-sans font-semibold text-white tracking-wide">
-                  PaDónde • Hoy en la Sierra
-                </span>
-              </div>
-
-              <div className="flex items-center gap-2">
-                {isCurrentVideo && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsMuted((prev) => !prev);
-                    }}
-                    aria-label={isMuted ? "Activar sonido" : "Silenciar video"}
-                    title={isMuted ? "Activar sonido" : "Silenciar"}
-                    className="w-9 h-9 rounded-full bg-black/50 hover:bg-black/75 border border-white/20 text-white flex items-center justify-center text-sm cursor-pointer transition-colors"
-                  >
-                    {isMuted ? "🔇" : "🔊"}
-                  </button>
-                )}
-
+            {/* Controles superiores limpios en esquina derecha: audio (en video) y botón cerrar ✕ */}
+            <div className="absolute top-4 right-3.5 z-30 flex items-center justify-end gap-2">
+              {isCurrentVideo && (
                 <button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    finalizarYCerrar();
+                    const nextMuted = !isMuted;
+                    videoReadyForVolumeUnmuteRef.current = false;
+                    if (videoRef.current) {
+                      videoRef.current.muted = nextMuted;
+                      if (!nextMuted && videoRef.current.volume === 0) {
+                        try {
+                          videoRef.current.volume = 0.8;
+                        } catch {
+                          // Ignorar
+                        }
+                      }
+                    }
+                    setIsMuted(nextMuted);
+                    window.setTimeout(() => {
+                      videoReadyForVolumeUnmuteRef.current = true;
+                    }, 200);
                   }}
-                  aria-label="Cerrar historias"
-                  className="w-9 h-9 rounded-full bg-black/50 hover:bg-black/75 border border-white/20 text-white flex items-center justify-center text-sm font-bold cursor-pointer transition-colors"
+                  aria-label={isMuted ? "Activar sonido" : "Silenciar video"}
+                  title={isMuted ? "Activar sonido" : "Silenciar"}
+                  className="w-9 h-9 rounded-full bg-black/50 hover:bg-black/75 border border-white/20 text-white flex items-center justify-center text-sm cursor-pointer transition-colors"
                 >
-                  ✕
+                  {isMuted ? "🔇" : "🔊"}
                 </button>
-              </div>
+              )}
+
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  finalizarYCerrar();
+                }}
+                aria-label="Cerrar historias"
+                className="w-9 h-9 rounded-full bg-black/50 hover:bg-black/75 border border-white/20 text-white flex items-center justify-center text-sm font-bold cursor-pointer transition-colors"
+              >
+                ✕
+              </button>
             </div>
 
             {/* Lámina actual: <video> bajo demanda (0 KB en portada) o <img> */}
@@ -612,6 +648,19 @@ export function TouristStories({ config }: TouristStoriesProps) {
                   onCanPlay={(e) => {
                     if (!isPaused) {
                       e.currentTarget.play().catch(() => {});
+                    }
+                  }}
+                  onVolumeChange={(e) => {
+                    const videoEl = e.currentTarget;
+                    if (
+                      videoReadyForVolumeUnmuteRef.current &&
+                      videoEl.muted &&
+                      videoEl.volume > 0
+                    ) {
+                      videoEl.muted = false;
+                      setIsMuted(false);
+                    } else if (!videoEl.muted && isMuted) {
+                      setIsMuted(false);
                     }
                   }}
                   onTimeUpdate={handleVideoTimeUpdate}
