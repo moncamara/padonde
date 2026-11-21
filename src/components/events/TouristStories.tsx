@@ -17,13 +17,7 @@ const SLIDE_DURATION_MS = 5000;
 const MAX_VIDEO_DURATION_SEC = 15;
 const TICK_INTERVAL_MS = 50;
 
-export const DEFAULT_DEMO_SLIDES = [
-  "/stories-demo/2.jpg",
-  "/stories-demo/3.jpg",
-  "/stories-demo/4.jpg",
-  "/stories-demo/5.jpg",
-  "/stories-demo/6.jpg",
-];
+export const DEFAULT_DEMO_SLIDES: string[] = [];
 
 export function esVideoSlide(url?: string | null): boolean {
   if (!url) return false;
@@ -33,16 +27,16 @@ export function esVideoSlide(url?: string | null): boolean {
 export function TouristStories({ config }: TouristStoriesProps) {
   const pathname = usePathname();
   const isAdminRoute = Boolean(pathname?.includes("/admin"));
-  const activa = config ? Boolean(config.activa) : true;
-  const versionId = config?.versionId || "demo-v2";
+  const activa = config ? Boolean(config.activa) : false;
+  const versionId = config?.versionId || "v1";
   const rawSlides =
     Array.isArray(config?.slides) && config!.slides.length > 0
       ? config!.slides
       : DEFAULT_DEMO_SLIDES;
 
-  // Filtrar valores vacíos y excluir siempre /stories-demo/1.jpg (la buseta)
+  // Filtrar valores vacíos y cualquier imagen demo heredada (/stories-demo/*)
   const slides = rawSlides.filter(
-    (s) => Boolean(s) && !s.endsWith("/stories-demo/1.jpg")
+    (s) => Boolean(s) && !s.includes("/stories-demo/")
   );
 
   // Inicia en null hasta verificar localStorage / ?testStories=1 en cliente
@@ -55,24 +49,12 @@ export function TouristStories({ config }: TouristStoriesProps) {
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const pointerDownTimeRef = useRef<number>(0);
+  const lastNavRef = useRef<number>(0);
+  const elapsedMsRef = useRef<number>(0);
   const storageKey = `padonde_story_seen_${versionId}`;
 
   const currentSlide = slides[currentIndex] || "";
   const isCurrentVideo = abierto && esVideoSlide(currentSlide);
-
-  // Limpieza explícita de RAM móvil para el elemento <video>
-  const limpiarMemoriaVideo = useCallback(() => {
-    const video = videoRef.current;
-    if (video) {
-      try {
-        video.pause();
-        video.removeAttribute("src");
-        video.load();
-      } catch {
-        // Ignorar
-      }
-    }
-  }, []);
 
   // 1. Verificar en cliente si esta versión ya fue vista (o si viene ?testStories=1)
   useEffect(() => {
@@ -93,9 +75,25 @@ export function TouristStories({ config }: TouristStoriesProps) {
     }
   }, [activa, slides.length, storageKey]);
 
-  // 2. Limpiar buffer de video, persistir en localStorage y ocultar por completo la Brújula-Sol
+  // 2. Precargar la siguiente lámina de imagen cuando el modal está abierto para transición sin parpadeo negro
+  useEffect(() => {
+    if (!abierto) return;
+    const nextSlide = slides[currentIndex + 1];
+    if (nextSlide && !esVideoSlide(nextSlide)) {
+      const img = new Image();
+      img.src = nextSlide;
+    }
+  }, [abierto, currentIndex, slides]);
+
+  // 3. Persistir en localStorage y ocultar por completo la Brújula-Sol al cerrar o terminar
   const finalizarYCerrar = useCallback(() => {
-    limpiarMemoriaVideo();
+    if (videoRef.current) {
+      try {
+        videoRef.current.pause();
+      } catch {
+        // Ignorar
+      }
+    }
     try {
       localStorage.setItem(storageKey, "true");
     } catch {
@@ -103,23 +101,31 @@ export function TouristStories({ config }: TouristStoriesProps) {
     }
     setAbierto(false);
     setYaVisto(true);
-  }, [limpiarMemoriaVideo, storageKey]);
+  }, [storageKey]);
 
   const avanzarOSalir = useCallback(() => {
-    limpiarMemoriaVideo();
+    const now = Date.now();
+    if (now - lastNavRef.current < 250) return;
+    lastNavRef.current = now;
+    elapsedMsRef.current = 0;
+    setProgress(0);
+
     if (currentIndex < slides.length - 1) {
-      setCurrentIndex((idx) => idx + 1);
-      setProgress(0);
+      setCurrentIndex((idx) => Math.min(slides.length - 1, idx + 1));
     } else {
       finalizarYCerrar();
     }
-  }, [currentIndex, slides.length, limpiarMemoriaVideo, finalizarYCerrar]);
+  }, [currentIndex, slides.length, finalizarYCerrar]);
 
   const retrocederOReiniciar = useCallback(() => {
+    const now = Date.now();
+    if (now - lastNavRef.current < 250) return;
+    lastNavRef.current = now;
+    elapsedMsRef.current = 0;
+    setProgress(0);
+
     if (currentIndex > 0) {
-      limpiarMemoriaVideo();
-      setCurrentIndex((idx) => idx - 1);
-      setProgress(0);
+      setCurrentIndex((idx) => Math.max(0, idx - 1));
     } else {
       if (videoRef.current) {
         try {
@@ -129,18 +135,36 @@ export function TouristStories({ config }: TouristStoriesProps) {
           // Ignorar
         }
       }
-      setProgress(0);
     }
-  }, [currentIndex, limpiarMemoriaVideo]);
+  }, [currentIndex]);
 
-  // 3. Liberar RAM del video anterior al cambiar de lámina o cerrar el modal
+  // 4. Iniciar reproducción inmediata al entrar a un slide de video y pausar al salir
   useEffect(() => {
-    return () => {
-      limpiarMemoriaVideo();
-    };
-  }, [currentIndex, abierto, limpiarMemoriaVideo]);
+    if (!isCurrentVideo) return;
+    const videoEl = videoRef.current;
+    if (!videoEl) return;
 
-  // 4. Pausar o reanudar <video> cuando el usuario mantiene presionada la pantalla
+    videoEl.currentTime = 0;
+    const playPromise = videoEl.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(() => {
+        // Fallback: forzar muted si el navegador bloqueó autoplay con audio
+        videoEl.muted = true;
+        setIsMuted(true);
+        videoEl.play().catch(() => {});
+      });
+    }
+
+    return () => {
+      try {
+        videoEl.pause();
+      } catch {
+        // Ignorar
+      }
+    };
+  }, [isCurrentVideo, currentSlide]);
+
+  // 5. Pausar o reanudar <video> cuando el usuario mantiene presionada la pantalla
   useEffect(() => {
     if (!isCurrentVideo || !videoRef.current) return;
     if (isPaused) {
@@ -150,26 +174,33 @@ export function TouristStories({ config }: TouristStoriesProps) {
     }
   }, [isPaused, isCurrentVideo]);
 
-  // 5. Auto-avance cada 5 segundos SOLO para láminas de imagen (los videos usan onTimeUpdate / onEnded)
+  // 6. Auto-avance determinista cada 5 segundos para láminas de imagen (fuera del updater de setProgress para evitar doble disparo en StrictMode)
+  useEffect(() => {
+    elapsedMsRef.current = 0;
+    setProgress(0);
+  }, [currentIndex, abierto]);
+
   useEffect(() => {
     if (!abierto || isPaused || isCurrentVideo) return;
 
-    const step = (TICK_INTERVAL_MS / SLIDE_DURATION_MS) * 100;
     const timer = window.setInterval(() => {
-      setProgress((prev) => {
-        if (prev + step >= 100) {
-          window.clearInterval(timer);
-          setTimeout(() => avanzarOSalir(), 0);
-          return 100;
-        }
-        return prev + step;
-      });
+      elapsedMsRef.current += TICK_INTERVAL_MS;
+      const nextProgress = Math.min(
+        100,
+        (elapsedMsRef.current / SLIDE_DURATION_MS) * 100
+      );
+      setProgress(nextProgress);
+
+      if (elapsedMsRef.current >= SLIDE_DURATION_MS) {
+        window.clearInterval(timer);
+        avanzarOSalir();
+      }
     }, TICK_INTERVAL_MS);
 
     return () => window.clearInterval(timer);
-  }, [abierto, isPaused, isCurrentVideo, avanzarOSalir]);
+  }, [abierto, isPaused, isCurrentVideo, currentIndex, avanzarOSalir]);
 
-  // 6. Bloquear scroll del body y navegación con teclado cuando el visor está abierto
+  // 7. Bloquear scroll del body y navegación con teclado cuando el visor está abierto
   useEffect(() => {
     if (!abierto) return;
     const prevOverflow = document.body.style.overflow;
@@ -198,6 +229,8 @@ export function TouristStories({ config }: TouristStoriesProps) {
   }
 
   function handleAbrirStories() {
+    lastNavRef.current = 0;
+    elapsedMsRef.current = 0;
     setCurrentIndex(0);
     setProgress(0);
     setIsPaused(false);
@@ -213,7 +246,7 @@ export function TouristStories({ config }: TouristStoriesProps) {
     const heldMs = Date.now() - pointerDownTimeRef.current;
     setIsPaused(false);
 
-    if (heldMs > 220) return;
+    if (heldMs > 350) return;
 
     if (zone === "left") {
       retrocederOReiniciar();
@@ -247,7 +280,8 @@ export function TouristStories({ config }: TouristStoriesProps) {
         onClick={handleAbrirStories}
         aria-label="Ver historias destacadas de hoy en PaDónde"
         title="Historias destacadas de hoy"
-        className="fixed bottom-20 right-4 z-40 w-[54px] h-[54px] cursor-pointer select-none bg-transparent border-0 p-0 hover:scale-105 active:scale-95 transition-transform focus:outline-none"
+        className="fixed bottom-20 right-4 z-40 w-[54px] h-[54px] cursor-pointer select-none border-0 p-0 hover:scale-105 active:scale-95 transition-transform focus:outline-none"
+        style={{ background: "none" }}
       >
         {/* Anillo orbital verde bosque con satélite girando en sentido contrario */}
         <span
@@ -257,12 +291,12 @@ export function TouristStories({ config }: TouristStoriesProps) {
           <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-[#085127]" />
         </span>
 
-        {/* Capa base (Sol limpio sin halo) y capa superior (Brújula girando) sin filtros CSS */}
+        {/* Capa base (Sol 290x290 en su escala real dentro del núcleo) y Brújula (578x590) 100% abierta y transparente */}
         <div className="relative w-full h-full p-1.5 pointer-events-none">
           <img
-            src="/animations/img_0_clean.png"
+            src="/animations/img_0.png"
             alt="PaDónde"
-            className="w-full h-full object-contain"
+            className="absolute inset-0 m-auto w-[42%] h-[42%] object-contain"
             draggable={false}
           />
           <img
@@ -284,7 +318,7 @@ export function TouristStories({ config }: TouristStoriesProps) {
         >
           <div className="relative w-full h-full max-w-[430px] max-h-[92vh] sm:rounded-3xl overflow-hidden bg-black shadow-2xl flex flex-col">
             {/* Barras de progreso segmentadas */}
-            <div className="absolute top-3 left-3 right-3 z-20 flex items-center gap-1.5">
+            <div className="absolute top-3 left-3 right-3 z-30 flex items-center gap-1.5 pointer-events-none">
               {slides.map((_, idx) => {
                 const fillWidth =
                   idx < currentIndex
@@ -307,8 +341,8 @@ export function TouristStories({ config }: TouristStoriesProps) {
             </div>
 
             {/* Cabecera con sello PaDónde, control opcional de audio en video y botón cerrar ✕ */}
-            <div className="absolute top-6 left-3.5 right-3.5 z-20 flex items-center justify-between pt-1">
-              <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md px-3 py-1 rounded-full border border-white/15">
+            <div className="absolute top-6 left-3.5 right-3.5 z-30 flex items-center justify-between pt-1">
+              <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md px-3 py-1 rounded-full border border-white/15 pointer-events-none">
                 <span className="text-sm">{isCurrentVideo ? "🎬" : "☀️"}</span>
                 <span className="text-xs font-sans font-semibold text-white tracking-wide">
                   PaDónde · Hoy en la Sierra
@@ -349,7 +383,7 @@ export function TouristStories({ config }: TouristStoriesProps) {
             </div>
 
             {/* Lámina actual: <video> bajo demanda (0 KB en portada) o <img> */}
-            <div className="relative w-full h-full flex items-center justify-center bg-black">
+            <div className="relative flex-1 min-h-0 w-full h-full flex items-center justify-center bg-black">
               {isCurrentVideo ? (
                 <video
                   key={currentSlide}
@@ -358,32 +392,36 @@ export function TouristStories({ config }: TouristStoriesProps) {
                   autoPlay
                   muted={isMuted}
                   playsInline
-                  preload="metadata"
+                  preload="auto"
+                  onCanPlay={(e) => {
+                    if (!isPaused) {
+                      e.currentTarget.play().catch(() => {});
+                    }
+                  }}
                   onTimeUpdate={handleVideoTimeUpdate}
                   onEnded={avanzarOSalir}
-                  onError={avanzarOSalir}
-                  className="w-full h-full object-contain bg-black select-none pointer-events-none"
+                  className="absolute inset-0 w-full h-full object-contain bg-black opacity-100 z-10 select-none pointer-events-none"
                 />
               ) : (
                 <img
                   key={currentSlide}
                   src={currentSlide}
                   alt={`Historia PaDónde ${currentIndex + 1} de ${slides.length}`}
-                  className="w-full h-full object-contain bg-black select-none pointer-events-none"
+                  className="absolute inset-0 w-full h-full object-contain bg-black opacity-100 z-10 select-none pointer-events-none"
                   draggable={false}
                 />
               )}
 
-              {/* Zonas táctiles izquierda (retroceder) y derecha (avanzar) + mantener presionado para pausar */}
-              <div className="absolute inset-0 z-10 flex">
+              {/* Zonas táctiles izquierda (1/3 retroceder) y derecha (2/3 avanzar) + mantener presionado para pausar */}
+              <div className="absolute inset-0 z-20 flex bg-transparent">
                 <div
-                  className="w-[35%] h-full cursor-pointer"
+                  className="w-1/3 h-full cursor-pointer"
                   onPointerDown={handlePointerDown}
                   onPointerUp={() => handlePointerUp("left")}
                   onPointerCancel={() => setIsPaused(false)}
                 />
                 <div
-                  className="w-[65%] h-full cursor-pointer"
+                  className="w-2/3 h-full cursor-pointer"
                   onPointerDown={handlePointerDown}
                   onPointerUp={() => handlePointerUp("right")}
                   onPointerCancel={() => setIsPaused(false)}
