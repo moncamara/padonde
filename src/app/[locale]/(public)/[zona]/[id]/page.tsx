@@ -614,10 +614,11 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
 
             const menuTema =
               (meta?.menu_tema as "fogon" | "sierra" | "caribe" | "oro" | "oceano_plata") ||
+              ((meta?.menu_data as any)?.tema as "fogon" | "sierra" | "caribe" | "oro" | "oceano_plata") ||
               (isSilocibe ? "oro" : isLazyCat ? "fogon" : "fogon");
 
             const luxuryMenuUrl = tieneMenuInteractivo
-              ? `/${locale}/${zonaSlug}/menu-demo?eventoId=${evento.id}&tema=${menuTema}`
+              ? `/${locale}/${zonaSlug}/menu-demo?eventoId=${evento.id}`
               : undefined;
 
             return (

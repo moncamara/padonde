@@ -1261,6 +1261,15 @@ export async function editarEventoAdminAction(input: EditarEventoAdminInput) {
       }
     }
 
+    if (
+      currentMeta.menu_tema &&
+      currentMeta.menu_data &&
+      typeof currentMeta.menu_data === "object" &&
+      !Array.isArray(currentMeta.menu_data)
+    ) {
+      currentMeta.menu_data.tema = currentMeta.menu_tema;
+    }
+
     if (input.tarifarioId !== undefined) {
       if (!input.tarifarioId?.trim()) {
         delete currentMeta.tarifario_id;
@@ -1365,6 +1374,12 @@ export async function editarEventoAdminAction(input: EditarEventoAdminInput) {
     }
 
     // Revalidar inmediatamente todo el sitio y todas las rutas públicas y de administración
+    const zSlug = input.zonaSlug || "minca";
+    for (const loc of ["es", "en", "fr", "de"]) {
+      revalidatePath(`/${loc}/${zSlug}`, "page");
+      revalidatePath(`/${loc}/${zSlug}/${input.eventoId}`, "page");
+      revalidatePath(`/${loc}/${zSlug}/menu-demo`, "page");
+    }
     revalidatePath("/", "layout");
     revalidatePath("/[locale]/admin", "page");
     revalidatePath("/[locale]/admin/aliados", "page");
@@ -1373,6 +1388,9 @@ export async function editarEventoAdminAction(input: EditarEventoAdminInput) {
     revalidatePath("/admin/aliados");
     revalidatePath("/[locale]/[zona]", "page");
     revalidatePath("/[locale]/[zona]/[id]", "page");
+    revalidatePath("/[locale]/(public)/[zona]", "page");
+    revalidatePath("/[locale]/(public)/[zona]/[id]", "page");
+    revalidatePath("/[locale]/(public)/[zona]/menu-demo", "page");
 
     return {
       success: true,

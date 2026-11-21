@@ -1351,6 +1351,9 @@ export function EventUpsertForm({
                 google_review_url: reviewUrlFinal,
                 menu_interactivo: menuInteractivo,
                 menu_tema: menuTema,
+                menu_data: parsedMenuData
+                  ? { ...parsedMenuData, tema: menuTema }
+                  : initialEvento.metadata_hospedaje?.menu_data,
                 tarifario_id: tarifarioId || undefined,
               },
               negocio: (res as any).negocio
@@ -2515,7 +2518,7 @@ export function EventUpsertForm({
                     {initialEvento?.id && (
                       <>
                         <a
-                          href={`/es/${zonaSlug || "minca"}/menu-demo?eventoId=${initialEvento.id}&tema=${menuTema}`}
+                          href={`/es/${zonaSlug || "minca"}/menu-demo?eventoId=${initialEvento.id}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="bg-white hover:bg-stone-50 text-forest border border-stone-300 font-semibold text-xs py-2 px-3 rounded-xl shadow-2xs flex items-center gap-1.5 transition-all"

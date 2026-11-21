@@ -154,8 +154,8 @@ export default async function MenuDemoPage({
     }
   }
 
-  // B) Si el admin o usuario pasó ?tema= en la URL (ej. selector dinámico o previsualización), tiene máxima prioridad
-  if (search.tema && search.tema in TEMAS_MENU) {
+  // B) Si no hay tema definido por eventoId en la BD (o estamos en el estudio general sin eventoId), usar ?tema= de la URL
+  if ((!temaAsignado || !search.eventoId) && search.tema && search.tema in TEMAS_MENU) {
     temaAsignado = search.tema as TemaMenuId;
   }
 

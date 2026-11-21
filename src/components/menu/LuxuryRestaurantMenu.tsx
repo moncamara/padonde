@@ -275,12 +275,16 @@ export function LuxuryRestaurantMenu({
     },
   }[idioma];
 
-  // Variables CSS del tema activo (consumidas por luxury-menu.css)
+  // Variables CSS del tema activo (consumidas por luxury-menu.css e inyectadas inline para evitar caché de hojas de estilo)
   const cssVars = {
     "--lx-bg": th.bg,
     "--lx-text": th.text,
     "--lx-text-muted": th.textMuted,
     "--lx-text-soft": th.textSoft,
+    "--lx-heading": th.heading,
+    "--lx-dish-title": th.dishTitle,
+    "--lx-accent": th.accent,
+    "--lx-accent-muted": th.accentMuted,
     "--lx-border": th.border,
     "--lx-border-strong": th.borderStrong,
     "--lx-font-title": th.fontTitle,
@@ -288,6 +292,8 @@ export function LuxuryRestaurantMenu({
     "--lx-card-to": th.cardTo,
     "--lx-card-shadow": th.cardShadow,
     "--lx-card-hover-shadow": th.cardHoverShadow,
+    "--lx-image-bg": th.imageBg,
+    "--lx-surface": th.surface,
     "--lx-input-bg": th.inputBg,
     "--lx-input-text": th.inputText,
     "--lx-nav-bg": th.navBg,
@@ -296,10 +302,17 @@ export function LuxuryRestaurantMenu({
     "--lx-btn-gradient": th.btnGradient,
     "--lx-btn-text": th.btnText,
     "--lx-btn-shadow": th.btnShadow,
+    "--lx-secondary-bg": th.secondaryBg,
+    "--lx-secondary-border": th.secondaryBorder,
+    "--lx-secondary-text": th.secondaryText,
     "--lx-pill-bg": th.pillBg,
     "--lx-pill-text": th.pillText,
     "--lx-pill-active-gradient": th.pillActiveGradient,
     "--lx-pill-active-text": th.pillActiveText,
+    "--lx-chip-bg": th.chipBg,
+    "--lx-chip-text": th.chipText,
+    "--lx-chip-active-bg": th.chipActiveBg,
+    "--lx-chip-active-text": th.chipActiveText,
     "--lx-badge-bg": th.badgeBg,
     "--lx-badge-border": th.badgeBorder,
     "--lx-badge-text": th.badgeText,
@@ -470,6 +483,7 @@ export function LuxuryRestaurantMenu({
       key={temaId}
       className={`luxury-menu-wrapper theme-${temaId}`}
       style={{
+        ...cssVars,
         backgroundColor: th.bg,
         backgroundImage:
           temaId === "oceano_plata"
