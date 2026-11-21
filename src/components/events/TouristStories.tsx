@@ -16,12 +16,27 @@ interface TouristStoriesProps {
 const SLIDE_DURATION_MS = 5000;
 const MAX_VIDEO_DURATION_SEC = 15;
 const TICK_INTERVAL_MS = 50;
+const MASCOT_SIZE = 54;
+const SAFE_MARGIN = 12;
+const DRAG_THRESHOLD_PX = 6;
+const TRASH_HIT_RADIUS_PX = 56;
+const POS_STORAGE_KEY = "padonde_story_pos";
 
 export const DEFAULT_DEMO_SLIDES: string[] = [];
 
 export function esVideoSlide(url?: string | null): boolean {
   if (!url) return false;
   return /\.(mp4|webm)(\?|#|$)/i.test(url.trim());
+}
+
+function clampPositionToViewport(x: number, y: number): { x: number; y: number } {
+  if (typeof window === "undefined") return { x, y };
+  const maxX = Math.max(SAFE_MARGIN, window.innerWidth - MASCOT_SIZE - SAFE_MARGIN);
+  const maxY = Math.max(SAFE_MARGIN, window.innerHeight - MASCOT_SIZE - SAFE_MARGIN);
+  return {
+    x: Math.min(maxX, Math.max(SAFE_MARGIN, Math.round(x))),
+    y: Math.min(maxY, Math.max(SAFE_MARGIN, Math.round(y))),
+  };
 }
 
 export function TouristStories({ config }: TouristStoriesProps) {
@@ -40,40 +55,98 @@ export function TouristStories({ config }: TouristStoriesProps) {
   );
 
   // Inicia en null hasta verificar localStorage / ?testStories=1 en cliente
-  const [yaVisto, setYaVisto] = useState<boolean | null>(null);
+  const [ocultoPorCaneca, setOcultoPorCaneca] = useState<boolean | null>(null);
+  const [yaVisto, setYaVisto] = useState(false);
   const [abierto, setAbierto] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
 
+  // Estados de arrastre libre y caneca (Drag-to-Trash)
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isOverTrash, setIsOverTrash] = useState(false);
+
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const trashRef = useRef<HTMLDivElement | null>(null);
   const pointerDownTimeRef = useRef<number>(0);
   const lastNavRef = useRef<number>(0);
   const elapsedMsRef = useRef<number>(0);
+  const dragStateRef = useRef<{
+    active: boolean;
+    pointerId: number | null;
+    startX: number;
+    startY: number;
+    initialLeft: number;
+    initialTop: number;
+    moved: boolean;
+    overTrash: boolean;
+    lastPos: { x: number; y: number } | null;
+  }>({
+    active: false,
+    pointerId: null,
+    startX: 0,
+    startY: 0,
+    initialLeft: 0,
+    initialTop: 0,
+    moved: false,
+    overTrash: false,
+    lastPos: null,
+  });
+
   const storageKey = `padonde_story_seen_${versionId}`;
+  const dismissedKey = `padonde_story_dismissed_${versionId}`;
 
   const currentSlide = slides[currentIndex] || "";
   const isCurrentVideo = abierto && esVideoSlide(currentSlide);
 
-  // 1. Verificar en cliente si esta versión ya fue vista (o si viene ?testStories=1)
+  // 1. Verificar en cliente si fue descartada en la caneca, si ya fue vista y si tiene coordenadas guardadas
   useEffect(() => {
     if (!activa || slides.length === 0) {
-      setYaVisto(true);
+      setOcultoPorCaneca(true);
       return;
     }
     try {
       const params = new URLSearchParams(window.location.search);
-      if (params.get("testStories") === "1") {
+      const isTestMode = params.get("testStories") === "1";
+
+      if (isTestMode) {
+        setOcultoPorCaneca(false);
         setYaVisto(false);
-        return;
+      } else {
+        const dismissed = localStorage.getItem(dismissedKey);
+        const seen = localStorage.getItem(storageKey);
+        setOcultoPorCaneca(Boolean(dismissed));
+        setYaVisto(Boolean(seen));
       }
-      const seen = localStorage.getItem(storageKey);
-      setYaVisto(Boolean(seen));
+
+      const rawPos = localStorage.getItem(POS_STORAGE_KEY);
+      if (rawPos) {
+        const parsed = JSON.parse(rawPos);
+        if (
+          parsed &&
+          typeof parsed.x === "number" &&
+          typeof parsed.y === "number" &&
+          Number.isFinite(parsed.x) &&
+          Number.isFinite(parsed.y)
+        ) {
+          setPos(clampPositionToViewport(parsed.x, parsed.y));
+        }
+      }
     } catch {
+      setOcultoPorCaneca(false);
       setYaVisto(false);
     }
-  }, [activa, slides.length, storageKey]);
+
+    const handleResize = () => {
+      setPos((prev) =>
+        prev ? clampPositionToViewport(prev.x, prev.y) : null
+      );
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [activa, slides.length, storageKey, dismissedKey]);
 
   // 2. Precargar la siguiente lámina de imagen cuando el modal está abierto para transición sin parpadeo negro
   useEffect(() => {
@@ -85,7 +158,7 @@ export function TouristStories({ config }: TouristStoriesProps) {
     }
   }, [abierto, currentIndex, slides]);
 
-  // 3. Persistir en localStorage y ocultar por completo la Brújula-Sol al cerrar o terminar
+  // 3. Al cerrar o terminar las láminas: registrar que ya las vio pero MANTENER la Brújula-Sol disponible en pantalla
   const finalizarYCerrar = useCallback(() => {
     if (videoRef.current) {
       try {
@@ -223,8 +296,8 @@ export function TouristStories({ config }: TouristStoriesProps) {
     };
   }, [abierto, finalizarYCerrar, avanzarOSalir, retrocederOReiniciar]);
 
-  // Zero-Noise UX: nunca mostrar en rutas /admin, ni si está desactivada, sin láminas, o ya fue vista esta versionId -> null
-  if (isAdminRoute || !activa || slides.length === 0 || yaVisto !== false) {
+  // Zero-Noise UX: nunca mostrar en rutas /admin, ni si está desactivada, sin láminas, o si el usuario la arrojó a la caneca
+  if (isAdminRoute || !activa || slides.length === 0 || ocultoPorCaneca !== false) {
     return null;
   }
 
@@ -235,6 +308,124 @@ export function TouristStories({ config }: TouristStoriesProps) {
     setProgress(0);
     setIsPaused(false);
     setAbierto(true);
+  }
+
+  function handleMascotPointerDown(e: React.PointerEvent<HTMLButtonElement>) {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    dragStateRef.current = {
+      active: true,
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      initialLeft: rect.left,
+      initialTop: rect.top,
+      moved: false,
+      overTrash: false,
+      lastPos: { x: rect.left, y: rect.top },
+    };
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // Ignorar si el navegador no soporta pointer capture
+    }
+  }
+
+  function handleMascotPointerMove(e: React.PointerEvent<HTMLButtonElement>) {
+    const state = dragStateRef.current;
+    if (!state.active || state.pointerId !== e.pointerId) return;
+
+    const dx = e.clientX - state.startX;
+    const dy = e.clientY - state.startY;
+    const distFromStart = Math.hypot(dx, dy);
+
+    if (!state.moved && distFromStart < DRAG_THRESHOLD_PX) {
+      return;
+    }
+
+    if (!state.moved) {
+      state.moved = true;
+      setIsDragging(true);
+    }
+
+    const clamped = clampPositionToViewport(
+      state.initialLeft + dx,
+      state.initialTop + dy
+    );
+    state.lastPos = clamped;
+    setPos(clamped);
+
+    // Calcular distancia entre el centro de la Brújula-Sol y el centro de la caneca inferior
+    const mascotCenterX = clamped.x + MASCOT_SIZE / 2;
+    const mascotCenterY = clamped.y + MASCOT_SIZE / 2;
+
+    let trashCenterX = window.innerWidth / 2;
+    let trashCenterY = window.innerHeight - 24 - 28;
+    if (trashRef.current) {
+      const trashRect = trashRef.current.getBoundingClientRect();
+      trashCenterX = trashRect.left + trashRect.width / 2;
+      trashCenterY = trashRect.top + trashRect.height / 2;
+    }
+
+    const distToTrash = Math.hypot(
+      mascotCenterX - trashCenterX,
+      mascotCenterY - trashCenterY
+    );
+    const hitTrash = distToTrash < TRASH_HIT_RADIUS_PX;
+    state.overTrash = hitTrash;
+    setIsOverTrash(hitTrash);
+  }
+
+  function handleMascotPointerUp(e: React.PointerEvent<HTMLButtonElement>) {
+    const state = dragStateRef.current;
+    if (!state.active || state.pointerId !== e.pointerId) return;
+
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {
+      // Ignorar
+    }
+
+    const { moved, overTrash, lastPos } = state;
+    state.active = false;
+    state.pointerId = null;
+    setIsDragging(false);
+    setIsOverTrash(false);
+
+    if (!moved) {
+      handleAbrirStories();
+      return;
+    }
+
+    if (overTrash) {
+      try {
+        localStorage.setItem(dismissedKey, "true");
+      } catch {
+        // Ignorar
+      }
+      setOcultoPorCaneca(true);
+      return;
+    }
+
+    if (lastPos) {
+      try {
+        localStorage.setItem(POS_STORAGE_KEY, JSON.stringify(lastPos));
+      } catch {
+        // Ignorar
+      }
+    }
+  }
+
+  function handleMascotPointerCancel(e: React.PointerEvent<HTMLButtonElement>) {
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {
+      // Ignorar
+    }
+    dragStateRef.current.active = false;
+    dragStateRef.current.pointerId = null;
+    setIsDragging(false);
+    setIsOverTrash(false);
   }
 
   function handlePointerDown() {
@@ -274,19 +465,43 @@ export function TouristStories({ config }: TouristStoriesProps) {
 
   return (
     <>
-      {/* Mascota Flotante Compacta: Anillo Orbital + Sol + Brújula Girando (60fps CSS nativo) */}
+      {/* Mascota Flotante Compacta: Anillo Orbital + Sol + Brújula Girando (Arrastrable + Drag-to-Trash) */}
       <button
         type="button"
-        onClick={handleAbrirStories}
-        aria-label="Ver historias destacadas de hoy en PaDónde"
-        title="Historias destacadas de hoy"
-        className="fixed bottom-20 right-4 z-40 w-[54px] h-[54px] cursor-pointer select-none border-0 p-0 hover:scale-105 active:scale-95 transition-transform focus:outline-none"
-        style={{ background: "none" }}
+        onPointerDown={handleMascotPointerDown}
+        onPointerMove={handleMascotPointerMove}
+        onPointerUp={handleMascotPointerUp}
+        onPointerCancel={handleMascotPointerCancel}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            handleAbrirStories();
+          }
+        }}
+        aria-label="Ver historias destacadas de hoy en PaDónde (o arrastrar para mover/ocultar)"
+        title="Toca para ver historias • Arrastra para mover o llevar a la papelera"
+        className={[
+          "fixed z-40 w-[54px] h-[54px] cursor-grab active:cursor-grabbing select-none touch-none border-0 p-0 focus:outline-none",
+          pos ? "" : "bottom-20 right-4",
+          isDragging
+            ? isOverTrash
+              ? "scale-75 opacity-80 transition-transform duration-150"
+              : "scale-110 transition-none"
+            : "hover:scale-105 active:scale-95 transition-transform",
+        ].join(" ")}
+        style={
+          pos
+            ? { background: "none", left: `${pos.x}px`, top: `${pos.y}px` }
+            : { background: "none" }
+        }
       >
         {/* Anillo orbital verde bosque con satélite girando en sentido contrario */}
         <span
           aria-hidden="true"
-          className="absolute inset-0 rounded-full border border-[#085127]/75 animate-[spin_8s_linear_infinite_reverse] pointer-events-none"
+          className={[
+            "absolute inset-0 rounded-full border animate-[spin_8s_linear_infinite_reverse] pointer-events-none",
+            yaVisto ? "border-[#085127]/50" : "border-[#085127]/75",
+          ].join(" ")}
         >
           <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-[#085127]" />
         </span>
@@ -307,6 +522,37 @@ export function TouristStories({ config }: TouristStoriesProps) {
           />
         </div>
       </button>
+
+      {/* Caneca dinámica Drag-to-Trash en la parte inferior central mientras se arrastra */}
+      {isDragging && (
+        <div
+          ref={trashRef}
+          aria-hidden="true"
+          className={[
+            "fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-14 h-14 rounded-full flex items-center justify-center pointer-events-none select-none transition-all duration-150 shadow-xl",
+            isOverTrash
+              ? "scale-125 bg-red-600/90 text-white border-2 border-red-300"
+              : "scale-100 bg-black/75 backdrop-blur-md text-white border border-white/25",
+          ].join(" ")}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="w-6 h-6"
+          >
+            <path d="M3 6h18" />
+            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+            <line x1="10" y1="11" x2="10" y2="17" />
+            <line x1="14" y1="11" x2="14" y2="17" />
+          </svg>
+        </div>
+      )}
 
       {/* Visor Modal tipo Instagram Stories */}
       {abierto && (
