@@ -1947,6 +1947,41 @@ export async function guardarHospedajeAction(input: GuardarHospedajeInput) {
     const precioBase = precios.length > 0 ? Math.min(...precios) : 0;
 
     // 4. Insertar o Actualizar el evento tipo 'hospedaje'
+    const esEdicionReal = Boolean(input.id && !input.id.startsWith("temp-"));
+    let prevMetaDB: Record<string, any> = {};
+    if (esEdicionReal && input.id) {
+      const { data: prevEv } = await supabase
+        .from("eventos")
+        .select("metadata_hospedaje")
+        .eq("id", input.id)
+        .maybeSingle();
+      if (prevEv?.metadata_hospedaje && typeof prevEv.metadata_hospedaje === "object") {
+        prevMetaDB = prevEv.metadata_hospedaje as Record<string, any>;
+      }
+    }
+
+    const ahoraEdicionIso = new Date().toISOString();
+    const mergedMeta: Record<string, any> = {
+      ...prevMetaDB,
+      ...(input.metadataHospedaje || {}),
+      ultima_edicion: ahoraEdicionIso,
+      google_review_url:
+        (input.metadataHospedaje?.google_review_url && (input.metadataHospedaje.google_review_url.includes("search.google.com/local/writereview") || input.metadataHospedaje.google_review_url.includes("g.page/r/")))
+          ? input.metadataHospedaje.google_review_url.trim()
+          : extraerGoogleReviewUrl(input.metadataHospedaje?.google_review_url) ||
+            extraerGoogleReviewUrl(input.metadataHospedaje?.google_reputacion?.maps_url) ||
+            input.metadataHospedaje?.google_review_url?.trim() ||
+            undefined,
+    };
+
+    if (Array.isArray(input.metadataHospedaje?.galeria_fotos)) {
+      if (input.metadataHospedaje.galeria_fotos.length > 0) {
+        mergedMeta.galeria_fotos = input.metadataHospedaje.galeria_fotos;
+      } else {
+        delete mergedMeta.galeria_fotos;
+      }
+    }
+
     const datosHospedaje: Record<string, any> = {
       negocio_id: negocioId,
       zona_id: zona.id,
@@ -1960,22 +1995,11 @@ export async function guardarHospedajeAction(input: GuardarHospedajeInput) {
       destacado: Boolean(input.destacado),
       tiene_boleteria: false,
       activo: true,
-      metadata_hospedaje: {
-        ...(input.metadataHospedaje || {}),
-        google_review_url:
-          (input.metadataHospedaje?.google_review_url && (input.metadataHospedaje.google_review_url.includes("search.google.com/local/writereview") || input.metadataHospedaje.google_review_url.includes("g.page/r/")))
-            ? input.metadataHospedaje.google_review_url.trim()
-            : extraerGoogleReviewUrl(input.metadataHospedaje?.google_review_url) ||
-              extraerGoogleReviewUrl(input.metadataHospedaje?.google_reputacion?.maps_url) ||
-              input.metadataHospedaje?.google_review_url?.trim() ||
-              undefined,
-      },
+      metadata_hospedaje: mergedMeta,
     };
 
-    const esEdicionReal = Boolean(input.id && !input.id.startsWith("temp-"));
-
     if (!esEdicionReal) {
-      datosHospedaje.fecha_inicio = new Date().toISOString();
+      datosHospedaje.fecha_inicio = ahoraEdicionIso;
     }
 
     if (esEdicionReal) {

@@ -868,8 +868,10 @@ export function ModalEditarHospedaje({
         .map((f) => f.trim())
         .filter((f) => Boolean(f) && f !== imagenUrl.trim());
 
+      const ahoraIso = new Date().toISOString();
       const metadataHospedaje = {
         ...(hospedaje?.metadata_hospedaje || {}),
+        ultima_edicion: ahoraIso,
         check_in_hora: hospedaje?.metadata_hospedaje?.check_in_hora || "14:00",
         check_out_hora: hospedaje?.metadata_hospedaje?.check_out_hora || "11:00",
         contacto_propietario: nombrePropietario.trim() || undefined,

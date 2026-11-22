@@ -75,6 +75,23 @@ export function AdminHospedajesList({
       });
     }
 
+    const getTimestampActividadHospedaje = (h: any): number => {
+      const ultima = h?.metadata_hospedaje?.ultima_edicion;
+      if (ultima) {
+        const t = new Date(ultima).getTime();
+        if (!Number.isNaN(t)) return t;
+      }
+      if (h?.updated_at) {
+        const t = new Date(h.updated_at).getTime();
+        if (!Number.isNaN(t)) return t;
+      }
+      if (h?.created_at) {
+        const t = new Date(h.created_at).getTime();
+        if (!Number.isNaN(t)) return t;
+      }
+      return 0;
+    };
+
     // Ordenación según criterio seleccionado
     return [...resultado].sort((a, b) => {
       if (criterioOrden === "nombre") {
@@ -88,14 +105,10 @@ export function AdminHospedajesList({
         return rB - rA;
       }
       if (criterioOrden === "antiguos") {
-        const tA = a.created_at ? new Date(a.created_at).getTime() : 0;
-        const tB = b.created_at ? new Date(b.created_at).getTime() : 0;
-        return tA - tB;
+        return getTimestampActividadHospedaje(a) - getTimestampActividadHospedaje(b);
       }
-      // "recientes" (por defecto): del más reciente al más antiguo
-      const tA = a.created_at ? new Date(a.created_at).getTime() : 0;
-      const tB = b.created_at ? new Date(b.created_at).getTime() : 0;
-      return tB - tA;
+      // "recientes" (por defecto): del más reciente (última edición o creación) al más antiguo
+      return getTimestampActividadHospedaje(b) - getTimestampActividadHospedaje(a);
     });
   }, [listaHospedajes, filtroZona, busqueda, criterioOrden]);
 
