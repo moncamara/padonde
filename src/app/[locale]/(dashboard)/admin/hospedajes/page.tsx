@@ -133,6 +133,40 @@ export default async function AdminHospedajesPage({
     hospedajesData = fallbackRes.data as any;
   }
 
+  // 2.5 Obtener mapa de fechas de edición por aliado desde configuraciones
+  let fechasEdicionMapa: Record<string, string> = {};
+  try {
+    const { data: cfgEdicion } = await supabase
+      .from("configuraciones")
+      .select("valor")
+      .eq("clave", "fechas_edicion_aliados")
+      .maybeSingle();
+    if (cfgEdicion?.valor && typeof cfgEdicion.valor === "object") {
+      fechasEdicionMapa = cfgEdicion.valor as Record<string, string>;
+    }
+  } catch {}
+
+  const hospedajesEnriquecidos = ((hospedajesData as any[]) || []).map((h) => {
+    const fechaAliado = h.negocio_id ? fechasEdicionMapa[h.negocio_id] : undefined;
+    const ultimaActual = h.metadata_hospedaje?.ultima_edicion;
+    let ultimaEfectiva = ultimaActual;
+    if (fechaAliado) {
+      if (!ultimaEfectiva || new Date(fechaAliado).getTime() > new Date(ultimaEfectiva).getTime()) {
+        ultimaEfectiva = fechaAliado;
+      }
+    }
+    if (ultimaEfectiva && ultimaEfectiva !== ultimaActual) {
+      return {
+        ...h,
+        metadata_hospedaje: {
+          ...(h.metadata_hospedaje || {}),
+          ultima_edicion: ultimaEfectiva,
+        },
+      };
+    }
+    return h;
+  });
+
   // 3. Obtener zonas para el formulario (garantizar que siempre aparezcan Tayrona y Taganga en admin)
   const { data: zonasData } = await supabase
     .from("zonas")
@@ -216,7 +250,7 @@ export default async function AdminHospedajesPage({
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
         <AdminHospedajesList
-          hospedajes={(hospedajesData as any[]) || []}
+          hospedajes={hospedajesEnriquecidos}
           zonas={zonasCompletas}
           aliados={aliados}
           locale={locale}

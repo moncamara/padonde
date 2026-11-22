@@ -2053,6 +2053,30 @@ export async function guardarHospedajeAction(input: GuardarHospedajeInput) {
       }
     }
 
+    // Registrar actividad reciente en el aliado vinculado para reflejarlo también en /admin/aliados
+    if (negocioId) {
+      try {
+        const { data: cfgRow } = await supabase
+          .from("configuraciones")
+          .select("valor")
+          .eq("clave", "fechas_edicion_aliados")
+          .maybeSingle();
+
+        const mapa = (
+          cfgRow?.valor && typeof cfgRow.valor === "object" ? cfgRow.valor : {}
+        ) as Record<string, string>;
+        mapa[negocioId] = ahoraEdicionIso;
+
+        await supabase.from("configuraciones").upsert({
+          clave: "fechas_edicion_aliados",
+          valor: mapa,
+          updated_at: ahoraEdicionIso,
+        });
+      } catch {
+        // Silencioso
+      }
+    }
+
     // Revalidar rutas administrativas y públicas ISR para reflejar cambios de inmediato en todos los idiomas
     for (const loc of ["es", "en", "fr", "de"]) {
       revalidatePath(`/${loc}/${input.zonaSlug}`, "page");

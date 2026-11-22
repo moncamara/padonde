@@ -76,20 +76,40 @@ export function AdminHospedajesList({
     }
 
     const getTimestampActividadHospedaje = (h: any): number => {
-      const ultima = h?.metadata_hospedaje?.ultima_edicion;
-      if (ultima) {
-        const t = new Date(ultima).getTime();
-        if (!Number.isNaN(t)) return t;
+      let maxTs = 0;
+
+      const checkDateStr = (val?: string | null) => {
+        if (!val) return;
+        const t = new Date(val).getTime();
+        if (!Number.isNaN(t) && t > maxTs) maxTs = t;
+      };
+
+      const checkUrlTimestamp = (url?: string | null) => {
+        if (!url || typeof url !== "string") return;
+        const match = url.match(/(?:^|\/|-)((?:17|18)\d{11})(?:-|\.)/);
+        if (match && match[1]) {
+          const ts = Number(match[1]);
+          if (Number.isFinite(ts) && ts > maxTs) maxTs = ts;
+        }
+      };
+
+      checkDateStr(h?.metadata_hospedaje?.ultima_edicion);
+      checkDateStr(h?.updated_at);
+      checkDateStr(h?.created_at);
+
+      checkUrlTimestamp(h?.imagen_url);
+      if (Array.isArray(h?.metadata_hospedaje?.galeria_fotos)) {
+        h.metadata_hospedaje.galeria_fotos.forEach(checkUrlTimestamp);
       }
-      if (h?.updated_at) {
-        const t = new Date(h.updated_at).getTime();
-        if (!Number.isNaN(t)) return t;
+      if (Array.isArray(h?.metadata_hospedaje?.habitaciones)) {
+        h.metadata_hospedaje.habitaciones.forEach((hab: any) => {
+          if (Array.isArray(hab?.fotos)) {
+            hab.fotos.forEach(checkUrlTimestamp);
+          }
+        });
       }
-      if (h?.created_at) {
-        const t = new Date(h.created_at).getTime();
-        if (!Number.isNaN(t)) return t;
-      }
-      return 0;
+
+      return maxTs;
     };
 
     // Ordenación según criterio seleccionado
