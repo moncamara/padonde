@@ -27,9 +27,13 @@ export function EventHeroGallery({
   destacadoBadge,
   posicionPortada,
 }: EventHeroGalleryProps) {
-  // Combinamos la foto de portada principal con las fotos de galería adicionales
-  const fotos: string[] = [imagenUrl, ...(galeriaFotos || [])].filter(
-    (url): url is string => Boolean(url && url.trim().length > 0)
+  // Combinamos la foto de portada principal con las fotos de galería adicionales (sin duplicados)
+  const fotos: string[] = Array.from(
+    new Set(
+      [imagenUrl, ...(galeriaFotos || [])].filter(
+        (url): url is string => Boolean(url && url.trim().length > 0)
+      )
+    )
   );
 
   const containerRef = useRef<HTMLDivElement>(null);

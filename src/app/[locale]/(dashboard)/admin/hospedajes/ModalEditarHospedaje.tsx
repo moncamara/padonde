@@ -88,6 +88,15 @@ export function ModalEditarHospedaje({
     hospedaje?.zonas?.slug || hospedaje?.zonaSlug || zonas[0]?.slug || "minca"
   );
   const [imagenUrl, setImagenUrl] = useState(hospedaje?.imagen_url || hospedaje?.imagenUrl || "");
+  const [galeriaFotos, setGaleriaFotos] = useState<string[]>(() => {
+    const raw =
+      hospedaje?.metadata_hospedaje?.galeria_fotos ||
+      hospedaje?.galeriaFotos;
+    return Array.isArray(raw)
+      ? raw.filter((u: any) => typeof u === "string" && u.trim().length > 0)
+      : [];
+  });
+  const [urlGaleriaInput, setUrlGaleriaInput] = useState("");
   const [destacado, setDestacado] = useState(Boolean(hospedaje?.destacado));
 
   // Control de Encuadre Vertical Dinámico (Focal Point) de la Portada
@@ -172,6 +181,15 @@ export function ModalEditarHospedaje({
     const urls: string[] = [];
     const portVal = hospedaje?.imagen_url || hospedaje?.imagenUrl;
     if (portVal) urls.push(portVal);
+    const galVal =
+      hospedaje?.metadata_hospedaje?.galeria_fotos ||
+      hospedaje?.galeriaFotos ||
+      [];
+    if (Array.isArray(galVal)) {
+      galVal.forEach((f: string) => {
+        if (f) urls.push(f);
+      });
+    }
     const habsVal = hospedaje?.metadata_hospedaje?.habitaciones || hospedaje?.habitaciones || [];
     habsVal.forEach((h: any) => {
       (h.fotos || []).forEach((f: string) => {
@@ -205,6 +223,11 @@ export function ModalEditarHospedaje({
     if (port && !port.includes("supabase.co") && !port.startsWith("blob:")) {
       urlsExternas.push(port);
     }
+    galeriaFotos.forEach((f: string) => {
+      if (f && !f.includes("supabase.co") && !f.startsWith("blob:")) {
+        urlsExternas.push(f);
+      }
+    });
     habs.forEach((h: any) => {
       (h.fotos || []).forEach((f: string) => {
         if (f && !f.includes("supabase.co") && !f.startsWith("blob:")) {
@@ -225,6 +248,9 @@ export function ModalEditarHospedaje({
         if (port && res.mapeo[port]) {
           setImagenUrl(res.mapeo[port]);
         }
+        setGaleriaFotos((prev) =>
+          prev.map((f: string) => res.mapeo[f] || f)
+        );
         setHabitaciones((prev) =>
           prev.map((h) => ({
             ...h,
@@ -441,18 +467,32 @@ export function ModalEditarHospedaje({
     setMensajeImportacion(null);
   };
 
-  // Distribuir fotos importadas entre las habitaciones o portada
+  // Distribuir fotos importadas entre las habitaciones, galería superior o portada
   const handleDistribuirFotos = () => {
     if (fotosImportadas.length === 0) return;
-
-    if (habitaciones.length === 0) {
-      alert("Por favor crea al menos una habitación antes de distribuir las fotos.");
-      return;
-    }
 
     // Si aún no hay portada, fijamos la primera foto como portada por defecto
     if (!imagenUrl && fotosImportadas[0]) {
       setImagenUrl(fotosImportadas[0]);
+    }
+
+    if (habitacionDestinoId === "galeria_superior") {
+      setGaleriaFotos((prev) => {
+        const nuevas = fotosImportadas.filter(
+          (f) => f && f !== imagenUrl && !prev.includes(f)
+        );
+        return [...prev, ...nuevas].slice(0, 12);
+      });
+      setMensajeImportacion(
+        `✅ Fotos agregadas a la Galería Superior del Hospedaje (carrusel arriba en el detalle).`
+      );
+      safeTimeout(() => setMensajeImportacion(null), 4000);
+      return;
+    }
+
+    if (habitaciones.length === 0) {
+      alert("Por favor crea al menos una habitación antes de distribuir las fotos.");
+      return;
     }
 
     if (habitacionDestinoId === "todas") {
@@ -608,6 +648,96 @@ export function ModalEditarHospedaje({
     }
   };
 
+  // Subida de múltiples fotos para la Galería Superior del Hospedaje (Áreas comunes / Carrusel de arriba)
+  const handleUploadGaleriaSuperior = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setIsSubiendoFoto(true);
+    try {
+      const nuevasUrls: string[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const url = await uploadEventImage(files[i]);
+        if (url) nuevasUrls.push(url);
+      }
+      if (nuevasUrls.length > 0) {
+        setGaleriaFotos((prev) => {
+          const limpias = nuevasUrls.filter((u) => !prev.includes(u));
+          return [...prev, ...limpias].slice(0, 12);
+        });
+      }
+    } catch {
+      setErrorMsg("Error al subir fotos a la galería superior del hospedaje");
+    } finally {
+      setIsSubiendoFoto(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleAgregarUrlGaleriaSuperior = async () => {
+    const raw = urlGaleriaInput.trim();
+    if (!raw) return;
+    const extraidas = extraerYOptimizarUrls(raw);
+    const candidatas = extraidas.length > 0 ? extraidas : [raw];
+    setUrlGaleriaInput("");
+
+    const externas = candidatas.filter(
+      (u) => !u.includes("supabase.co") && !u.startsWith("blob:")
+    );
+    if (externas.length > 0) {
+      setIsSubiendoFoto(true);
+      try {
+        const res = await procesarUrlsFotosAction(externas);
+        const procesadas = candidatas.map((u) => res.mapeo?.[u] || u);
+        setGaleriaFotos((prev) => {
+          const nuevas = procesadas.filter((u) => u && !prev.includes(u));
+          return [...prev, ...nuevas].slice(0, 12);
+        });
+      } catch {
+        setGaleriaFotos((prev) => {
+          const nuevas = candidatas.filter((u) => u && !prev.includes(u));
+          return [...prev, ...nuevas].slice(0, 12);
+        });
+      } finally {
+        setIsSubiendoFoto(false);
+      }
+    } else {
+      setGaleriaFotos((prev) => {
+        const nuevas = candidatas.filter((u) => u && !prev.includes(u));
+        return [...prev, ...nuevas].slice(0, 12);
+      });
+    }
+  };
+
+  const eliminarFotoGaleriaSuperior = (idx: number) => {
+    setGaleriaFotos((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const moverFotoGaleriaSuperior = (fromIdx: number, toIdx: number) => {
+    setGaleriaFotos((prev) => {
+      if (toIdx < 0 || toIdx >= prev.length) return prev;
+      const copy = [...prev];
+      const [movida] = copy.splice(fromIdx, 1);
+      copy.splice(toIdx, 0, movida);
+      return copy;
+    });
+  };
+
+  const promoverFotoGaleriaAPortada = (idx: number) => {
+    const elegida = galeriaFotos[idx];
+    if (!elegida) return;
+    const portadaAnterior = imagenUrl;
+    setImagenUrl(elegida);
+    setGaleriaFotos((prev) => {
+      const sinElegida = prev.filter((_, i) => i !== idx);
+      return portadaAnterior && !sinElegida.includes(portadaAnterior)
+        ? [portadaAnterior, ...sinElegida]
+        : sinElegida;
+    });
+  };
+
   // Subida de fotos para habitaciones
   const handleUploadFotoHabitacion = async (
     indexHab: number,
@@ -734,12 +864,18 @@ export function ModalEditarHospedaje({
     setIsGuardando(true);
 
     try {
+      const galeriaLimpia = galeriaFotos
+        .map((f) => f.trim())
+        .filter((f) => Boolean(f) && f !== imagenUrl.trim());
+
       const metadataHospedaje = {
+        ...(hospedaje?.metadata_hospedaje || {}),
         check_in_hora: hospedaje?.metadata_hospedaje?.check_in_hora || "14:00",
         check_out_hora: hospedaje?.metadata_hospedaje?.check_out_hora || "11:00",
         contacto_propietario: nombrePropietario.trim() || undefined,
         posicion_portada: posicionPortada || "50%",
         posicionPortada: posicionPortada || "50%",
+        galeria_fotos: galeriaLimpia.length > 0 ? galeriaLimpia : undefined,
         google_reputacion:
           ratingGoogle && reviewsGoogle && mapsUrl
             ? {
@@ -1177,6 +1313,133 @@ export function ModalEditarHospedaje({
                 </div>
               </div>
 
+              {/* Galería Superior del Hospedaje (Áreas comunes, piscina, vista, playa — carrusel superior en la vista de detalle) */}
+              <div className="pt-3 border-t border-stone-light/60 space-y-2.5">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div>
+                    <label className="text-stone font-semibold flex items-center gap-1.5 text-xs">
+                      <span>🖼️</span>
+                      <span>
+                        Galería Superior del Hospedaje ({galeriaFotos.length}/12 fotos adicionales)
+                      </span>
+                    </label>
+                    <p className="text-[11px] text-stone mt-0.5">
+                      Se muestran en el carrusel principal arriba del detalle (junto a la portada): zonas comunes, fachada, piscina, restaurante o playa.
+                    </p>
+                  </div>
+
+                  <label className="px-3 py-1.5 bg-forest text-cream hover:bg-forest-dark rounded-xl font-semibold text-[11px] transition-colors cursor-pointer shadow-2xs flex items-center gap-1.5 shrink-0">
+                    <span>📤</span>
+                    <span>{isSubiendoFoto ? "Subiendo..." : "+ Subir Fotos"}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      disabled={isSubiendoFoto}
+                      onChange={handleUploadGaleriaSuperior}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+
+                {/* Agregar por URL */}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={urlGaleriaInput}
+                    onChange={(e) => setUrlGaleriaInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAgregarUrlGaleriaSuperior();
+                      }
+                    }}
+                    placeholder="O pega URL(s) de fotos de áreas comunes / fachada y pulsa Agregar..."
+                    className="flex-1 bg-cream/70 border border-stone-light rounded-xl px-2.5 py-1.5 text-forest focus:outline-none focus:border-forest font-mono text-[11px]"
+                  />
+                  <button
+                    type="button"
+                    disabled={!urlGaleriaInput.trim() || isSubiendoFoto}
+                    onClick={handleAgregarUrlGaleriaSuperior}
+                    className="px-3 py-1.5 bg-forest/10 hover:bg-forest text-forest hover:text-cream rounded-xl font-semibold text-[11px] transition-colors cursor-pointer disabled:opacity-40 shrink-0"
+                  >
+                    + Agregar URL
+                  </button>
+                </div>
+
+                {/* Miniaturas de la Galería Superior */}
+                {galeriaFotos.length > 0 ? (
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 pt-1">
+                    {galeriaFotos.map((url, idx) => (
+                      <div
+                        key={`${url}-${idx}`}
+                        className="relative group aspect-4/3 rounded-xl overflow-hidden border border-stone-light bg-stone-100 shadow-2xs"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={url}
+                          alt={`Galería superior ${idx + 2}`}
+                          referrerPolicy="no-referrer"
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                        <span className="absolute bottom-1 left-1 bg-black/65 text-white text-[9px] font-mono px-1.5 py-0.5 rounded pointer-events-none">
+                          #{idx + 2}
+                        </span>
+
+                        <div className="absolute inset-0 bg-black/55 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-1">
+                          <div className="flex items-center justify-between gap-1">
+                            <button
+                              type="button"
+                              onClick={() => promoverFotoGaleriaAPortada(idx)}
+                              title="Intercambiar con la Foto de Portada Principal (#1)"
+                              className="bg-amber-400 hover:bg-amber-300 text-forest text-[9px] font-bold px-1.5 py-0.5 rounded cursor-pointer shadow-2xs"
+                            >
+                              ⭐ Portada
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => eliminarFotoGaleriaSuperior(idx)}
+                              title="Quitar de la galería superior"
+                              className="w-4 h-4 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center text-[10px] font-bold cursor-pointer"
+                            >
+                              ✕
+                            </button>
+                          </div>
+
+                          <div className="flex items-center justify-end gap-1">
+                            {idx > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => moverFotoGaleriaSuperior(idx, idx - 1)}
+                                title="Mover antes"
+                                className="w-5 h-5 rounded bg-white/90 text-forest flex items-center justify-center text-[10px] font-bold hover:bg-white cursor-pointer"
+                              >
+                                ◀
+                              </button>
+                            )}
+                            {idx < galeriaFotos.length - 1 && (
+                              <button
+                                type="button"
+                                onClick={() => moverFotoGaleriaSuperior(idx, idx + 1)}
+                                title="Mover después"
+                                className="w-5 h-5 rounded bg-white/90 text-forest flex items-center justify-center text-[10px] font-bold hover:bg-white cursor-pointer"
+                              >
+                                ▶
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-stone/80 italic">
+                    Aún no hay fotos adicionales en el carrusel superior (actualmente solo se muestra la Foto de Portada Principal arriba).
+                  </p>
+                )}
+              </div>
+
               {/* Opción Destacado */}
               <div className="pt-3 border-t border-stone-light/60">
                 <label className="flex items-center gap-3 p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200/80 cursor-pointer hover:bg-amber-100/60 transition-colors select-none">
@@ -1394,24 +1657,40 @@ export function ModalEditarHospedaje({
                       />
                       {/* Overlay de acciones rápidas */}
                       <div className="absolute inset-0 bg-black/55 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-1">
-                        <div className="flex justify-between items-center">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setImagenUrl(url);
-                              setMensajeImportacion("⭐ Foto fijada como Portada Principal");
-                              safeTimeout(() => setMensajeImportacion(null), 3000);
-                            }}
-                            title="Fijar como portada"
-                            className="bg-amber-400 text-forest text-[9px] font-bold px-1.5 py-0.5 rounded shadow-xs hover:bg-amber-300 cursor-pointer"
-                          >
-                            ⭐ Portada
-                          </button>
+                        <div className="flex justify-between items-center gap-0.5">
+                          <div className="flex items-center gap-0.5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setImagenUrl(url);
+                                setMensajeImportacion("⭐ Foto fijada como Portada Principal");
+                                safeTimeout(() => setMensajeImportacion(null), 3000);
+                              }}
+                              title="Fijar como portada"
+                              className="bg-amber-400 text-forest text-[9px] font-bold px-1 py-0.5 rounded shadow-xs hover:bg-amber-300 cursor-pointer"
+                            >
+                              ⭐ Portada
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setGaleriaFotos((prev) =>
+                                  prev.includes(url) ? prev : [...prev, url].slice(0, 12)
+                                );
+                                setMensajeImportacion("🖼️ Foto agregada a la Galería Superior del Hospedaje");
+                                safeTimeout(() => setMensajeImportacion(null), 3000);
+                              }}
+                              title="Agregar al carrusel superior del detalle"
+                              className="bg-sky-400 text-slate-950 text-[9px] font-bold px-1 py-0.5 rounded shadow-xs hover:bg-sky-300 cursor-pointer"
+                            >
+                              🖼️ +Galería
+                            </button>
+                          </div>
                           <button
                             type="button"
                             onClick={() => handleEliminarFotoImportada(idx)}
                             title="Eliminar de la lista"
-                            className="w-4 h-4 rounded-full bg-red-600 text-white flex items-center justify-center text-[10px] font-bold hover:bg-red-700 cursor-pointer"
+                            className="w-4 h-4 rounded-full bg-red-600 text-white flex items-center justify-center text-[10px] font-bold hover:bg-red-700 cursor-pointer shrink-0"
                           >
                             ✕
                           </button>
@@ -1435,7 +1714,8 @@ export function ModalEditarHospedaje({
                       onChange={(e) => setHabitacionDestinoId(e.target.value)}
                       className="bg-white border border-stone-light rounded-xl px-2.5 py-1.5 text-xs text-forest focus:outline-none focus:border-forest"
                     >
-                      <option value="todas">⚖️ Distribuir equitativamente entre todas</option>
+                      <option value="todas">⚖️ Distribuir equitativamente entre todas las habitaciones</option>
+                      <option value="galeria_superior">🖼️ Galería Superior del Hospedaje (Carrusel Arriba)</option>
                       {habitaciones.map((h, i) => (
                         <option key={h.id || i} value={h.id || `hab-${i}`}>
                           🛏️ Hab #{i + 1}: {h.titulo || `Habitación ${i + 1}`}

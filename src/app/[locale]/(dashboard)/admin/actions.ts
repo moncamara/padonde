@@ -1732,7 +1732,8 @@ export interface GuardarHospedajeInput {
     contacto_propietario?: string;
     posicion_portada?: string;
     posicionPortada?: string;
-  precioDesde?: boolean;
+    precioDesde?: boolean;
+    galeria_fotos?: string[];
     habitaciones: Array<{
       id: string;
       titulo: string;
