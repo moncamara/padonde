@@ -1369,9 +1369,25 @@ export function ModalEditarHospedaje({
                   </button>
                 </div>
 
-                {/* Miniaturas de la Galería Superior */}
-                {galeriaFotos.length > 0 ? (
+                {/* Miniaturas de la Galería Superior (Muestra #1 Portada + #2..#N adicionales con botón ✕ siempre visible) */}
+                {imagenUrl || galeriaFotos.length > 0 ? (
                   <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 pt-1">
+                    {imagenUrl && (
+                      <div className="relative aspect-4/3 rounded-xl overflow-hidden border-2 border-amber-400 bg-stone-100 shadow-2xs">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={imagenUrl}
+                          alt="Portada principal (#1)"
+                          referrerPolicy="no-referrer"
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                        <span className="absolute bottom-1 left-1 bg-amber-400 text-forest text-[9px] font-bold px-1.5 py-0.5 rounded shadow-2xs pointer-events-none">
+                          ⭐ #1 Portada
+                        </span>
+                      </div>
+                    )}
+
                     {galeriaFotos.map((url, idx) => (
                       <div
                         key={`${url}-${idx}`}
@@ -1385,12 +1401,22 @@ export function ModalEditarHospedaje({
                           className="w-full h-full object-cover"
                           loading="lazy"
                         />
-                        <span className="absolute bottom-1 left-1 bg-black/65 text-white text-[9px] font-mono px-1.5 py-0.5 rounded pointer-events-none">
+                        <span className="absolute bottom-1 left-1 bg-black/70 text-white text-[9px] font-mono px-1.5 py-0.5 rounded pointer-events-none z-10">
                           #{idx + 2}
                         </span>
 
-                        <div className="absolute inset-0 bg-black/55 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-1">
-                          <div className="flex items-center justify-between gap-1">
+                        {/* Botón ✕ siempre visible en la esquina superior derecha para eliminar con 1 toque */}
+                        <button
+                          type="button"
+                          onClick={() => eliminarFotoGaleriaSuperior(idx)}
+                          title="Quitar esta foto de la galería superior"
+                          className="absolute top-1 right-1 z-20 w-5 h-5 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center text-[10px] font-bold cursor-pointer shadow-md"
+                        >
+                          ✕
+                        </button>
+
+                        <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-1">
+                          <div className="flex items-center justify-start">
                             <button
                               type="button"
                               onClick={() => promoverFotoGaleriaAPortada(idx)}
@@ -1398,14 +1424,6 @@ export function ModalEditarHospedaje({
                               className="bg-amber-400 hover:bg-amber-300 text-forest text-[9px] font-bold px-1.5 py-0.5 rounded cursor-pointer shadow-2xs"
                             >
                               ⭐ Portada
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => eliminarFotoGaleriaSuperior(idx)}
-                              title="Quitar de la galería superior"
-                              className="w-4 h-4 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center text-[10px] font-bold cursor-pointer"
-                            >
-                              ✕
                             </button>
                           </div>
 

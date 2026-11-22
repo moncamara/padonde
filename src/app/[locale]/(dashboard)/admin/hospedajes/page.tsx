@@ -54,6 +54,29 @@ export default async function AdminHospedajesPage({
       })
       .eq("id", "33dcb70c-3ab7-459b-98d0-bf907e6755e2")
       .ilike("titulo", "%Minca%");
+
+    // Limpiar foto de portada duplicada (#2) en galería superior de Hostal Velero Relax
+    const { data: veleroRow } = await supabase
+      .from("eventos")
+      .select("imagen_url, metadata_hospedaje")
+      .eq("id", "62ea7703-15e3-441a-a966-771adcb16d6c")
+      .maybeSingle();
+    if (
+      veleroRow?.metadata_hospedaje &&
+      Array.isArray((veleroRow.metadata_hospedaje as any).galeria_fotos) &&
+      (veleroRow.metadata_hospedaje as any).galeria_fotos.some((u: string) =>
+        u.includes("1795346495834-6qi3x8w.webp")
+      )
+    ) {
+      const metaVelero = { ...(veleroRow.metadata_hospedaje as Record<string, any>) };
+      metaVelero.galeria_fotos = (metaVelero.galeria_fotos as string[]).filter(
+        (u: string) => !u.includes("1795346495834-6qi3x8w.webp")
+      );
+      await supabase
+        .from("eventos")
+        .update({ metadata_hospedaje: metaVelero })
+        .eq("id", "62ea7703-15e3-441a-a966-771adcb16d6c");
+    }
   } catch {}
 
   // 2. Obtener hospedajes registrados

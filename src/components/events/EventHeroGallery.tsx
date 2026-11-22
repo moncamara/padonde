@@ -28,9 +28,22 @@ export function EventHeroGallery({
   posicionPortada,
 }: EventHeroGalleryProps) {
   // Combinamos la foto de portada principal con las fotos de galería adicionales (sin duplicados)
+  const galeriaSinDuplicados = (galeriaFotos || []).filter((url) => {
+    if (!url || !url.trim()) return false;
+    if (imagenUrl && url.trim() === imagenUrl.trim()) return false;
+    // Evitar duplicado histórico de portada subida dos veces en Velero Relax
+    if (
+      imagenUrl?.includes("1795347547046-poqe9t6.webp") &&
+      url.includes("1795346495834-6qi3x8w.webp")
+    ) {
+      return false;
+    }
+    return true;
+  });
+
   const fotos: string[] = Array.from(
     new Set(
-      [imagenUrl, ...(galeriaFotos || [])].filter(
+      [imagenUrl, ...galeriaSinDuplicados].filter(
         (url): url is string => Boolean(url && url.trim().length > 0)
       )
     )
