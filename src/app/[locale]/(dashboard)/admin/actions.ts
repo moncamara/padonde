@@ -2036,6 +2036,7 @@ export async function guardarHospedajeAction(input: GuardarHospedajeInput) {
         revalidatePath(`/${loc}/${input.zonaSlug}/${input.id}`, "page");
       }
     }
+    revalidatePath("/", "layout");
     revalidatePath(`/[locale]/admin`, "page");
     revalidatePath(`/[locale]/admin/hospedajes`, "page");
     revalidatePath(`/[locale]/admin/aliados`, "page");
@@ -2044,6 +2045,8 @@ export async function guardarHospedajeAction(input: GuardarHospedajeInput) {
     if (esEdicionReal && input.id) {
       revalidatePath(`/[locale]/${input.zonaSlug}/${input.id}`, "page");
     }
+    revalidatePath("/[locale]/(public)/[zona]", "page");
+    revalidatePath("/[locale]/(public)/[zona]/[id]", "page");
 
     return { success: true };
   } catch (err: any) {

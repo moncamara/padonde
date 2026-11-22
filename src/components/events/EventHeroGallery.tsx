@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import Image from "next/image";
 
 interface EventHeroGalleryProps {
@@ -40,6 +40,11 @@ export function EventHeroGallery({
   const [canLeft, setCanLeft] = useState(false);
   const [canRight, setCanRight] = useState(Boolean(fotos.length > 1));
   const [activeIndex, setActiveIndex] = useState(0);
+
+  useEffect(() => {
+    setCanRight(activeIndex < fotos.length - 1);
+    setCanLeft(activeIndex > 0);
+  }, [fotos.length, activeIndex]);
 
   const handleScroll = useCallback(() => {
     const el = containerRef.current;
@@ -179,8 +184,8 @@ export function EventHeroGallery({
 
         {/* Indicador de fotos (Badge estilo Airbnb / Instagram) */}
         <div className="flex items-center gap-2">
-          {/* Dots discretos */}
-          <div className="hidden sm:flex items-center gap-1 bg-black/40 backdrop-blur-md px-2 py-1 rounded-full pointer-events-auto">
+          {/* Dots interactivos visibles en móvil y desktop */}
+          <div className="flex items-center gap-1 bg-black/45 backdrop-blur-md px-2 py-1 rounded-full pointer-events-auto">
             {fotos.map((_, i) => (
               <button
                 key={i}
