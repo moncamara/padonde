@@ -41,6 +41,8 @@ export interface EventoAliadoItem {
   video_url?: string | null;
   metadata_hospedaje?: Record<string, any> | null;
   descripcion?: string | null;
+  zona_id?: string | null;
+  zonaSlug?: string | null;
 }
 
 export interface AliadoItem {

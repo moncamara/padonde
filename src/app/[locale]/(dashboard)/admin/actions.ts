@@ -1049,6 +1049,9 @@ export async function editarEventoAdminAction(input: EditarEventoAdminInput) {
         if (cleanIg !== undefined && (esMismoNegocioOriginal || !negById.instagram)) {
           negUpdates.instagram = cleanIg;
         }
+        if (targetZonaId && esMismoNegocioOriginal) {
+          negUpdates.zona_id = targetZonaId;
+        }
         if (Object.keys(negUpdates).length > 0) {
           try {
             await supabase.from("negocios").update(negUpdates).eq("id", negById.id);
@@ -1096,6 +1099,9 @@ export async function editarEventoAdminAction(input: EditarEventoAdminInput) {
         }
         if (cleanIg !== undefined && (esMismoNegocioOriginal || !mejorCandidato.instagram)) {
           negUpdates.instagram = cleanIg;
+        }
+        if (targetZonaId && esMismoNegocioOriginal) {
+          negUpdates.zona_id = targetZonaId;
         }
         if (Object.keys(negUpdates).length > 0) {
           try {
@@ -1515,6 +1521,7 @@ export async function eliminarAliadoAdminAction(negocioId: string) {
 export interface EditarAliadoInput {
   id: string;
   nombre: string;
+  zonaSlug?: string;
   categoria: CategoriaEvento;
   whatsapp: string;
   instagram?: string | null;
@@ -1577,6 +1584,19 @@ export async function editarAliadoCompletoAction(input: EditarAliadoInput) {
       plan: input.plan,
     };
 
+    let targetZonaId: string | undefined = undefined;
+    if (input.zonaSlug) {
+      const { data: zonaRow } = await supabase
+        .from("zonas")
+        .select("id")
+        .eq("slug", input.zonaSlug)
+        .maybeSingle();
+      if (zonaRow?.id) {
+        targetZonaId = zonaRow.id;
+        updatePayload.zona_id = zonaRow.id;
+      }
+    }
+
     if (input.google_rating !== undefined) {
       updatePayload.google_rating = input.google_rating;
     }
@@ -1619,11 +1639,20 @@ export async function editarAliadoCompletoAction(input: EditarAliadoInput) {
       return { success: false, error: error.message };
     }
 
-    // Si el usuario solicita sincronizar publicaciones al desactivar/activar
+    // Si el usuario solicita sincronizar publicaciones al desactivar/activar o cambiar de zona
     if (input.sincronizarPublicaciones) {
+      const evSyncPayload: Record<string, any> = { activo: input.activo };
+      if (targetZonaId) {
+        evSyncPayload.zona_id = targetZonaId;
+      }
       await supabase
         .from("eventos")
-        .update({ activo: input.activo })
+        .update(evSyncPayload)
+        .eq("negocio_id", input.id);
+    } else if (targetZonaId) {
+      await supabase
+        .from("eventos")
+        .update({ zona_id: targetZonaId })
         .eq("negocio_id", input.id);
     }
 

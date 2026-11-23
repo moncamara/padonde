@@ -80,6 +80,31 @@ export interface EventUpsertFormProps {
   onDeleted?: (eventoId: string) => void;
 }
 
+function resolverZonaSlug(valor?: string | null): string | null {
+  if (!valor) return null;
+  const v = valor.trim().toLowerCase();
+  if (v === "mendihuaca" || v === "zona-mendihuaca" || v === "65c773d8-658a-492d-a759-b3292eb2d935") {
+    return "mendihuaca";
+  }
+  if (v === "tayrona" || v === "tairona" || v === "zona-tayrona" || v === "21c8930c-5e37-44a2-b129-fe5f0e6d8899") {
+    return "tayrona";
+  }
+  if (v === "taganga" || v === "zona-taganga") {
+    return "taganga";
+  }
+  if (v === "minca" || v === "zona-minca" || v === "a801fc4b-a6cd-41ff-9a3c-e25a726b9b69") {
+    return "minca";
+  }
+  return null;
+}
+
+function obtenerZonaNombre(slug: string): string {
+  if (slug === "mendihuaca") return "Mendihuaca";
+  if (slug === "tayrona") return "Tayrona";
+  if (slug === "taganga") return "Taganga";
+  return "Minca";
+}
+
 export function EventUpsertForm({
   mode,
   initialEvento,
@@ -98,13 +123,31 @@ export function EventUpsertForm({
   // 1. Estado de Zona y Aliado / Negocio
   const [zonaSlug, setZonaSlug] = useState<string>(() => {
     if (initialEvento) {
-      if (initialEvento.zonaSlug) return initialEvento.zonaSlug;
-      if (initialEvento.zona_id === "zona-mendihuaca") return "mendihuaca";
-      if (initialEvento.zona_id === "zona-tayrona") return "tayrona";
-      if (initialEvento.zona_id === "zona-taganga") return "taganga";
-      return defaultZona || "minca";
+      const fromEvento =
+        resolverZonaSlug(initialEvento.zonaSlug) ||
+        resolverZonaSlug(initialEvento.zona_id) ||
+        resolverZonaSlug((initialEvento.negocio as any)?.zonaSlug) ||
+        resolverZonaSlug((initialEvento.negocio as any)?.zona_id);
+      if (fromEvento) return fromEvento;
+
+      const negId = initialEvento.negocio_id || (initialEvento.negocio as any)?.id;
+      if (negId) {
+        const matchAliado =
+          (aliados || []).find((a) => a.id === negId) ||
+          ((negocios || []) as any[]).find((n) => n.id === negId);
+        const fromAliado =
+          resolverZonaSlug(matchAliado?.zonaSlug) ||
+          resolverZonaSlug(matchAliado?.zona_id);
+        if (fromAliado) return fromAliado;
+      }
+      return resolverZonaSlug(defaultZona) || "minca";
     }
-    return initialNegocio?.zonaSlug || defaultZona || "minca";
+    return (
+      resolverZonaSlug(initialNegocio?.zonaSlug) ||
+      resolverZonaSlug((initialNegocio as any)?.zona_id) ||
+      resolverZonaSlug(defaultZona) ||
+      "minca"
+    );
   });
 
   const [selectedAliadoId, setSelectedAliadoId] = useState<string | null>(() => {
@@ -168,15 +211,14 @@ export function EventUpsertForm({
           categoria: n.categoria || "comida",
           zona_id: n.zona_id,
           zonaSlug:
-            n.zonaSlug ||
-            (n.zona_id === "zona-mendihuaca"
-              ? "mendihuaca"
-              : n.zona_id === "zona-tayrona"
-              ? "tayrona"
-              : n.zona_id === "zona-taganga"
-              ? "taganga"
-              : "minca"),
-          zonaNombre: n.zonaNombre,
+            resolverZonaSlug(n.zonaSlug) ||
+            resolverZonaSlug(n.zona_id) ||
+            "minca",
+          zonaNombre:
+            n.zonaNombre ||
+            obtenerZonaNombre(
+              resolverZonaSlug(n.zonaSlug) || resolverZonaSlug(n.zona_id) || "minca"
+            ),
           activo: n.activo,
           google_rating: n.google_rating ?? null,
           google_total_reviews: n.google_total_reviews ?? null,
@@ -1342,6 +1384,7 @@ export function EventUpsertForm({
               video_url: finalVidUrl,
               negocio_id: finalNegocioId,
               zonaSlug,
+              zonaNombre: obtenerZonaNombre(zonaSlug),
               metadata_hospedaje: {
                 ...(initialEvento.metadata_hospedaje || {}),
                 google_reputacion: googleReputacion || undefined,

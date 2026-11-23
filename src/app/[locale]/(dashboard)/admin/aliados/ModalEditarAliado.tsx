@@ -23,6 +23,7 @@ export function ModalEditarAliado({ aliado, isOpen, onClose }: ModalEditarAliado
 
   // Campos de formulario
   const [nombre, setNombre] = useState(aliado.nombre);
+  const [zonaSlug, setZonaSlug] = useState<string>(aliado.zonaSlug || "minca");
   const [categoria, setCategoria] = useState<CategoriaEvento>(
     (aliado.categoria as CategoriaEvento) || "comida"
   );
@@ -78,6 +79,7 @@ export function ModalEditarAliado({ aliado, isOpen, onClose }: ModalEditarAliado
       const input: EditarAliadoInput = {
         id: aliado.id,
         nombre: nombre.trim(),
+        zonaSlug,
         categoria,
         whatsapp: whatsapp.trim(),
         instagram: instagram.trim() ? instagram.trim() : null,
@@ -137,20 +139,39 @@ export function ModalEditarAliado({ aliado, isOpen, onClose }: ModalEditarAliado
             </div>
           )}
 
-          {/* 1. Nombre Comercial */}
-          <div className="space-y-1.5">
-            <label className="font-semibold text-forest flex items-center gap-1">
-              <span>Nombre del Comercio / Aliado</span>
-              <span className="text-terra">*</span>
-            </label>
-            <input
-              type="text"
-              required
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-              placeholder="Ej: Jam Birding Minca, Duni Gourmet..."
-              className="w-full px-3.5 py-2.5 bg-stone-light/20 border border-stone-light rounded-xl focus:outline-none focus:ring-1 focus:ring-forest text-forest placeholder:text-stone/50 font-medium"
-            />
+          {/* 1. Nombre Comercial y Región */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="font-semibold text-forest flex items-center gap-1">
+                <span>Nombre del Comercio / Aliado</span>
+                <span className="text-terra">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                value={nombre}
+                onChange={(e) => setNombre(e.target.value)}
+                placeholder="Ej: Jam Birding Minca, Duni Gourmet..."
+                className="w-full px-3.5 py-2.5 bg-stone-light/20 border border-stone-light rounded-xl focus:outline-none focus:ring-1 focus:ring-forest text-forest placeholder:text-stone/50 font-medium"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="font-semibold text-forest flex items-center gap-1">
+                <span>📍 Región / Destino</span>
+                <span className="text-terra">*</span>
+              </label>
+              <select
+                value={zonaSlug}
+                onChange={(e) => setZonaSlug(e.target.value)}
+                className="w-full px-3.5 py-2.5 bg-stone-light/20 border border-stone-light rounded-xl focus:outline-none focus:ring-1 focus:ring-forest text-forest font-medium cursor-pointer"
+              >
+                <option value="minca">🌿 Minca (Sierra Nevada)</option>
+                <option value="mendihuaca">🌊 Mendihuaca (Caribe & Surf)</option>
+                <option value="tayrona">🌴 Tayrona (Parque & Playas)</option>
+                <option value="taganga">🤿 Taganga (Bahía & Buceo)</option>
+              </select>
+            </div>
           </div>
 
           {/* 2. Categoría */}

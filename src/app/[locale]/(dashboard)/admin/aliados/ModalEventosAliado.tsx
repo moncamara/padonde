@@ -232,6 +232,18 @@ export function ModalEventosAliado({
                         <button
                           type="button"
                           onClick={() => {
+                            const evZonaId = (ev as any).zona_id || aliado.zona_id;
+                            const evZonaSlug =
+                              (ev as any).zonaSlug ||
+                              (evZonaId === "65c773d8-658a-492d-a759-b3292eb2d935" ||
+                              evZonaId === "zona-mendihuaca"
+                                ? "mendihuaca"
+                                : evZonaId === "21c8930c-5e37-44a2-b129-fe5f0e6d8899" ||
+                                  evZonaId === "zona-tayrona"
+                                ? "tayrona"
+                                : evZonaId === "zona-taganga"
+                                ? "taganga"
+                                : aliado.zonaSlug || "minca");
                             setEventoParaEditar({
                               id: ev.id,
                               titulo: ev.titulo,
@@ -246,6 +258,9 @@ export function ModalEventosAliado({
                               imagen_url: ev.imagen_url,
                               video_url: (ev as any).video_url,
                               metadata_hospedaje: (ev as any).metadata_hospedaje,
+                              zona_id: evZonaId,
+                              zonaSlug: evZonaSlug,
+                              zonaNombre: aliado.zonaNombre,
                               negocio_id: aliado.id,
                               negocio: {
                                 id: aliado.id,
@@ -264,7 +279,7 @@ export function ModalEventosAliado({
 
                       {/* Enlace directo para ver en la web */}
                       <a
-                        href={`/es/minca/${ev.id}`}
+                        href={`/es/${aliado.zonaSlug || "minca"}/${ev.id}`}
                         target="_blank"
                         rel="noreferrer"
                         className="w-7 h-7 rounded-xl bg-white/80 border border-stone-light hover:bg-white text-stone hover:text-forest flex items-center justify-center text-xs transition-colors"
