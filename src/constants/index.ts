@@ -96,6 +96,17 @@ import configTerritorialData from "./config_territorial.json";
 
 export type CriterioOrdenFeed = "agenda_primero" | "hospedaje_primero";
 
+export type EstrategiaOrdenPublicoAliados =
+  | "rotacion_diaria"
+  | "actividad_reciente"
+  | "curaduria_manual";
+
+export interface ConfigOrdenPublicoAliados {
+  estrategia: EstrategiaOrdenPublicoAliados;
+  posicionesManuales?: Record<string, number>;
+  fechasEdicionAliados?: Record<string, string>;
+}
+
 export type CapsulaTerritorialConfig = {
   activa: boolean;
   etiqueta?: string;

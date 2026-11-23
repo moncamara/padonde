@@ -348,25 +348,63 @@ export async function getServiciosEsencialesByZona(
 }
 
 /**
- * Obtiene la configuración de UX territorial desde Supabase con fallback seguro a CONFIG_TERRITORIAL.
+ * Obtiene la configuración de UX territorial y la estrategia de posicionamiento público de aliados
+ * desde Supabase (100% SSG con cliente público anónimo) con fallback seguro a CONFIG_TERRITORIAL.
  */
 export async function getConfigTerritorialAsync(): Promise<Record<string, any>> {
+  const { CONFIG_TERRITORIAL } = await import("@/constants");
+  let baseConfig: Record<string, any> = { ...CONFIG_TERRITORIAL };
+
   try {
     const supabase = getPublicSupabaseClient();
     const { data } = await supabase
       .from("configuraciones")
-      .select("valor")
-      .eq("clave", "config_territorial")
-      .maybeSingle();
+      .select("clave, valor")
+      .in("clave", [
+        "config_territorial",
+        "orden_publico_aliados",
+        "fechas_edicion_aliados",
+      ]);
 
-    if (data?.valor && typeof data.valor === "object") {
-      return data.valor;
+    if (Array.isArray(data)) {
+      const rowTerritorial = data.find((r) => r.clave === "config_territorial");
+      if (rowTerritorial?.valor && typeof rowTerritorial.valor === "object") {
+        baseConfig = { ...baseConfig, ...rowTerritorial.valor };
+      }
+
+      const rowOrden = data.find((r) => r.clave === "orden_publico_aliados");
+      const rowFechas = data.find((r) => r.clave === "fechas_edicion_aliados");
+      const valOrden =
+        rowOrden?.valor && typeof rowOrden.valor === "object"
+          ? (rowOrden.valor as Record<string, any>)
+          : {};
+      const valFechas =
+        rowFechas?.valor && typeof rowFechas.valor === "object"
+          ? (rowFechas.valor as Record<string, string>)
+          : {};
+
+      const estrategiaRaw = valOrden.estrategia;
+      const estrategia =
+        estrategiaRaw === "actividad_reciente" ||
+        estrategiaRaw === "curaduria_manual" ||
+        estrategiaRaw === "rotacion_diaria"
+          ? estrategiaRaw
+          : "rotacion_diaria";
+
+      baseConfig._ordenPublicoAliados = {
+        estrategia,
+        posicionesManuales:
+          valOrden.posicionesManuales && typeof valOrden.posicionesManuales === "object"
+            ? valOrden.posicionesManuales
+            : {},
+        fechasEdicionAliados: valFechas,
+      };
     }
   } catch {
     // Silencioso
   }
-  const { CONFIG_TERRITORIAL } = await import("@/constants");
-  return CONFIG_TERRITORIAL;
+
+  return baseConfig;
 }
 
 /**

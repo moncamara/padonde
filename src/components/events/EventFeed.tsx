@@ -15,6 +15,7 @@ import { useSwipeCategoryNav } from "@/hooks/useSwipeCategoryNav";
 import {
   eventoCoincideConFiltroTiempo,
   esEventoVigente,
+  getFechaYMDColombia,
   getFechaYMDDesdeISO,
   getMinutosDelDiaColombia,
 } from "@/lib/utils";
@@ -26,6 +27,56 @@ interface EventFeedProps {
   eventos: EventoConNegocio[];
   zona: string;
   configTerritorial?: Record<string, TerritorialUXConfig>;
+}
+
+/**
+ * Hash determinístico FNV-1a de 32 bits para rotación diaria equitativa (100% compatible con SSG/ISR sin desajuste de hidratación).
+ */
+function hashDeterministicoDiario(seedStr: string): number {
+  let hash = 2166136261;
+  for (let i = 0; i < seedStr.length; i++) {
+    hash ^= seedStr.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+/**
+ * Calcula el timestamp de última actividad o vigencia más reciente de una publicación/aliado.
+ */
+function getTimestampActividadPublica(
+  e: EventoConNegocio,
+  fechasEdicionAliados?: Record<string, string>
+): number {
+  let maxTs = 0;
+
+  const checkDate = (val?: string | null) => {
+    if (!val) return;
+    const t = new Date(val).getTime();
+    if (!Number.isNaN(t) && t > maxTs) maxTs = t;
+  };
+
+  const checkUrlTs = (url?: string | null) => {
+    if (!url || typeof url !== "string") return;
+    const m = url.match(/(?:^|\/|-)((?:17|18)\d{11})(?:-|\.)/);
+    if (m && m[1]) {
+      const ts = Number(m[1]);
+      if (Number.isFinite(ts) && ts > maxTs) maxTs = ts;
+    }
+  };
+
+  checkDate((e.metadata_hospedaje as any)?.ultima_edicion);
+  checkDate((e as any).updated_at);
+  checkDate(e.created_at);
+  if (e.negocio_id && fechasEdicionAliados?.[e.negocio_id]) {
+    checkDate(fechasEdicionAliados[e.negocio_id]);
+  }
+  checkUrlTs(e.imagen_url);
+  if (Array.isArray(e.metadata_hospedaje?.galeria_fotos)) {
+    e.metadata_hospedaje.galeria_fotos.forEach(checkUrlTs);
+  }
+
+  return maxTs;
 }
 
 function eventoCoincideConBusqueda(e: EventoConNegocio, queryNorm: string): boolean {
@@ -222,9 +273,20 @@ export function EventFeed({ eventos, zona, configTerritorial }: EventFeedProps) 
     }
 
     const territorialConfig = getTerritorialConfig(zona, configTerritorial);
+    const ordenPublicoConfig = (configTerritorial as any)?._ordenPublicoAliados as
+      | {
+          estrategia?: "rotacion_diaria" | "actividad_reciente" | "curaduria_manual";
+          posicionesManuales?: Record<string, number>;
+          fechasEdicionAliados?: Record<string, string>;
+        }
+      | undefined;
+    const estrategiaActiva = ordenPublicoConfig?.estrategia || "rotacion_diaria";
+    const posicionesManuales = ordenPublicoConfig?.posicionesManuales || {};
+    const fechasEdicionAliados = ordenPublicoConfig?.fechasEdicionAliados || {};
+    const semillaFechaColombia = getFechaYMDColombia(now);
 
     const ordenados = [...listaAFiltrar].sort((a, b) => {
-      // 1. Jerarquía de Destacados en Cartelera:
+      // 1. Jerarquía de Destacados en Cartelera (SIEMPRE PROTEGIDOS EN PRIMERAS POSICIONES):
       // Eventos con destacado === true (o es_destacado) encabecen estrictamente el listado antes de los eventos estándar
       const esDestacadoA = Boolean(a.destacado || (a as any).es_destacado);
       const esDestacadoB = Boolean(b.destacado || (b as any).es_destacado);
@@ -261,7 +323,47 @@ export function EventFeed({ eventos, zona, configTerritorial }: EventFeedProps) 
         }
       }
 
-      // 4. Horas del evento (de más temprano a más tarde en el día)
+      // 4. Estrategia configurable para Espacios No Destacados:
+      if (!esDestacadoA && !esDestacadoB) {
+        if (estrategiaActiva === "curaduria_manual") {
+          const rawPosA = Number(
+            (a.negocio_id ? posicionesManuales[a.negocio_id] : undefined) ??
+              (a.negocio as any)?.posicion_manual ??
+              (a.metadata_hospedaje as any)?.posicion_manual ??
+              99
+          );
+          const rawPosB = Number(
+            (b.negocio_id ? posicionesManuales[b.negocio_id] : undefined) ??
+              (b.negocio as any)?.posicion_manual ??
+              (b.metadata_hospedaje as any)?.posicion_manual ??
+              99
+          );
+          const posA = Number.isFinite(rawPosA) && rawPosA > 0 ? rawPosA : 99;
+          const posB = Number.isFinite(rawPosB) && rawPosB > 0 ? rawPosB : 99;
+          if (posA !== posB) {
+            return posA - posB;
+          }
+        } else if (estrategiaActiva === "actividad_reciente") {
+          const actA = getTimestampActividadPublica(a, fechasEdicionAliados);
+          const actB = getTimestampActividadPublica(b, fechasEdicionAliados);
+          if (actA !== actB) {
+            return actB - actA;
+          }
+        }
+
+        // Modo Equitativo / Rotación Diaria (Por defecto y desempate determinístico cada 24h en hora de Colombia):
+        const hashA = hashDeterministicoDiario(
+          `${semillaFechaColombia}_${zona}_${a.negocio_id || a.id}_${a.id}`
+        );
+        const hashB = hashDeterministicoDiario(
+          `${semillaFechaColombia}_${zona}_${b.negocio_id || b.id}_${b.id}`
+        );
+        if (hashA !== hashB) {
+          return hashA - hashB;
+        }
+      }
+
+      // 5. Fallback final determinista
       const minA = getMinutosDelDiaColombia(a.fecha_inicio);
       const minB = getMinutosDelDiaColombia(b.fecha_inicio);
       if (minA !== minB) {

@@ -7,6 +7,8 @@ import {
   actualizarPlanNegocioAction,
   toggleActivoAliadoAction,
   eliminarAliadoAdminAction,
+  guardarEstrategiaOrdenPublicoAliadosAction,
+  actualizarPosicionManualAliadoAction,
 } from "../actions";
 import { ModalEditarAliado } from "./ModalEditarAliado";
 import { ModalEventosAliado } from "./ModalEventosAliado";
@@ -65,7 +67,13 @@ export interface AliadoItem {
   google_review_url?: string | null;
   eventos?: EventoAliadoItem[];
   ultimaActividad?: number;
+  posicion_manual?: number;
 }
+
+type EstrategiaOrdenPublico =
+  | "rotacion_diaria"
+  | "actividad_reciente"
+  | "curaduria_manual";
 
 interface AdminAliadosListProps {
   aliados: AliadoItem[];
@@ -73,6 +81,8 @@ interface AdminAliadosListProps {
   locale: string;
   metricasDinamicas?: Record<string, MetricaHistoricaAliado> | null;
   fechaCorteGA4?: string | null;
+  estrategiaOrdenPublicoInicial?: EstrategiaOrdenPublico;
+  posicionesManualesIniciales?: Record<string, number>;
 }
 
 type FiltroPlan = "todos" | "pro_premium" | "por_vencer" | "gratis";
@@ -84,6 +94,8 @@ export function AdminAliadosList({
   locale,
   metricasDinamicas = null,
   fechaCorteGA4 = "2026-10-27",
+  estrategiaOrdenPublicoInicial = "rotacion_diaria",
+  posicionesManualesIniciales = {},
 }: AdminAliadosListProps) {
   const router = useRouter();
   const [filtro, setFiltro] = useState<FiltroPlan>("todos");
@@ -92,6 +104,23 @@ export function AdminAliadosList({
   const [criterioOrden, setCriterioOrden] = useState<CriterioOrden>("recientes");
   const [busqueda, setBusqueda] = useState("");
   const [copiadoId, setCopiadoId] = useState<string | null>(null);
+
+  // Estrategia de Ordenamiento Público en la App y Posiciones Manuales
+  const [estrategiaPublica, setEstrategiaPublica] = useState<EstrategiaOrdenPublico>(
+    estrategiaOrdenPublicoInicial
+  );
+  const [posicionesManuales, setPosicionesManuales] = useState<Record<string, number>>(() => {
+    const map: Record<string, number> = { ...posicionesManualesIniciales };
+    for (const a of aliados) {
+      if (map[a.id] === undefined) {
+        map[a.id] = typeof a.posicion_manual === "number" ? a.posicion_manual : 99;
+      }
+    }
+    return map;
+  });
+  const [guardandoOrdenPublico, setGuardandoOrdenPublico] = useState(false);
+  const [guardandoPosId, setGuardandoPosId] = useState<string | null>(null);
+  const [avisoOrdenPublico, setAvisoOrdenPublico] = useState<string | null>(null);
 
   // Selección múltiple para mensajes masivos
   const [aliadosSeleccionados, setAliadosSeleccionados] = useState<Record<string, boolean>>({});
@@ -429,6 +458,49 @@ export function AdminAliadosList({
     });
   }
 
+  // Cambiar estrategia global de orden público en la app
+  async function handleCambiarEstrategiaPublica(nueva: EstrategiaOrdenPublico) {
+    setEstrategiaPublica(nueva);
+    setGuardandoOrdenPublico(true);
+    setAvisoOrdenPublico(null);
+    try {
+      const res = await guardarEstrategiaOrdenPublicoAliadosAction(nueva);
+      if (res.success) {
+        const label =
+          nueva === "rotacion_diaria"
+            ? "🔄 Rotación Equitativa (Diaria)"
+            : nueva === "actividad_reciente"
+            ? "⚡ Actividad Reciente"
+            : "🎯 Curaduría Manual";
+        setAvisoOrdenPublico(`✓ Orden público actualizado a: ${label}`);
+        setTimeout(() => setAvisoOrdenPublico(null), 4000);
+        router.refresh();
+      } else {
+        alert(res.error || "No se pudo actualizar el orden público.");
+      }
+    } finally {
+      setGuardandoOrdenPublico(false);
+    }
+  }
+
+  // Guardar posición manual individual de un aliado
+  async function handleGuardarPosicionManual(negocioId: string, valorRaw: number) {
+    const num = Number.isFinite(valorRaw)
+      ? Math.max(1, Math.min(999, Math.round(valorRaw)))
+      : 99;
+    setPosicionesManuales((prev) => ({ ...prev, [negocioId]: num }));
+    setGuardandoPosId(negocioId);
+    try {
+      const res = await actualizarPosicionManualAliadoAction(negocioId, num);
+      if (res.success) {
+        setAvisoOrdenPublico(`✓ Posición manual #${num} guardada y publicada`);
+        setTimeout(() => setAvisoOrdenPublico(null), 3000);
+      }
+    } finally {
+      setGuardandoPosId(null);
+    }
+  }
+
   return (
     <div className="space-y-6" suppressHydrationWarning>
       {/* Selector de Región / Zona y Tipo de Negocio */}
@@ -489,31 +561,76 @@ export function AdminAliadosList({
           ))}
         </div>
 
-        {/* Fila 2: Categorías (Restaurantes, Hospedajes, Tours, Todos) */}
-        <div className="flex items-center gap-1.5 overflow-x-auto w-full pt-1.5 border-t border-stone-light/50">
-          <span className="text-xs font-semibold text-forest font-sans mr-1 shrink-0">
-            Tipo:
-          </span>
-          {[
-            { id: "todas", label: "Todas las Categorías" },
-            { id: "restaurantes", label: "🍽️ Restaurantes" },
-            { id: "hospedajes", label: "🏡 Hospedajes" },
-            { id: "tours", label: "🎒 Tours & Guías" },
-          ].map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              onClick={() => setFiltroCategoria(c.id)}
-              className={[
-                "py-1 px-2.5 rounded-lg text-xs font-sans font-medium transition-all cursor-pointer flex items-center gap-1 shrink-0",
-                filtroCategoria === c.id
-                  ? "bg-forest/90 text-white shadow-2xs font-semibold"
-                  : "bg-cream/80 text-stone hover:text-forest hover:bg-stone-100 border border-stone-light/60",
-              ].join(" ")}
-            >
-              <span>{c.label}</span>
-            </button>
-          ))}
+        {/* Fila 2: Categorías (Restaurantes, Hospedajes, Tours, Todos) + Selector de Orden Público de Aliados */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 pt-1.5 border-t border-stone-light/50">
+          <div className="flex items-center gap-1.5 overflow-x-auto w-full lg:w-auto">
+            <span className="text-xs font-semibold text-forest font-sans mr-1 shrink-0">
+              Tipo:
+            </span>
+            {[
+              { id: "todas", label: "Todas las Categorías" },
+              { id: "restaurantes", label: "🍽️ Restaurantes" },
+              { id: "hospedajes", label: "🏡 Hospedajes" },
+              { id: "tours", label: "🎒 Tours & Guías" },
+            ].map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => setFiltroCategoria(c.id)}
+                className={[
+                  "py-1 px-2.5 rounded-lg text-xs font-sans font-medium transition-all cursor-pointer flex items-center gap-1 shrink-0",
+                  filtroCategoria === c.id
+                    ? "bg-forest/90 text-white shadow-2xs font-semibold"
+                    : "bg-cream/80 text-stone hover:text-forest hover:bg-stone-100 border border-stone-light/60",
+                ].join(" ")}
+              >
+                <span>{c.label}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Control de Estrategia de Orden Público en la Vitrina ([zona]/page.tsx) */}
+          <div className="flex items-center gap-2 flex-wrap bg-forest/5 border border-forest/20 px-3 py-1.5 rounded-xl shrink-0">
+            <span className="text-[11px] font-semibold text-forest whitespace-nowrap">
+              Orden público de aliados:
+            </span>
+            <div className="relative">
+              <select
+                value={estrategiaPublica}
+                disabled={guardandoOrdenPublico}
+                onChange={(e) =>
+                  handleCambiarEstrategiaPublica(
+                    e.target.value as EstrategiaOrdenPublico
+                  )
+                }
+                className="py-1 pl-2.5 pr-7 text-xs bg-white rounded-lg border border-forest/30 text-forest font-bold focus:outline-none focus:ring-1 focus:ring-forest cursor-pointer appearance-none shadow-2xs disabled:opacity-60"
+                title="Define cómo se ordenan los aliados activos no destacados en la cartelera pública (los Destacados #1, #2, #3 siempre van primero)"
+              >
+                <option value="rotacion_diaria">
+                  🔄 Rotación Equitativa (Diaria)
+                </option>
+                <option value="actividad_reciente">
+                  ⚡ Actividad Reciente
+                </option>
+                <option value="curaduria_manual">
+                  🎯 Curaduría Manual (Pos. #)
+                </option>
+              </select>
+              <span className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-[10px] text-forest">
+                ▾
+              </span>
+            </div>
+            {guardandoOrdenPublico && (
+              <span className="text-[10px] text-stone animate-pulse">
+                Guardando...
+              </span>
+            )}
+            {avisoOrdenPublico && !guardandoOrdenPublico && (
+              <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                {avisoOrdenPublico}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -795,6 +912,50 @@ export function AdminAliadosList({
                   >
                     {est.texto}
                   </span>
+
+                  {/* Input rápido de Posición Manual (visible cuando está activa la Curaduría Manual) */}
+                  {estrategiaPublica === "curaduria_manual" && (
+                    <div
+                      className="inline-flex items-center gap-1 bg-amber-50 border border-amber-300 px-2 py-0.5 rounded-xl shrink-0"
+                      title="Prioridad en vitrina pública (1 = más arriba después de los destacados, 99 = estándar)"
+                    >
+                      <span className="text-[10px] font-bold text-amber-900">
+                        Pos. #
+                      </span>
+                      <input
+                        type="number"
+                        min={1}
+                        max={999}
+                        value={posicionesManuales[aliado.id] ?? 99}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value, 10);
+                          setPosicionesManuales((prev) => ({
+                            ...prev,
+                            [aliado.id]: Number.isNaN(val) ? 99 : val,
+                          }));
+                        }}
+                        onBlur={(e) => {
+                          const val = parseInt(e.target.value, 10);
+                          handleGuardarPosicionManual(
+                            aliado.id,
+                            Number.isNaN(val) ? 99 : val
+                          );
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            (e.target as HTMLInputElement).blur();
+                          }
+                        }}
+                        className="w-12 text-center text-xs font-bold text-forest bg-white border border-amber-300 rounded-md py-0.5 focus:outline-none focus:ring-1 focus:ring-forest"
+                      />
+                      {guardandoPosId === aliado.id && (
+                        <span className="text-[9px] text-amber-800 animate-pulse">
+                          ⏳
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2 flex-wrap">

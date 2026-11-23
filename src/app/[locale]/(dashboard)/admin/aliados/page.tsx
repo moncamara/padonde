@@ -154,16 +154,38 @@ export default async function AdminAliadosPage({
     (c) => new Date(c.created_at) >= hace7Dias
   ).length;
 
-  // 2.2 Cargar mapa de fechas de edición manual (guardadas en configuraciones)
+  // 2.2 Cargar mapa de fechas de edición manual y configuración de orden público (guardadas en configuraciones)
   let mapaFechasEdicion: Record<string, string> = {};
+  let estrategiaOrdenPublico: "rotacion_diaria" | "actividad_reciente" | "curaduria_manual" =
+    "rotacion_diaria";
+  let mapaPosicionesManuales: Record<string, number> = {};
+
   try {
-    const { data: cfgEdiciones } = await supabase
+    const { data: cfgRows } = await supabase
       .from("configuraciones")
-      .select("valor")
-      .eq("clave", "fechas_edicion_aliados")
-      .maybeSingle();
-    if (cfgEdiciones?.valor && typeof cfgEdiciones.valor === "object") {
-      mapaFechasEdicion = cfgEdiciones.valor as Record<string, string>;
+      .select("clave, valor")
+      .in("clave", ["fechas_edicion_aliados", "orden_publico_aliados"]);
+
+    if (Array.isArray(cfgRows)) {
+      const cfgEdiciones = cfgRows.find((r) => r.clave === "fechas_edicion_aliados");
+      if (cfgEdiciones?.valor && typeof cfgEdiciones.valor === "object") {
+        mapaFechasEdicion = cfgEdiciones.valor as Record<string, string>;
+      }
+
+      const cfgOrden = cfgRows.find((r) => r.clave === "orden_publico_aliados");
+      if (cfgOrden?.valor && typeof cfgOrden.valor === "object") {
+        const val = cfgOrden.valor as Record<string, any>;
+        if (
+          val.estrategia === "rotacion_diaria" ||
+          val.estrategia === "actividad_reciente" ||
+          val.estrategia === "curaduria_manual"
+        ) {
+          estrategiaOrdenPublico = val.estrategia;
+        }
+        if (val.posicionesManuales && typeof val.posicionesManuales === "object") {
+          mapaPosicionesManuales = val.posicionesManuales as Record<string, number>;
+        }
+      }
     }
   } catch {
     // Silencioso para producción
@@ -222,6 +244,10 @@ export default async function AdminAliadosPage({
       clics7Dias: clicsAliado.filter((c) => new Date(c.created_at) >= hace7Dias).length,
       eventos: eventosOrdenados,
       ultimaActividad: maxTime,
+      posicion_manual:
+        typeof mapaPosicionesManuales[n.id] === "number"
+          ? mapaPosicionesManuales[n.id]
+          : 99,
     };
   });
 
@@ -434,6 +460,8 @@ export default async function AdminAliadosPage({
             locale={locale}
             metricasDinamicas={ga4Config?.metricasPorAliado || null}
             fechaCorteGA4={ga4Config?.fechaFin || "2026-10-27"}
+            estrategiaOrdenPublicoInicial={estrategiaOrdenPublico}
+            posicionesManualesIniciales={mapaPosicionesManuales}
           />
         </div>
       </main>

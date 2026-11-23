@@ -1706,6 +1706,155 @@ export async function toggleActivoAliadoAction(
   }
 }
 
+/**
+ * Server Action para cambiar la estrategia global de ordenamiento público de aliados no destacados
+ * ("rotacion_diaria" | "actividad_reciente" | "curaduria_manual") y revalidar todas las zonas públicas.
+ */
+export async function guardarEstrategiaOrdenPublicoAliadosAction(
+  estrategia: "rotacion_diaria" | "actividad_reciente" | "curaduria_manual"
+) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: "No autenticado." };
+    }
+
+    const { data: curRow } = await supabase
+      .from("configuraciones")
+      .select("valor")
+      .eq("clave", "orden_publico_aliados")
+      .maybeSingle();
+
+    const prevValor =
+      curRow?.valor && typeof curRow.valor === "object"
+        ? (curRow.valor as Record<string, any>)
+        : {};
+
+    const nuevoValor = {
+      ...prevValor,
+      estrategia,
+      posicionesManuales:
+        prevValor.posicionesManuales && typeof prevValor.posicionesManuales === "object"
+          ? prevValor.posicionesManuales
+          : {},
+    };
+
+    const { error } = await supabase.from("configuraciones").upsert({
+      clave: "orden_publico_aliados",
+      valor: nuevoValor,
+      updated_at: new Date().toISOString(),
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    for (const loc of ["es", "en", "fr", "de"]) {
+      for (const z of ["minca", "mendihuaca", "tayrona", "taganga"]) {
+        revalidatePath(`/${loc}/${z}`, "page");
+      }
+    }
+    revalidatePath("/", "layout");
+    revalidatePath("/[locale]/(public)/[zona]", "page");
+    revalidatePath("/[locale]/admin/aliados", "page");
+
+    return { success: true };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err?.message || "Error al guardar la estrategia de orden público.",
+    };
+  }
+}
+
+/**
+ * Server Action para asignar la posición manual (posicion_manual, por defecto 99) de un aliado
+ * en el Modo Curaduría Manual y revalidar todas las zonas públicas.
+ */
+export async function actualizarPosicionManualAliadoAction(
+  negocioId: string,
+  posicionManual: number
+) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: "No autenticado." };
+    }
+
+    const posNormalizada = Number.isFinite(posicionManual)
+      ? Math.max(1, Math.min(999, Math.round(posicionManual)))
+      : 99;
+
+    const { data: curRow } = await supabase
+      .from("configuraciones")
+      .select("valor")
+      .eq("clave", "orden_publico_aliados")
+      .maybeSingle();
+
+    const prevValor =
+      curRow?.valor && typeof curRow.valor === "object"
+        ? (curRow.valor as Record<string, any>)
+        : {};
+
+    const mapaPosiciones: Record<string, number> =
+      prevValor.posicionesManuales && typeof prevValor.posicionesManuales === "object"
+        ? { ...prevValor.posicionesManuales }
+        : {};
+
+    mapaPosiciones[negocioId] = posNormalizada;
+
+    const nuevoValor = {
+      ...prevValor,
+      estrategia: prevValor.estrategia || "curaduria_manual",
+      posicionesManuales: mapaPosiciones,
+    };
+
+    const { error } = await supabase.from("configuraciones").upsert({
+      clave: "orden_publico_aliados",
+      valor: nuevoValor,
+      updated_at: new Date().toISOString(),
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    // Intentar sincronizar también con columna posicion_manual en negocios si existe (tolerante a 42703)
+    try {
+      await supabase
+        .from("negocios")
+        .update({ posicion_manual: posNormalizada } as any)
+        .eq("id", negocioId);
+    } catch {
+      // Silencioso si la columna opcional no existe
+    }
+
+    for (const loc of ["es", "en", "fr", "de"]) {
+      for (const z of ["minca", "mendihuaca", "tayrona", "taganga"]) {
+        revalidatePath(`/${loc}/${z}`, "page");
+      }
+    }
+    revalidatePath("/", "layout");
+    revalidatePath("/[locale]/(public)/[zona]", "page");
+    revalidatePath("/[locale]/admin/aliados", "page");
+
+    return { success: true, posicionManual: posNormalizada };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err?.message || "Error al actualizar la posición manual del aliado.",
+    };
+  }
+}
+
 // ─── GESTIÓN DE HOSPEDAJES (SERVER ACTIONS) ─────────────────────────────────
 
 export interface GuardarHospedajeInput {
