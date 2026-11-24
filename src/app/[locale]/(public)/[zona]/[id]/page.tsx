@@ -23,6 +23,7 @@ import { ShareButton } from "@/components/events/ShareButton";
 import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 import { WhatsAppBookingButton } from "@/components/events/WhatsAppBookingButton";
 import { StayCalculator } from "@/components/events/StayCalculator";
+import { resolverModoVisualizacion } from "@/lib/types";
 import { GoogleRatingBadge } from "@/components/events/GoogleRatingBadge";
 import { DetailBackButton } from "@/components/events/DetailBackButton";
 import { DetailSlideWrapper } from "@/components/events/DetailSlideWrapper";
@@ -691,6 +692,10 @@ export default async function EventoDetailPage({ params }: EventoDetailPageProps
                 eventoId={evento.id}
                 negocioId={evento.negocio_id}
                 zonaSlug={zonaSlug}
+                modoVisualizacion={resolverModoVisualizacion(
+                  evento.metadata_hospedaje?.modo_visualizacion
+                )}
+                galeriaHabitaciones={evento.metadata_hospedaje?.galeria_habitaciones}
                 labels={{
                   sectionTitle: tStay("sectionTitle"),
                   sectionSubtitle: tStay("sectionSubtitle"),

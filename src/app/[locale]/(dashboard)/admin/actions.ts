@@ -1912,6 +1912,8 @@ export interface GuardarHospedajeInput {
     posicionPortada?: string;
     precioDesde?: boolean;
     galeria_fotos?: string[];
+    galeria_habitaciones?: string[];
+    modo_visualizacion?: "habitaciones_con_fotos" | "galeria_y_lista_precios";
     habitaciones: Array<{
       id: string;
       titulo: string;
@@ -2047,16 +2049,16 @@ export async function guardarHospedajeAction(input: GuardarHospedajeInput) {
         if (!existingNegocio.instagram && instagramLimpio) negUpdates.instagram = instagramLimpio;
       }
 
-      if (googleRatingNum && !Number.isNaN(googleRatingNum) && (input.actualizarDatosMaestros || existingNegocio.google_rating == null)) {
+      if (googleRatingNum != null && googleRatingNum > 0 && !Number.isNaN(googleRatingNum)) {
         negUpdates.google_rating = googleRatingNum;
       }
-      if (googleReviewsNum && !Number.isNaN(googleReviewsNum) && (input.actualizarDatosMaestros || existingNegocio.google_total_reviews == null)) {
+      if (googleReviewsNum != null && googleReviewsNum > 0 && !Number.isNaN(googleReviewsNum)) {
         negUpdates.google_total_reviews = googleReviewsNum;
       }
-      if (googleMapsStr && (input.actualizarDatosMaestros || !existingNegocio.google_maps_url)) {
+      if (googleMapsStr) {
         negUpdates.google_maps_url = googleMapsStr;
       }
-      if (googleReviewStr && (input.actualizarDatosMaestros || !existingNegocio.google_review_url)) {
+      if (googleReviewStr) {
         negUpdates.google_review_url = googleReviewStr;
       }
 
@@ -2157,6 +2159,13 @@ export async function guardarHospedajeAction(input: GuardarHospedajeInput) {
         mergedMeta.galeria_fotos = input.metadataHospedaje.galeria_fotos;
       } else {
         delete mergedMeta.galeria_fotos;
+      }
+    }
+    if (Array.isArray(input.metadataHospedaje?.galeria_habitaciones)) {
+      if (input.metadataHospedaje.galeria_habitaciones.length > 0) {
+        mergedMeta.galeria_habitaciones = input.metadataHospedaje.galeria_habitaciones;
+      } else {
+        delete mergedMeta.galeria_habitaciones;
       }
     }
 

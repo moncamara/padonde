@@ -12,6 +12,8 @@ interface RoomCardProps {
   tSelect: string;
   tSelected: string;
   tPerNight: string;
+  /** Modo "galeria_y_lista_precios": fila compacta sin miniaturas */
+  compacto?: boolean;
 }
 
 /**
@@ -25,6 +27,7 @@ export function RoomCard({
   tSelect,
   tSelected,
   tPerNight,
+  compacto = false,
 }: RoomCardProps) {
   const { id, titulo, precio_noche_cop, fotos, badges, descripcion } = habitacion;
   const tCard = useTranslations("eventCard");
@@ -60,6 +63,63 @@ export function RoomCard({
     const amount = direction === "left" ? -el.clientWidth : el.clientWidth;
     el.scrollBy({ left: amount, behavior: "smooth" });
   };
+
+  if (compacto) {
+    const capacidad = Number(habitacion.capacidad_max) || 0;
+    return (
+      <article
+        onClick={() => onSelect(habitacion)}
+        aria-pressed={isSeleccionada}
+        className={`bg-white/80 rounded-2xl border p-3.5 space-y-2 transition-all cursor-pointer ${
+          isSeleccionada
+            ? "border-forest shadow-md ring-2 ring-forest/20 bg-white"
+            : "border-stone-light/70 hover:border-stone"
+        }`}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start gap-2.5 min-w-0">
+            <div
+              className={`mt-0.5 w-4 h-4 shrink-0 rounded-full border flex items-center justify-center transition-colors ${
+                isSeleccionada ? "border-forest bg-forest text-white text-[10px]" : "border-stone bg-white"
+              }`}
+            >
+              {isSeleccionada && "✓"}
+            </div>
+            <div className="min-w-0">
+              <h3 className="font-serif text-sm font-bold text-forest leading-snug">{titulo}</h3>
+              {capacidad > 0 && (
+                <p className="text-[11px] font-sans text-stone mt-0.5">👥 {capacidad} máx.</p>
+              )}
+            </div>
+          </div>
+          <div className="text-right whitespace-nowrap">
+            <span className="font-sans text-xs font-bold text-terra">
+              ${(precio_noche_cop ?? 0).toLocaleString("es-CO")}
+            </span>
+            <span className="block text-[10px] text-stone font-normal leading-none mt-0.5">{tPerNight}</span>
+          </div>
+        </div>
+        {Array.isArray(badges) && badges.length > 0 && (
+          <div className="flex flex-wrap gap-1 pl-6">
+            {badges.map((b, i) => {
+              const icono = typeof b === "object" && b?.icono ? b.icono : "✨";
+              const texto = typeof b === "object" && b?.texto ? b.texto : String(b || "");
+              if (!texto) return null;
+              return (
+                <span
+                  key={i}
+                  className="inline-flex items-center gap-1 bg-cream/90 text-forest-dark border border-stone-light/60 text-[10px] font-sans px-2 py-0.5 rounded-md"
+                >
+                  <span>{icono}</span>
+                  <span>{texto}</span>
+                </span>
+              );
+            })}
+          </div>
+        )}
+      </article>
+    );
+  }
 
   return (
     <article

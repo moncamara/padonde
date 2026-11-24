@@ -121,6 +121,8 @@ export interface RegistroAliadoInput {
   googleMapsUrl?: string;
   descripcion: string;
   habitaciones?: HabitacionRegistro[];
+  modoVisualizacion?: "habitaciones_con_fotos" | "galeria_y_lista_precios";
+  galeriaHospedaje?: string[];
   fotoPrincipal?: string;
   galeria?: string[];
   horario?: string;
@@ -194,13 +196,17 @@ export async function registrarAliadoPublicoAction(
       if (habs.length === 0) {
         return { success: false, error: "Agrega al menos una habitación." };
       }
+      const modoGaleria = input.modoVisualizacion === "galeria_y_lista_precios";
+      metadata.modo_visualizacion = modoGaleria ? "galeria_y_lista_precios" : "habitaciones_con_fotos";
       const habitaciones = habs.map((h, i) => ({
         id: `hab-${i + 1}`,
         titulo: limpiar(h.titulo, 120) || `Habitación #${i + 1}`,
         descripcion: "",
         precio_noche_cop: Math.max(0, Math.round(Number(h.precio_noche_cop) || 0)),
         capacidad_max: Math.min(30, Math.max(1, Math.round(Number(h.capacidad_max) || 1))),
-        fotos: (Array.isArray(h.fotos) ? h.fotos : []).filter(esUrlPropia).slice(0, 5),
+        fotos: modoGaleria
+          ? []
+          : (Array.isArray(h.fotos) ? h.fotos : []).filter(esUrlPropia).slice(0, 5),
         badges: (Array.isArray(h.badges) ? h.badges : [])
           .filter((b) => typeof b === "string" && ICONOS_BADGES[b])
           .map((b) => ({ icono: ICONOS_BADGES[b], texto: b })),
@@ -211,9 +217,21 @@ export async function registrarAliadoPublicoAction(
       precio = precios.length > 0 ? Math.min(...precios) : 0;
       metadata.precio_desde = precios.length > 1;
 
-      const todasFotos = habitaciones.flatMap((h) => h.fotos);
-      imagenUrl = todasFotos[0] || "";
-      if (todasFotos.length > 1) metadata.galeria_fotos = todasFotos.slice(1, 13);
+      const todasFotos = modoGaleria
+        ? (Array.isArray(input.galeriaHospedaje) ? input.galeriaHospedaje : [])
+            .filter(esUrlPropia)
+            .slice(0, 6)
+        : habitaciones.flatMap((h) => h.fotos);
+
+      if (modoGaleria) {
+        // Las fotos de habitaciones en modo galería van a galeria_habitaciones (se muestran en "Habitaciones y Acomodación")
+        // y NO se mezclan en galeria_fotos del carrusel principal superior.
+        if (todasFotos.length > 0) metadata.galeria_habitaciones = todasFotos;
+        imagenUrl = esUrlPropia(input.fotoPrincipal) ? input.fotoPrincipal : todasFotos[0] || "";
+      } else {
+        imagenUrl = todasFotos[0] || "";
+        if (todasFotos.length > 1) metadata.galeria_fotos = todasFotos.slice(1, 13);
+      }
     } else {
       imagenUrl = esUrlPropia(input.fotoPrincipal) ? input.fotoPrincipal : "";
       const galeria = (Array.isArray(input.galeria) ? input.galeria : []).filter(esUrlPropia).slice(0, 4);

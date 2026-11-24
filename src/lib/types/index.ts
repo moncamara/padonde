@@ -133,12 +133,23 @@ export type HorarioExperiencia = {
   fecha_limite_vigencia?: string | null;
 };
 
+export type ModoVisualizacionHospedaje = "habitaciones_con_fotos" | "galeria_y_lista_precios";
+
+/** Null-safe: cualquier valor distinto de "galeria_y_lista_precios" se trata como "habitaciones_con_fotos". */
+export function resolverModoVisualizacion(valor: unknown): ModoVisualizacionHospedaje {
+  return valor === "galeria_y_lista_precios" ? "galeria_y_lista_precios" : "habitaciones_con_fotos";
+}
+
 export type HospedajeMetadata = {
   check_in_hora?: string;     // ej: "15:00"
   check_out_hora?: string;    // ej: "11:00"
   google_reputacion?: GoogleReputacion;
   habitaciones?: HabitacionHospedaje[];
   galeria_fotos?: string[];   // Fotos adicionales de vitrina (hasta 5 fotos para restaurantes, tours, o locales)
+  /** Galería unificada de habitaciones para el modo "galeria_y_lista_precios" */
+  galeria_habitaciones?: string[];
+  /** Modo visual del hospedaje. null/undefined ⇒ "habitaciones_con_fotos" (retrocompatible) */
+  modo_visualizacion?: ModoVisualizacionHospedaje | null;
   menu_url?: string;          // Enlace directo a carta digital (PDF, Canva, link)
   menu_fotos?: string[];      // Fotos de las páginas de la carta
   google_review_url?: string; // Enlace directo para calificar en Google

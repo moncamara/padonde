@@ -890,18 +890,28 @@ export function EventUpsertForm({
     }
   }
 
-  // 9. Calificación / Reputación Google Maps (Sincronizada)
-  const [ratingGoogle, setRatingGoogle] = useState(
-    initialEvento?.metadata_hospedaje?.google_reputacion?.rating?.toString() || ""
-  );
-  const [reviewsGoogle, setReviewsGoogle] = useState(
-    initialEvento?.metadata_hospedaje?.google_reputacion?.total_reviews?.toString() || ""
-  );
+  // 9. Calificación / Reputación Google Maps (Sincronizada con fallback a negocio.*)
+  const [ratingGoogle, setRatingGoogle] = useState(() => {
+    const val =
+      initialEvento?.metadata_hospedaje?.google_reputacion?.rating ??
+      initialEvento?.negocio?.google_rating;
+    return val !== undefined && val !== null && Number(val) > 0 ? String(val) : "";
+  });
+  const [reviewsGoogle, setReviewsGoogle] = useState(() => {
+    const val =
+      initialEvento?.metadata_hospedaje?.google_reputacion?.total_reviews ??
+      initialEvento?.negocio?.google_total_reviews;
+    return val !== undefined && val !== null && Number(val) > 0 ? String(val) : "";
+  });
   const [mapsUrl, setMapsUrl] = useState(
-    initialEvento?.metadata_hospedaje?.google_reputacion?.maps_url || ""
+    initialEvento?.metadata_hospedaje?.google_reputacion?.maps_url ||
+      initialEvento?.negocio?.google_maps_url ||
+      ""
   );
   const [googleReviewUrl, setGoogleReviewUrl] = useState(
-    initialEvento?.metadata_hospedaje?.google_review_url || ""
+    initialEvento?.metadata_hospedaje?.google_review_url ||
+      initialEvento?.negocio?.google_review_url ||
+      ""
   );
 
   // 10. Opciones de Publicación / Estados
@@ -1224,12 +1234,12 @@ export function EventUpsertForm({
         ? (tieneLimiteVigencia && fechaLimiteVigencia ? `${fechaLimiteVigencia}T${horaFin || "23:59"}` : null)
         : (tieneFechaFin && fechaFin ? fechaFin : null);
 
-      // 4. Construcción de Reputación Google
+      // 4. Construcción de Reputación Google (guardar si hay cualquier campo lleno)
       const googleReputacion =
-        ratingGoogle && reviewsGoogle && mapsUrl
+        ratingGoogle.trim() || reviewsGoogle.trim() || mapsUrl.trim()
           ? {
-              rating: parseFloat(ratingGoogle),
-              total_reviews: parseInt(reviewsGoogle, 10),
+              rating: ratingGoogle.trim() ? parseFloat(ratingGoogle) || 0 : 0,
+              total_reviews: reviewsGoogle.trim() ? parseInt(reviewsGoogle, 10) || 0 : 0,
               maps_url: mapsUrl.trim(),
             }
           : null;

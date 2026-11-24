@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { generarEnlaceWhatsAppHospedaje } from "@/lib/whatsappHospedaje";
 import { trackWhatsAppClick } from "@/lib/analytics";
 import { getFechaYMDColombia } from "@/lib/utils";
 import { RoomCard } from "./RoomCard";
-import type { HabitacionHospedaje } from "@/lib/types";
+import type { HabitacionHospedaje, ModoVisualizacionHospedaje } from "@/lib/types";
 
 interface StayCalculatorProps {
   habitaciones: HabitacionHospedaje[];
@@ -15,6 +15,10 @@ interface StayCalculatorProps {
   eventoId?: string;
   negocioId?: string;
   zonaSlug?: string;
+  /** "galeria_y_lista_precios" ⇒ galería de habitaciones arriba + filas compactas sin miniaturas. */
+  modoVisualizacion?: ModoVisualizacionHospedaje;
+  /** Fotos de habitaciones para el modo "galeria_y_lista_precios" */
+  galeriaHabitaciones?: string[];
   labels: {
     sectionTitle: string;
     sectionSubtitle: string;
@@ -41,8 +45,43 @@ export function StayCalculator({
   eventoId,
   negocioId,
   zonaSlug,
+  modoVisualizacion = "habitaciones_con_fotos",
+  galeriaHabitaciones,
   labels,
 }: StayCalculatorProps) {
+  const esCompacto = modoVisualizacion === "galeria_y_lista_precios";
+  const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
+
+  // Fotos unificadas para el carrusel de "Habitaciones y Acomodación" en modo compacto
+  const fotosHabitacionesUnificadas = esCompacto
+    ? Array.from(
+        new Set(
+          [
+            ...(Array.isArray(galeriaHabitaciones) ? galeriaHabitaciones : []),
+            ...(Array.isArray(habitaciones)
+              ? habitaciones.flatMap((h) => (Array.isArray(h?.fotos) ? h.fotos : []))
+              : []),
+          ].filter((u): u is string => typeof u === "string" && u.trim().length > 0)
+        )
+      )
+    : [];
+
+  useEffect(() => {
+    if (lightboxIdx === null) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setLightboxIdx(null);
+      else if (e.key === "ArrowRight")
+        setLightboxIdx((i) => (i === null ? null : (i + 1) % fotosHabitacionesUnificadas.length));
+      else if (e.key === "ArrowLeft")
+        setLightboxIdx((i) =>
+          i === null
+            ? null
+            : (i - 1 + fotosHabitacionesUnificadas.length) % fotosHabitacionesUnificadas.length
+        );
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [lightboxIdx, fotosHabitacionesUnificadas.length]);
   // 1. Habitación seleccionada con blindaje null-safe
   const listaHabitaciones = Array.isArray(habitaciones) ? habitaciones : [];
   const [habitacionSeleccionada, setHabitacionSeleccionada] = useState<HabitacionHospedaje | null>(
@@ -129,7 +168,40 @@ export function StayCalculator({
           </div>
         </div>
 
-        <div className="space-y-3">
+        {/* Carrusel horizontal nativo de habitaciones (solo en modo galeria_y_lista_precios) */}
+        {esCompacto && fotosHabitacionesUnificadas.length > 0 && (
+          <div className="mb-3.5 space-y-1.5">
+            <div className="flex gap-2.5 overflow-x-auto snap-x snap-mandatory scrollbar-none pb-1">
+              {fotosHabitacionesUnificadas.map((src, idx) => (
+                <button
+                  key={`${src}-${idx}`}
+                  type="button"
+                  onClick={() => setLightboxIdx(idx)}
+                  aria-label={`Ver foto ${idx + 1} de ${fotosHabitacionesUnificadas.length}`}
+                  className="relative shrink-0 w-44 sm:w-48 aspect-[4/3] rounded-2xl overflow-hidden bg-stone-light/40 border border-stone-light/70 snap-start cursor-pointer group focus:outline-none focus:ring-2 focus:ring-forest"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={src}
+                    alt={`${hostalNombre} - habitación ${idx + 1}`}
+                    loading="lazy"
+                    decoding="async"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                  <span className="absolute bottom-1.5 right-1.5 bg-black/55 backdrop-blur-xs text-white text-[10px] font-sans px-1.5 py-0.5 rounded-full">
+                    {idx + 1}/{fotosHabitacionesUnificadas.length}
+                  </span>
+                </button>
+              ))}
+            </div>
+            <p className="text-[11px] font-sans text-stone/80 flex items-center gap-1">
+              <span>👆</span>
+              <span>Desliza o toca una foto para ampliarla</span>
+            </p>
+          </div>
+        )}
+
+        <div className={esCompacto ? "space-y-2" : "space-y-3"}>
           {listaHabitaciones.length > 0 ? (
             listaHabitaciones.map((hab) => (
               <RoomCard
@@ -140,6 +212,7 @@ export function StayCalculator({
                 tSelect={labels.selectRoom}
                 tSelected={labels.selectedRoom}
                 tPerNight={labels.perNight}
+                compacto={esCompacto}
               />
             ))
           ) : (
@@ -286,6 +359,67 @@ export function StayCalculator({
           ℹ️ {labels.disclaimer}
         </p>
       </div>
+
+      {/* Lightbox ligero (0 dependencias) para ampliar fotos de habitaciones */}
+      {lightboxIdx !== null && fotosHabitacionesUnificadas[lightboxIdx] && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setLightboxIdx(null)}
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-xs flex items-center justify-center p-4"
+        >
+          <button
+            type="button"
+            onClick={() => setLightboxIdx(null)}
+            aria-label="Cerrar galería"
+            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/15 hover:bg-white/25 text-white text-lg flex items-center justify-center cursor-pointer"
+          >
+            ✕
+          </button>
+
+          {fotosHabitacionesUnificadas.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setLightboxIdx(
+                    (lightboxIdx - 1 + fotosHabitacionesUnificadas.length) %
+                      fotosHabitacionesUnificadas.length
+                  );
+                }}
+                aria-label="Foto anterior"
+                className="absolute left-3 sm:left-5 w-10 h-10 rounded-full bg-white/15 hover:bg-white/25 text-white text-xl flex items-center justify-center cursor-pointer"
+              >
+                ‹
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setLightboxIdx((lightboxIdx + 1) % fotosHabitacionesUnificadas.length);
+                }}
+                aria-label="Foto siguiente"
+                className="absolute right-3 sm:right-5 w-10 h-10 rounded-full bg-white/15 hover:bg-white/25 text-white text-xl flex items-center justify-center cursor-pointer"
+              >
+                ›
+              </button>
+            </>
+          )}
+
+          <div onClick={(e) => e.stopPropagation()} className="max-w-2xl w-full flex flex-col items-center gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={fotosHabitacionesUnificadas[lightboxIdx]}
+              alt={`${hostalNombre} - habitación ${lightboxIdx + 1}`}
+              className="max-h-[78vh] w-auto max-w-full rounded-2xl object-contain shadow-2xl"
+            />
+            <span className="text-xs font-sans text-white/80">
+              {lightboxIdx + 1} / {fotosHabitacionesUnificadas.length}
+            </span>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

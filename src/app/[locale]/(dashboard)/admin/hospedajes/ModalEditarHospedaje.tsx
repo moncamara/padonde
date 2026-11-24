@@ -97,6 +97,20 @@ export function ModalEditarHospedaje({
       : [];
   });
   const [urlGaleriaInput, setUrlGaleriaInput] = useState("");
+  // Modo de visualización (null-safe ⇒ "habitaciones_con_fotos"). Cambiarlo NO borra fotos.
+  const [modoVisualizacion, setModoVisualizacion] = useState<
+    "habitaciones_con_fotos" | "galeria_y_lista_precios"
+  >(
+    hospedaje?.metadata_hospedaje?.modo_visualizacion === "galeria_y_lista_precios"
+      ? "galeria_y_lista_precios"
+      : "habitaciones_con_fotos"
+  );
+  const [galeriaHabitaciones, setGaleriaHabitaciones] = useState<string[]>(() => {
+    const raw = hospedaje?.metadata_hospedaje?.galeria_habitaciones;
+    return Array.isArray(raw)
+      ? raw.filter((u: any) => typeof u === "string" && u.trim().length > 0)
+      : [];
+  });
   const [destacado, setDestacado] = useState(Boolean(hospedaje?.destacado));
 
   // Control de Encuadre Vertical Dinámico (Focal Point) de la Portada
@@ -115,30 +129,42 @@ export function ModalEditarHospedaje({
     return "50%";
   });
 
-  // Estados Google Rating
-  const [ratingGoogle, setRatingGoogle] = useState(
-    hospedaje?.metadata_hospedaje?.google_reputacion?.rating?.toString() ||
-      hospedaje?.ratingGoogle ||
-      ""
-  );
-  const [reviewsGoogle, setReviewsGoogle] = useState(
-    hospedaje?.metadata_hospedaje?.google_reputacion?.total_reviews?.toString() ||
-      hospedaje?.reviewsGoogle ||
-      ""
-  );
+  // Estados Google Rating (con fallback directo desde negocio.* para no perder datos guardados en Aliados)
+  const [ratingGoogle, setRatingGoogle] = useState(() => {
+    const val =
+      hospedaje?.metadata_hospedaje?.google_reputacion?.rating ??
+      hospedaje?.negocio?.google_rating ??
+      hospedaje?.ratingGoogle;
+    return val !== undefined && val !== null && Number(val) > 0 ? String(val) : "";
+  });
+  const [reviewsGoogle, setReviewsGoogle] = useState(() => {
+    const val =
+      hospedaje?.metadata_hospedaje?.google_reputacion?.total_reviews ??
+      hospedaje?.negocio?.google_total_reviews ??
+      hospedaje?.reviewsGoogle;
+    return val !== undefined && val !== null && Number(val) > 0 ? String(val) : "";
+  });
   const [mapsUrl, setMapsUrl] = useState(
     hospedaje?.metadata_hospedaje?.google_reputacion?.maps_url ||
+      hospedaje?.negocio?.google_maps_url ||
       hospedaje?.mapsUrl ||
       ""
   );
   const [googleReviewUrl, setGoogleReviewUrl] = useState<string>(() => {
-    const raw = hospedaje?.metadata_hospedaje?.google_review_url || hospedaje?.googleReviewUrl;
+    const raw =
+      hospedaje?.metadata_hospedaje?.google_review_url ||
+      hospedaje?.negocio?.google_review_url ||
+      hospedaje?.googleReviewUrl;
     if (raw && (raw.includes("search.google.com/local/writereview") || raw.includes("g.page/r/"))) {
       return raw;
     }
     const auto =
       extraerGoogleReviewUrl(raw) ||
-      extraerGoogleReviewUrl(hospedaje?.metadata_hospedaje?.google_reputacion?.maps_url || hospedaje?.mapsUrl);
+      extraerGoogleReviewUrl(
+        hospedaje?.metadata_hospedaje?.google_reputacion?.maps_url ||
+          hospedaje?.negocio?.google_maps_url ||
+          hospedaje?.mapsUrl
+      );
     if (auto) return auto;
     const nom = ((hospedaje?.titulo || "") + " " + (hospedaje?.negocio?.nombre || "") + " " + (hospedaje?.nombreNegocio || "")).toLowerCase();
     if (nom.includes("velero")) {
@@ -878,11 +904,13 @@ export function ModalEditarHospedaje({
         posicion_portada: posicionPortada || "50%",
         posicionPortada: posicionPortada || "50%",
         galeria_fotos: galeriaLimpia.length > 0 ? galeriaLimpia : undefined,
+        galeria_habitaciones: galeriaHabitaciones,
+        modo_visualizacion: modoVisualizacion,
         google_reputacion:
-          ratingGoogle && reviewsGoogle && mapsUrl
+          ratingGoogle.trim() || reviewsGoogle.trim() || mapsUrl.trim()
             ? {
-                rating: parseFloat(ratingGoogle),
-                total_reviews: parseInt(reviewsGoogle, 10),
+                rating: ratingGoogle.trim() ? parseFloat(ratingGoogle) || 0 : 0,
+                total_reviews: reviewsGoogle.trim() ? parseInt(reviewsGoogle, 10) || 0 : 0,
                 maps_url: mapsUrl.trim(),
               }
             : undefined,
@@ -1313,6 +1341,116 @@ export function ModalEditarHospedaje({
                     </div>
                   )}
                 </div>
+              </div>
+
+              {/* Modo de Visualización del Hospedaje (no destructivo: conserva todas las fotos) */}
+              <div className="pt-3 border-t border-stone-light/60 space-y-2">
+                <label className="text-stone font-semibold flex items-center gap-1.5 text-xs">
+                  <span>🧭</span>
+                  <span>Modo de visualización pública</span>
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {(
+                    [
+                      {
+                        id: "habitaciones_con_fotos",
+                        titulo: "🛏️ Habitaciones con fotos",
+                        desc: "Cada habitación muestra su propio carrusel de fotos.",
+                      },
+                      {
+                        id: "galeria_y_lista_precios",
+                        titulo: "🖼️ Galería + lista de precios",
+                        desc: "Galería unificada arriba y lista compacta de habitaciones sin miniaturas.",
+                      },
+                    ] as const
+                  ).map((op) => (
+                    <button
+                      key={op.id}
+                      type="button"
+                      onClick={() => setModoVisualizacion(op.id)}
+                      aria-pressed={modoVisualizacion === op.id}
+                      className={[
+                        "text-left p-3 rounded-xl border transition-all cursor-pointer",
+                        modoVisualizacion === op.id
+                          ? "border-forest bg-forest/5 ring-1 ring-forest/30"
+                          : "border-stone-light bg-white hover:border-forest/40",
+                      ].join(" ")}
+                    >
+                      <span className="block text-xs font-bold text-forest">
+                        {modoVisualizacion === op.id ? "● " : "○ "}
+                        {op.titulo}
+                      </span>
+                      <span className="block text-[11px] text-stone mt-0.5">{op.desc}</span>
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[10px] text-stone">
+                  Cambiar de modo no borra fotos: las de habitaciones y galería se conservan en ambos modos.
+                </p>
+
+                {modoVisualizacion === "galeria_y_lista_precios" && (
+                  <div className="mt-2 p-3 rounded-xl bg-cream/60 border border-stone-light/80 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[11px] font-bold text-forest">
+                        🛏️ Galería de Habitaciones ({galeriaHabitaciones.length}/12)
+                      </span>
+                      <label className="px-2.5 py-1 bg-forest text-cream hover:bg-forest-dark rounded-lg font-semibold text-[11px] cursor-pointer">
+                        <span>{isSubiendoFoto ? "Subiendo..." : "+ Subir Fotos"}</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          className="hidden"
+                          onChange={async (e) => {
+                            const files = Array.from(e.target.files || []);
+                            if (!files.length) return;
+                            setIsSubiendoFoto(true);
+                            const nuevas: string[] = [];
+                            for (const f of files.slice(0, 12 - galeriaHabitaciones.length)) {
+                              try {
+                                const res = await uploadEventImage(f);
+                                if (res) nuevas.push(res);
+                              } catch {}
+                            }
+                            if (nuevas.length) {
+                              setGaleriaHabitaciones((prev) =>
+                                [...prev, ...nuevas].slice(0, 12)
+                              );
+                            }
+                            setIsSubiendoFoto(false);
+                            e.target.value = "";
+                          }}
+                        />
+                      </label>
+                    </div>
+                    <p className="text-[10px] text-stone">
+                      Se muestran en el carrusel de <strong>Habitaciones y Acomodación</strong> (junto con las fotos individuales que ya tengan las habitaciones), sin mezclarse con la galería principal de arriba.
+                    </p>
+                    {galeriaHabitaciones.length > 0 && (
+                      <div className="flex gap-2 overflow-x-auto pb-1">
+                        {galeriaHabitaciones.map((url, idx) => (
+                          <div
+                            key={`${url}-${idx}`}
+                            className="relative w-16 h-16 shrink-0 rounded-lg overflow-hidden border border-stone-light"
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={url} alt="" className="w-full h-full object-cover" />
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setGaleriaHabitaciones((prev) => prev.filter((_, i) => i !== idx))
+                              }
+                              className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-black/70 text-white text-[9px] flex items-center justify-center cursor-pointer"
+                              title="Quitar"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Galería Superior del Hospedaje (Áreas comunes, piscina, vista, playa — carrusel superior en la vista de detalle) */}

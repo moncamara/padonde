@@ -108,7 +108,7 @@ export function EventCard({ evento: rawEvento, zona, priority = false }: EventCa
           }
         }}
         className="absolute inset-0 z-10 focus:outline-none focus:ring-2 focus:ring-terra focus:ring-offset-2 rounded-3xl"
-        aria-label={`${evento.titulo} - ${evento.negocio.nombre}`}
+        aria-label={`${evento.titulo} - ${evento.negocio?.nombre || "PaDónde"}`}
       >
         <span className="sr-only">{evento.titulo}</span>
       </Link>
@@ -202,7 +202,7 @@ export function EventCard({ evento: rawEvento, zona, priority = false }: EventCa
         <div className="space-y-1.5">
           {/* Nombre del Aliado, Horario Inteligente y Calificación Google */}
           <div className="text-stone text-xs font-sans font-medium tracking-wide flex items-center gap-1.5 flex-wrap">
-            <span className="text-forest font-semibold">{evento.negocio.nombre}</span>
+            <span className="text-forest font-semibold">{evento.negocio?.nombre || "PaDónde"}</span>
             <span>·</span>
             <span className="text-stone">{getEtiquetaHorario(evento, locale)}</span>
             {(() => {

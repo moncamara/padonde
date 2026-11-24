@@ -141,17 +141,13 @@ export async function getEventosByZona(
       return getMockEventos(zonaSlug);
     }
 
-    // 2. Obtener eventos con su negocio relacionado
-    // En producción solo eventos activos; en vista previa local muestra todo para validar el montaje
+    // 2. Obtener eventos activos con su negocio relacionado
     let eventosData: any[] | null = null;
-    let queryInicial = supabase
+    const resInicial = await supabase
       .from("eventos")
       .select(COLUMNAS_CON_REPUTACION_Y_TRADUCCIONES)
-      .eq("zona_id", zonaId);
-    if (!opciones.preview) {
-      queryInicial = queryInicial.eq("activo", true);
-    }
-    const resInicial = await queryInicial
+      .eq("zona_id", zonaId)
+      .eq("activo", true)
       .order("destacado", { ascending: false })
       .order("fecha_inicio", { ascending: true });
 
@@ -160,24 +156,22 @@ export async function getEventosByZona(
 
     // Fallback retrocompatible por si las nuevas columnas de reputación aún no existen en 'negocios'
     if (eventosError && eventosError.code === "42703") {
-      let queryTrad = supabase
+      const fallbackTraducciones = await supabase
         .from("eventos")
         .select(COLUMNAS_CON_TRADUCCIONES)
-        .eq("zona_id", zonaId);
-      if (!opciones.preview) queryTrad = queryTrad.eq("activo", true);
-      const fallbackTraducciones = await queryTrad
+        .eq("zona_id", zonaId)
+        .eq("activo", true)
         .order("destacado", { ascending: false })
         .order("fecha_inicio", { ascending: true });
       eventosData = fallbackTraducciones.data;
       eventosError = fallbackTraducciones.error;
 
       if (eventosError && eventosError.code === "42703") {
-        let queryBase = supabase
+        const fallbackBase = await supabase
           .from("eventos")
           .select(COLUMNAS_BASE)
-          .eq("zona_id", zonaId);
-        if (!opciones.preview) queryBase = queryBase.eq("activo", true);
-        const fallbackBase = await queryBase
+          .eq("zona_id", zonaId)
+          .eq("activo", true)
           .order("destacado", { ascending: false })
           .order("fecha_inicio", { ascending: true });
         eventosData = fallbackBase.data;
@@ -190,11 +184,11 @@ export async function getEventosByZona(
       return getMockEventos(zonaSlug);
     }
 
-    const lista = (eventosData as unknown as (EventoConNegocio & { negocio?: { activo?: boolean } })[]) || [];
-    // En producción solo eventos activos y negocios activos; en preview local permite verlo
-    const filtrados = opciones.preview
-      ? lista
-      : lista.filter((e) => e.activo !== false && (!e.negocio || e.negocio.activo !== false));
+    const lista = (eventosData as unknown as (EventoConNegocio & { negocio?: { activo?: boolean } | null })[]) || [];
+    // Solo eventos activos cuyo negocio exista y esté activo (nunca borradores inactivos de /sumate)
+    const filtrados = lista.filter(
+      (e) => e.activo !== false && Boolean(e.negocio) && e.negocio?.activo !== false
+    );
 
     if (filtrados.length === 0) {
       return getMockEventos(zonaSlug);

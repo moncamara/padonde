@@ -68,6 +68,10 @@ export function RegistroAliadoWizard() {
 
   // Paso 3 — Hospedaje
   const [habitaciones, setHabitaciones] = useState<HabitacionForm[]>([nuevaHabitacion(1)]);
+  const [modoHosp, setModoHosp] = useState<"habitaciones_con_fotos" | "galeria_y_lista_precios">(
+    "habitaciones_con_fotos"
+  );
+  const [galeriaHosp, setGaleriaHosp] = useState<string[]>([]);
 
   // Paso 3 — Otras categorías
   const [fotoPrincipal, setFotoPrincipal] = useState<string>("");
@@ -126,7 +130,11 @@ export function RegistroAliadoWizard() {
         if (!h.titulo.trim()) return `Ponle nombre a la habitación #${i + 1}.`;
         if (!(Number(h.precio) > 0)) return `Indica el precio por noche de "${h.titulo || `Habitación #${i + 1}`}".`;
       }
-      if (!habitaciones.some((h) => h.fotos.length > 0)) return "Sube al menos una foto de tus habitaciones.";
+      if (modoHosp === "galeria_y_lista_precios") {
+        if (galeriaHosp.length === 0) return "Sube al menos una foto a la galería general.";
+      } else if (!habitaciones.some((h) => h.fotos.length > 0)) {
+        return "Sube al menos una foto de tus habitaciones.";
+      }
     } else if (!fotoPrincipal) {
       return "Sube la foto principal de tu negocio.";
     }
@@ -158,9 +166,12 @@ export function RegistroAliadoWizard() {
               precio_noche_cop: Number(h.precio) || 0,
               capacidad_max: Number(h.capacidad) || 1,
               badges: h.badges,
-              fotos: h.fotos,
+              fotos: modoHosp === "galeria_y_lista_precios" ? [] : h.fotos,
             }))
           : undefined,
+      modoVisualizacion: tipo === "hospedaje" ? modoHosp : undefined,
+      galeriaHospedaje:
+        tipo === "hospedaje" && modoHosp === "galeria_y_lista_precios" ? galeriaHosp : undefined,
       fotoPrincipal: tipo !== "hospedaje" ? fotoPrincipal : undefined,
       galeria: tipo !== "hospedaje" ? galeria : undefined,
       horario,
@@ -351,8 +362,66 @@ export function RegistroAliadoWizard() {
         <section className="space-y-4">
           <div>
             <h1 className="font-serif text-2xl font-bold">Tus habitaciones</h1>
-            <p className="text-sm text-stone mt-1">Agrega cada tipo de habitación con su precio y hasta 5 fotos.</p>
+            <p className="text-sm text-stone mt-1">Agrega cada tipo de habitación con su precio y comodidades.</p>
           </div>
+
+          <div className="space-y-2">
+            <h2 className="text-sm font-bold">¿Cómo quieres mostrar tus fotos?</h2>
+            <div className="grid grid-cols-1 gap-2.5">
+              {(
+                [
+                  {
+                    id: "habitaciones_con_fotos",
+                    emoji: "🛏️",
+                    titulo: "Cada habitación tiene sus propias fotos",
+                    desc: "Hasta 5 fotos dentro de cada habitación.",
+                  },
+                  {
+                    id: "galeria_y_lista_precios",
+                    emoji: "🖼️",
+                    titulo: "Galería general arriba + lista de habitaciones y precios abajo",
+                    desc: "Una sola galería (máx. 6 fotos). Más rápido desde el celular.",
+                  },
+                ] as const
+              ).map((op) => (
+                <button
+                  key={op.id}
+                  type="button"
+                  onClick={() => setModoHosp(op.id)}
+                  aria-pressed={modoHosp === op.id}
+                  className={[
+                    "p-4 rounded-3xl border-2 text-left flex items-start gap-3 transition-all active:scale-[0.99] cursor-pointer",
+                    modoHosp === op.id
+                      ? "border-[#1B382B] bg-[#1B382B] text-[#FBF9F5] shadow-md"
+                      : "border-stone-light bg-white hover:border-[#1B382B]/40",
+                  ].join(" ")}
+                >
+                  <span className="text-2xl">{op.emoji}</span>
+                  <span>
+                    <span className="block font-bold text-sm leading-tight">{op.titulo}</span>
+                    <span className={`block text-[11px] mt-0.5 ${modoHosp === op.id ? "text-[#FBF9F5]/80" : "text-stone"}`}>
+                      {op.desc}
+                    </span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {modoHosp === "galeria_y_lista_precios" && (
+            <div className="bg-white rounded-3xl border border-stone-light p-4">
+              <FotosPicker
+                fotos={galeriaHosp}
+                max={6}
+                etiqueta="Galería general del hospedaje *"
+                onAgregar={async (files) => {
+                  const urls = await subirArchivos(files, 6 - galeriaHosp.length);
+                  if (urls.length) setGaleriaHosp((prev) => [...prev, ...urls].slice(0, 6));
+                }}
+                onQuitar={(url) => setGaleriaHosp((prev) => prev.filter((f) => f !== url))}
+              />
+            </div>
+          )}
 
           {habitaciones.map((h, idx) => (
             <div key={h.key} className="bg-white rounded-3xl border border-stone-light p-4 space-y-3.5 shadow-2xs">
@@ -408,6 +477,7 @@ export function RegistroAliadoWizard() {
                 </div>
               </div>
 
+              {modoHosp === "habitaciones_con_fotos" && (
               <FotosPicker
                 fotos={h.fotos}
                 max={5}
@@ -422,6 +492,7 @@ export function RegistroAliadoWizard() {
                 }}
                 onQuitar={(url) => actualizarHab(h.key, { fotos: h.fotos.filter((f) => f !== url) })}
               />
+              )}
             </div>
           ))}
 
