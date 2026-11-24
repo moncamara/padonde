@@ -23,7 +23,7 @@ const ZONAS = [
   { id: "taganga", label: "Taganga", emoji: "🤿" },
 ];
 
-const BADGES = ["Baño privado", "Vista montaña", "WiFi", "Desayuno incluido", "Balcón", "Aire/Ventilador"];
+import { COMODIDADES_HABITACION } from "@/lib/constants/comodidadesHabitacion";
 
 interface HabitacionForm {
   key: string;
@@ -454,7 +454,8 @@ export function RegistroAliadoWizard() {
               <div className="space-y-1.5">
                 <span className="text-xs font-bold">Comodidades</span>
                 <div className="flex flex-wrap gap-2">
-                  {BADGES.map((b) => {
+                  {COMODIDADES_HABITACION.map((c) => {
+                    const b = c.texto;
                     const on = h.badges.includes(b);
                     return (
                       <button
@@ -465,12 +466,12 @@ export function RegistroAliadoWizard() {
                           actualizarHab(h.key, { badges: on ? h.badges.filter((x) => x !== b) : [...h.badges, b] })
                         }
                         className={[
-                          "px-3 py-2 rounded-full text-xs font-semibold border transition-colors cursor-pointer",
+                          "px-3 py-2 rounded-full text-xs font-semibold border transition-colors cursor-pointer inline-flex items-center gap-1",
                           on ? "bg-[#1B382B] text-[#FBF9F5] border-[#1B382B]" : "bg-white border-stone-light text-[#1B382B]",
                         ].join(" ")}
                       >
-                        {on ? "✓ " : ""}
-                        {b}
+                        <span>{on ? "✓" : c.icono}</span>
+                        <span>{b}</span>
                       </button>
                     );
                   })}

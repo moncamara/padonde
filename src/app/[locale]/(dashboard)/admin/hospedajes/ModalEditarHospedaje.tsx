@@ -36,17 +36,9 @@ interface ModalEditarHospedajeProps {
   onDeleted?: (id: string) => void;
 }
 
-const BADGES_DISPONIBLES: BadgeHabitacion[] = [
-  { icono: "🚿", texto: "Baño privado" },
-  { icono: "🚿", texto: "Baño compartido" },
-  { icono: "🍳", texto: "Desayuno incluido" },
-  { icono: "🌿", texto: "Vista a la montaña" },
-  { icono: "❄️", texto: "Aire acondicionado" },
-  { icono: "🌀", texto: "Ventilador" },
-  { icono: "📶", texto: "Wi-Fi rápido" },
-  { icono: "🔒", texto: "Locker individual" },
-  { icono: "🌄", texto: "Balcón privado" },
-];
+import { COMODIDADES_ADMIN } from "@/lib/constants/comodidadesHabitacion";
+
+const BADGES_DISPONIBLES: BadgeHabitacion[] = COMODIDADES_ADMIN;
 
 export function ModalEditarHospedaje({
   hospedaje,

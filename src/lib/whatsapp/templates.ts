@@ -33,8 +33,11 @@ export function resolverUrlPublicacion(params: MensajeBaseParams): string {
  */
 export function resolverNombreDestino(params: MensajeBaseParams): string {
   if (params.zonaNombre) return params.zonaNombre;
-  const slug = params.zonaSlug || "minca";
-  return slug === "mendihuaca" ? "Mendihuaca" : "Minca";
+  const slug = (params.zonaSlug || "minca").toLowerCase();
+  if (slug === "mendihuaca") return "Mendihuaca";
+  if (slug === "tayrona" || slug === "tairona") return "Tayrona";
+  if (slug === "taganga") return "Taganga";
+  return "Minca";
 }
 
 // ─── 1. PLANTILLAS DE ONBOARDING / ACTIVACIÓN (15 DÍAS DE CORTESÍA) ──────────
@@ -86,44 +89,42 @@ Incluye tu ficha activa 24/7, publicación en cartelera turística, 0% comisione
 
 /**
  * Plantilla oficial para Hostales, Eco-lodges y Alojamientos.
- * Enfoque: 15 días cortesía, escala trimestral por habitaciones y 0% comisiones.
+ * Bienvenida, valor en 4 idiomas, 0% comisiones, difusión de eventos internos y plan trimestral anticipado.
  */
 export function generarMensajeHospedaje(params: MensajeBaseParams): string {
-  const destino = resolverNombreDestino(params);
-  const url = resolverUrlPublicacion(params);
-  const fechaLimite = params.fechaLimite || calcularFechaLimite(15);
+  const nombreHospedaje = params.negocioNombre;
+  const nombreZona = resolverNombreDestino(params);
+  const urlFicha = resolverUrlPublicacion(params);
 
-  return `🌿 *¡Hola ${params.negocioNombre}! Un saludo muy especial desde PaDónde ${destino}.*
+  return `🌿 *¡Hola equipo de ${nombreHospedaje}! Un saludo muy especial desde PaDónde ${nombreZona}.*
 
-Ya tenemos su propuesta de hospedaje activa y verificada en vivo dentro de la plataforma digital oficial de ${destino}:
-👉 *Ver su ficha aquí:* ${url}
+Ya tenemos su propuesta de hospedaje maquetada y verificada dentro de la plataforma turística oficial del corredor ${nombreZona}:
+👉 *Miren su ficha aquí:* ${urlFicha}
 
-Queremos darles la bienvenida con *15 días de cortesía total (prueba 100% gratuita)* a partir de hoy hasta el *${fechaLimite}*, para que comprueben cómo los viajeros y turistas internacionales encuentran sus cabañas, fotos y tarifas en tiempo real 📲✨
+Queremos darles la bienvenida a *PaDónde*. Al activar su vitrina, su hospedaje queda visible 24/7 en una plataforma en *4 idiomas*, siendo consultada a diario por viajeros de Colombia y turistas internacionales provenientes de *EE. UU., Canadá, Alemania, Francia, Suiza, Países Bajos y España*.
 
-🌟 *El valor directo para ${params.negocioNombre}:*
-• *0% de comisiones por reserva:* El huésped les escribe y cotiza directo a su WhatsApp (se ahorran el 18% al 20% que descuentan Booking o Airbnb).
-• *Catálogo global en 4 idiomas:* Su hospedaje se presenta automáticamente en Español, Inglés, Francés y Alemán (ES / EN / FR / DE) para captar al viajero extranjero.
-• *Presencia fija 24/7:* Indexados en la vitrina oficial recomendada de alojamientos de ${destino}.
+🌟 *El valor directo para ${nombreHospedaje}:*
+• *0% de comisiones por reserva:* El huésped cotiza fechas y habitaciones en la plataforma y les escribe directo a su WhatsApp (se ahorran el 18% al 20% que descuentan Booking o Airbnb).
+• *Catálogo internacional en 4 idiomas:* Su información, habitaciones y experiencias se presentan automáticamente en Español, Inglés, Francés y Alemán (ES / EN / FR / DE) para captar al viajero extranjero.
+• *Presencia fija 24/7:* Indexados en la vitrina oficial recomendada de alojamientos de ${nombreZona}.
 
-🗓️ *Reglas claras de activación:*
-• Su periodo de cortesía corre libre de costo hasta el *${fechaLimite}*.
-• A partir del *${fechaLimite}*, formalizamos su presencia para toda la temporada con nuestro Plan Trimestral (asociado a su capacidad de habitaciones o cabañas):
+🎉 *Difusión de Eventos y Actividades del Hospedaje:*
+Dentro de su misma suscripción de hospedaje pueden publicar y promocionar las actividades, talleres o eventos internos que organicen para impulsar sus reservas, *sin costo adicional*.
+*(Nota: Si cuentan con un restaurante, bar o comercio independiente abierto al público general, ese establecimiento se gestiona con una suscripción aparte).*
 
-Los pagos son trimestrales de la siguiente forma:
-🏨 1 a 5 habitaciones: $125.000 COP *(menos de $1.400 al día)*
-🏨 6 a 10 habitaciones: $200.000 COP
-🏨 11 a 20 habitaciones: $300.000 COP
-🏨 Más de 20 habitaciones: $400.000 COP
+🗓️ *Condiciones de Activación (Plan Trimestral Anticipado):*
+Para mantener la plataforma activa sin cobros mensuales engorrosos, manejamos pagos trimestrales (90 días continuos) según la capacidad de habitaciones o cabañas de su hospedaje:
 
-💡 *Con 1 sola noche de habitación reservada directo a su WhatsApp en los 3 meses, ya se ahorran más comisiones de Booking que el costo total de la plataforma.*
+🏨 *1 a 5 habitaciones:* $150.000 COP / trimestre
+🏨 *6 a 10 habitaciones:* $200.000 COP / trimestre
+🏨 *11 a 20 habitaciones:* $300.000 COP / trimestre
+🏨 *Más de 20 habitaciones:* $400.000 COP / trimestre
 
-🎉 *Difusión de Eventos y Actividades:*
-Si organizan noches acústicas, yoga matutino, sunsets o eventos abiertos:
-• *1 evento puntual:* $30.000 COP (activo toda la semana de promoción).
-• *Agenda Semanal Completa (hasta 3 eventos en la semana):* $50.000 COP.
-(Incluye flyer, fechas, horarios, fotos y botón directo a su WhatsApp para reservas).
+💳 *Medios de pago para activación inmediata:*
+• *Nequi (Llave):* 3013010194
+• *Bancolombia Ahorros:* 080 756 549 53
 
-¿Pudieron abrir el enlace? Échenle un ojito a la ficha y me cuentan si sus fotos, tarifas y número de WhatsApp están al día para dejarlos activos desde hoy. ¡Muchos éxitos con las reservas en esta temporada! 🏡🌊✨`;
+¿Pudieron abrir el enlace? Échenle un ojo a su ficha, confírmenme cuántas habitaciones tienen y los precios para cada una, también si sus fotos, tarifas y número de WhatsApp están al día. ¡Muchos éxitos en esta temporada! 🏡🌊✨`;
 }
 
 /**

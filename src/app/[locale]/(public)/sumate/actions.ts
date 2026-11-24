@@ -130,14 +130,9 @@ export interface RegistroAliadoInput {
   precioReferencia?: number;
 }
 
-const ICONOS_BADGES: Record<string, string> = {
-  "Baño privado": "🚿",
-  "Vista montaña": "⛰️",
-  WiFi: "📶",
-  "Desayuno incluido": "🍳",
-  Balcón: "🌅",
-  "Aire/Ventilador": "🌀",
-};
+import { ICONOS_COMODIDADES } from "@/lib/constants/comodidadesHabitacion";
+
+const ICONOS_BADGES = ICONOS_COMODIDADES;
 
 const ZONAS_VALIDAS = ["minca", "mendihuaca", "tayrona", "taganga"];
 const TIPOS_VALIDOS: TipoNegocioRegistro[] = ["hospedaje", "comida", "tours", "esencial"];

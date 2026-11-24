@@ -2,8 +2,9 @@
 
 import { useState, useRef, useCallback } from "react";
 import Image from "next/image";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import type { HabitacionHospedaje } from "@/lib/types";
+import { traducirComodidadHabitacion } from "@/lib/constants/comodidadesHabitacion";
 
 interface RoomCardProps {
   habitacion: HabitacionHospedaje;
@@ -31,6 +32,7 @@ export function RoomCard({
 }: RoomCardProps) {
   const { id, titulo, precio_noche_cop, fotos, badges, descripcion } = habitacion;
   const tCard = useTranslations("eventCard");
+  const locale = useLocale();
   const galleryRef = useRef<HTMLDivElement>(null);
   const [canLeft, setCanLeft] = useState(false);
   const [canRight, setCanRight] = useState(Boolean(fotos && fotos.length > 1));
@@ -111,7 +113,7 @@ export function RoomCard({
                   className="inline-flex items-center gap-1 bg-cream/90 text-forest-dark border border-stone-light/60 text-[10px] font-sans px-2 py-0.5 rounded-md"
                 >
                   <span>{icono}</span>
-                  <span>{texto}</span>
+                  <span>{traducirComodidadHabitacion(texto, locale)}</span>
                 </span>
               );
             })}
@@ -245,7 +247,7 @@ export function RoomCard({
                   className="inline-flex items-center gap-1 bg-cream/90 text-forest-dark border border-stone-light/60 text-[10px] font-sans px-2 py-0.5 rounded-md"
                 >
                   <span>{icono}</span>
-                  <span>{texto}</span>
+                  <span>{traducirComodidadHabitacion(texto, locale)}</span>
                 </span>
               );
             })}
