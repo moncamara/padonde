@@ -7,6 +7,7 @@ import { ZonaHeader } from "@/components/layout/ZonaHeader";
 import { SearchProvider } from "@/context/SearchContext";
 import { InstallPrompt } from "@/components/layout/InstallPrompt";
 import { InstallAppButton } from "@/components/layout/InstallAppButton";
+import { EmergenciasFooterLink } from "@/components/services/EmergenciasModal";
 import { QRScanTracker } from "@/components/layout/QRScanTracker";
 import { PullToRefreshTracker } from "@/components/layout/PullToRefreshTracker";
 import { ZonaPersistence } from "@/components/layout/ZonaPersistence";
@@ -233,8 +234,9 @@ export default async function ZonaPage({ params }: ZonaPageProps) {
           </div>
 
           {/* Acceso manual permanente a la instalación de la app */}
-          <div className="mt-3">
+          <div className="mt-3 flex flex-col items-center gap-2.5">
             <InstallAppButton />
+            <EmergenciasFooterLink />
           </div>
         </div>
       </footer>

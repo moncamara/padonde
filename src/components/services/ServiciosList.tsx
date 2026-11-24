@@ -12,6 +12,8 @@ import {
   trackServicioEsencialMapsClick,
 } from "@/lib/analytics";
 import { DrawerTarifarioTransporte } from "./DrawerTarifarioTransporte";
+import { EmergenciasModal } from "@/components/services/EmergenciasModal";
+import { EMERGENCIAS_TEXTOS, resolverLocaleEmergencias } from "@/data/emergencias";
 import { getTarifarioPorId } from "@/data/tarifas";
 import type { TarifarioTransporte } from "@/data/tarifas/types";
 import {
@@ -243,6 +245,8 @@ export function ServiciosList({ servicios, zonaNombre, zonaSlug }: ServiciosList
   const locale = useLocale();
   const [categoriaActiva, setCategoriaActiva] = useState<string>("todas");
   const [videoActivoId, setVideoActivoId] = useState<string | null>(null);
+  const [emergenciasAbierto, setEmergenciasAbierto] = useState(false);
+  const txtEmergencias = EMERGENCIAS_TEXTOS[resolverLocaleEmergencias(locale)];
   const [tarifarioActivo, setTarifarioActivo] = useState<TarifarioTransporte | null>(() => {
     if (typeof window !== "undefined") {
       try {
@@ -284,6 +288,30 @@ export function ServiciosList({ servicios, zonaNombre, zonaSlug }: ServiciosList
           {t("servicesSubtitle")} {zonaNombre}
         </p>
       </div>
+
+      {/* Tarjeta destacada: Emergencias y Embajadas / Consulados */}
+      <button
+        type="button"
+        onClick={() => setEmergenciasAbierto(true)}
+        className="w-full text-left p-4 rounded-3xl bg-gradient-to-r from-red-50 via-white to-amber-50/60 border border-red-200/80 hover:border-red-300 shadow-xs hover:shadow-sm transition-all flex items-center justify-between gap-3 cursor-pointer active:scale-[0.99]"
+      >
+        <div className="flex items-start gap-3 min-w-0">
+          <span className="w-10 h-10 rounded-2xl bg-red-100 text-red-700 flex items-center justify-center text-xl shrink-0">
+            🚨
+          </span>
+          <div className="min-w-0">
+            <p className="font-serif text-sm sm:text-base font-bold text-forest leading-snug">
+              {txtEmergencias.cardTitle}
+            </p>
+            <p className="font-sans text-xs text-stone mt-0.5 leading-snug">
+              {txtEmergencias.cardSubtitle}
+            </p>
+            <span className="inline-block text-[11px] font-sans font-bold text-red-700 mt-1.5">
+              {txtEmergencias.cardCta}
+            </span>
+          </div>
+        </div>
+      </button>
 
       {/* Carrusel horizontal de categorías de servicios con flechas semitransparentes */}
       <CarouselWrapper
@@ -638,6 +666,11 @@ export function ServiciosList({ servicios, zonaNombre, zonaSlug }: ServiciosList
           zonaNombre={zonaNombre}
         />
       )}
+
+      <EmergenciasModal
+        isOpen={emergenciasAbierto}
+        onClose={() => setEmergenciasAbierto(false)}
+      />
     </div>
   );
 }
