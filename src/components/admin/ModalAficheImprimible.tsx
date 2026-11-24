@@ -25,6 +25,7 @@ export function ModalAficheImprimible({
     tipoContenido === "menu_restaurante" ? "mesa" : "pared"
   );
   const [generando, setGenerando] = useState(false);
+  const [enlaceCopiado, setEnlaceCopiado] = useState(false);
 
   if (!isOpen) return null;
 
@@ -377,20 +378,42 @@ export function ModalAficheImprimible({
     }
   }
 
-  // ─── 4. Acción: Descargar Solo el Código QR en PNG ───
-  function handleDownloadSoloQRPNG() {
-    const a = document.createElement("a");
-    const slugSafe = (nombreLugar || "padonde")
-      .toLowerCase()
-      .replace(/[^\w-]/g, "-");
-    a.href = `https://api.qrserver.com/v1/create-qr-code/?size=1200x1200&margin=12&data=${encodeURIComponent(
+  // ─── 4. Acción: Descargar Solo el Código QR en PNG (800x800) ───
+  async function handleDownloadSoloQRPNG() {
+    const slugSafe =
+      (srcParam || nombreLugar || "padonde")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "") || "padonde";
+    const qr800 = `https://api.qrserver.com/v1/create-qr-code/?size=800x800&margin=12&data=${encodeURIComponent(
       urlSeguraDestino
     )}`;
-    a.target = "_blank";
-    a.download = `solo-qr-${slugSafe}.png`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    try {
+      setGenerando(true);
+      const res = await fetch(qr800);
+      if (!res.ok) throw new Error("fetch_qr_error");
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = `qr-${slugSafe}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    } catch {
+      window.open(qr800, "_blank");
+    } finally {
+      setGenerando(false);
+    }
+  }
+
+  function handleCopiarEnlace() {
+    navigator.clipboard?.writeText(urlSeguraDestino);
+    setEnlaceCopiado(true);
+    setTimeout(() => setEnlaceCopiado(false), 2500);
   }
 
   return (
@@ -452,16 +475,27 @@ export function ModalAficheImprimible({
               <span>{generando ? "Generando..." : "Descargar Imagen"}</span>
             </button>
 
+            {/* Copiar Enlace Directo */}
+            <button
+              type="button"
+              onClick={handleCopiarEnlace}
+              className="px-3 py-2 bg-forest/10 hover:bg-forest/20 text-forest rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-2xs cursor-pointer transition-all active:scale-95"
+              title={urlSeguraDestino}
+            >
+              <span>{enlaceCopiado ? "✓" : "📋"}</span>
+              <span>{enlaceCopiado ? "Enlace Copiado" : "Copiar Enlace"}</span>
+            </button>
+
             {/* Solo QR */}
             <button
               type="button"
               onClick={handleDownloadSoloQRPNG}
               disabled={generando}
               className="px-3 py-2 bg-slate-700 hover:bg-slate-800 disabled:opacity-60 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-xs cursor-pointer transition-all active:scale-95"
-              title="Descargar únicamente el código QR cuadrado"
+              title="Descargar únicamente el código QR cuadrado (PNG 800×800)"
             >
               <span>🔲</span>
-              <span>Solo QR</span>
+              <span>Solo QR (PNG)</span>
             </button>
 
             {/* Imprimir / PDF */}

@@ -21,6 +21,7 @@ import { ToggleDestacadoButton } from "./ToggleDestacadoButton";
 import { ModalEditarEvento } from "./ModalEditarEvento";
 import { ModalProyectarEvento } from "./ModalProyectarEvento";
 import { ModalNotificarAliado, type EventoNotificarData } from "./ModalNotificarAliado";
+import { ModalAficheImprimible } from "@/components/admin/ModalAficheImprimible";
 import type { AliadoSimple } from "@/lib/eventoParser";
 import { Button } from "@/components/ui/Button";
 import { getCategoria } from "@/constants";
@@ -115,6 +116,11 @@ export function AdminEventList({
   const [eventoAEditar, setEventoAEditar] = useState<EventoAdminItem | null>(null);
   const [eventoAProyectar, setEventoAProyectar] = useState<EventoAdminItem | null>(null);
   const [eventoANotificar, setEventoANotificar] = useState<EventoNotificarData | null>(null);
+  const [qrFichaData, setQrFichaData] = useState<{
+    nombre: string;
+    url: string;
+    slugNegocio: string;
+  } | null>(null);
 
   function handleProyectarFecha(ev: EventoAdminItem) {
     const { fechaInicio, fechaFin } = proyectarProximaFechaEvento(
@@ -688,6 +694,30 @@ export function AdminEventList({
                     </button>
                   )}
 
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const zSlug = ev.zonaSlug || "minca";
+                      const slugNegocio =
+                        (negocio?.nombre || ev.titulo || "aliado")
+                          .normalize("NFD")
+                          .replace(/[\u0300-\u036f]/g, "")
+                          .toLowerCase()
+                          .replace(/[^a-z0-9]+/g, "-")
+                          .replace(/^-+|-+$/g, "") || "aliado";
+                      setQrFichaData({
+                        nombre: negocio?.nombre || ev.titulo,
+                        slugNegocio,
+                        url: `https://padonde.lat/es/${zSlug}/${ev.id}?utm_source=recepcion&utm_medium=qr_${slugNegocio}`,
+                      });
+                    }}
+                    className="text-xs text-indigo-800 hover:text-indigo-950 px-2.5 py-1.5 rounded-xl border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 transition-colors flex items-center gap-1 font-semibold font-sans shadow-2xs shrink-0 cursor-pointer active:scale-95"
+                    title="Generar código QR directo a la ficha de este aliado (PNG 800×800)"
+                  >
+                    <span>🔲</span>
+                    <span className="font-sans">QR Ficha</span>
+                  </button>
+
                   <a
                     href={`/es/${ev.zonaSlug || "minca"}/${ev.id}`}
                     target="_blank"
@@ -808,6 +838,20 @@ export function AdminEventList({
         isOpen={Boolean(eventoANotificar)}
         onClose={() => setEventoANotificar(null)}
       />
+
+      {/* Modal QR Ficha Directa (PNG 800x800 + Copiar Enlace) */}
+      {qrFichaData && (
+        <ModalAficheImprimible
+          isOpen={true}
+          onClose={() => setQrFichaData(null)}
+          puntoNombre={qrFichaData.nombre}
+          urlDestino={qrFichaData.url}
+          srcParam={qrFichaData.slugNegocio}
+          qrImageUrl={`https://api.qrserver.com/v1/create-qr-code/?size=800x800&margin=10&data=${encodeURIComponent(
+            qrFichaData.url
+          )}`}
+        />
+      )}
     </section>
   );
 }

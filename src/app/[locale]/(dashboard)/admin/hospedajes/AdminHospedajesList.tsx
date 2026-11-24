@@ -6,6 +6,7 @@ import { Link, useRouter } from "@/i18n/routing";
 import { ModalEditarHospedaje } from "./ModalEditarHospedaje";
 import { ModalAlertaDuplicado } from "./ModalAlertaDuplicado";
 import { ModalNotificarAliado, type EventoNotificarData } from "../ModalNotificarAliado";
+import { ModalAficheImprimible } from "@/components/admin/ModalAficheImprimible";
 import {
   toggleEventoActivoAction,
   investigarHospedajeAction,
@@ -138,6 +139,11 @@ export function AdminHospedajesList({
   const [isInvestigando, setIsInvestigando] = useState(false);
   const [hospedajeEnEdicion, setHospedajeEnEdicion] = useState<any | null>(null);
   const [hospedajeANotificar, setHospedajeANotificar] = useState<EventoNotificarData | null>(null);
+  const [qrFichaData, setQrFichaData] = useState<{
+    nombre: string;
+    url: string;
+    slugNegocio: string;
+  } | null>(null);
 
   // Estado para alertar si se detecta un posible duplicado antes de crear
   const [alertaDuplicado, setAlertaDuplicado] = useState<{
@@ -638,6 +644,29 @@ export function AdminHospedajesList({
                     )}
 
                     <button
+                      type="button"
+                      onClick={() => {
+                        const slugNegocio =
+                          (hosp.negocio?.nombre || hosp.titulo || "hospedaje")
+                            .normalize("NFD")
+                            .replace(/[\u0300-\u036f]/g, "")
+                            .toLowerCase()
+                            .replace(/[^a-z0-9]+/g, "-")
+                            .replace(/^-+|-+$/g, "") || "hospedaje";
+                        setQrFichaData({
+                          nombre: hosp.negocio?.nombre || hosp.titulo,
+                          slugNegocio,
+                          url: `https://padonde.lat/es/${zonaSlug}/${hosp.id}?utm_source=recepcion&utm_medium=qr_${slugNegocio}`,
+                        });
+                      }}
+                      className="px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 text-xs font-sans font-semibold rounded-xl transition-all flex items-center gap-1 shadow-2xs cursor-pointer active:scale-95"
+                      title="Generar código QR directo a la ficha de este hospedaje (PNG 800×800)"
+                    >
+                      <span>🔲</span>
+                      <span>QR Ficha</span>
+                    </button>
+
+                    <button
                       onClick={() => abrirEditar(hosp)}
                       className="px-3 py-1.5 bg-forest/10 hover:bg-forest text-forest hover:text-cream text-xs font-sans font-medium rounded-xl transition-all cursor-pointer"
                     >
@@ -686,6 +715,20 @@ export function AdminHospedajesList({
         isOpen={Boolean(hospedajeANotificar)}
         onClose={() => setHospedajeANotificar(null)}
       />
+
+      {/* Modal QR Ficha Directa (PNG 800x800 + Copiar Enlace) */}
+      {qrFichaData && (
+        <ModalAficheImprimible
+          isOpen={true}
+          onClose={() => setQrFichaData(null)}
+          puntoNombre={qrFichaData.nombre}
+          urlDestino={qrFichaData.url}
+          srcParam={qrFichaData.slugNegocio}
+          qrImageUrl={`https://api.qrserver.com/v1/create-qr-code/?size=800x800&margin=10&data=${encodeURIComponent(
+            qrFichaData.url
+          )}`}
+        />
+      )}
 
       {/* Modal de Alerta de Duplicado Detectado */}
       {alertaDuplicado && (
