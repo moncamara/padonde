@@ -49,42 +49,36 @@ export function resolverNombreDestino(params: MensajeBaseParams): string {
  * CTA: "Consultar Menú - Reservar".
  */
 export function generarMensajeRestaurante(params: MensajeBaseParams): string {
-  const destino = resolverNombreDestino(params);
-  const url = resolverUrlPublicacion(params);
-  const fechaLimite = params.fechaLimite || calcularFechaLimite(15);
+  const nombreNegocio = params.negocioNombre;
+  const zonaNombre = resolverNombreDestino(params);
+  const urlPublica = resolverUrlPublicacion(params);
   const wpVisual = formatVisualPhone(params.whatsapp);
-  const textoWhatsapp = wpVisual ? ` (${wpVisual})` : "";
+  const whatsappFormateado = wpVisual || params.whatsapp || "su WhatsApp";
 
-  return `🌿 *¡Hola ${params.negocioNombre}! Un saludo muy especial desde PaDónde ${destino}.*
+  return `🌿 *¡Hola equipo de ${nombreNegocio}! Un saludo muy especial desde PaDónde ${zonaNombre}.*
 
-Ya tenemos su propuesta gastronómica activa y verificada en vivo dentro de la cartelera oficial de ${destino}:
-👉 *Miren su vitrina aquí:* ${url}
+Ya tenemos su propuesta gastronómica maquetada y verificada dentro de la cartelera turística oficial del corredor ${zonaNombre}:
+👉 *Miren su vitrina aquí:* ${urlPublica}
 
-Échale una mirada y fíjate en esto:
-• Puedes ver tus fotos, horarios y descripción detallada.
-• Si deseas agregar un reel y/o el Menú digital e interactivo nos avisas
-• Toca en *"Consultar Menú - Reservar"* para comprobar que te llega directo a tu número${textoWhatsapp}.
-• La plataforma traduce automáticamente al inglés, alemán y francés para mochileros extranjeros.
+Queremos darles la bienvenida a *PaDónde*. Al activar su vitrina, su restaurante queda visible 24/7 en una plataforma en *4 idiomas*, siendo consultada a diario por viajeros de Colombia y turistas internacionales provenientes de *EE. UU., Canadá, Alemania, Francia, Suiza, Países Bajos y España*.
 
-🎁 *Por lanzamiento, ya te dejamos la publicación activa y destacada durante 15 días de cortesía 100% libres de costo (hasta el ${fechaLimite})* para que compruebes cuántos viajeros te descubren y contactan. 🚀
+🌟 *El valor directo para ${nombreNegocio}:*
+• *0% de comisiones por reserva o pedido:* Toca en *"Consultar Menú - Reservar"* dentro de su ficha para comprobar que los clientes llegan directo a su WhatsApp (${whatsappFormateado}).
+• *Catálogo internacional en 4 idiomas:* Su descripción, horarios y propuesta gastronómica se traducen automáticamente al Español, Inglés, Francés y Alemán (ES / EN / FR / DE) para captar al turista extranjero.
+• *Presencia fija 24/7 + Reels:* Visibilidad continua en la cartelera gastronómica oficial de ${zonaNombre} (si desean agregar un video reel corto de sus platos o ambiente, nos lo envían y lo montamos).
 
----
+🗓️ *Condiciones de Activación (Plan Trimestral Anticipado):*
+Para mantener su vitrina activa sin cobros mensuales engorrosos, manejamos suscripción trimestral (90 días continuos):
+🍽️ *Plan Trimestral Restaurantes, Bares & Cafés:* *$150.000 COP / trimestre* ($50.000/mes).
 
-📋 *Nuestra Propuesta Comercial (para después de tus 15 días):*
-Las apps de delivery o comisionistas descuentan márgenes altos. En PaDónde los clientes y turistas te escriben directo a tu WhatsApp con *0% de comisiones*.
+💡 *Complemento recomendado para mesas: Menú Digital Interactivo + Reseñas en Google ($100.000 COP — pago único opcional):*
+• Digitalización completa de su carta en 4 idiomas dentro de la plataforma *(solo nos pasan fotos o PDF de su menú y nosotros lo dejamos listo)* + botón directo al final para que sus clientes califiquen el negocio en Google Maps en 1 clic + archivo del **Código QR en alta calidad** listo para imprimir en habladores de mesa.
 
-💰 *Plan Trimestral Restaurantes, Bares & Cafés:*
-• *$150.000 COP el trimestre*.
-Incluye tu ficha activa 24/7, publicación en cartelera turística, 0% comisiones y catálogo en 4 idiomas.
+💳 *Medios de pago para activación inmediata:*
+• *Nequi (Llave):* 3013010194
+• *Bancolombia Ahorros:* 080 756 549 53
 
-💡 *Opción recomendada para mesa: Menú Digital + Reseñas en Google* (Único pago de $100.000 COP):
-• *Stickers con código QR resistentes para tus mesas:* El comensal se sienta, escanea y ve tu menú en su celular al instante.
-• *Reseñas 5 Estrellas en Google sin rodeos:* Al final del menú dejamos un botón directo para que el cliente califique tu negocio en Google Maps en 1 solo clic.
-• Publicación y habilitación de tu carta en la plataforma *(solo nos pasas las fotos o archivo de tu menú y nosotros te lo dejamos listo)* + el archivo del código QR en alta calidad por si deseas mandar a hacer habladores.
-
----
-
-¿Pudiste abrir el enlace de *${params.negocioNombre}*? ¿Te gusta cómo quedó o le afinamos algún horario o detalle? 📲✨`;
+¿Pudieron abrir el enlace de *${nombreNegocio}*? Échenle un ojo a su ficha, confírmenme si sus fotos, horarios y número de WhatsApp están al día y si desean activar solo la vitrina trimestral ($150.000) o el paquete completo con Carta Digital QR ($250.000). ¡Muchos éxitos esta temporada! 🍽️🌊✨`;
 }
 
 /**
