@@ -1536,6 +1536,43 @@ export interface EditarAliadoInput {
   google_review_url?: string | null;
 }
 
+async function revalidarRutasPublicasAliado(
+  supabase: any,
+  negocioId: string,
+  zonaSlug?: string
+) {
+  try {
+    const { data: evsAliado } = await supabase
+      .from("eventos")
+      .select("id, zonas:zona_id(slug)")
+      .eq("negocio_id", negocioId);
+
+    const zonasSet = new Set<string>(["minca", "mendihuaca", "tayrona", "taganga"]);
+    if (zonaSlug) zonasSet.add(zonaSlug);
+
+    for (const loc of ["es", "en", "fr", "de"]) {
+      for (const z of zonasSet) {
+        revalidatePath(`/${loc}/${z}`, "page");
+        revalidatePath(`/${loc}/${z}/menu-demo`, "page");
+      }
+      for (const ev of evsAliado || []) {
+        const zRel = Array.isArray((ev as any).zonas) ? (ev as any).zonas[0] : (ev as any).zonas;
+        const evZona = zRel?.slug || zonaSlug || "minca";
+        revalidatePath(`/${loc}/${evZona}/${ev.id}`, "page");
+      }
+    }
+  } catch {}
+
+  revalidatePath("/", "layout");
+  revalidatePath("/[locale]/admin", "page");
+  revalidatePath("/[locale]/admin/aliados", "page");
+  revalidatePath("/[locale]/admin/hospedajes", "page");
+  revalidatePath("/[locale]/[zona]", "page");
+  revalidatePath("/[locale]/[zona]/[id]", "page");
+  revalidatePath("/[locale]/(public)/[zona]", "page");
+  revalidatePath("/[locale]/(public)/[zona]/[id]", "page");
+}
+
 /**
  * Server Action para editar completamente los datos de un Aliado comercial.
  */
@@ -1676,10 +1713,7 @@ export async function editarAliadoCompletoAction(input: EditarAliadoInput) {
       // Silencioso
     }
 
-    revalidatePath(`/[locale]/admin`, "page");
-    revalidatePath(`/[locale]/admin/aliados`, "page");
-    revalidatePath(`/[locale]/minca`, "page");
-    revalidatePath(`/[locale]/mendihuaca`, "page");
+    await revalidarRutasPublicasAliado(supabase, input.id, input.zonaSlug);
 
     return { success: true };
   } catch (err: any) {
@@ -1723,10 +1757,7 @@ export async function toggleActivoAliadoAction(
         .eq("negocio_id", negocioId);
     }
 
-    revalidatePath(`/[locale]/admin`, "page");
-    revalidatePath(`/[locale]/admin/aliados`, "page");
-    revalidatePath(`/[locale]/minca`, "page");
-    revalidatePath(`/[locale]/mendihuaca`, "page");
+    await revalidarRutasPublicasAliado(supabase, negocioId);
 
     return { success: true };
   } catch (err: any) {
