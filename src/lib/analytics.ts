@@ -135,10 +135,6 @@ export function trackWhatsAppClick(data: TrackWhatsAppClickParams) {
       } else {
         window.gtag("event", "click_reserva_whatsapp", ga4Payload);
       }
-
-      if ((window as any).padonde_debug_analytics) {
-        console.log("📊 [GA4 click_whatsapp despachado]", ga4Payload);
-      }
     }
   } catch (gtagErr) {
     console.warn("Métricas WhatsApp (gtag dispatch fallback):", gtagErr);

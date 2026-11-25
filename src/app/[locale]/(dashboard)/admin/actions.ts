@@ -319,8 +319,11 @@ export async function adminPublishEventAction(
       return { success: false, error: "Error al registrar el evento en Supabase." };
     }
 
-    // Revalidar inmediatamente todo el sitio (CDN y rutas públicas en todos los idiomas)
-    revalidatePath("/", "layout");
+    // Revalidar la cartelera de la zona y la nueva ficha en los 4 idiomas + panel admin
+    for (const loc of ["es", "en", "fr", "de"]) {
+      revalidatePath(`/${loc}/${input.zonaSlug}`, "page");
+      revalidatePath(`/${loc}/${input.zonaSlug}/${nuevoEvento.id}`, "page");
+    }
     revalidatePath(`/[locale]/${input.zonaSlug}`, "page");
     revalidatePath(`/[locale]/admin`, "page");
     revalidatePath(`/[locale]/admin/aliados`, "page");
@@ -1386,7 +1389,6 @@ export async function editarEventoAdminAction(input: EditarEventoAdminInput) {
       revalidatePath(`/${loc}/${zSlug}/${input.eventoId}`, "page");
       revalidatePath(`/${loc}/${zSlug}/menu-demo`, "page");
     }
-    revalidatePath("/", "layout");
     revalidatePath("/[locale]/admin", "page");
     revalidatePath("/[locale]/admin/aliados", "page");
     revalidatePath("/[locale]/admin/cobros", "page");
@@ -1813,7 +1815,6 @@ export async function guardarEstrategiaOrdenPublicoAliadosAction(
         revalidatePath(`/${loc}/${z}`, "page");
       }
     }
-    revalidatePath("/", "layout");
     revalidatePath("/[locale]/(public)/[zona]", "page");
     revalidatePath("/[locale]/admin/aliados", "page");
 
@@ -1897,7 +1898,6 @@ export async function actualizarPosicionManualAliadoAction(
         revalidatePath(`/${loc}/${z}`, "page");
       }
     }
-    revalidatePath("/", "layout");
     revalidatePath("/[locale]/(public)/[zona]", "page");
     revalidatePath("/[locale]/admin/aliados", "page");
 
@@ -2297,7 +2297,6 @@ export async function guardarHospedajeAction(input: GuardarHospedajeInput) {
         revalidatePath(`/${loc}/${input.zonaSlug}/${input.id}`, "page");
       }
     }
-    revalidatePath("/", "layout");
     revalidatePath(`/[locale]/admin`, "page");
     revalidatePath(`/[locale]/admin/hospedajes`, "page");
     revalidatePath(`/[locale]/admin/aliados`, "page");
