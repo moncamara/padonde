@@ -1563,14 +1563,9 @@ async function revalidarRutasPublicasAliado(
     }
   } catch {}
 
-  revalidatePath("/", "layout");
-  revalidatePath("/[locale]/admin", "page");
-  revalidatePath("/[locale]/admin/aliados", "page");
-  revalidatePath("/[locale]/admin/hospedajes", "page");
-  revalidatePath("/[locale]/[zona]", "page");
-  revalidatePath("/[locale]/[zona]/[id]", "page");
-  revalidatePath("/[locale]/(public)/[zona]", "page");
-  revalidatePath("/[locale]/(public)/[zona]/[id]", "page");
+  revalidatePath("/es/admin", "page");
+  revalidatePath("/es/admin/aliados", "page");
+  revalidatePath("/es/admin/hospedajes", "page");
 }
 
 /**
