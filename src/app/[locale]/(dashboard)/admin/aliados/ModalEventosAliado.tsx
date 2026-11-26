@@ -8,6 +8,7 @@ import {
   formatHora,
   formatPrecio,
   getEtiquetaHorario,
+  esEventoVigente,
 } from "@/lib/utils";
 import { toggleEventoActivoAction } from "../actions";
 import { ModalEditarEvento } from "../ModalEditarEvento";
@@ -37,6 +38,9 @@ export function ModalEventosAliado({
   if (!isOpen) return null;
 
   const eventos = aliado.eventos || [];
+  const eventosVigentesHoy = eventos.filter(
+    (ev) => Boolean(ev.activo) && esEventoVigente(ev)
+  ).length;
 
   const handleToggleEvento = (eventoId: string, estadoActual: boolean) => {
     startTransition(async () => {
@@ -66,7 +70,7 @@ export function ModalEventosAliado({
                 <span className="font-medium text-forest">{aliado.categoria}</span>
                 <span>·</span>
                 <span>
-                  <strong>{aliado.eventosActivos}</strong> vigentes ({eventos.length} total)
+                  <strong>{eventosVigentesHoy}</strong> vigentes ({eventos.length} total)
                 </span>
                 <span>·</span>
                 <span className={aliado.activo ? "text-emerald-700 font-medium" : "text-amber-700 font-medium"}>
@@ -178,21 +182,30 @@ export function ModalEventosAliado({
 
                     {/* Acciones del evento */}
                     <div className="flex items-center gap-2 shrink-0 pt-2 sm:pt-0 border-t border-stone-light/50 sm:border-0 justify-end">
-                      {/* Switch Activo / Pausado */}
-                      <button
-                        type="button"
-                        onClick={() => handleToggleEvento(ev.id, ev.activo)}
-                        disabled={isPending}
-                        title={ev.activo ? "Clic para pausar esta publicación" : "Clic para activar"}
-                        className={[
-                          "text-[10px] px-2.5 py-1 rounded-xl font-semibold border flex items-center gap-1 transition-all cursor-pointer shadow-2xs active:scale-95",
-                          ev.activo
-                            ? "bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100"
-                            : "bg-stone-100 text-stone-600 border-stone-300 hover:bg-stone-200",
-                        ].join(" ")}
-                      >
-                        <span>{ev.activo ? "🟢 Activo" : "⏸️ Pausado"}</span>
-                      </button>
+                      {/* Switch Activo / Pausado / Concluido */}
+                      {(() => {
+                        const estaVigente = Boolean(ev.activo) && esEventoVigente(ev);
+                        return (
+                          <button
+                            type="button"
+                            onClick={() => handleToggleEvento(ev.id, ev.activo)}
+                            disabled={isPending}
+                            title={ev.activo ? "Clic para pausar esta publicación" : "Clic para activar"}
+                            className={[
+                              "text-[10px] px-2.5 py-1 rounded-xl font-semibold border flex items-center gap-1 transition-all cursor-pointer shadow-2xs active:scale-95",
+                              !ev.activo
+                                ? "bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100"
+                                : estaVigente
+                                ? "bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100"
+                                : "bg-stone-100 text-stone-600 border-stone-300 hover:bg-stone-200",
+                            ].join(" ")}
+                          >
+                            <span>
+                              {!ev.activo ? "⏸️ Pausado" : estaVigente ? "🟢 Vigente" : "⚪ Concluido"}
+                            </span>
+                          </button>
+                        );
+                      })()}
 
                       {/* Botón Notificar al Aliado por WhatsApp */}
                       {aliado.whatsapp && (

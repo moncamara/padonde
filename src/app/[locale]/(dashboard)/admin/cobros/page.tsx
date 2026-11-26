@@ -4,6 +4,7 @@ import { AdminNav } from "../AdminNav";
 import { CobrosDashboardClient } from "./CobrosDashboardClient";
 import type { HistorialAliadoCobro } from "./ModalHistorialCobro";
 import { obtenerCobrosAliadosAction } from "./actions";
+import { esEventoVigente } from "@/lib/utils";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -34,7 +35,7 @@ export default async function AdminCobrosPage({
     supabase.from("negocios").select("id, created_at"),
     supabase
       .from("eventos")
-      .select("id, negocio_id, titulo, activo, fecha_inicio, created_at")
+      .select("id, negocio_id, titulo, tipo, activo, fecha_inicio, fecha_fin, descripcion, metadata_hospedaje, created_at")
       .order("fecha_inicio", { ascending: false }),
   ]);
 
@@ -71,7 +72,7 @@ export default async function AdminCobrosPage({
       fecha_ingreso: fechaIngreso,
       dias_activo: diasActivo,
       total_anuncios_historicos: evs.length,
-      anuncios_activos_hoy: evs.filter((e) => Boolean(e.activo)).length,
+      anuncios_activos_hoy: evs.filter((e) => Boolean(e.activo) && esEventoVigente(e)).length,
       listado_anuncios: evs.map((e) => {
         const refIso = e.fecha_inicio || e.created_at;
         let fechaFmt = "—";
@@ -85,11 +86,14 @@ export default async function AdminCobrosPage({
             });
           }
         } catch {}
+        const estaActivo = Boolean(e.activo);
+        const estaVigente = estaActivo && esEventoVigente(e);
         return {
           id: e.id,
           titulo: e.titulo || "Publicación",
           fecha: fechaFmt,
-          activo: Boolean(e.activo),
+          activo: estaActivo,
+          vigente: estaVigente,
         };
       }),
     };

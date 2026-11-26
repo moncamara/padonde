@@ -8,6 +8,7 @@ export interface AnuncioHistorialItem {
   titulo: string;
   fecha: string;
   activo: boolean;
+  vigente?: boolean;
 }
 
 export interface HistorialAliadoCobro {
@@ -189,12 +190,18 @@ export function ModalHistorialCobro({
                     <span
                       className={[
                         "shrink-0 text-[10px] px-2 py-0.5 rounded-full font-semibold border",
-                        ev.activo
+                        !ev.activo
+                          ? "bg-amber-50 text-amber-800 border-amber-200"
+                          : ev.vigente !== false
                           ? "bg-emerald-50 text-emerald-800 border-emerald-200"
                           : "bg-stone-100 text-stone-600 border-stone-200",
                       ].join(" ")}
                     >
-                      {ev.activo ? "🟢 Activo" : "⏸️ Finalizado"}
+                      {!ev.activo
+                        ? "⏸️ Pausado"
+                        : ev.vigente !== false
+                        ? "🟢 Vigente"
+                        : "⚪ Concluido"}
                     </span>
                   </div>
                 ))}

@@ -3,6 +3,7 @@ import { Link, redirect } from "@/i18n/routing";
 import { Button } from "@/components/ui/Button";
 import { AdminNav } from "../AdminNav";
 import { obtenerCobrosAliadosAction } from "../cobros/actions";
+import { esEventoVigente } from "@/lib/utils";
 import { AdminAliadosList, type AliadoItem } from "./AdminAliadosList";
 import { ModalKitProspeccion } from "./ModalKitProspeccion";
 import { ModalDifusionWhatsApp } from "./ModalDifusionWhatsApp";
@@ -258,7 +259,7 @@ export default async function AdminAliadosPage({
       google_review_url: n.google_review_url ?? null,
       created_at: n.created_at,
       totalEventos: evList.length,
-      eventosActivos: evList.filter((e: any) => e.activo).length,
+      eventosActivos: evList.filter((e: any) => Boolean(e.activo) && esEventoVigente(e)).length,
       totalClics: clicsAliado.length,
       clics7Dias: clicsAliado.filter((c) => new Date(c.created_at) >= hace7Dias).length,
       eventos: eventosOrdenados,
