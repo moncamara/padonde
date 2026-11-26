@@ -58,6 +58,7 @@ export interface AliadoItem {
   plan_expira_en?: string | null;
   activo: boolean;
   qr_disenado?: boolean;
+  estadoPagoReal?: string | null;
   created_at: string;
   totalEventos: number;
   eventosActivos: number;
@@ -90,7 +91,7 @@ interface AdminAliadosListProps {
   posicionesManualesIniciales?: Record<string, number>;
 }
 
-type FiltroPlan = "todos" | "pro_premium" | "por_vencer" | "gratis";
+type FiltroPlan = "todos" | "al_dia" | "vencidos" | "pro_premium" | "por_vencer" | "gratis";
 type CriterioOrden = "recientes" | "nombre" | "vistas" | "antiguos";
 
 export function AdminAliadosList({
@@ -253,11 +254,25 @@ export function AdminAliadosList({
       if (filtroEstado === "activos" && !a.activo) return false;
       if (filtroEstado === "inactivos" && a.activo) return false;
 
-      // 1. Filtro por plan / estado
+      // 1. Filtro por plan / estado de pago REAL (sincronizado con /admin/cobros → acuerdos_comerciales)
       const est = getEstadoExpiracion(a);
+      const esAlDiaReal = a.estadoPagoReal === "al_dia";
+      const esVencidoReal = a.estadoPagoReal
+        ? a.estadoPagoReal === "vencido"
+        : est.tipo === "vencido";
+      if (filtro === "al_dia" && !esAlDiaReal) return false;
+      if (filtro === "vencidos" && !esVencidoReal) return false;
       if (filtro === "pro_premium" && a.plan === "gratis") return false;
       if (filtro === "gratis" && a.plan !== "gratis") return false;
-      if (filtro === "por_vencer" && est.tipo !== "por_vencer" && est.tipo !== "vencido") return false;
+      if (
+        filtro === "por_vencer" &&
+        a.estadoPagoReal !== "por_vencer" &&
+        a.estadoPagoReal !== "vencido" &&
+        est.tipo !== "por_vencer" &&
+        est.tipo !== "vencido"
+      ) {
+        return false;
+      }
 
       // 2. Búsqueda por texto (insensible a tildes y diacríticos)
       const q = normalizarTextoBusqueda(busqueda);
@@ -737,6 +752,40 @@ export function AdminAliadosList({
             ].join(" ")}
           >
             Todos ({aliados.length})
+          </button>
+
+          <button
+            onClick={() => setFiltro("al_dia")}
+            className={[
+              "px-3 py-1.5 rounded-xl font-sans text-xs font-medium transition-all cursor-pointer flex items-center gap-1 whitespace-nowrap flex-shrink-0",
+              filtro === "al_dia"
+                ? "bg-white text-forest shadow-xs font-semibold"
+                : "text-stone hover:text-forest",
+            ].join(" ")}
+          >
+            <span>✅ Al día</span>
+            <span className="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded-full font-semibold">
+              {aliados.filter((a) => a.estadoPagoReal === "al_dia").length}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setFiltro("vencidos")}
+            className={[
+              "px-3 py-1.5 rounded-xl font-sans text-xs font-medium transition-all cursor-pointer flex items-center gap-1 whitespace-nowrap flex-shrink-0",
+              filtro === "vencidos"
+                ? "bg-white text-forest shadow-xs font-semibold"
+                : "text-stone hover:text-forest",
+            ].join(" ")}
+          >
+            <span>🔴 Vencidos</span>
+            <span className="text-[10px] bg-red-100 text-red-800 px-1.5 py-0.2 rounded-full font-semibold">
+              {
+                aliados.filter((a) =>
+                  a.estadoPagoReal ? a.estadoPagoReal === "vencido" : getEstadoExpiracion(a).tipo === "vencido"
+                ).length
+              }
+            </span>
           </button>
 
           <button

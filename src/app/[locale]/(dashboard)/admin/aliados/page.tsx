@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Link, redirect } from "@/i18n/routing";
 import { Button } from "@/components/ui/Button";
 import { AdminNav } from "../AdminNav";
+import { obtenerCobrosAliadosAction } from "../cobros/actions";
 import { AdminAliadosList, type AliadoItem } from "./AdminAliadosList";
 import { ModalKitProspeccion } from "./ModalKitProspeccion";
 import { ModalDifusionWhatsApp } from "./ModalDifusionWhatsApp";
@@ -192,6 +193,21 @@ export default async function AdminAliadosPage({
     // Silencioso para producción
   }
 
+  // 2.2b Cargar estado real de pagos desde /admin/cobros (acuerdos_comerciales / vista_cobros_aliados)
+  const mapaEstadoPagoReal = new Map<string, string>();
+  try {
+    const cobrosRes = await obtenerCobrosAliadosAction();
+    if (cobrosRes.success && Array.isArray(cobrosRes.aliados)) {
+      for (const c of cobrosRes.aliados) {
+        if (c.negocio_id) {
+          mapaEstadoPagoReal.set(c.negocio_id, c.estado_calculado);
+        }
+      }
+    }
+  } catch {
+    // Silencioso para producción
+  }
+
   // 3. Normalizar datos
   const todosLosAliados: AliadoItem[] = (rawNegocios || []).map((n: any) => {
     const evList = Array.isArray(n.eventos) ? n.eventos : [];
@@ -235,6 +251,7 @@ export default async function AdminAliadosPage({
       plan_expira_en: n.plan_expira_en,
       activo: n.activo,
       qr_disenado: Boolean(n.qr_disenado),
+      estadoPagoReal: mapaEstadoPagoReal.get(n.id) ?? null,
       google_rating: n.google_rating ?? null,
       google_total_reviews: n.google_total_reviews ?? null,
       google_maps_url: n.google_maps_url ?? null,
