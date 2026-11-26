@@ -140,6 +140,15 @@ export function resolverModoVisualizacion(valor: unknown): ModoVisualizacionHosp
   return valor === "galeria_y_lista_precios" ? "galeria_y_lista_precios" : "habitaciones_con_fotos";
 }
 
+export interface PedidosMenuConfig {
+  habilitarPedidos: boolean;
+  nequiLlave?: string;
+  qrPagoUrl?: string;
+  permitirPagoAlFinal?: boolean;
+  permitirPagoAnticipado?: boolean;
+  permitirPagoEfectivo?: boolean;
+}
+
 export type HospedajeMetadata = {
   check_in_hora?: string;     // ej: "15:00"
   check_out_hora?: string;    // ej: "11:00"
@@ -156,6 +165,7 @@ export type HospedajeMetadata = {
   menu_interactivo?: boolean; // Carta digital interactiva multilingüe
   menu_tema?: "fogon" | "sierra" | "caribe" | "oro" | "oceano_plata"; // Tema visual de autor para la carta
   menu_data?: any;            // Estructura JSON de la carta digital (categorías, platos, precios y traducciones)
+  pedidos_config?: PedidosMenuConfig; // Configuración opcional de Pedido & Pago Directo en la carta digital
   horario?: HorarioExperiencia; // Horario limpio y recurrencia para experiencias gastronómicas, bares y miradores
   posicion_portada?: string;  // Enfoque vertical de la portada (ej: "20%", "50%", "80%")
   posicionPortada?: string;   // Alias camelCase de compatibilidad

@@ -6,8 +6,10 @@ import Link from "next/link";
 import {
   LAZY_CAT_MENU,
   type MenuRestaurante,
+  type ItemMenu,
   type IdiomaCodigo,
 } from "@/data/menus/lazyCatMenu";
+import type { PedidosMenuConfig } from "@/lib/types";
 import { TEMAS_MENU, LISTA_TEMAS, type TemaMenuId } from "./menuThemes";
 import { normalizarTextoBusqueda } from "@/lib/utils/text";
 import "./luxury-menu.css";
@@ -25,6 +27,8 @@ interface LuxuryRestaurantMenuProps {
   zonaSlug?: string;
   /** ID de la ficha del restaurante propietario para regresar directo a su detalle. */
   eventoId?: string;
+  /** Configuración opcional de Pedido & Pago Directo (apagado por defecto). */
+  pedidosConfig?: PedidosMenuConfig;
 }
 
 
@@ -36,6 +40,7 @@ export function LuxuryRestaurantMenu({
   embebido = false,
   zonaSlug = "minca",
   eventoId,
+  pedidosConfig,
 }: LuxuryRestaurantMenuProps) {
   // Idioma activo: soporta ES, EN, FR, DE
   const [idioma, setIdioma] = useState<IdiomaCodigo>(() => {
@@ -86,18 +91,93 @@ export function LuxuryRestaurantMenu({
     insignia?: string;
   } | null>(null);
 
+  // ─── MODO PEDIDO & PAGO DIRECTO (100% cliente, apagado por defecto) ───
+  const configPedidos = pedidosConfig ?? menu.pedidosConfig;
+  const habilitarPedidos = Boolean(configPedidos?.habilitarPedidos);
+  const nequiLlave = configPedidos?.nequiLlave?.trim() || "";
+  const qrPagoUrl = configPedidos?.qrPagoUrl?.trim() || "";
+  const permitirPagoAlFinal = configPedidos?.permitirPagoAlFinal !== false;
+  const permitirPagoAnticipado = configPedidos?.permitirPagoAnticipado !== false;
+  const permitirPagoEfectivo = configPedidos?.permitirPagoEfectivo !== false;
+  const tieneDatosPago = Boolean(nequiLlave || qrPagoUrl);
+
+  type CartEntry = {
+    key: string;
+    item: ItemMenu;
+    variante?: string;
+    precio: number;
+    cantidad: number;
+  };
+  const [carrito, setCarrito] = useState<Record<string, CartEntry>>({});
+  const [mostrarModalPedido, setMostrarModalPedido] = useState<boolean>(false);
+  const [mostrarModalDatosPago, setMostrarModalDatosPago] = useState<boolean>(false);
+  const [ubicacionPedido, setUbicacionPedido] = useState<string>("");
+  const [notasPedido, setNotasPedido] = useState<string>("");
+  const [metodoPago, setMetodoPago] = useState<"final_mesa" | "nequi" | "efectivo">(() => {
+    if (permitirPagoAlFinal) return "final_mesa";
+    if (permitirPagoAnticipado) return "nequi";
+    if (permitirPagoEfectivo) return "efectivo";
+    return "final_mesa";
+  });
+  const [copiadoNequi, setCopiadoNequi] = useState<boolean>(false);
+
+  const itemsCarrito = useMemo(() => Object.values(carrito), [carrito]);
+  const totalItems = useMemo(
+    () => itemsCarrito.reduce((acc, entry) => acc + entry.cantidad, 0),
+    [itemsCarrito]
+  );
+  const totalCop = useMemo(
+    () => itemsCarrito.reduce((acc, entry) => acc + entry.precio * entry.cantidad, 0),
+    [itemsCarrito]
+  );
+
+  const actualizarCantidad = (
+    key: string,
+    item: ItemMenu,
+    precio: number,
+    delta: number,
+    variante?: string
+  ) => {
+    setCarrito((prev) => {
+      const actual = prev[key]?.cantidad || 0;
+      const siguiente = Math.max(0, actual + delta);
+      if (siguiente === 0) {
+        const copia = { ...prev };
+        delete copia[key];
+        return copia;
+      }
+      return {
+        ...prev,
+        [key]: { key, item, variante, precio, cantidad: siguiente },
+      };
+    });
+  };
+
+  const copiarNequi = async () => {
+    if (!nequiLlave) return;
+    try {
+      await navigator.clipboard.writeText(nequiLlave);
+      setCopiadoNequi(true);
+      setTimeout(() => setCopiadoNequi(false), 2200);
+    } catch {
+      // Fallback silencioso
+    }
+  };
+
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Bloquear scroll de la página y escuchar tecla Escape cuando el visor de foto esté abierto
+  // Bloquear scroll de la página y escuchar tecla Escape cuando algún modal esté abierto
   useEffect(() => {
-    if (fotoModal) {
+    if (fotoModal || mostrarModalPedido || mostrarModalDatosPago) {
       const prevOverflow = document.body.style.overflow;
       document.body.style.overflow = "hidden";
       const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === "Escape") {
           setFotoModal(null);
+          setMostrarModalPedido(false);
+          setMostrarModalDatosPago(false);
         }
       };
       window.addEventListener("keydown", handleKeyDown);
@@ -106,7 +186,7 @@ export function LuxuryRestaurantMenu({
         window.removeEventListener("keydown", handleKeyDown);
       };
     }
-  }, [fotoModal]);
+  }, [fotoModal, mostrarModalPedido, mostrarModalDatosPago]);
 
   const categoryRefs = useRef<Record<string, HTMLElement | null>>({});
   const originalBgRef = useRef<string | null>(null);
@@ -218,6 +298,28 @@ export function LuxuryRestaurantMenu({
       opciones: "opciones",
       irArriba: "Subir al inicio",
       limpiarFiltros: "Limpiar filtros",
+      hacerPedido: "Hacer Pedido",
+      datosPago: "Datos de Pago",
+      itemSingular: "ítem",
+      itemPlural: "ítems",
+      tuPedido: "Tu Pedido",
+      ubicacionLabel: "Nº de Mesa o Hostal / Dirección",
+      ubicacionPlaceholder: "Ej: Mesa 4 / Hostal Sierra...",
+      notasLabel: "Notas para cocina (opcional)",
+      notasPlaceholder: "Ej: sin cebolla, término medio, poca sal...",
+      formaPagoLabel: "Momento y forma de pago",
+      pagoFinalMesa: "Pagar al final en mesa",
+      pagoFinalDesc: "Tu pedido entra a cocina y pagas al terminar de comer.",
+      pagoNequi: "Pagar ahora por Nequi / Llave",
+      pagoEfectivo: "Efectivo al recibir / en mesa",
+      pagoEfectivoDesc: "Pagas en efectivo al recibir tu pedido o al cerrar la cuenta.",
+      copiarNumero: "Copiar número",
+      copiado: "¡Copiado!",
+      enviarWhatsapp: "Enviar Pedido por WhatsApp",
+      faltaUbicacion: "Por favor indica tu Nº de Mesa o Dirección.",
+      vaciarPedido: "Vaciar",
+      datosPagoTitulo: "Datos de Pago Directo",
+      datosPagoSub: "Copia el número o escanea el QR para transferir fácilmente.",
     },
     en: {
       volver: eventoId ? `← Back to ${menu.negocioNombre}` : "← Back to Live Board",
@@ -238,6 +340,28 @@ export function LuxuryRestaurantMenu({
       opciones: "options",
       irArriba: "Back to top",
       limpiarFiltros: "Clear filters",
+      hacerPedido: "Place Order",
+      datosPago: "Payment Info",
+      itemSingular: "item",
+      itemPlural: "items",
+      tuPedido: "Your Order",
+      ubicacionLabel: "Table Nº or Hostel / Address",
+      ubicacionPlaceholder: "E.g. Table 4 / Sierra Hostel...",
+      notasLabel: "Kitchen notes (optional)",
+      notasPlaceholder: "E.g. no onions, medium rare...",
+      formaPagoLabel: "When & how to pay",
+      pagoFinalMesa: "Pay at the end (at table)",
+      pagoFinalDesc: "Your order goes to the kitchen and you pay when you finish.",
+      pagoNequi: "Pay now via Nequi / Key",
+      pagoEfectivo: "Cash on delivery / at table",
+      pagoEfectivoDesc: "Pay in cash upon delivery or when closing your tab.",
+      copiarNumero: "Copy number",
+      copiado: "Copied!",
+      enviarWhatsapp: "Send Order via WhatsApp",
+      faltaUbicacion: "Please enter your Table Nº or Address.",
+      vaciarPedido: "Clear",
+      datosPagoTitulo: "Direct Payment Details",
+      datosPagoSub: "Copy the number or scan the QR code to transfer easily.",
     },
     fr: {
       volver: eventoId ? `← Retour à ${menu.negocioNombre}` : "← Retour à l'Agenda",
@@ -258,6 +382,28 @@ export function LuxuryRestaurantMenu({
       opciones: "options",
       irArriba: "Haut de page",
       limpiarFiltros: "Effacer les filtres",
+      hacerPedido: "Commander",
+      datosPago: "Paiement",
+      itemSingular: "article",
+      itemPlural: "articles",
+      tuPedido: "Votre Commande",
+      ubicacionLabel: "Nº de Table ou Auberge / Adresse",
+      ubicacionPlaceholder: "Ex : Table 4 / Auberge Sierra...",
+      notasLabel: "Notes pour la cuisine (optionnel)",
+      notasPlaceholder: "Ex : sans oignons, à point...",
+      formaPagoLabel: "Mode et moment de paiement",
+      pagoFinalMesa: "Payer à la fin à table",
+      pagoFinalDesc: "Votre commande part en cuisine et vous réglez à la fin.",
+      pagoNequi: "Payer maintenant par Nequi / Clé",
+      pagoEfectivo: "Espèces à la réception / à table",
+      pagoEfectivoDesc: "Vous payez en espèces à la livraison ou en fin de repas.",
+      copiarNumero: "Copier le numéro",
+      copiado: "Copié !",
+      enviarWhatsapp: "Envoyer la commande par WhatsApp",
+      faltaUbicacion: "Veuillez indiquer votre Nº de Table ou Adresse.",
+      vaciarPedido: "Vider",
+      datosPagoTitulo: "Informations de Paiement",
+      datosPagoSub: "Copiez le numéro ou scannez le QR pour transférer facilement.",
     },
     de: {
       volver: eventoId ? `← Zurück zu ${menu.negocioNombre}` : "← Zurück zur Übersicht",
@@ -278,6 +424,28 @@ export function LuxuryRestaurantMenu({
       opciones: "Optionen",
       irArriba: "Nach oben",
       limpiarFiltros: "Filter zurücksetzen",
+      hacerPedido: "Bestellen",
+      datosPago: "Zahlungsdaten",
+      itemSingular: "Artikel",
+      itemPlural: "Artikel",
+      tuPedido: "Ihre Bestellung",
+      ubicacionLabel: "Tischnummer oder Hostel / Adresse",
+      ubicacionPlaceholder: "Z.B.: Tisch 4 / Sierra Hostel...",
+      notasLabel: "Hinweise für die Küche (optional)",
+      notasPlaceholder: "Z.B.: ohne Zwiebeln, medium...",
+      formaPagoLabel: "Zahlungsart & Zeitpunkt",
+      pagoFinalMesa: "Am Ende am Tisch zahlen",
+      pagoFinalDesc: "Ihre Bestellung geht in die Küche und Sie zahlen zum Schluss.",
+      pagoNequi: "Jetzt per Nequi / Schlüssel zahlen",
+      pagoEfectivo: "Bar bei Lieferung / am Tisch",
+      pagoEfectivoDesc: "Sie zahlen bar bei Erhalt oder am Ende am Tisch.",
+      copiarNumero: "Nummer kopieren",
+      copiado: "Kopiert!",
+      enviarWhatsapp: "Bestellung per WhatsApp senden",
+      faltaUbicacion: "Bitte Tischnummer oder Adresse angeben.",
+      vaciarPedido: "Leeren",
+      datosPagoTitulo: "Direktzahlungsdaten",
+      datosPagoSub: "Nummer kopieren oder QR-Code scannen.",
     },
   }[idioma];
 
@@ -961,6 +1129,30 @@ export function LuxuryRestaurantMenu({
             </div>
           )}
 
+          {habilitarPedidos && tieneDatosPago && (
+            <button
+              type="button"
+              onClick={() => setMostrarModalDatosPago(true)}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.35rem",
+                padding: "0.45rem 0.85rem",
+                borderRadius: "9999px",
+                border: `1px solid ${th.borderStrong}`,
+                backgroundColor: th.isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.04)",
+                color: th.accent,
+                fontSize: "0.75rem",
+                fontWeight: 700,
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+              }}
+            >
+              <span>💳</span>
+              <span>{t.datosPago}</span>
+            </button>
+          )}
+
           {/* Indicador de resultados activos cuando hay búsqueda o filtro */}
           {(busqueda.trim() || filtroEspecial !== "ninguno") && (
             <div
@@ -1512,22 +1704,98 @@ export function LuxuryRestaurantMenu({
                             borderTop: `1px solid ${th.border}`,
                           }}
                         >
-                          {item.preciosVariados.map((v, i) => (
-                            <span
-                              key={i}
-                              style={{
-                                fontSize: "0.65rem",
-                                fontFamily: "monospace",
-                                padding: "2px 6px",
-                                borderRadius: "6px",
-                                backgroundColor: th.inputBg,
-                                border: `1px solid ${th.border}`,
-                                color: th.accent,
-                              }}
-                            >
-                              {v.etiqueta}: {formatearPrecio(v.precio)}
-                            </span>
-                          ))}
+                          {item.preciosVariados.map((v, i) => {
+                            const varKey = `${item.id}::${v.etiqueta}`;
+                            const qtyVar = carrito[varKey]?.cantidad || 0;
+                            if (!habilitarPedidos) {
+                              return (
+                                <span
+                                  key={i}
+                                  style={{
+                                    fontSize: "0.65rem",
+                                    fontFamily: "monospace",
+                                    padding: "2px 6px",
+                                    borderRadius: "6px",
+                                    backgroundColor: th.inputBg,
+                                    border: `1px solid ${th.border}`,
+                                    color: th.accent,
+                                  }}
+                                >
+                                  {v.etiqueta}: {formatearPrecio(v.precio)}
+                                </span>
+                              );
+                            }
+                            return (
+                              <div
+                                key={i}
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "0.45rem",
+                                  fontSize: "0.68rem",
+                                  fontFamily: "monospace",
+                                  padding: "3px 7px",
+                                  borderRadius: "9999px",
+                                  backgroundColor: qtyVar > 0 ? th.accentMuted + "22" : th.inputBg,
+                                  border: `1px solid ${qtyVar > 0 ? th.accent : th.border}`,
+                                  color: th.accent,
+                                }}
+                              >
+                                <span>
+                                  {v.etiqueta}: {formatearPrecio(v.precio)}
+                                </span>
+                                <span style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
+                                  <button
+                                    type="button"
+                                    onClick={() => actualizarCantidad(varKey, item, v.precio, -1, v.etiqueta)}
+                                    disabled={qtyVar === 0}
+                                    aria-label="Restar"
+                                    style={{
+                                      width: "20px",
+                                      height: "20px",
+                                      borderRadius: "9999px",
+                                      border: `1px solid ${th.borderStrong}`,
+                                      backgroundColor: th.surface,
+                                      color: th.text,
+                                      fontWeight: 700,
+                                      cursor: qtyVar === 0 ? "default" : "pointer",
+                                      opacity: qtyVar === 0 ? 0.45 : 1,
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      lineHeight: 1,
+                                    }}
+                                  >
+                                    −
+                                  </button>
+                                  <span style={{ minWidth: "14px", textAlign: "center", fontWeight: 700, color: th.text }}>
+                                    {qtyVar}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => actualizarCantidad(varKey, item, v.precio, 1, v.etiqueta)}
+                                    aria-label="Agregar"
+                                    style={{
+                                      width: "20px",
+                                      height: "20px",
+                                      borderRadius: "9999px",
+                                      border: "none",
+                                      background: th.btnGradient,
+                                      color: th.btnText,
+                                      fontWeight: 700,
+                                      cursor: "pointer",
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      lineHeight: 1,
+                                    }}
+                                  >
+                                    +
+                                  </button>
+                                </span>
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
 
@@ -1546,6 +1814,96 @@ export function LuxuryRestaurantMenu({
                         >
                           <span>🍺</span>
                           <span>{item.maridaje[idioma]}</span>
+                        </div>
+                      )}
+
+                      {/* Control compacto - 0 + cuando el modo Pedido & Pago Directo está activo */}
+                      {habilitarPedidos && (!item.preciosVariados || item.preciosVariados.length === 0) && (
+                        <div
+                          style={{
+                            marginTop: "0.6rem",
+                            paddingTop: "0.5rem",
+                            borderTop: `1px solid ${th.border}`,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "flex-end",
+                          }}
+                        >
+                          {(() => {
+                            const qty = carrito[item.id]?.cantidad || 0;
+                            return (
+                              <div
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "0.5rem",
+                                  padding: "2px 4px",
+                                  borderRadius: "9999px",
+                                  backgroundColor: th.isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
+                                  border: `1px solid ${qty > 0 ? th.accent : th.border}`,
+                                }}
+                              >
+                                <button
+                                  type="button"
+                                  onClick={() => actualizarCantidad(item.id, item, item.precio, -1)}
+                                  disabled={qty === 0}
+                                  aria-label="Restar plato"
+                                  style={{
+                                    width: "26px",
+                                    height: "26px",
+                                    borderRadius: "9999px",
+                                    border: `1px solid ${th.borderStrong}`,
+                                    backgroundColor: th.surface,
+                                    color: th.text,
+                                    fontSize: "0.95rem",
+                                    fontWeight: 700,
+                                    cursor: qty === 0 ? "default" : "pointer",
+                                    opacity: qty === 0 ? 0.45 : 1,
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    lineHeight: 1,
+                                  }}
+                                >
+                                  −
+                                </button>
+                                <span
+                                  style={{
+                                    minWidth: "18px",
+                                    textAlign: "center",
+                                    fontSize: "0.82rem",
+                                    fontWeight: 700,
+                                    fontFamily: "monospace",
+                                    color: qty > 0 ? th.accent : th.textMuted,
+                                  }}
+                                >
+                                  {qty}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => actualizarCantidad(item.id, item, item.precio, 1)}
+                                  aria-label="Agregar plato"
+                                  style={{
+                                    width: "26px",
+                                    height: "26px",
+                                    borderRadius: "9999px",
+                                    border: "none",
+                                    background: th.btnGradient,
+                                    color: th.btnText,
+                                    fontSize: "0.95rem",
+                                    fontWeight: 700,
+                                    cursor: "pointer",
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    lineHeight: 1,
+                                  }}
+                                >
+                                  +
+                                </button>
+                              </div>
+                            );
+                          })()}
                         </div>
                       )}
                     </div>
@@ -1658,7 +2016,7 @@ export function LuxuryRestaurantMenu({
         </button>
       )}
 
-      {/* ─── BARRA INFERIOR: RESERVAR + CALIFICAR ─── */}
+      {/* ─── BARRA INFERIOR: PEDIDO DIRECTO O RESERVAR + CALIFICAR ─── */}
       <footer
         className="luxury-footer-sticky"
         style={{
@@ -1674,66 +2032,172 @@ export function LuxuryRestaurantMenu({
             : "0 -6px 20px rgba(0, 0, 0, 0.06)",
         }}
       >
-        <div
-          style={{
-            maxWidth: "32rem",
-            margin: "0 auto",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "0.65rem",
-            width: "100%",
-          }}
-        >
-          <a
-            href={whatsappUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="luxury-btn-gold"
+        {habilitarPedidos && totalItems > 0 ? (
+          <div
             style={{
-              flex: 1,
-              padding: "0.7rem 0.85rem",
-              fontSize: "0.82rem",
-              textDecoration: "none",
+              maxWidth: "36rem",
+              margin: "0 auto",
               display: "flex",
               alignItems: "center",
-              justifyContent: "center",
-              gap: "0.4rem",
-              whiteSpace: "nowrap",
-              fontWeight: 700,
-              minHeight: "44px",
+              justifyContent: "space-between",
+              gap: "0.6rem",
+              width: "100%",
             }}
           >
-            <span style={{ fontSize: "0.95rem" }}>💬</span>
-            <span>{t.consultarMesa}</span>
-          </a>
+            <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+              <span
+                style={{
+                  fontSize: "0.7rem",
+                  color: th.textMuted,
+                  fontWeight: 600,
+                }}
+              >
+                🛒 {totalItems} {totalItems === 1 ? t.itemSingular : t.itemPlural}
+              </span>
+              <span
+                style={{
+                  fontSize: "1rem",
+                  fontWeight: 800,
+                  fontFamily: "monospace",
+                  color: th.accent,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {formatearPrecio(totalCop)}
+              </span>
+            </div>
 
-          <a
-            href={menu.googleMapsUrl || "https://search.google.com/local/writereview?placeid=ChIJKy680-Lx9I4Rk89-h79nh9s"}
-            target="_blank"
-            rel="noopener noreferrer"
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              {tieneDatosPago && (
+                <button
+                  type="button"
+                  onClick={() => setMostrarModalDatosPago(true)}
+                  title={t.datosPago}
+                  style={{
+                    padding: "0.68rem 0.75rem",
+                    fontSize: "0.8rem",
+                    borderRadius: "0.85rem",
+                    backgroundColor: th.secondaryBg,
+                    border: `1px solid ${th.secondaryBorder}`,
+                    color: th.secondaryText,
+                    fontWeight: 700,
+                    minHeight: "44px",
+                    cursor: "pointer",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  💳
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setMostrarModalPedido(true)}
+                className="luxury-btn-gold"
+                style={{
+                  padding: "0.7rem 1.15rem",
+                  fontSize: "0.85rem",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "0.45rem",
+                  whiteSpace: "nowrap",
+                  fontWeight: 800,
+                  minHeight: "44px",
+                  cursor: "pointer",
+                }}
+              >
+                <span>📲</span>
+                <span>{t.hacerPedido}</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div
             style={{
-              flex: 1,
-              padding: "0.7rem 0.85rem",
-              fontSize: "0.82rem",
-              textDecoration: "none",
+              maxWidth: "32rem",
+              margin: "0 auto",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              gap: "0.4rem",
-              whiteSpace: "nowrap",
-              borderRadius: "0.85rem",
-              backgroundColor: th.secondaryBg,
-              border: `1px solid ${th.secondaryBorder}`,
-              color: th.secondaryText,
-              fontWeight: 700,
-              minHeight: "44px",
+              gap: "0.65rem",
+              width: "100%",
             }}
           >
-            <span style={{ fontSize: "0.95rem" }}>⭐</span>
-            <span>{t.calificarGoogle}</span>
-          </a>
-        </div>
+            {habilitarPedidos && tieneDatosPago ? (
+              <button
+                type="button"
+                onClick={() => setMostrarModalDatosPago(true)}
+                className="luxury-btn-gold"
+                style={{
+                  flex: 1,
+                  padding: "0.7rem 0.85rem",
+                  fontSize: "0.82rem",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "0.4rem",
+                  whiteSpace: "nowrap",
+                  fontWeight: 700,
+                  minHeight: "44px",
+                  cursor: "pointer",
+                }}
+              >
+                <span style={{ fontSize: "0.95rem" }}>💳</span>
+                <span>{t.datosPago}</span>
+              </button>
+            ) : (
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="luxury-btn-gold"
+                style={{
+                  flex: 1,
+                  padding: "0.7rem 0.85rem",
+                  fontSize: "0.82rem",
+                  textDecoration: "none",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "0.4rem",
+                  whiteSpace: "nowrap",
+                  fontWeight: 700,
+                  minHeight: "44px",
+                }}
+              >
+                <span style={{ fontSize: "0.95rem" }}>💬</span>
+                <span>{t.consultarMesa}</span>
+              </a>
+            )}
+
+            <a
+              href={menu.googleMapsUrl || "https://search.google.com/local/writereview?placeid=ChIJKy680-Lx9I4Rk89-h79nh9s"}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                flex: 1,
+                padding: "0.7rem 0.85rem",
+                fontSize: "0.82rem",
+                textDecoration: "none",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "0.4rem",
+                whiteSpace: "nowrap",
+                borderRadius: "0.85rem",
+                backgroundColor: th.secondaryBg,
+                border: `1px solid ${th.secondaryBorder}`,
+                color: th.secondaryText,
+                fontWeight: 700,
+                minHeight: "44px",
+              }}
+            >
+              <span style={{ fontSize: "0.95rem" }}>⭐</span>
+              <span>{t.calificarGoogle}</span>
+            </a>
+          </div>
+        )}
       </footer>
 
       {/* ─── SELECTOR DE TEMAS (solo demo interna) ─── */}
@@ -2030,6 +2494,591 @@ export function LuxuryRestaurantMenu({
                   </span>
                 </div>
               </div>
+            </div>
+          </div>,
+          document.body
+        )}
+
+      {/* ─── MODAL: DATOS DE PAGO DIRECTO (NEQUI / LLAVE / QR) ─── */}
+      {mounted &&
+        mostrarModalDatosPago &&
+        createPortal(
+          <div
+            onClick={() => setMostrarModalDatosPago(false)}
+            role="dialog"
+            aria-modal="true"
+            aria-label={t.datosPagoTitulo}
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 10000,
+              backgroundColor: "rgba(0, 0, 0, 0.8)",
+              backdropFilter: "blur(8px)",
+              WebkitBackdropFilter: "blur(8px)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "1rem",
+            }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                width: "100%",
+                maxWidth: "400px",
+                borderRadius: "1.35rem",
+                backgroundColor: th.isDark ? "#18181B" : "#FFFFFF",
+                color: th.isDark ? "#F4F4F5" : "#1B382B",
+                border: `1px solid ${th.borderStrong}`,
+                boxShadow: "0 24px 60px rgba(0,0,0,0.45)",
+                padding: "1.25rem",
+                display: "flex",
+                flexDirection: "column",
+                gap: "1rem",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem" }}>
+                <div>
+                  <h3 style={{ margin: 0, fontFamily: th.fontTitle, fontSize: "1.15rem", fontWeight: 700 }}>
+                    💳 {t.datosPagoTitulo}
+                  </h3>
+                  <p style={{ margin: "0.2rem 0 0", fontSize: "0.76rem", opacity: 0.78 }}>
+                    {menu.negocioNombre}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setMostrarModalDatosPago(false)}
+                  style={{
+                    width: "32px",
+                    height: "32px",
+                    borderRadius: "9999px",
+                    border: `1px solid ${th.border}`,
+                    background: "transparent",
+                    color: "inherit",
+                    cursor: "pointer",
+                    fontWeight: 700,
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              <p style={{ margin: 0, fontSize: "0.8rem", opacity: 0.85 }}>{t.datosPagoSub}</p>
+
+              {nequiLlave && (
+                <div
+                  style={{
+                    padding: "0.9rem",
+                    borderRadius: "1rem",
+                    border: `1px solid ${th.borderStrong}`,
+                    backgroundColor: th.isDark ? "rgba(255,255,255,0.05)" : "#FBF9F5",
+                    textAlign: "center",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "0.6rem",
+                  }}
+                >
+                  <span style={{ fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.08em", opacity: 0.7 }}>
+                    Nequi / Llave Bre-B / Cuenta
+                  </span>
+                  <div style={{ fontSize: "1.35rem", fontWeight: 800, fontFamily: "monospace", letterSpacing: "0.04em" }}>
+                    {nequiLlave}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={copiarNequi}
+                    className="luxury-btn-gold"
+                    style={{
+                      padding: "0.6rem 1rem",
+                      fontSize: "0.82rem",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      borderRadius: "0.75rem",
+                    }}
+                  >
+                    {copiadoNequi ? `✓ ${t.copiado}` : `📋 ${t.copiarNumero}`}
+                  </button>
+                </div>
+              )}
+
+              {qrPagoUrl && (
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    padding: "0.75rem",
+                    borderRadius: "1rem",
+                    backgroundColor: "#FFFFFF",
+                    border: `1px solid ${th.border}`,
+                  }}
+                >
+                  <img
+                    src={qrPagoUrl}
+                    alt="QR de Pago"
+                    style={{ maxWidth: "220px", maxHeight: "220px", objectFit: "contain" }}
+                  />
+                </div>
+              )}
+            </div>
+          </div>,
+          document.body
+        )}
+
+      {/* ─── MODAL: CONFIRMACIÓN DE PEDIDO & PAGO DIRECTO ─── */}
+      {mounted &&
+        mostrarModalPedido &&
+        createPortal(
+          <div
+            onClick={() => setMostrarModalPedido(false)}
+            role="dialog"
+            aria-modal="true"
+            aria-label={t.tuPedido}
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 10000,
+              backgroundColor: "rgba(0, 0, 0, 0.8)",
+              backdropFilter: "blur(8px)",
+              WebkitBackdropFilter: "blur(8px)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "0.75rem",
+            }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                width: "100%",
+                maxWidth: "460px",
+                maxHeight: "92vh",
+                overflowY: "auto",
+                borderRadius: "1.35rem",
+                backgroundColor: th.isDark ? "#18181B" : "#FFFFFF",
+                color: th.isDark ? "#F4F4F5" : "#1B382B",
+                border: `1px solid ${th.borderStrong}`,
+                boxShadow: "0 24px 60px rgba(0,0,0,0.45)",
+                padding: "1.2rem",
+                display: "flex",
+                flexDirection: "column",
+                gap: "0.95rem",
+              }}
+            >
+              {/* Header */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem" }}>
+                <div>
+                  <h3 style={{ margin: 0, fontFamily: th.fontTitle, fontSize: "1.2rem", fontWeight: 700 }}>
+                    🛒 {t.tuPedido} · {menu.negocioNombre}
+                  </h3>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCarrito({});
+                      setMostrarModalPedido(false);
+                    }}
+                    style={{
+                      fontSize: "0.72rem",
+                      background: "transparent",
+                      border: "none",
+                      color: "#EF4444",
+                      cursor: "pointer",
+                      textDecoration: "underline",
+                    }}
+                  >
+                    {t.vaciarPedido}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMostrarModalPedido(false)}
+                    style={{
+                      width: "32px",
+                      height: "32px",
+                      borderRadius: "9999px",
+                      border: `1px solid ${th.border}`,
+                      background: "transparent",
+                      color: "inherit",
+                      cursor: "pointer",
+                      fontWeight: 700,
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+
+              {/* Resumen de platos */}
+              <div
+                style={{
+                  borderRadius: "1rem",
+                  border: `1px solid ${th.border}`,
+                  backgroundColor: th.isDark ? "rgba(255,255,255,0.04)" : "#FBF9F5",
+                  padding: "0.75rem",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "0.55rem",
+                }}
+              >
+                {itemsCarrito.map((entry) => {
+                  const nombre = getNombrePlato(entry.item, idioma);
+                  return (
+                    <div
+                      key={entry.key}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: "0.5rem",
+                        fontSize: "0.82rem",
+                      }}
+                    >
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{ fontWeight: 600 }}>
+                          {nombre}
+                          {entry.variante ? ` (${entry.variante})` : ""}
+                        </div>
+                        <div style={{ fontSize: "0.72rem", opacity: 0.72, fontFamily: "monospace" }}>
+                          {formatearPrecio(entry.precio)} c/u
+                        </div>
+                      </div>
+
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.45rem" }}>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            actualizarCantidad(entry.key, entry.item, entry.precio, -1, entry.variante)
+                          }
+                          style={{
+                            width: "24px",
+                            height: "24px",
+                            borderRadius: "9999px",
+                            border: `1px solid ${th.borderStrong}`,
+                            background: "transparent",
+                            color: "inherit",
+                            cursor: "pointer",
+                            fontWeight: 700,
+                          }}
+                        >
+                          −
+                        </button>
+                        <span style={{ fontWeight: 700, fontFamily: "monospace", minWidth: "16px", textAlign: "center" }}>
+                          {entry.cantidad}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            actualizarCantidad(entry.key, entry.item, entry.precio, 1, entry.variante)
+                          }
+                          style={{
+                            width: "24px",
+                            height: "24px",
+                            borderRadius: "9999px",
+                            border: "none",
+                            background: th.btnGradient,
+                            color: th.btnText,
+                            cursor: "pointer",
+                            fontWeight: 700,
+                          }}
+                        >
+                          +
+                        </button>
+                      </div>
+
+                      <div style={{ fontWeight: 700, fontFamily: "monospace", whiteSpace: "nowrap" }}>
+                        {formatearPrecio(entry.precio * entry.cantidad)}
+                      </div>
+                    </div>
+                  );
+                })}
+
+                <div
+                  style={{
+                    borderTop: `1px solid ${th.border}`,
+                    paddingTop: "0.55rem",
+                    marginTop: "0.15rem",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    fontWeight: 800,
+                    fontSize: "0.98rem",
+                  }}
+                >
+                  <span>Total</span>
+                  <span style={{ fontFamily: "monospace", color: th.accent }}>
+                    {formatearPrecio(totalCop)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Ubicación + Notas */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.65rem" }}>
+                <div>
+                  <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, marginBottom: "0.25rem" }}>
+                    📍 {t.ubicacionLabel} *
+                  </label>
+                  <input
+                    type="text"
+                    value={ubicacionPedido}
+                    onChange={(e) => setUbicacionPedido(e.target.value)}
+                    placeholder={t.ubicacionPlaceholder}
+                    style={{
+                      width: "100%",
+                      padding: "0.6rem 0.75rem",
+                      borderRadius: "0.75rem",
+                      border: `1px solid ${th.borderStrong}`,
+                      backgroundColor: th.isDark ? "rgba(255,255,255,0.06)" : "#FFFFFF",
+                      color: "inherit",
+                      fontSize: "0.85rem",
+                      outline: "none",
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, marginBottom: "0.25rem" }}>
+                    📝 {t.notasLabel}
+                  </label>
+                  <input
+                    type="text"
+                    value={notasPedido}
+                    onChange={(e) => setNotasPedido(e.target.value)}
+                    placeholder={t.notasPlaceholder}
+                    style={{
+                      width: "100%",
+                      padding: "0.55rem 0.75rem",
+                      borderRadius: "0.75rem",
+                      border: `1px solid ${th.border}`,
+                      backgroundColor: th.isDark ? "rgba(255,255,255,0.06)" : "#FFFFFF",
+                      color: "inherit",
+                      fontSize: "0.82rem",
+                      outline: "none",
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Selector de forma de pago */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.45rem" }}>
+                <span style={{ fontSize: "0.78rem", fontWeight: 700 }}>💳 {t.formaPagoLabel}</span>
+
+                {permitirPagoAlFinal && (
+                  <button
+                    type="button"
+                    onClick={() => setMetodoPago("final_mesa")}
+                    style={{
+                      textAlign: "left",
+                      padding: "0.65rem 0.8rem",
+                      borderRadius: "0.85rem",
+                      border: `1.5px solid ${metodoPago === "final_mesa" ? th.accent : th.border}`,
+                      backgroundColor:
+                        metodoPago === "final_mesa"
+                          ? th.isDark
+                            ? "rgba(255,255,255,0.08)"
+                            : "#F0FDF4"
+                          : "transparent",
+                      color: "inherit",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <div style={{ fontWeight: 700, fontSize: "0.84rem" }}>🍽️ {t.pagoFinalMesa}</div>
+                    <div style={{ fontSize: "0.72rem", opacity: 0.78, marginTop: "0.15rem" }}>
+                      {t.pagoFinalDesc}
+                    </div>
+                  </button>
+                )}
+
+                {permitirPagoAnticipado && (
+                  <div
+                    style={{
+                      borderRadius: "0.85rem",
+                      border: `1.5px solid ${metodoPago === "nequi" ? th.accent : th.border}`,
+                      backgroundColor:
+                        metodoPago === "nequi"
+                          ? th.isDark
+                            ? "rgba(255,255,255,0.08)"
+                            : "#F0FDF4"
+                          : "transparent",
+                      overflow: "hidden",
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setMetodoPago("nequi")}
+                      style={{
+                        width: "100%",
+                        textAlign: "left",
+                        padding: "0.65rem 0.8rem",
+                        background: "transparent",
+                        border: "none",
+                        color: "inherit",
+                        cursor: "pointer",
+                        fontWeight: 700,
+                        fontSize: "0.84rem",
+                      }}
+                    >
+                      📲 {t.pagoNequi}
+                    </button>
+
+                    {metodoPago === "nequi" && (
+                      <div
+                        style={{
+                          padding: "0 0.8rem 0.75rem",
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "0.55rem",
+                        }}
+                      >
+                        {nequiLlave && (
+                          <div
+                            style={{
+                              padding: "0.65rem",
+                              borderRadius: "0.75rem",
+                              border: `1px solid ${th.borderStrong}`,
+                              backgroundColor: th.isDark ? "rgba(0,0,0,0.35)" : "#FFFFFF",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              gap: "0.5rem",
+                              flexWrap: "wrap",
+                            }}
+                          >
+                            <span style={{ fontSize: "1.1rem", fontWeight: 800, fontFamily: "monospace" }}>
+                              {nequiLlave}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={copiarNequi}
+                              className="luxury-btn-gold"
+                              style={{
+                                padding: "0.4rem 0.75rem",
+                                fontSize: "0.76rem",
+                                fontWeight: 700,
+                                borderRadius: "0.6rem",
+                                cursor: "pointer",
+                              }}
+                            >
+                              {copiadoNequi ? `✓ ${t.copiado}` : `📋 ${t.copiarNumero}`}
+                            </button>
+                          </div>
+                        )}
+
+                        {qrPagoUrl && (
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "center",
+                              padding: "0.5rem",
+                              borderRadius: "0.75rem",
+                              backgroundColor: "#FFFFFF",
+                              border: `1px solid ${th.border}`,
+                            }}
+                          >
+                            <img
+                              src={qrPagoUrl}
+                              alt="QR Nequi"
+                              style={{ maxWidth: "170px", maxHeight: "170px", objectFit: "contain" }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {permitirPagoEfectivo && (
+                  <button
+                    type="button"
+                    onClick={() => setMetodoPago("efectivo")}
+                    style={{
+                      textAlign: "left",
+                      padding: "0.65rem 0.8rem",
+                      borderRadius: "0.85rem",
+                      border: `1.5px solid ${metodoPago === "efectivo" ? th.accent : th.border}`,
+                      backgroundColor:
+                        metodoPago === "efectivo"
+                          ? th.isDark
+                            ? "rgba(255,255,255,0.08)"
+                            : "#F0FDF4"
+                          : "transparent",
+                      color: "inherit",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <div style={{ fontWeight: 700, fontSize: "0.84rem" }}>💵 {t.pagoEfectivo}</div>
+                    <div style={{ fontSize: "0.72rem", opacity: 0.78, marginTop: "0.15rem" }}>
+                      {t.pagoEfectivoDesc}
+                    </div>
+                  </button>
+                )}
+              </div>
+
+              {/* Botón Enviar por WhatsApp */}
+              <button
+                type="button"
+                onClick={() => {
+                  const ubicacionLimpia = ubicacionPedido.trim();
+                  if (!ubicacionLimpia) {
+                    alert(t.faltaUbicacion);
+                    return;
+                  }
+                  const rawNumber = menu.whatsapp || "573218507204";
+                  const telefono = rawNumber.replace(/\D/g, "");
+                  const lineasItems = itemsCarrito
+                    .map((entry) => {
+                      const nombre = getNombrePlato(entry.item, idioma);
+                      const varTxt = entry.variante ? ` (${entry.variante})` : "";
+                      return `- ${entry.cantidad}x ${nombre}${varTxt} — ${formatearPrecio(
+                        entry.precio * entry.cantidad
+                      )}`;
+                    })
+                    .join("\n");
+
+                  const textoMetodo =
+                    metodoPago === "nequi"
+                      ? t.pagoNequi
+                      : metodoPago === "efectivo"
+                      ? t.pagoEfectivo
+                      : t.pagoFinalMesa;
+
+                  const partes = [
+                    `🛎️ *NUEVO PEDIDO — ${menu.negocioNombre}*`,
+                    `📍 *Ubicación:* ${ubicacionLimpia}`,
+                    "",
+                    lineasItems,
+                    "",
+                    `💰 *Total:* ${formatearPrecio(totalCop)}`,
+                    `💳 *Forma de pago:* ${textoMetodo}`,
+                  ];
+                  if (notasPedido.trim()) {
+                    partes.push(`📝 *Notas:* ${notasPedido.trim()}`);
+                  }
+                  if (metodoPago === "nequi") {
+                    partes.push("", "📎 *(Adjunto comprobante de transferencia)*");
+                  }
+                  const urlWa = `https://wa.me/${telefono}?text=${encodeURIComponent(
+                    partes.join("\n")
+                  )}`;
+                  window.open(urlWa, "_blank", "noopener,noreferrer");
+                }}
+                className="luxury-btn-gold"
+                style={{
+                  width: "100%",
+                  padding: "0.85rem 1rem",
+                  fontSize: "0.92rem",
+                  fontWeight: 800,
+                  borderRadius: "0.9rem",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "0.5rem",
+                }}
+              >
+                <span>📲</span>
+                <span>{t.enviarWhatsapp}</span>
+              </button>
             </div>
           </div>,
           document.body

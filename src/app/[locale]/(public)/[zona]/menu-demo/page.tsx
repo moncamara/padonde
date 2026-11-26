@@ -84,6 +84,7 @@ export default async function MenuDemoPage({
   // 1. Obtener la carta y el tema configurado por el admin en la base de datos
   let temaAsignado: TemaMenuId | undefined = undefined;
   let menuData = LAZY_CAT_MENU;
+  let pedidosConfig = undefined as import("@/lib/types").PedidosMenuConfig | undefined;
   let targetEventoId = search.eventoId || "a9cb4306-82f5-4784-b6d3-546b6d10f5ec";
   let targetZonaSlug = zona || "minca";
 
@@ -94,6 +95,7 @@ export default async function MenuDemoPage({
     const isMamo =
       search.eventoId === "379566b8-036e-4b39-aaad-7a9fb8b7ae8e";
     const evento = await getEventoById(search.eventoId);
+    pedidosConfig = evento?.metadata_hospedaje?.pedidos_config;
     const dbMenu = evento?.metadata_hospedaje?.menu_data as any;
     const esMenuSilocibeIncompleto =
       isSilocibe && (!dbMenu?.categorias || dbMenu.categorias.length < 12);
@@ -193,6 +195,7 @@ export default async function MenuDemoPage({
         embebido={esEmbebido}
         zonaSlug={targetZonaSlug}
         eventoId={targetEventoId}
+        pedidosConfig={pedidosConfig}
       />
     </div>
   );

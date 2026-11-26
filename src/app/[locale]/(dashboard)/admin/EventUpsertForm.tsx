@@ -603,6 +603,34 @@ export function EventUpsertForm({
   const [subiendoFotoMenu, setSubiendoFotoMenu] = useState(false);
   const [subiendoPdfMenu, setSubiendoPdfMenu] = useState(false);
 
+  // Configuración opcional: Pedido & Pago Directo en Carta Digital (default false)
+  const initialPedidos = initialEvento?.metadata_hospedaje?.pedidos_config;
+  const [habilitarPedidos, setHabilitarPedidos] = useState<boolean>(
+    Boolean(initialPedidos?.habilitarPedidos)
+  );
+  const [nequiLlave, setNequiLlave] = useState<string>(
+    initialPedidos?.nequiLlave || ""
+  );
+  const [qrPagoUrl, setQrPagoUrl] = useState<string>(
+    initialPedidos?.qrPagoUrl || ""
+  );
+  const [subiendoQrPago, setSubiendoQrPago] = useState<boolean>(false);
+  const [permitirPagoAlFinal, setPermitirPagoAlFinal] = useState<boolean>(
+    initialPedidos?.permitirPagoAlFinal !== undefined
+      ? Boolean(initialPedidos.permitirPagoAlFinal)
+      : true
+  );
+  const [permitirPagoAnticipado, setPermitirPagoAnticipado] = useState<boolean>(
+    initialPedidos?.permitirPagoAnticipado !== undefined
+      ? Boolean(initialPedidos.permitirPagoAnticipado)
+      : true
+  );
+  const [permitirPagoEfectivo, setPermitirPagoEfectivo] = useState<boolean>(
+    initialPedidos?.permitirPagoEfectivo !== undefined
+      ? Boolean(initialPedidos.permitirPagoEfectivo)
+      : true
+  );
+
   const [tarifarioId, setTarifarioId] = useState<string>(() => {
     return (
       (initialEvento?.metadata_hospedaje as any)?.tarifario_id ||
@@ -886,6 +914,23 @@ export function EventUpsertForm({
       alert("Error al subir archivo PDF: " + (err?.message || "intenta de nuevo"));
     } finally {
       setSubiendoPdfMenu(false);
+      e.target.value = "";
+    }
+  }
+
+  async function handleSubirQrPago(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setSubiendoQrPago(true);
+    try {
+      const url = await uploadMenuDocument(f);
+      if (url) {
+        setQrPagoUrl(url);
+      }
+    } catch (err: any) {
+      alert("Error al subir QR de pago: " + (err?.message || "intenta de nuevo"));
+    } finally {
+      setSubiendoQrPago(false);
       e.target.value = "";
     }
   }
@@ -1264,6 +1309,15 @@ export function EventUpsertForm({
         }
       }
 
+      const pedidosConfigPayload = {
+        habilitarPedidos: Boolean(menuInteractivo && habilitarPedidos),
+        nequiLlave: nequiLlave.trim() || undefined,
+        qrPagoUrl: qrPagoUrl.trim() || undefined,
+        permitirPagoAlFinal,
+        permitirPagoAnticipado,
+        permitirPagoEfectivo,
+      };
+
       if (mode === "crear") {
         // MODO CREAR: INSERT Consolidado con arrays listos
         const res = await adminPublishEventAction({
@@ -1291,6 +1345,7 @@ export function EventUpsertForm({
           menuInteractivo,
           menuTema,
           menuData: parsedMenuData,
+          pedidosConfig: pedidosConfigPayload,
           tarifarioId: tarifarioId || undefined,
           horaInicio: esRecurrente ? horaInicio : undefined,
           horaFin: esRecurrente ? horaFin : undefined,
@@ -1352,6 +1407,7 @@ export function EventUpsertForm({
           menuInteractivo,
           menuTema,
           menuData: parsedMenuData,
+          pedidosConfig: pedidosConfigPayload,
           tarifarioId: tarifarioId || undefined,
           horaInicio: esRecurrente ? horaInicio : undefined,
           horaFin: esRecurrente ? horaFin : undefined,
@@ -1407,6 +1463,7 @@ export function EventUpsertForm({
                 menu_data: parsedMenuData
                   ? { ...parsedMenuData, tema: menuTema }
                   : initialEvento.metadata_hospedaje?.menu_data,
+                pedidos_config: pedidosConfigPayload,
                 tarifario_id: tarifarioId || undefined,
               },
               negocio: (res as any).negocio
@@ -2596,6 +2653,127 @@ export function EventUpsertForm({
                       </>
                     )}
                   </div>
+
+                  {/* Modo Pedido & Pago Directo (Opcional, apagado por defecto) */}
+                  <div className="mt-3 pt-3 border-t border-forest/15 space-y-3">
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs font-bold text-forest flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={habilitarPedidos}
+                          onChange={(e) => setHabilitarPedidos(e.target.checked)}
+                          className="rounded text-forest focus:ring-forest w-4 h-4 cursor-pointer"
+                        />
+                        <span>🛒 Activar Modo Pedido & Pago Directo en este menú</span>
+                      </label>
+                      <p className="text-[11px] text-stone ml-6">
+                        Permite armar pedido en cliente (0% consumo servidor) y enviarlo por WhatsApp con pago al final en mesa, Nequi/Llave o efectivo.
+                      </p>
+                    </div>
+
+                    {habilitarPedidos && (
+                      <div className="ml-0 sm:ml-6 p-3.5 bg-white rounded-2xl border border-forest/20 space-y-3 shadow-2xs">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {/* Número Nequi / Llave Bre-B / Cuenta */}
+                          <div className="space-y-1">
+                            <label className="text-[11px] font-bold text-forest block">
+                              📲 Número Nequi / Llave Bre-B / Cuenta
+                            </label>
+                            <input
+                              type="text"
+                              value={nequiLlave}
+                              onChange={(e) => setNequiLlave(e.target.value)}
+                              placeholder="Ej: 300 123 4567 o @llavebreb"
+                              className="w-full p-2 text-xs bg-stone-50 rounded-xl border border-stone-light/80 text-forest outline-none focus:ring-1 focus:ring-forest"
+                            />
+                            <p className="text-[10px] text-stone">
+                              El cliente podrá copiarlo en 1 toque desde la carta o el checkout.
+                            </p>
+                          </div>
+
+                          {/* Imagen QR de Nequi / Pago (optimizada a WebP) */}
+                          <div className="space-y-1.5">
+                            <label className="text-[11px] font-bold text-forest block">
+                              🖼️ QR de Nequi / Pago (Opcional · WebP)
+                            </label>
+                            <div className="flex items-center gap-2.5">
+                              {qrPagoUrl ? (
+                                <div className="relative w-14 h-14 rounded-xl overflow-hidden border border-stone-300 shrink-0 bg-white">
+                                  <Image
+                                    src={qrPagoUrl}
+                                    alt="QR de pago"
+                                    fill
+                                    className="object-contain p-0.5"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => setQrPagoUrl("")}
+                                    className="absolute top-0.5 right-0.5 bg-black/75 text-white rounded-full w-4 h-4 text-[10px] flex items-center justify-center cursor-pointer hover:bg-red-600"
+                                    title="Quitar QR"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              ) : null}
+
+                              <label className="px-3 py-2 rounded-xl border border-dashed border-forest/35 bg-forest/5 hover:bg-forest/10 text-forest text-[11px] font-semibold cursor-pointer transition-colors">
+                                <span>
+                                  {subiendoQrPago
+                                    ? "Optimizando WebP..."
+                                    : qrPagoUrl
+                                    ? "🔄 Cambiar QR"
+                                    : "📤 Subir imagen QR"}
+                                </span>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  disabled={subiendoQrPago}
+                                  onChange={handleSubirQrPago}
+                                  className="hidden"
+                                />
+                              </label>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Checkboxes de modalidades permitidas */}
+                        <div className="pt-2 border-t border-stone-light/60 space-y-1.5">
+                          <span className="text-[11px] font-bold text-forest block">
+                            💳 Modalidades de pago permitidas:
+                          </span>
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-xs text-forest flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={permitirPagoAlFinal}
+                                onChange={(e) => setPermitirPagoAlFinal(e.target.checked)}
+                                className="rounded text-forest focus:ring-forest w-4 h-4 cursor-pointer"
+                              />
+                              <span>🍽️ Permitir pedir en mesa y pagar al final</span>
+                            </label>
+                            <label className="text-xs text-forest flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={permitirPagoAnticipado}
+                                onChange={(e) => setPermitirPagoAnticipado(e.target.checked)}
+                                className="rounded text-forest focus:ring-forest w-4 h-4 cursor-pointer"
+                              />
+                              <span>📲 Permitir pago anticipado por transferencia / Nequi</span>
+                            </label>
+                            <label className="text-xs text-forest flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={permitirPagoEfectivo}
+                                onChange={(e) => setPermitirPagoEfectivo(e.target.checked)}
+                                className="rounded text-forest focus:ring-forest w-4 h-4 cursor-pointer"
+                              />
+                              <span>💵 Permitir pago en efectivo</span>
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
@@ -3003,6 +3181,14 @@ export function EventUpsertForm({
                 menu={menuPreviewObj || undefined}
                 tema={menuTema}
                 embebido={true}
+                pedidosConfig={{
+                  habilitarPedidos: Boolean(menuInteractivo && habilitarPedidos),
+                  nequiLlave: nequiLlave.trim() || undefined,
+                  qrPagoUrl: qrPagoUrl.trim() || undefined,
+                  permitirPagoAlFinal,
+                  permitirPagoAnticipado,
+                  permitirPagoEfectivo,
+                }}
               />
             </div>
           </div>

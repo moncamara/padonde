@@ -43,6 +43,7 @@ export interface AdminPublishInput {
   menuInteractivo?: boolean;
   menuTema?: "fogon" | "sierra" | "caribe" | "oro" | "oceano_plata";
   menuData?: any;
+  pedidosConfig?: import("@/lib/types").PedidosMenuConfig;
   tarifarioId?: string | null;
   horaInicio?: string;
   horaFin?: string;
@@ -275,6 +276,7 @@ export async function adminPublishEventAction(
           : {}),
         ...(input.menuInteractivo !== undefined ? { menu_interactivo: Boolean(input.menuInteractivo) } : {}),
         ...(input.menuTema ? { menu_tema: input.menuTema } : {}),
+        ...(input.pedidosConfig ? { pedidos_config: input.pedidosConfig } : {}),
         ...(input.tarifarioId ? { tarifario_id: input.tarifarioId.trim() } : {}),
         ...(input.menuData
           ? {
@@ -946,6 +948,7 @@ export interface EditarEventoAdminInput {
   menuInteractivo?: boolean;
   menuTema?: "fogon" | "sierra" | "caribe" | "oro" | "oceano_plata";
   menuData?: any;
+  pedidosConfig?: import("@/lib/types").PedidosMenuConfig;
   tarifarioId?: string | null;
   horaInicio?: string;
   horaFin?: string;
@@ -1277,6 +1280,14 @@ export async function editarEventoAdminAction(input: EditarEventoAdminInput) {
       !Array.isArray(currentMeta.menu_data)
     ) {
       currentMeta.menu_data.tema = currentMeta.menu_tema;
+    }
+
+    if (input.pedidosConfig !== undefined) {
+      if (!input.pedidosConfig) {
+        delete currentMeta.pedidos_config;
+      } else {
+        currentMeta.pedidos_config = input.pedidosConfig;
+      }
     }
 
     if (input.tarifarioId !== undefined) {

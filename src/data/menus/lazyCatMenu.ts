@@ -1,4 +1,5 @@
 import type { TemaMenuId } from "@/components/menu/menuThemes";
+import type { PedidosMenuConfig } from "@/lib/types";
 
 export type IdiomaCodigo = "es" | "en" | "fr" | "de";
 
@@ -47,6 +48,7 @@ export interface MenuRestaurante {
     fin: string; // "19:00"
     texto: Record<IdiomaCodigo, string>;
   };
+  pedidosConfig?: PedidosMenuConfig;
   categorias: CategoriaMenu[];
 }
 
