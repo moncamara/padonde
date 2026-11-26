@@ -12,9 +12,11 @@ import { normalizarTextoBusqueda } from "@/lib/utils/text";
 import { esAliadoPausadoOInactivo } from "./cobrosUtils";
 import { ModalRegistrarPago } from "./ModalRegistrarPago";
 import { ModalAjustarAcuerdo } from "./ModalAjustarAcuerdo";
+import { ModalHistorialCobro, type HistorialAliadoCobro } from "./ModalHistorialCobro";
 
 interface CobrosDashboardClientProps {
   initialData: ObtenerCobrosResult;
+  historialPorNegocio?: Record<string, HistorialAliadoCobro>;
 }
 
 type FiltroEstadoPildora = "todos" | "pausados" | EstadoPago;
@@ -90,7 +92,10 @@ function generarEnlaceWhatsApp(aliado: FilaCobroCalculada): string {
   return `https://wa.me/${tel}?text=${encodeURIComponent(mensaje)}`;
 }
 
-export function CobrosDashboardClient({ initialData }: CobrosDashboardClientProps) {
+export function CobrosDashboardClient({
+  initialData,
+  historialPorNegocio = {},
+}: CobrosDashboardClientProps) {
   const [data, setData] = useState<ObtenerCobrosResult>(initialData);
   const [isPending, startTransition] = useTransition();
 
@@ -102,6 +107,7 @@ export function CobrosDashboardClient({ initialData }: CobrosDashboardClientProp
   // Modales
   const [pagoAliado, setPagoAliado] = useState<FilaCobroCalculada | null>(null);
   const [ajusteAliado, setAjusteAliado] = useState<FilaCobroCalculada | null>(null);
+  const [historialAliado, setHistorialAliado] = useState<FilaCobroCalculada | null>(null);
 
   // Toast / Notificaciones
   const [toastMsg, setToastMsg] = useState<{ tipo: "exito" | "error"; texto: string } | null>(null);
@@ -679,6 +685,17 @@ export function CobrosDashboardClient({ initialData }: CobrosDashboardClientProp
                           </button>
                           </>)}
 
+                          {/* Botón Historial y Soporte de Cobro */}
+                          <button
+                            type="button"
+                            onClick={() => setHistorialAliado(aliado)}
+                            className="px-2.5 py-1.5 rounded-xl border border-stone-light/80 bg-[#FBF9F5] hover:bg-stone-100 text-[#1B382B] font-medium text-[11px] transition-all cursor-pointer flex items-center gap-1"
+                            title="Ver antigüedad, historial de anuncios y resumen de cobro"
+                          >
+                            <span>🧾</span>
+                            <span>Historial</span>
+                          </button>
+
                           {/* Botón Ajustar Acuerdo */}
                           <button
                             type="button"
@@ -830,6 +847,16 @@ export function CobrosDashboardClient({ initialData }: CobrosDashboardClientProp
 
                     <button
                       type="button"
+                      onClick={() => setHistorialAliado(aliado)}
+                      className="px-2.5 py-2 rounded-xl border border-stone-light/80 bg-[#FBF9F5] hover:bg-stone-100 text-[#1B382B] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1"
+                      title="Ver Historial y Soporte de Cobro"
+                    >
+                      <span>🧾</span>
+                      <span>Historial</span>
+                    </button>
+
+                    <button
+                      type="button"
                       onClick={() => setAjusteAliado(aliado)}
                       className="p-2 rounded-xl border border-stone-light/80 hover:bg-stone-100 text-stone text-xs transition-colors"
                       title="Ajustar Acuerdo"
@@ -863,6 +890,13 @@ export function CobrosDashboardClient({ initialData }: CobrosDashboardClientProp
           mostrarToast(msg, "exito");
           refrescarDatos();
         }}
+      />
+
+      <ModalHistorialCobro
+        aliado={historialAliado}
+        historial={historialAliado ? historialPorNegocio[historialAliado.negocio_id] : null}
+        isOpen={Boolean(historialAliado)}
+        onClose={() => setHistorialAliado(null)}
       />
     </div>
   );

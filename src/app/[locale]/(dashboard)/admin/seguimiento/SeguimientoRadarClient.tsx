@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Link } from "@/i18n/routing";
 import { guardarSeguimientoAliadoAction } from "./actions";
 import { normalizarTextoBusqueda } from "@/lib/utils/text";
 
@@ -241,14 +242,24 @@ export function SeguimientoRadarClient({
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setModalCsv(true)}
-          className="px-4 py-2.5 rounded-2xl bg-[#1B382B] hover:bg-[#142a20] text-[#FBF9F5] text-xs font-bold shadow-xs flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-all shrink-0"
-        >
-          <span>📊</span>
-          <span>Personalizar y Exportar Informe</span>
-        </button>
+        <div className="flex items-center gap-2 shrink-0 flex-wrap">
+          <Link
+            href="/admin/cobros"
+            className="px-3.5 py-2.5 rounded-2xl bg-white hover:bg-stone-50 border border-stone-light text-[#1B382B] text-xs font-bold shadow-2xs flex items-center gap-1.5 transition-all"
+          >
+            <span>🧾</span>
+            <span>Cobros e Historial</span>
+          </Link>
+
+          <button
+            type="button"
+            onClick={() => setModalCsv(true)}
+            className="px-4 py-2.5 rounded-2xl bg-[#1B382B] hover:bg-[#142a20] text-[#FBF9F5] text-xs font-bold shadow-xs flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-all shrink-0"
+          >
+            <span>📊</span>
+            <span>Personalizar y Exportar Informe</span>
+          </button>
+        </div>
       </div>
 
       {/* Píldoras de filtro rápido */}
