@@ -17,6 +17,7 @@ export interface AliadoSeguimientoRow {
   totalEventos: number;
   estadoCartelera: EstadoCartelera;
   ultimaPublicacionIso: string | null;
+  estadoPagoReal?: string | null;
   revisadoHoy: boolean;
   publicadoHoy: boolean;
   interactuadoIgHoy: boolean;
@@ -28,6 +29,7 @@ export interface AliadoSeguimientoRow {
 
 type FiltroRapido =
   | "todos"
+  | "al_dia"
   | "sin_publicar_2d"
   | "reciente"
   | "publique_hoy"
@@ -147,6 +149,7 @@ export function SeguimientoRadarClient({
   const contadores = useMemo(() => {
     return {
       todos: filas.length,
+      al_dia: filas.filter((f) => f.estadoPagoReal === "al_dia").length,
       sin_publicar_2d: filas.filter((f) => f.estadoCartelera !== "reciente").length,
       reciente: filas.filter((f) => f.estadoCartelera === "reciente").length,
       publique_hoy: filas.filter((f) => f.publicadoHoy).length,
@@ -158,6 +161,7 @@ export function SeguimientoRadarClient({
   const filasFiltradas = useMemo(() => {
     const q = normalizarTextoBusqueda(busqueda);
     return filas.filter((f) => {
+      if (filtroRapido === "al_dia" && f.estadoPagoReal !== "al_dia") return false;
       if (filtroRapido === "sin_publicar_2d" && f.estadoCartelera === "reciente") return false;
       if (filtroRapido === "reciente" && f.estadoCartelera !== "reciente") return false;
       if (filtroRapido === "publique_hoy" && !f.publicadoHoy) return false;
@@ -252,6 +256,7 @@ export function SeguimientoRadarClient({
         {(
           [
             { id: "todos", label: `Todos los Activos (${contadores.todos})` },
+            { id: "al_dia", label: `💳 Al día / Pagados (${contadores.al_dia})` },
             { id: "sin_publicar_2d", label: `🔴 Sin publicar +2 días (${contadores.sin_publicar_2d})` },
             { id: "reciente", label: `🟢 Publicación reciente (${contadores.reciente})` },
             { id: "publique_hoy", label: `📤 Les publiqué hoy (${contadores.publique_hoy})` },
@@ -358,6 +363,11 @@ export function SeguimientoRadarClient({
                           <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 capitalize">
                             {f.categoria}
                           </span>
+                          {f.estadoPagoReal === "al_dia" && (
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300 font-semibold">
+                              💳 Al día
+                            </span>
+                          )}
                           {igClean && (
                             <a
                               href={`https://instagram.com/${igClean}`}

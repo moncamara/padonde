@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "@/i18n/routing";
 import { AdminNav } from "../AdminNav";
+import { obtenerCobrosAliadosAction } from "../cobros/actions";
 import { getFechaYMDColombia } from "@/lib/utils";
 import {
   SeguimientoRadarClient,
@@ -94,6 +95,21 @@ export default async function AdminSeguimientoPage({
     tablaPendiente = true;
   }
 
+  // Cargar estado real de pagos desde /admin/cobros (acuerdos_comerciales / vista_cobros_aliados)
+  const mapaEstadoPagoReal = new Map<string, string>();
+  try {
+    const cobrosRes = await obtenerCobrosAliadosAction();
+    if (cobrosRes.success && Array.isArray(cobrosRes.aliados)) {
+      for (const c of cobrosRes.aliados) {
+        if (c.negocio_id) {
+          mapaEstadoPagoReal.set(c.negocio_id, c.estado_calculado);
+        }
+      }
+    }
+  } catch {
+    // Silencioso
+  }
+
   // Agrupar logs por negocio_id
   const logsPorNegocio = new Map<string, any[]>();
   for (const log of logsSeguimiento) {
@@ -141,6 +157,7 @@ export default async function AdminSeguimientoPage({
       totalEventos: evs.length,
       estadoCartelera,
       ultimaPublicacionIso: maxPubMs > 0 ? new Date(maxPubMs).toISOString() : null,
+      estadoPagoReal: mapaEstadoPagoReal.get(n.id) ?? null,
       revisadoHoy: Boolean(logHoy?.revisado_redes),
       publicadoHoy: Boolean(logHoy?.publicado_hoy),
       interactuadoIgHoy: Boolean(logHoy?.interactuado_ig),
