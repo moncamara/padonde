@@ -22,6 +22,7 @@ export function AdminNav({ userEmail }: AdminNavProps) {
   }, []);
 
   const isCartelera = pathname === "/admin" || pathname.endsWith("/admin");
+  const isSeguimiento = pathname.includes("/admin/seguimiento");
   const isHospedajes = pathname.includes("/admin/hospedajes");
   const isAliados = pathname.includes("/admin/aliados");
   const isCobros = pathname.includes("/admin/cobros");
@@ -86,6 +87,19 @@ export function AdminNav({ userEmail }: AdminNavProps) {
             >
               <span>👥</span>
               <span>Aliados</span>
+            </Link>
+
+            <Link
+              href="/admin/seguimiento"
+              className={[
+                "py-1.5 px-2 xl:px-2.5 rounded-xl font-sans text-[11px] font-medium transition-all text-center flex items-center justify-center gap-1 shrink-0 whitespace-nowrap",
+                isSeguimiento
+                  ? "bg-white text-forest shadow-xs font-semibold"
+                  : "text-stone hover:text-forest",
+              ].join(" ")}
+            >
+              <span>📡</span>
+              <span>Seguimiento</span>
             </Link>
 
             <Link
