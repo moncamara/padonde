@@ -14,6 +14,8 @@ import { ModalEditarAliado } from "./ModalEditarAliado";
 import { ModalEventosAliado } from "./ModalEventosAliado";
 import { ModalDifusionWhatsApp } from "./ModalDifusionWhatsApp";
 import { ModalFichaJsonAliado } from "./ModalFichaJsonAliado";
+import { ModalAficheImprimible } from "@/components/admin/ModalAficheImprimible";
+import { toggleQrDisenadoAliadoAction } from "./actions";
 import {
   obtenerMetricasGA4Aliado,
   calcularPeriodoReporteAliado,
@@ -55,6 +57,7 @@ export interface AliadoItem {
   plan: PlanNegocio;
   plan_expira_en?: string | null;
   activo: boolean;
+  qr_disenado?: boolean;
   created_at: string;
   totalEventos: number;
   eventosActivos: number;
@@ -103,6 +106,8 @@ export function AdminAliadosList({
   const [filtro, setFiltro] = useState<FiltroPlan>("todos");
   const [filtroZona, setFiltroZona] = useState<string>("todas");
   const [filtroCategoria, setFiltroCategoria] = useState<string>("todas");
+  const [filtroQr, setFiltroQr] = useState<"todos" | "pendiente" | "disenado">("todos");
+  const [filtroEstado, setFiltroEstado] = useState<"todos" | "activos" | "inactivos">("todos");
   const [criterioOrden, setCriterioOrden] = useState<CriterioOrden>("recientes");
   const [busqueda, setBusqueda] = useState("");
   const [copiadoId, setCopiadoId] = useState<string | null>(null);
@@ -139,6 +144,15 @@ export function AdminAliadosList({
 
   // Estado para confirmación de eliminación de aliado
   const [aliadoAEliminar, setAliadoAEliminar] = useState<AliadoItem | null>(null);
+
+  // Estado optimista de QR diseñado + modal QR Ficha en /admin/aliados
+  const [qrDisenadoMap, setQrDisenadoMap] = useState<Record<string, boolean>>(() => {
+    const m: Record<string, boolean> = {};
+    for (const a of aliados) m[a.id] = Boolean(a.qr_disenado);
+    return m;
+  });
+  const [aliadoParaQr, setAliadoParaQr] = useState<AliadoItem | null>(null);
+  const [eventoIdParaQr, setEventoIdParaQr] = useState<string>("");
 
   // Estado para modal / panel de edición de plan
   const [editandoNegocio, setEditandoNegocio] = useState<AliadoItem | null>(null);
@@ -188,7 +202,7 @@ export function AdminAliadosList({
         return false;
       }
 
-      // 0.1 Filtro por Categoría
+      // 0.1 Filtro por Categoría / Rubro
       if (filtroCategoria !== "todas") {
         const cat = (a.categoria || "").toLowerCase();
         const nom = (a.nombre || "").toLowerCase();
@@ -225,8 +239,19 @@ export function AdminAliadosList({
             cat.includes("aventura") ||
             cat.includes("guia");
           if (!matchTour) return false;
+        } else if (!cat.includes(filtroCategoria)) {
+          return false;
         }
       }
+
+      // 0.2 Filtro por Estado de Diseño QR
+      const tieneQrDisenado = qrDisenadoMap[a.id] ?? Boolean(a.qr_disenado);
+      if (filtroQr === "pendiente" && tieneQrDisenado) return false;
+      if (filtroQr === "disenado" && !tieneQrDisenado) return false;
+
+      // 0.3 Filtro por Estado Activo / Inactivo
+      if (filtroEstado === "activos" && !a.activo) return false;
+      if (filtroEstado === "inactivos" && a.activo) return false;
 
       // 1. Filtro por plan / estado
       const est = getEstadoExpiracion(a);
@@ -571,9 +596,12 @@ export function AdminAliadosList({
             </span>
             {[
               { id: "todas", label: "Todas las Categorías" },
-              { id: "restaurantes", label: "🍽️ Restaurantes" },
-              { id: "hospedajes", label: "🏡 Hospedajes" },
-              { id: "tours", label: "🎒 Tours & Guías" },
+              { id: "restaurantes", label: "🍽️ Comida / Rest." },
+              { id: "hospedajes", label: "🏡 Hospedaje" },
+              { id: "rumba", label: "🪩 Rumba" },
+              { id: "tours", label: "🌿 Tours" },
+              { id: "bienestar", label: "🧘 Bienestar" },
+              { id: "arte", label: "🎨 Arte" },
             ].map((c) => (
               <button
                 key={c.id}
@@ -632,6 +660,65 @@ export function AdminAliadosList({
                 {avisoOrdenPublico}
               </span>
             )}
+          </div>
+        </div>
+
+        {/* Fila 3: Filtros de Estado QR (para diseño físico) y Estado Activo/Inactivo */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-1.5 border-t border-stone-light/50">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-xs font-semibold text-forest font-sans mr-1 shrink-0">
+              Diseño QR:
+            </span>
+            {[
+              { id: "todos", label: `Todos (${aliados.length})` },
+              {
+                id: "pendiente",
+                label: `⬜ QR Pendiente (${aliados.filter((a) => !(qrDisenadoMap[a.id] ?? Boolean(a.qr_disenado))).length})`,
+              },
+              {
+                id: "disenado",
+                label: `✅ QR Diseñado (${aliados.filter((a) => qrDisenadoMap[a.id] ?? Boolean(a.qr_disenado)).length})`,
+              },
+            ].map((q) => (
+              <button
+                key={q.id}
+                type="button"
+                onClick={() => setFiltroQr(q.id as any)}
+                className={[
+                  "py-1 px-2.5 rounded-lg text-xs font-sans font-medium transition-all cursor-pointer",
+                  filtroQr === q.id
+                    ? "bg-forest text-white shadow-2xs font-semibold"
+                    : "bg-cream/80 text-stone hover:text-forest hover:bg-stone-100 border border-stone-light/60",
+                ].join(" ")}
+              >
+                {q.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-xs font-semibold text-forest font-sans mr-1 shrink-0">
+              Estado:
+            </span>
+            {[
+              { id: "todos", label: "Todos" },
+              { id: "activos", label: `🟢 Activos (${aliados.filter((a) => a.activo).length})` },
+              { id: "inactivos", label: `⏸️ Inactivos (${aliados.filter((a) => !a.activo).length})` },
+            ].map((e) => (
+              <button
+                key={e.id}
+                type="button"
+                onClick={() => setFiltroEstado(e.id as any)}
+                className={[
+                  "py-1 px-2.5 rounded-lg text-xs font-sans font-medium transition-all cursor-pointer",
+                  filtroEstado === e.id
+                    ? "bg-forest/90 text-white shadow-2xs font-semibold"
+                    : "bg-cream/80 text-stone hover:text-forest hover:bg-stone-100 border border-stone-light/60",
+                ].join(" ")}
+              >
+                {e.label}
+              </button>
+            ))}
           </div>
         </div>
       </div>
@@ -1092,6 +1179,67 @@ export function AdminAliadosList({
                     <span>📊</span>
                     <span>Reporte</span>
                   </button>
+
+                  {(() => {
+                    const tieneEventos = Boolean(aliado.eventos && aliado.eventos.length > 0);
+                    const eventoPrincipal =
+                      aliado.eventos?.find((ev) => ev.activo) || aliado.eventos?.[0];
+                    const qrOk = qrDisenadoMap[aliado.id] ?? Boolean(aliado.qr_disenado);
+
+                    return (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!tieneEventos || !eventoPrincipal) {
+                              alert(
+                                `El aliado "${aliado.nombre}" aún no tiene ninguna ficha/publicación creada. Crea primero una publicación para generar su QR.`
+                              );
+                              return;
+                            }
+                            setEventoIdParaQr(eventoPrincipal.id);
+                            setAliadoParaQr(aliado);
+                          }}
+                          className={[
+                            "px-3 py-1.5 rounded-xl text-xs font-sans font-semibold transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer",
+                            tieneEventos
+                              ? "text-indigo-800 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200"
+                              : "text-stone-400 bg-stone-50 border border-stone-200/80",
+                          ].join(" ")}
+                          title={
+                            tieneEventos
+                              ? "Generar y descargar Código QR de la ficha pública (PNG 800×800)"
+                              : "Aún no tiene publicación creada para generar QR"
+                          }
+                        >
+                          <span>📱</span>
+                          <span>QR Ficha</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const nuevo = !qrOk;
+                            setQrDisenadoMap((prev) => ({ ...prev, [aliado.id]: nuevo }));
+                            const res = await toggleQrDisenadoAliadoAction(aliado.id, nuevo);
+                            if (!res.success) {
+                              setQrDisenadoMap((prev) => ({ ...prev, [aliado.id]: qrOk }));
+                              alert(res.error || "No se pudo guardar el estado de QR.");
+                            }
+                          }}
+                          className={[
+                            "px-3 py-1.5 rounded-xl text-xs font-sans font-semibold border transition-all cursor-pointer flex items-center gap-1 shadow-2xs active:scale-95",
+                            qrOk
+                              ? "bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100"
+                              : "bg-amber-50/70 text-amber-900 border-amber-200 hover:bg-amber-100",
+                          ].join(" ")}
+                          title="Marcar o desmarcar si el material QR físico ya fue diseñado"
+                        >
+                          <span>{qrOk ? "✅ QR Diseñado" : "⬜ QR Pendiente"}</span>
+                        </button>
+                      </>
+                    );
+                  })()}
                 </div>
 
                 {/* Grupo Derecho: WhatsApp Comercial, Plan, Editar y Eliminar */}
@@ -1610,6 +1758,58 @@ export function AdminAliadosList({
           onClose={() => setAliadoParaJson(null)}
         />
       )}
+
+      {/* Modal QR Ficha Directa desde /admin/aliados (PNG 800x800 + selector si hay varias fichas) */}
+      {aliadoParaQr && (() => {
+        const zSlug = aliadoParaQr.zonaSlug || "minca";
+        const slugNegocio =
+          (aliadoParaQr.nombre || "aliado")
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-+|-+$/g, "") || "aliado";
+        const evId =
+          eventoIdParaQr ||
+          aliadoParaQr.eventos?.find((e) => e.activo)?.id ||
+          aliadoParaQr.eventos?.[0]?.id ||
+          "";
+        const urlQr = `https://padonde.lat/es/${zSlug}/${evId}?utm_source=recepcion&utm_medium=qr_${slugNegocio}`;
+        const evs = aliadoParaQr.eventos || [];
+
+        return (
+          <div className="relative">
+            {evs.length > 1 && (
+              <div className="fixed top-3 left-1/2 -translate-x-1/2 z-[60] bg-white border border-forest/30 rounded-2xl shadow-lg px-3 py-2 flex items-center gap-2 max-w-[92vw]">
+                <span className="text-[11px] font-bold text-forest shrink-0">
+                  Elegir ficha:
+                </span>
+                <select
+                  value={evId}
+                  onChange={(e) => setEventoIdParaQr(e.target.value)}
+                  className="text-xs bg-cream border border-stone-light rounded-xl px-2 py-1 text-forest font-medium max-w-[260px] truncate outline-none cursor-pointer"
+                >
+                  {evs.map((ev) => (
+                    <option key={ev.id} value={ev.id}>
+                      {ev.activo ? "🟢" : "⏸️"} {ev.titulo}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <ModalAficheImprimible
+              isOpen={true}
+              onClose={() => setAliadoParaQr(null)}
+              puntoNombre={aliadoParaQr.nombre}
+              urlDestino={urlQr}
+              srcParam={slugNegocio}
+              qrImageUrl={`https://api.qrserver.com/v1/create-qr-code/?size=800x800&margin=10&data=${encodeURIComponent(
+                urlQr
+              )}`}
+            />
+          </div>
+        );
+      })()}
     </div>
   );
 }
